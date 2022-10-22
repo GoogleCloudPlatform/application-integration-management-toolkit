@@ -22,6 +22,10 @@ Run this script to download & install the latest version (on Linux or Darwin)
 curl -L https://raw.githubusercontent.com/srinandan/integrationcli/master/downloadLatest.sh | sh -
 ```
 
+## Selecting the endpoint
+
+By default `integrationcli` uses Application Integration endpoints. This can be changed per command through the flag `--apigee-integration=true` or set permanently by leveraging preferences. See the `preferences` section below.
+
 ## Available Commands
 
 Here is a [list](./docs/integrationcli.md) of available commands
