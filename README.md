@@ -4,7 +4,7 @@
 [![GitHub release](https://img.shields.io/github/v/release/srinandan/integrationcli)](https://github.com/srinandan/integrationcli/releases)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 
-This is a tool to interact with [Apigee Integration APIs](https://cloud.google.com/apigee/docs/api-platform/integration/reference/rest) for [Apigee Integration](https://cloud.google.com/apigee/docs/api-platform/integration/what-is-apigee-integration) offering. The tool lets you manage (Create,Get, List, Update, Delete, Export and Import) Integration entities like integrations, authConfigs etc. 
+This is a tool to interact with [Application Integration APIs](https://cloud.google.com/application-integration/docs/reference/rest), [Apigee Integration APIs](https://cloud.google.com/apigee/docs/api-platform/integration/reference/rest) and [Connector APIs](https://cloud.google.com/integration-connectors/docs/reference/rest). The tool lets you manage (Create,Get, List, Update, Delete, Export and Import) Integration entities like integrations, authConfigs etc. 
 
 ## Installation
 
