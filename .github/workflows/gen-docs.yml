@@ -12,8 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Generate documentation for apigeecli 
-name: apigeecli Github Pages Pipeline
+# Generate documentation for integrationcli 
+name: integrationcli Github Pages Pipeline
 
 on:
   push:
@@ -23,7 +23,7 @@ on:
 
 jobs:      
   publish-gh-pages:
-    name: Publish apigeecli Documentation
+    name: Publish integrationcli Documentation
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
@@ -32,8 +32,8 @@ jobs:
         run: |
           git pull --rebase origin main
           go run docs/docs.go
-          git config --global user.name "apigeecli Publish Action"
-          git config --global user.email "apigeecli-bot@noreply.apigee.com"
+          git config --global user.name "integrationcli Publish Action"
+          git config --global user.email "integrationcli-bot@noreply.srinandans.com"
           git add --all
           git commit -m "Update GH Pages - $GITHUB_SHA" || echo "No Changes in docs"
           git push origin main
