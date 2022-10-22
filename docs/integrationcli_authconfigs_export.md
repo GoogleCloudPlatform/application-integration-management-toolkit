@@ -1,22 +1,20 @@
-## integrationcli authconfigs list
+## integrationcli authconfigs export
 
-List all integration flows in the region
+Export authconfigs in a region to a folder
 
 ### Synopsis
 
-List all integration flows in the region
+Export authconfigs in a region to a folder
 
 ```
-integrationcli authconfigs list [flags]
+integrationcli authconfigs export [flags]
 ```
 
 ### Options
 
 ```
-      --filter string      Filter results
-  -h, --help               help for list
-      --pageSize int       The maximum number of versions to return (default -1)
-      --pageToken string   A page token, received from a previous call
+  -f, --folder string   Folder to export Integration flows
+  -h, --help            help for export
 ```
 
 ### Options inherited from parent commands
