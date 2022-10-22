@@ -24,10 +24,10 @@ else
   OSEXT="Linux"
 fi
 
-# Determine the latest integrationcli version by version number ignoring alpha, beta, and rc versions.
+# Determine the latest INTEGRATIONCLI version by version number ignoring alpha, beta, and rc versions.
 if [ "${INTEGRATIONCLI_VERSION}" = "" ] ; then
   INTEGRATIONCLI_VERSION="$(curl -sL https://github.com/srinandan/integrationcli/releases/latest | \
-                  grep -i release | grep -o 'v[0-9].[0-9][0-9][0-9]' | tail -1)"
+                  grep -i release | grep -o 'v[0-9].[0-999]' | tail -1)"
   INTEGRATIONCLI_VERSION="${INTEGRATIONCLI_VERSION##*/}"
 fi
 
@@ -37,13 +37,10 @@ if [ "${TARGET_ARCH}" ]; then
 fi
 
 case "${LOCAL_ARCH}" in
-  x86_64)
+  x86_64|amd64|arm64)
     INTEGRATIONCLI_ARCH=x86_64
     ;;
-  armv8*)
-    INTEGRATIONCLI_ARCH=arm64
-    ;;
-  aarch64*)
+  armv8*|aarch64*)
     INTEGRATIONCLI_ARCH=arm64
     ;;
   *)
@@ -53,16 +50,22 @@ case "${LOCAL_ARCH}" in
 esac
 
 if [ "${INTEGRATIONCLI_VERSION}" = "" ] ; then
-  printf "Unable to get latest integrationcli version. Set INTEGRATIONCLI_VERSION env var and re-run. For example: export INTEGRATIONCLI_VERSION=v1.104"
+  printf "Unable to get latest INTEGRATIONCLI version. Set INTEGRATIONCLI_VERSION env var and re-run. For example: export INTEGRATIONCLI_VERSION=v1.104"
   exit 1;
 fi
 
-# Downloads the integrationcli binary archive.
+# older versions of INTEGRATIONCLI used a file called .INTEGRATIONCLI. This changed to a folder in v1.108 
+INTEGRATIONCLI_FILE=~/.INTEGRATIONCLI
+if [ -f "$INTEGRATIONCLI_FILE" ]; then
+    rm ${INTEGRATIONCLI_FILE}
+fi
+
+# Downloads the INTEGRATIONCLI binary archive.
 tmp=$(mktemp -d /tmp/integrationcli.XXXXXX)
-NAME="INTEGRATIONCLI_$INTEGRATIONCLI_VERSION"
+NAME="integrationcli_$INTEGRATIONCLI_VERSION"
 
 cd "$tmp" || exit
-URL="https://github.com/srinandan/integrationcli/releases/download/${INTEGRATIONCLI_VERSION}/INTEGRATIONCLI_${INTEGRATIONCLI_VERSION}_${OSEXT}_${INTEGRATIONCLI_ARCH}.zip"
+URL="https://github.com/srinandan/integrationcli/releases/download/${INTEGRATIONCLI_VERSION}/integrationcli_${INTEGRATIONCLI_VERSION}_${OSEXT}_${INTEGRATIONCLI_ARCH}.zip"
 
 download_cli() {
   printf "\nDownloading %s from %s ...\n" "$NAME" "$URL"
@@ -85,7 +88,7 @@ printf "\n"
 printf "integrationcli has been successfully downloaded into the %s folder on your system.\n" "$tmp"
 printf "\n"
 
-# setup integrationcli
+# setup INTEGRATIONCLI
 cd "$HOME" || exit
 mkdir -p "$HOME/.integrationcli/bin"
 mv "${tmp}/INTEGRATIONCLI_${INTEGRATIONCLI_VERSION}_${OSEXT}_${INTEGRATIONCLI_ARCH}/integrationcli" "$HOME/.integrationcli/bin"
