@@ -1,6 +1,6 @@
 module github.com/srinandan/integrationcli
 
-go 1.18
+go 1.19
 
 require (
 	github.com/apigee/apigeecli v0.0.0-20220602211911-fadd8fdbbc2a
