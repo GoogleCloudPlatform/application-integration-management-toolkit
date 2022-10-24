@@ -26,7 +26,6 @@ import (
 	"net/url"
 	"os"
 
-	token "github.com/apigee/apigeecli/apiclient"
 	"github.com/apigee/apigeecli/clilog"
 )
 
@@ -326,7 +325,7 @@ func getRequest(params []string) (req *http.Request, err error) {
 
 func setAuthHeader(req *http.Request) (*http.Request, error) {
 	if GetIntegrationToken() == "" {
-		if err := token.SetAccessToken(); err != nil {
+		if err := SetAccessToken(); err != nil {
 			return nil, err
 		}
 	}
