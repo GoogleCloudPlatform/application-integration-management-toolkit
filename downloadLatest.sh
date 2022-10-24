@@ -54,12 +54,6 @@ if [ "${INTEGRATIONCLI_VERSION}" = "" ] ; then
   exit 1;
 fi
 
-# older versions of INTEGRATIONCLI used a file called .INTEGRATIONCLI. This changed to a folder in v1.108 
-INTEGRATIONCLI_FILE=~/.INTEGRATIONCLI
-if [ -f "$INTEGRATIONCLI_FILE" ]; then
-    rm ${INTEGRATIONCLI_FILE}
-fi
-
 # Downloads the INTEGRATIONCLI binary archive.
 tmp=$(mktemp -d /tmp/integrationcli.XXXXXX)
 NAME="integrationcli_$INTEGRATIONCLI_VERSION"
@@ -74,7 +68,7 @@ download_cli() {
     exit 1
   fi
   curl -fsLO "$URL"
-  filename="INTEGRATIONCLI_${INTEGRATIONCLI_VERSION}_${OSEXT}_${INTEGRATIONCLI_ARCH}.zip"
+  filename="integrationcli_${INTEGRATIONCLI_VERSION}_${OSEXT}_${INTEGRATIONCLI_ARCH}.zip"
   unzip "${filename}"
   rm "${filename}"
 }
