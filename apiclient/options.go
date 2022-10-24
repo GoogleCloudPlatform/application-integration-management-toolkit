@@ -24,7 +24,7 @@ import (
 // BaseURL is the Integration control plane endpoint
 const integrationBaseURL = "https://%s-integrations.googleapis.com/v1/projects/%s/locations/%s/products/apigee/"
 const appIntegrationBaseURL = "https://%s-integrations.googleapis.com/v1/projects/%s/locations/%s/"
-const connectorBaseURL = "https://connectors.googleapis.com/v1/project/%s/locations/%s/connections"
+const connectorBaseURL = "https://connectors.googleapis.com/v1/projects/%s/locations/%s/connections"
 
 var integrationRegions = []string{"us", "us-west1"}
 
