@@ -22,7 +22,7 @@ import (
 	"github.com/srinandan/integrationcli/apiclient"
 )
 
-//Delete
+// Delete
 func Delete(name string) (respBody []byte, err error) {
 	u, _ := url.Parse(apiclient.GetBaseConnectorURL())
 	u.Path = path.Join(u.Path, "connectors", name)
@@ -30,7 +30,7 @@ func Delete(name string) (respBody []byte, err error) {
 	return respBody, err
 }
 
-//Get
+// Get
 func Get(name string) (respBody []byte, err error) {
 	u, _ := url.Parse(apiclient.GetBaseConnectorURL())
 	u.Path = path.Join(u.Path, "connectors", name)
@@ -38,7 +38,7 @@ func Get(name string) (respBody []byte, err error) {
 	return respBody, err
 }
 
-//List
+// List
 func List(pageSize int, pageToken string, filter string, orderBy string) (respBody []byte, err error) {
 	u, _ := url.Parse(apiclient.GetBaseConnectorURL())
 	q := u.Query()
@@ -56,7 +56,6 @@ func List(pageSize int, pageToken string, filter string, orderBy string) (respBo
 	}
 
 	u.RawQuery = q.Encode()
-	u.Path = path.Join(u.Path, "connectors")
 	respBody, err = apiclient.HttpClient(apiclient.GetPrintOutput(), u.String())
 	return respBody, err
 }
