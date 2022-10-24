@@ -25,7 +25,7 @@ import (
 // Delete
 func Delete(name string) (respBody []byte, err error) {
 	u, _ := url.Parse(apiclient.GetBaseConnectorURL())
-	u.Path = path.Join(u.Path, "connectors", name)
+	u.Path = path.Join(u.Path, name)
 	respBody, err = apiclient.HttpClient(apiclient.GetPrintOutput(), u.String(), "", "DELETE")
 	return respBody, err
 }
@@ -33,7 +33,7 @@ func Delete(name string) (respBody []byte, err error) {
 // Get
 func Get(name string) (respBody []byte, err error) {
 	u, _ := url.Parse(apiclient.GetBaseConnectorURL())
-	u.Path = path.Join(u.Path, "connectors", name)
+	u.Path = path.Join(u.Path, name)
 	respBody, err = apiclient.HttpClient(apiclient.GetPrintOutput(), u.String())
 	return respBody, err
 }
