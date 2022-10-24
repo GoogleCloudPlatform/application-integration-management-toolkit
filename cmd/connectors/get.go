@@ -15,6 +15,8 @@
 package connectors
 
 import (
+	"fmt"
+
 	"github.com/srinandan/integrationcli/apiclient"
 	"github.com/srinandan/integrationcli/client/connectors"
 
@@ -30,18 +32,22 @@ var GetCmd = &cobra.Command{
 		if err = apiclient.SetRegion(region); err != nil {
 			return err
 		}
+		if view != "BASIC" && view != "FULL" {
+			return fmt.Errorf("view must be BASIC or FULL")
+		}
 		return apiclient.SetProjectID(project)
 	},
 	RunE: func(cmd *cobra.Command, args []string) (err error) {
-		_, err = connectors.Get(name)
+		_, err = connectors.Get(name, view)
 		return
-
 	},
 }
 
-var name string
+var name, view string
 
 func init() {
 	GetCmd.Flags().StringVarP(&name, "name", "n",
 		"", "The name of the connection")
+	GetCmd.Flags().StringVarP(&view, "view", "",
+		"BASIC", "fields of the Connection to be returned; default is BASIC. FULL is the other option")
 }
