@@ -37,7 +37,7 @@ Users can set a default project and region via preferences and those settings wi
 ```bash
 integrationcli prefs set -p project-name -r region
 
-integrationcli integrations list
+integrationcli integrations list #if you don't have a token cached, don't forget to include -t
 ```
 
 NOTE: the second command uses the org name from perferences
