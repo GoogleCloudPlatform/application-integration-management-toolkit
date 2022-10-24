@@ -67,7 +67,7 @@ download_cli() {
     printf "\n%s is not found, please specify a valid INTEGRATIONCLI_VERSION and TARGET_ARCH\n" "$URL"
     exit 1
   fi
-  curl -fsLO "$URL"
+  curl -fsLO -H 'Cache-Control: no-cache, no-store' "$URL"
   filename="integrationcli_${INTEGRATIONCLI_VERSION}_${OSEXT}_${INTEGRATIONCLI_ARCH}.zip"
   unzip "${filename}"
   rm "${filename}"
