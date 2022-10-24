@@ -85,7 +85,7 @@ printf "\n"
 # setup INTEGRATIONCLI
 cd "$HOME" || exit
 mkdir -p "$HOME/.integrationcli/bin"
-mv "${tmp}/INTEGRATIONCLI_${INTEGRATIONCLI_VERSION}_${OSEXT}_${INTEGRATIONCLI_ARCH}/integrationcli" "$HOME/.integrationcli/bin"
+mv "${tmp}/integrationcli_${INTEGRATIONCLI_VERSION}_${OSEXT}_${INTEGRATIONCLI_ARCH}/integrationcli" "$HOME/.integrationcli/bin"
 printf "Copied integrationcli into the $HOME/.integrationcli/bin folder.\n"
 chmod +x "$HOME/.integrationcli/bin/integrationcli"
 rm -r "${tmp}"
