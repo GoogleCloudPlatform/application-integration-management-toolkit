@@ -71,5 +71,5 @@ func init() {
 		false, "Don't check for newer versions of cmd")
 
 	SetCmd.Flags().BoolVarP(&useapigee, "apigee-integration", "",
-		false, "Use Apigee Integration; default is Application Integration")
+		false, "Use Apigee Integration; default is false (Application Integration)")
 }

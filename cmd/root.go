@@ -88,7 +88,7 @@ func init() {
 		false, "Disable check for newer versions")
 
 	RootCmd.PersistentFlags().BoolVarP(&useApigee, "apigee-integration", "",
-		false, "Use Apigee Integration; default is false")
+		false, "Use Apigee Integration; default is false (Application Integration)")
 
 	RootCmd.PersistentFlags().BoolVarP(&noOutput, "no-output", "",
 		false, "Disable printing API responses from the control plane")
