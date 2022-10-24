@@ -21,11 +21,11 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// ListCmd to list Connections
-var ListCmd = &cobra.Command{
-	Use:   "list",
-	Short: "List all connections in the region",
-	Long:  "List all connections in the region",
+// GetCmd to get connection
+var GetCmd = &cobra.Command{
+	Use:   "get",
+	Short: "Get connection details",
+	Long:  "Get connection details from a connection created in a region",
 	Args: func(cmd *cobra.Command, args []string) (err error) {
 		if err = apiclient.SetRegion(region); err != nil {
 			return err
@@ -33,22 +33,15 @@ var ListCmd = &cobra.Command{
 		return apiclient.SetProjectID(project)
 	},
 	RunE: func(cmd *cobra.Command, args []string) (err error) {
-		_, err = connectors.List(pageSize, pageToken, filter, orderBy)
+		_, err = connectors.Get(name)
 		return
 
 	},
 }
 
-var pageToken, filter, orderBy string
-var pageSize int
+var name string
 
 func init() {
-	ListCmd.Flags().IntVarP(&pageSize, "pageSize", "",
-		-1, "The maximum number of versions to return")
-	ListCmd.Flags().StringVarP(&pageToken, "pageToken", "",
-		"", "A page token, received from a previous call")
-	ListCmd.Flags().StringVarP(&filter, "filter", "",
-		"", "Filter results")
-	ListCmd.Flags().StringVarP(&orderBy, "orderBy", "",
-		"", "The results would be returned in order")
+	GetCmd.Flags().StringVarP(&name, "name", "n",
+		"", "The name of the connection")
 }
