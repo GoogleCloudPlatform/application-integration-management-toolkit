@@ -21,11 +21,11 @@ import (
 	"github.com/spf13/cobra"
 )
 
-//ExportCmd to export integrations
+// ExportCmd to export integrations
 var ExportCmd = &cobra.Command{
 	Use:   "export",
-	Short: "Export Integrations all flows in a region to a folder",
-	Long:  "Export Integrations all flows in a region to a folder",
+	Short: "Export all Integrations flows in a region to a folder",
+	Long:  "Export all Integrations flows in a region to a folder",
 	Args: func(cmd *cobra.Command, args []string) (err error) {
 		if err = apiclient.SetRegion(region); err != nil {
 			return err
