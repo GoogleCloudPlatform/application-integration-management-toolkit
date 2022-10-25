@@ -36,7 +36,7 @@ func init() {
 
 	IamCmd.AddCommand(GetIamCmd)
 	IamCmd.AddCommand(SetAdminCmd)
-	//IamCmd.AddCommand(SetInvokeCmd)
-	//IamCmd.AddCommand(SetViewerCmd)
-	//IamCmd.AddCommand(SetCustCmd)
+	IamCmd.AddCommand(SetInvokeCmd)
+	IamCmd.AddCommand(SetViewerCmd)
+	IamCmd.AddCommand(SetCustomCmd)
 }
