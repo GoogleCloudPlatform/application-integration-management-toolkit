@@ -1,4 +1,4 @@
-// Copyright 2021 Google LLC
+// Copyright 2022 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -16,18 +16,23 @@ package connectors
 
 import (
 	"github.com/spf13/cobra"
+	"github.com/srinandan/integrationcli/apiclient"
+	"github.com/srinandan/integrationcli/client/connectors"
 )
 
-// Cmd to manage preferences
-var Cmd = &cobra.Command{
-	Use:   "connectors",
-	Short: "Manage Connectors for Integration",
-	Long:  "Manage Connectors for Integration",
-}
-
-var region, project, name string
-
-func init() {
-	Cmd.AddCommand(ListCmd)
-	Cmd.AddCommand(IamCmd)
+// Cmd to manage tracing of apis
+var GetIamCmd = &cobra.Command{
+	Use:   "get",
+	Short: "Gets the IAM policy on a Connection",
+	Long:  "Gets the IAM policy on a Connection",
+	Args: func(cmd *cobra.Command, args []string) (err error) {
+		if err = apiclient.SetRegion(region); err != nil {
+			return err
+		}
+		return apiclient.SetProjectID(project)
+	},
+	RunE: func(cmd *cobra.Command, args []string) (err error) {
+		_, err = connectors.GetIAM(name)
+		return
+	},
 }

@@ -1,4 +1,4 @@
-// Copyright 2021 Google LLC
+// Copyright 2022 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -18,16 +18,25 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// Cmd to manage preferences
-var Cmd = &cobra.Command{
-	Use:   "connectors",
-	Short: "Manage Connectors for Integration",
-	Long:  "Manage Connectors for Integration",
+// IamCmd to IAM permissions for Connections
+var IamCmd = &cobra.Command{
+	Use:   "iam",
+	Short: "Manage IAM permissions for the connection",
+	Long:  "Manage IAM permissions for the connection",
 }
 
-var region, project, name string
+var memberName, role, memberType string
 
 func init() {
-	Cmd.AddCommand(ListCmd)
-	Cmd.AddCommand(IamCmd)
+
+	IamCmd.PersistentFlags().StringVarP(&name, "name", "n",
+		"", "Connection name")
+
+	_ = IamCmd.MarkPersistentFlagRequired("name")
+
+	IamCmd.AddCommand(GetIamCmd)
+	IamCmd.AddCommand(SetAdminCmd)
+	//IamCmd.AddCommand(SetInvokeCmd)
+	//IamCmd.AddCommand(SetViewerCmd)
+	//IamCmd.AddCommand(SetCustCmd)
 }
