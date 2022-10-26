@@ -1,4 +1,4 @@
-// Copyright 2021 Google LLC
+// Copyright 2022 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,39 +15,24 @@
 package connectors
 
 import (
-	"fmt"
-
+	"github.com/spf13/cobra"
 	"github.com/srinandan/integrationcli/apiclient"
 	"github.com/srinandan/integrationcli/client/connectors"
-
-	"github.com/spf13/cobra"
 )
 
-// GetCmd to get connection
-var GetCmd = &cobra.Command{
+// Cmd to manage tracing of apis
+var GetIamCmd = &cobra.Command{
 	Use:   "get",
-	Short: "Get connection details",
-	Long:  "Get connection details from a connection created in a region",
+	Short: "Gets the IAM policy on a Connection",
+	Long:  "Gets the IAM policy on a Connection",
 	Args: func(cmd *cobra.Command, args []string) (err error) {
 		if err = apiclient.SetRegion(region); err != nil {
 			return err
 		}
-		if view != "BASIC" && view != "FULL" {
-			return fmt.Errorf("view must be BASIC or FULL")
-		}
 		return apiclient.SetProjectID(project)
 	},
 	RunE: func(cmd *cobra.Command, args []string) (err error) {
-		_, err = connectors.Get(name, view)
+		_, err = connectors.GetIAM(name)
 		return
 	},
-}
-
-var view string
-
-func init() {
-	GetCmd.Flags().StringVarP(&name, "name", "n",
-		"", "The name of the connection")
-	GetCmd.Flags().StringVarP(&view, "view", "",
-		"BASIC", "fields of the Connection to be returned; default is BASIC. FULL is the other option")
 }
