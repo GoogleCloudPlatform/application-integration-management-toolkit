@@ -46,4 +46,4 @@ jobs:
           git config --global user.email "integrationcli-bot@noreply.srinandans.com"
           git add --all
           git commit -m "Update GH Pages - $GITHUB_SHA" || echo "No Changes in docs"
-          git push origin HEAD:refs/heads/release/main
+          git push origin HEAD:refs/heads/main
