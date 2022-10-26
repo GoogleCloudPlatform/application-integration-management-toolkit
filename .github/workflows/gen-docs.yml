@@ -21,17 +21,35 @@ on:
     tags:        
       - v[0-1].[0-9]+  
 
-jobs:      
+jobs:
+  generate-docs:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+      - name: generate-docs
+        run: |
+          go run docs/docs.go
+      - name: Archive Generated Docs
+        uses: actions/upload-artifact@v3
+        with:
+          name: generated-docs
+          path: docs/
+
   publish-gh-pages:
     name: Publish integrationcli Documentation
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
         uses: actions/checkout@v3
+        with:
+          ref: gh-pages
+      - name: Download Generated Docs
+        uses: actions/download-artifact@v3
+        with:
+          name: generated-docs        
       - name: Push GH Pages
         run: |
-          git checkout main
-          go run docs/docs.go
           git config --global user.name "integrationcli Publish Action"
           git config --global user.email "integrationcli-bot@noreply.srinandans.com"
           git add --all
