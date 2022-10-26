@@ -43,7 +43,7 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v3
         with:
-          ref: gh-pages
+          path: main
       - name: Download Generated Docs
         uses: actions/download-artifact@v3
         with:
