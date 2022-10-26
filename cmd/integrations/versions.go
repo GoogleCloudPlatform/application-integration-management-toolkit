@@ -18,7 +18,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-//VerCmd to manage versions of an integration flow
+// VerCmd to manage versions of an integration flow
 var VerCmd = &cobra.Command{
 	Use:   "versions",
 	Short: "Manage integrations flow versions",
@@ -30,6 +30,7 @@ var version string
 func init() {
 
 	VerCmd.AddCommand(ListVerCmd)
+	VerCmd.AddCommand(PatchVerCmd)
 	VerCmd.AddCommand(GetVerCmd)
 	VerCmd.AddCommand(ExportVerCmd)
 	VerCmd.AddCommand(ImportflowCmd)
