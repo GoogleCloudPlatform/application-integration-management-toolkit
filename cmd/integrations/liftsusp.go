@@ -53,7 +53,7 @@ func init() {
 		"", "Integration execution id")
 	LiftSuspCmd.Flags().StringVarP(&suspension, "suspension", "s",
 		"", "Integration suspension id")
-	LiftSuspCmd.Flags().StringVarP(&result, "result", "r",
+	LiftSuspCmd.Flags().StringVarP(&result, "result", "",
 		"", "Integration suspension result")
 
 	_ = LiftSuspCmd.MarkFlagRequired("name")
