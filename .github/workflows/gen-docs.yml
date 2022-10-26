@@ -22,7 +22,8 @@ on:
       - v[0-1].[0-9]+  
 
 jobs:
-  generate-docs:
+  publish-gh-pages:
+    name: Publish integrationcli Documentation
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
@@ -35,15 +36,6 @@ jobs:
         with:
           name: generated-docs
           path: docs/
-
-  publish-gh-pages:
-    name: Publish integrationcli Documentation
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout Code
-        uses: actions/checkout@v3
-        with:
-          ref: main
       - name: Download Generated Docs
         uses: actions/download-artifact@v3
         with:
