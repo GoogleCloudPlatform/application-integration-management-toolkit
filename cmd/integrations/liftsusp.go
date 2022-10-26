@@ -15,35 +15,49 @@
 package integrations
 
 import (
+	"fmt"
+
 	"github.com/srinandan/integrationcli/apiclient"
 	"github.com/srinandan/integrationcli/client/integrations"
 
 	"github.com/spf13/cobra"
 )
 
-// ExportCmd to export integrations
-var ExportCmd = &cobra.Command{
-	Use:   "export",
-	Short: "Export all Integrations flows in a region to a folder",
-	Long:  "Export all Integrations flows in a region to a folder",
+// LiftSuspCmd to list suspensions of an integration
+var LiftSuspCmd = &cobra.Command{
+	Use:   "lift",
+	Short: "Lift a suspension of an integration execution",
+	Long:  "Lift a suspension of an integration execution",
 	Args: func(cmd *cobra.Command, args []string) (err error) {
 		if err = apiclient.SetRegion(region); err != nil {
 			return err
 		}
+		if result != "Approved" && result != "Rejected" {
+			return fmt.Errorf("result must be Approved or Rejected")
+		}
 		return apiclient.SetProjectID(project)
 	},
 	RunE: func(cmd *cobra.Command, args []string) (err error) {
-		if err = apiclient.FolderExists(folder); err != nil {
-			return err
-		}
+		_, err = integrations.Lift(name, execution, suspension, result)
+		return
 
-		return integrations.Export(folder)
 	},
 }
 
-func init() {
-	ExportCmd.Flags().StringVarP(&folder, "folder", "f",
-		"", "Folder to export Integration flows")
+var execution, suspension, result string
 
-	_ = ExportCmd.MarkFlagRequired("folder")
+func init() {
+	LiftSuspCmd.Flags().StringVarP(&name, "name", "n",
+		"", "Integration name")
+	LiftSuspCmd.Flags().StringVarP(&execution, "execution", "e",
+		"", "Integration execution id")
+	LiftSuspCmd.Flags().StringVarP(&suspension, "suspension", "s",
+		"", "Integration suspension id")
+	LiftSuspCmd.Flags().StringVarP(&result, "result", "r",
+		"", "Integration suspension result")
+
+	_ = LiftSuspCmd.MarkFlagRequired("name")
+	_ = LiftSuspCmd.MarkFlagRequired("execution")
+	_ = LiftSuspCmd.MarkFlagRequired("suspension")
+	_ = LiftSuspCmd.MarkFlagRequired("result")
 }

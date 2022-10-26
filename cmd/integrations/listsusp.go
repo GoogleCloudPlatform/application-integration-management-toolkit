@@ -12,43 +12,52 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package connectors
+package integrations
 
 import (
+	"fmt"
+
 	"github.com/srinandan/integrationcli/apiclient"
-	"github.com/srinandan/integrationcli/client/connectors"
+	"github.com/srinandan/integrationcli/client/integrations"
 
 	"github.com/spf13/cobra"
 )
 
-// ListCmd to list Connections
-var ListCmd = &cobra.Command{
+// ListSuspCmd to list suspensions of an integration
+var ListSuspCmd = &cobra.Command{
 	Use:   "list",
-	Short: "List all connections in the region",
-	Long:  "List all connections in the region",
+	Short: "List all suspensions of an integration",
+	Long:  "List all suspensions of an integration",
 	Args: func(cmd *cobra.Command, args []string) (err error) {
 		if err = apiclient.SetRegion(region); err != nil {
 			return err
 		}
+		if allVersions && pageSize != -1 {
+			return fmt.Errorf("allVersions and pageSize cannot be combined")
+		}
+		if allVersions && pageToken != "" {
+			return fmt.Errorf("allVersions and pageToken cannot be combined")
+		}
 		return apiclient.SetProjectID(project)
 	},
 	RunE: func(cmd *cobra.Command, args []string) (err error) {
-		_, err = connectors.List(pageSize, pageToken, filter, orderBy)
+		_, err = integrations.ListExecutions(name, pageSize, pageToken, filter, orderBy)
 		return
 
 	},
 }
 
-var pageToken, filter, orderBy string
-var pageSize int
-
 func init() {
-	ListCmd.Flags().IntVarP(&pageSize, "pageSize", "",
+	ListSuspCmd.Flags().StringVarP(&name, "name", "n",
+		"", "Integration flow name")
+	ListSuspCmd.Flags().IntVarP(&pageSize, "pageSize", "",
 		-1, "The maximum number of versions to return")
-	ListCmd.Flags().StringVarP(&pageToken, "pageToken", "",
+	ListSuspCmd.Flags().StringVarP(&pageToken, "pageToken", "",
 		"", "A page token, received from a previous call")
-	ListCmd.Flags().StringVarP(&filter, "filter", "",
+	ListSuspCmd.Flags().StringVarP(&filter, "filter", "",
 		"", "Filter results")
-	ListCmd.Flags().StringVarP(&orderBy, "orderBy", "",
+	ListSuspCmd.Flags().StringVarP(&orderBy, "orderBy", "",
 		"", "The results would be returned in order")
+
+	_ = ListSuspCmd.MarkFlagRequired("name")
 }

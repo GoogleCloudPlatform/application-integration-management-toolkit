@@ -18,29 +18,16 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// Cmd to manage integration flows
-var Cmd = &cobra.Command{
-	Use:   "integrations",
-	Short: "Manage integrations in a GCP project",
-	Long:  "Manage integrations in a GCP project",
+// SuspendCmd to manage suspensions of an integration flow
+var SuspendCmd = &cobra.Command{
+	Use:     "suspensions",
+	Aliases: []string{"susp"},
+	Short:   "Manage suspensions of an integrations flow version",
+	Long:    "Manage suspensions of an integrations flow version",
 }
 
-var project, region, name string
-var userLabel, snapshot string
-
 func init() {
-
-	Cmd.PersistentFlags().StringVarP(&project, "proj", "p",
-		"", "Integration GCP Project name")
-
-	Cmd.PersistentFlags().StringVarP(&region, "reg", "r",
-		"", "Integration region name")
-
-	Cmd.AddCommand(ListCmd)
-	Cmd.AddCommand(VerCmd)
-	Cmd.AddCommand(ExecCmd)
-	Cmd.AddCommand(ExportCmd)
-	Cmd.AddCommand(ImportCmd)
-	Cmd.AddCommand(UploadCmd)
-	Cmd.AddCommand(CreateCmd)
+	SuspendCmd.AddCommand(ListSuspCmd)
+	SuspendCmd.AddCommand(LiftSuspCmd)
+	//SuspendCmd.AddCommand(ResolveSuspendCmd)
 }

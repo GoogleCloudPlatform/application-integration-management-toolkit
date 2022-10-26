@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package connectors
+package integrations
 
 import (
 	"net/url"
@@ -22,29 +22,9 @@ import (
 	"github.com/srinandan/integrationcli/apiclient"
 )
 
-// Delete
-func Delete(name string) (respBody []byte, err error) {
-	u, _ := url.Parse(apiclient.GetBaseConnectorURL())
-	u.Path = path.Join(u.Path, name)
-	respBody, err = apiclient.HttpClient(apiclient.GetPrintOutput(), u.String(), "", "DELETE")
-	return respBody, err
-}
-
-// Get
-func Get(name string, view string) (respBody []byte, err error) {
-	u, _ := url.Parse(apiclient.GetBaseConnectorURL())
-	q := u.Query()
-	if view != "" {
-		q.Set("view", view)
-	}
-	u.Path = path.Join(u.Path, name)
-	respBody, err = apiclient.HttpClient(apiclient.GetPrintOutput(), u.String())
-	return respBody, err
-}
-
-// List
-func List(pageSize int, pageToken string, filter string, orderBy string) (respBody []byte, err error) {
-	u, _ := url.Parse(apiclient.GetBaseConnectorURL())
+// List all suspensions
+func ListSuspensions(name string, execution string, pageSize int, pageToken string, filter string, orderBy string) (respBody []byte, err error) {
+	u, _ := url.Parse(apiclient.GetBaseIntegrationURL())
 	q := u.Query()
 	if pageSize != -1 {
 		q.Set("pageSize", strconv.Itoa(pageSize))
@@ -60,6 +40,21 @@ func List(pageSize int, pageToken string, filter string, orderBy string) (respBo
 	}
 
 	u.RawQuery = q.Encode()
+	u.Path = path.Join(u.Path, "integrations", name, "executions", execution, "suspensions")
 	respBody, err = apiclient.HttpClient(apiclient.GetPrintOutput(), u.String())
 	return respBody, err
+}
+
+// Lift a suspension
+func Lift(name string, execution string, suspension string, result string) (respBody []byte, err error) {
+	u, _ := url.Parse(apiclient.GetBaseIntegrationURL())
+	u.Path = path.Join(u.Path, "integrations", name, "executions", execution, "suspensions", suspension)
+	payload := "{ \"suspensionResult\":" + result + "}"
+	respBody, err = apiclient.HttpClient(apiclient.GetPrintOutput(), u.String(), payload)
+	return respBody, err
+}
+
+// Resolve one or more suspensions
+func Resolve(name string, suspensions string) (respBody []byte, err error) {
+	return nil, nil
 }

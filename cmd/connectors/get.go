@@ -12,38 +12,42 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package integrations
+package connectors
 
 import (
+	"fmt"
+
 	"github.com/srinandan/integrationcli/apiclient"
-	"github.com/srinandan/integrationcli/client/integrations"
+	"github.com/srinandan/integrationcli/client/connectors"
 
 	"github.com/spf13/cobra"
 )
 
-// ExportCmd to export integrations
-var ExportCmd = &cobra.Command{
-	Use:   "export",
-	Short: "Export all Integrations flows in a region to a folder",
-	Long:  "Export all Integrations flows in a region to a folder",
+// GetCmd to get connection
+var GetCmd = &cobra.Command{
+	Use:   "get",
+	Short: "Get connection details",
+	Long:  "Get connection details from a connection created in a region",
 	Args: func(cmd *cobra.Command, args []string) (err error) {
 		if err = apiclient.SetRegion(region); err != nil {
 			return err
 		}
+		if view != "BASIC" && view != "FULL" {
+			return fmt.Errorf("view must be BASIC or FULL")
+		}
 		return apiclient.SetProjectID(project)
 	},
 	RunE: func(cmd *cobra.Command, args []string) (err error) {
-		if err = apiclient.FolderExists(folder); err != nil {
-			return err
-		}
-
-		return integrations.Export(folder)
+		_, err = connectors.Get(name, view)
+		return
 	},
 }
 
-func init() {
-	ExportCmd.Flags().StringVarP(&folder, "folder", "f",
-		"", "Folder to export Integration flows")
+var view string
 
-	_ = ExportCmd.MarkFlagRequired("folder")
+func init() {
+	GetCmd.Flags().StringVarP(&name, "name", "n",
+		"", "The name of the connection")
+	GetCmd.Flags().StringVarP(&view, "view", "",
+		"BASIC", "fields of the Connection to be returned; default is BASIC. FULL is the other option")
 }
