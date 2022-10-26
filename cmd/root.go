@@ -38,8 +38,8 @@ import (
 // RootCmd to manage apigeecli
 var RootCmd = &cobra.Command{
 	Use:   "integrationcli",
-	Short: "Utility to work with Integration APIs.",
-	Long:  "This command lets you interact with Apigee APIs.",
+	Short: "Utility to work with Integration & Connectors",
+	Long:  "This command lets you interact with Integration and Connector APIs.",
 	PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
 		apiclient.SetServiceAccount(serviceAccount)
 		apiclient.SetIntegrationToken(accessToken)
