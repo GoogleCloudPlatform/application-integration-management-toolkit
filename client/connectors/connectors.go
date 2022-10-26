@@ -31,8 +31,12 @@ func Delete(name string) (respBody []byte, err error) {
 }
 
 // Get
-func Get(name string) (respBody []byte, err error) {
+func Get(name string, view string) (respBody []byte, err error) {
 	u, _ := url.Parse(apiclient.GetBaseConnectorURL())
+	q := u.Query()
+	if view != "" {
+		q.Set("view", view)
+	}
 	u.Path = path.Join(u.Path, name)
 	respBody, err = apiclient.HttpClient(apiclient.GetPrintOutput(), u.String())
 	return respBody, err

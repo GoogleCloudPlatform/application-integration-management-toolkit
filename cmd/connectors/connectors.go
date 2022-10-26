@@ -18,15 +18,16 @@ import (
 	"github.com/spf13/cobra"
 )
 
-//Cmd to manage preferences
+// Cmd to manage preferences
 var Cmd = &cobra.Command{
 	Use:   "connectors",
-	Short: "Manage Connectors for Integration",
-	Long:  "Manage Connectors for Integration",
+	Short: "Manage connections for Integration Connectors",
+	Long:  "Manage connections for Integration Connectors",
 }
 
 var region, project string
 
 func init() {
 	Cmd.AddCommand(ListCmd)
+	Cmd.AddCommand(GetCmd)
 }
