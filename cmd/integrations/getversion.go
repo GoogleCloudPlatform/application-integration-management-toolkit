@@ -21,7 +21,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-//GetVerCmd to get integration flow
+// GetVerCmd to get integration flow
 var GetVerCmd = &cobra.Command{
 	Use:   "get",
 	Short: "Get an integration flow version",
@@ -33,7 +33,7 @@ var GetVerCmd = &cobra.Command{
 		return apiclient.SetProjectID(project)
 	},
 	RunE: func(cmd *cobra.Command, args []string) (err error) {
-		_, err = integrations.Get(name, version)
+		_, err = integrations.Get(name, version, basic)
 		return
 
 	},
@@ -44,6 +44,8 @@ func init() {
 		"", "Integration flow name")
 	GetVerCmd.Flags().StringVarP(&version, "ver", "v",
 		"", "Integration flow version")
+	GetVerCmd.Flags().BoolVarP(&basic, "basic", "b",
+		false, "Returns snapshot and version only")
 
 	_ = GetVerCmd.MarkFlagRequired("name")
 	_ = GetVerCmd.MarkFlagRequired("ver")

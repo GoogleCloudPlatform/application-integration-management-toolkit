@@ -57,6 +57,16 @@ type integrationVersion struct {
 	UserLabel              string                   `json:"userLabel,omitempty"`
 }
 
+type listbasicIntegrationVersions struct {
+	BasicIntegrationVersions []basicIntegrationVersion `json:"integrationVersions,omitempty"`
+	NextPageToken            string                    `json:"nextPageToken,omitempty"`
+}
+
+type basicIntegrationVersion struct {
+	Version        string `json:"version,omitempty"`
+	SnapshotNumber string `json:"snapshotNumber,omitempty"`
+}
+
 type listintegrations struct {
 	Integrations  []integration `json:"integrations,omitempty"`
 	NextPageToken string        `json:"nextPageToken,omitempty"`
@@ -69,11 +79,11 @@ type integration struct {
 	Active      bool   `json:"active,omitempty"`
 }
 
-//Create
-func Create(name string, content []byte, newIntegration bool) (respBody []byte, err error) {
+// Create
+func Create(name string, content []byte) (respBody []byte, err error) {
 
 	iversion := integrationVersion{}
-	if err = json.Unmarshal(content, iversion); err != nil {
+	if err = json.Unmarshal(content, &iversion); err != nil {
 		return nil, err
 	}
 
@@ -83,7 +93,19 @@ func Create(name string, content []byte, newIntegration bool) (respBody []byte, 
 	return respBody, err
 }
 
-//Upload
+// Patch
+func Patch(name string, version string, content []byte) (respBody []byte, err error) {
+	iversion := integrationVersion{}
+	if err = json.Unmarshal(content, &iversion); err != nil {
+		return nil, err
+	}
+	u, _ := url.Parse(apiclient.GetBaseIntegrationURL())
+	u.Path = path.Join(u.Path, "integrations", name, "versions", version)
+	respBody, err = apiclient.HttpClient(apiclient.GetPrintOutput(), u.String(), string(content), "PATCH")
+	return respBody, err
+}
+
+// Upload
 func Upload(name string, content string) (respBody []byte, err error) {
 	u, _ := url.Parse(apiclient.GetBaseIntegrationURL())
 	u.Path = path.Join(u.Path, "integrations", name, "versions:upload")
@@ -91,7 +113,7 @@ func Upload(name string, content string) (respBody []byte, err error) {
 	return respBody, err
 }
 
-//List
+// List
 func List(pageSize int, pageToken string, filter string, orderBy string) (respBody []byte, err error) {
 	u, _ := url.Parse(apiclient.GetBaseIntegrationURL())
 	q := u.Query()
@@ -114,8 +136,8 @@ func List(pageSize int, pageToken string, filter string, orderBy string) (respBo
 	return respBody, err
 }
 
-//ListVersions
-func ListVersions(name string, pageSize int, pageToken string, filter string, orderBy string, allVersions bool, download bool) (respBody []byte, err error) {
+// ListVersions
+func ListVersions(name string, pageSize int, pageToken string, filter string, orderBy string, allVersions bool, download bool, basicInfo bool) (respBody []byte, err error) {
 	u, _ := url.Parse(apiclient.GetBaseIntegrationURL())
 	q := u.Query()
 	if pageSize != -1 {
@@ -139,11 +161,41 @@ func ListVersions(name string, pageSize int, pageToken string, filter string, or
 		apiclient.SetPrintOutput(false)
 	}
 
-	if allVersions == false {
+	if !allVersions {
+		if basicInfo {
+			apiclient.SetPrintOutput(false)
+			respBody, err = apiclient.HttpClient(apiclient.GetPrintOutput(), u.String())
+			if err != nil {
+				return nil, err
+			}
+			listIvers := listIntegrationVersions{}
+			listBIvers := listbasicIntegrationVersions{}
+
+			listBIvers.NextPageToken = listIvers.NextPageToken
+
+			if err = json.Unmarshal(respBody, &listIvers); err != nil {
+				return nil, err
+			}
+			for _, iVer := range listIvers.IntegrationVersions {
+				basicIVer := basicIntegrationVersion{}
+				basicIVer.SnapshotNumber = iVer.SnapshotNumber
+				basicIVer.Version = getVersion(iVer.Name)
+				listBIvers.BasicIntegrationVersions = append(listBIvers.BasicIntegrationVersions, basicIVer)
+			}
+			newResp, err := json.Marshal(listBIvers)
+			apiclient.PrettyPrint(newResp)
+			return newResp, err
+		}
 		respBody, err = apiclient.HttpClient(apiclient.GetPrintOutput(), u.String())
+		if err != nil {
+			return nil, err
+		}
 		return respBody, err
 	} else {
 		respBody, err = apiclient.HttpClient(apiclient.GetPrintOutput(), u.String())
+		if err != nil {
+			return nil, err
+		}
 
 		iversions := listIntegrationVersions{}
 		if err = json.Unmarshal(respBody, &iversions); err != nil {
@@ -184,7 +236,7 @@ func ListVersions(name string, pageSize int, pageToken string, filter string, or
 
 		//if more versions exist, repeat the process
 		if iversions.NextPageToken != "" {
-			if _, err = ListVersions(name, -1, iversions.NextPageToken, filter, orderBy, true, download); err != nil {
+			if _, err = ListVersions(name, -1, iversions.NextPageToken, filter, orderBy, true, download, false); err != nil {
 				clilog.Error.Println(err)
 				return nil, err
 			}
@@ -195,65 +247,88 @@ func ListVersions(name string, pageSize int, pageToken string, filter string, or
 	return nil, err
 }
 
-//Get
-func Get(name string, version string) (respBody []byte, err error) {
+// Get
+func Get(name string, version string, basicInfo bool) ([]byte, error) {
 	u, _ := url.Parse(apiclient.GetBaseIntegrationURL())
 	u.Path = path.Join(u.Path, "integrations", name, "versions", version)
-	respBody, err = apiclient.HttpClient(apiclient.GetPrintOutput(), u.String())
+
+	if basicInfo {
+		iVer := integrationVersion{}
+		bIVer := basicIntegrationVersion{}
+
+		apiclient.SetPrintOutput(false)
+		respBody, err := apiclient.HttpClient(apiclient.GetPrintOutput(), u.String())
+		if err != nil {
+			return nil, err
+		}
+
+		if err = json.Unmarshal(respBody, &iVer); err != nil {
+			return nil, err
+		}
+
+		bIVer.SnapshotNumber = iVer.SnapshotNumber
+		bIVer.Version = getVersion(iVer.Name)
+
+		newResp, err := json.Marshal(bIVer)
+		apiclient.PrettyPrint(newResp)
+		return newResp, err
+	}
+
+	respBody, err := apiclient.HttpClient(apiclient.GetPrintOutput(), u.String())
 	return respBody, err
 }
 
-//Deactivate
+// Deactivate
 func Deactivate(name string, version string) (respBody []byte, err error) {
 	return changeState(name, version, "", ":deactivate")
 }
 
-//Archive
+// Archive
 func Archive(name string, version string) (respBody []byte, err error) {
 	return changeState(name, version, "", ":archive")
 }
 
-//Publish
+// Publish
 func Publish(name string, version string) (respBody []byte, err error) {
 	return changeState(name, version, "", ":publish")
 }
 
-//Download
+// Download
 func Download(name string, version string) (respBody []byte, err error) {
 	return changeState(name, version, "", ":download")
 }
 
-//ArchiveSnapshot
+// ArchiveSnapshot
 func ArchiveSnapshot(name string, snapshot string) (respBody []byte, err error) {
 	return changeState(name, "", "snapshotNumber="+snapshot, ":archive")
 }
 
-//DeactivateSnapshot
+// DeactivateSnapshot
 func DeactivateSnapshot(name string, snapshot string) (respBody []byte, err error) {
 	return changeState(name, "", "snapshotNumber="+snapshot, ":deactivate")
 }
 
-//ArchiveUserLabel
+// ArchiveUserLabel
 func ArchiveUserLabel(name string, snapshot string) (respBody []byte, err error) {
 	return changeState(name, "", "userLabel="+snapshot, ":archive")
 }
 
-//DeactivateUserLabel
+// DeactivateUserLabel
 func DeactivateUserLabel(name string, snapshot string) (respBody []byte, err error) {
 	return changeState(name, "", "userLabel="+snapshot, ":deactivate")
 }
 
-//PublishUserLabel
+// PublishUserLabel
 func PublishUserLabel(name string, userlabel string) (respBody []byte, err error) {
 	return changeState(name, "", "userLabel="+userlabel, ":publish")
 }
 
-//PublishSnapshot
+// PublishSnapshot
 func PublishSnapshot(name string, snapshot string) (respBody []byte, err error) {
 	return changeState(name, "", "snapshotNumber="+snapshot, ":publish")
 }
 
-//DownloadSnapshot
+// DownloadSnapshot
 func DownloadSnapshot(name string, snapshot string) (respBody []byte, err error) {
 	var version string
 	if version, err = getVersionId(name, "snapshotNumber="+snapshot); err != nil {
@@ -262,7 +337,7 @@ func DownloadSnapshot(name string, snapshot string) (respBody []byte, err error)
 	return Download(name, version)
 }
 
-//DownloadSnapshot
+// DownloadSnapshot
 func DownloadUserLabel(name string, userlabel string) (respBody []byte, err error) {
 	var version string
 	if version, err = getVersionId(name, "userLabel="+userlabel); err != nil {
@@ -271,7 +346,7 @@ func DownloadUserLabel(name string, userlabel string) (respBody []byte, err erro
 	return Download(name, version)
 }
 
-//changeState
+// changeState
 func changeState(name string, version string, filter string, action string) (respBody []byte, err error) {
 	//if a version is sent, use it, else try the filter
 	if version == "" {
@@ -290,7 +365,7 @@ func changeState(name string, version string, filter string, action string) (res
 	return respBody, err
 }
 
-//getVersionId
+// getVersionId
 func getVersionId(name string, filter string) (version string, err error) {
 	u, _ := url.Parse(apiclient.GetBaseIntegrationURL())
 	q := u.Query()
@@ -319,7 +394,7 @@ func getVersionId(name string, filter string) (version string, err error) {
 	}
 }
 
-//Export
+// Export
 func Export(folder string) (err error) {
 
 	apiclient.SetExportToFile(folder)
@@ -341,7 +416,7 @@ func Export(folder string) (err error) {
 	for _, lintegration := range lintegrations.Integrations {
 		integrationName := lintegration.Name[strings.LastIndex(lintegration.Name, "/")+1:]
 		fmt.Printf("Exporting all the revisions for Integration Flow %s\n", integrationName)
-		if _, err = ListVersions(integrationName, -1, "", "", "", true, true); err != nil {
+		if _, err = ListVersions(integrationName, -1, "", "", "", true, true, false); err != nil {
 			return err
 		}
 	}
@@ -354,7 +429,7 @@ func Export(folder string) (err error) {
 	return nil
 }
 
-//batchExport
+// batchExport
 func batchExport(folder string, nextPageToken string) (err error) {
 	respBody, err := List(maxPageSize, nextPageToken, "", "")
 	lintegrations := listintegrations{}
@@ -370,7 +445,7 @@ func batchExport(folder string, nextPageToken string) (err error) {
 	for _, lintegration := range lintegrations.Integrations {
 		integrationName := lintegration.Name[strings.LastIndex(lintegration.Name, "/")+1:]
 		clilog.Info.Printf("Exporting all the revisions for Integration Flow %s\n", integrationName)
-		if _, err = ListVersions(integrationName, -1, "", "", "", true, true); err != nil {
+		if _, err = ListVersions(integrationName, -1, "", "", "", true, true, false); err != nil {
 			return err
 		}
 	}
@@ -383,7 +458,7 @@ func batchExport(folder string, nextPageToken string) (err error) {
 	return nil
 }
 
-//ImportFlow
+// ImportFlow
 func ImportFlow(name string, folder string, conn int) (err error) {
 
 	var pwg sync.WaitGroup
@@ -448,7 +523,7 @@ func ImportFlow(name string, folder string, conn int) (err error) {
 	return nil
 }
 
-//batchImport creates a batch of integration flows to import
+// batchImport creates a batch of integration flows to import
 func batchImport(name string, entities []string, pwg *sync.WaitGroup) {
 
 	defer pwg.Done()
@@ -477,7 +552,7 @@ func uploadAsync(name string, filePath string, wg *sync.WaitGroup) {
 	}
 }
 
-//Import
+// Import
 func Import(folder string, conn int) (err error) {
 
 	var pwg sync.WaitGroup
@@ -526,13 +601,13 @@ func Import(folder string, conn int) (err error) {
 	return nil
 }
 
-//extractIntegrationFlowName
+// extractIntegrationFlowName
 func extractIntegrationFlowName(fileName string) (name string) {
 	splitNames := strings.Split(fileName, "+")
 	return splitNames[0]
 }
 
-//integrationFlowExists
+// integrationFlowExists
 func integrationFlowExists(name string, integrationFlowList []string) bool {
 	for _, integrationFlow := range integrationFlowList {
 		if name == integrationFlow {
@@ -542,9 +617,15 @@ func integrationFlowExists(name string, integrationFlowList []string) bool {
 	return false
 }
 
-//asyncImportFlow
+// asyncImportFlow
 func asyncImportFlow(name string, folder string, conn int, pwg *sync.WaitGroup) {
 	defer pwg.Done()
 
 	_ = ImportFlow(name, folder, conn)
+}
+
+// getVersion
+func getVersion(name string) (version string) {
+	s := strings.Split(name, "/")
+	return s[len(s)-1]
 }
