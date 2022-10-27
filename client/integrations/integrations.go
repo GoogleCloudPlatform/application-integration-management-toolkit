@@ -39,22 +39,32 @@ type listIntegrationVersions struct {
 }
 
 type integrationVersion struct {
-	Name                   string                   `json:"name,omitempty"`
-	Description            string                   `json:"description,omitempty"`
-	TaskConfigsInternal    []map[string]interface{} `json:"taskConfigsInternal,omitempty"`
-	TriggerConfigsInternal []map[string]interface{} `json:"triggerConfigsInternal,omitempty"`
-	Origin                 string                   `json:"origin,omitempty"`
-	Status                 string                   `json:"status,omitempty"`
-	SnapshotNumber         string                   `json:"snapshotNumber,omitempty"`
-	UpdateTime             string                   `json:"updateTime,omitempty"`
-	LockHolder             string                   `json:"lockHolder,omitempty"`
-	CreateTime             string                   `json:"createTime,omitempty"`
-	LastModifierEmail      string                   `json:"lastModifierEmail,omitempty"`
-	State                  string                   `json:"state,omitempty"`
-	TriggerConfigs         []map[string]interface{} `json:"triggerConfigs,omitempty"`
-	TaskConfigs            []map[string]interface{} `json:"taskConfigs,omitempty"`
-	IntegrationParameters  []map[string]interface{} `json:"integrationParameters,omitempty"`
-	UserLabel              string                   `json:"userLabel,omitempty"`
+	Name                          string                   `json:"name,omitempty"`
+	Description                   string                   `json:"description,omitempty"`
+	TaskConfigsInternal           []map[string]interface{} `json:"taskConfigsInternal,omitempty"`
+	TriggerConfigsInternal        []map[string]interface{} `json:"triggerConfigsInternal,omitempty"`
+	IntegrationParametersInternal parametersInternal       `json:"integrationParametersInternal,omitempty"`
+	Origin                        string                   `json:"origin,omitempty"`
+	Status                        string                   `json:"status,omitempty"`
+	SnapshotNumber                string                   `json:"snapshotNumber,omitempty"`
+	UpdateTime                    string                   `json:"updateTime,omitempty"`
+	LockHolder                    string                   `json:"lockHolder,omitempty"`
+	CreateTime                    string                   `json:"createTime,omitempty"`
+	LastModifierEmail             string                   `json:"lastModifierEmail,omitempty"`
+	State                         string                   `json:"state,omitempty"`
+	TriggerConfigs                []map[string]interface{} `json:"triggerConfigs,omitempty"`
+	TaskConfigs                   []map[string]interface{} `json:"taskConfigs,omitempty"`
+	IntegrationParameters         []parameterExternal      `json:"integrationParameters,omitempty"`
+	UserLabel                     string                   `json:"userLabel,omitempty"`
+}
+
+type integrationVersionExternal struct {
+	Description           string                   `json:"description,omitempty"`
+	SnapshotNumber        string                   `json:"snapshotNumber,omitempty"`
+	TriggerConfigs        []map[string]interface{} `json:"triggerConfigs,omitempty"`
+	TaskConfigs           []map[string]interface{} `json:"taskConfigs,omitempty"`
+	IntegrationParameters []parameterExternal      `json:"integrationParameters,omitempty"`
+	UserLabel             string                   `json:"userLabel,omitempty"`
 }
 
 type listbasicIntegrationVersions struct {
@@ -79,6 +89,32 @@ type integration struct {
 	Active      bool   `json:"active,omitempty"`
 }
 
+type parametersInternal struct {
+	Parameters []parameterInternal `json:"parameters,omitempty"`
+}
+
+type parameterInternal struct {
+	Key         string     `json:"key,omitempty"`
+	DataType    string     `json:"dataType,omitempty"`
+	Name        string     `json:"name,omitempty"`
+	IsTransient bool       `json:"isTransient,omitempty"`
+	ProducedBy  producedBy `json:"producedBy,omitempty"`
+	Producer    string     `json:"producer,omitempty"`
+}
+
+type parameterExternal struct {
+	Key         string `json:"key,omitempty"`
+	DataType    string `json:"dataType,omitempty"`
+	Name        string `json:"name,omitempty"`
+	IsTransient bool   `json:"isTransient,omitempty"`
+	Producer    string `json:"producer,omitempty"`
+}
+
+type producedBy struct {
+	ElementType       string `json:"elementType,omitempty"`
+	ElementIdentifier string `json:"elementIdentifier,omitempty"`
+}
+
 // CreateVersion
 func CreateVersion(name string, content []byte, snapshot string) (respBody []byte, err error) {
 
@@ -87,11 +123,15 @@ func CreateVersion(name string, content []byte, snapshot string) (respBody []byt
 		return nil, err
 	}
 
+	//remove any internal elements if exists
+	eversion := convertInternalToExternal(iversion)
+
 	if snapshot != "" {
-		iversion.SnapshotNumber = snapshot
-		if content, err = json.Marshal(iversion); err != nil {
-			return nil, err
-		}
+		eversion.SnapshotNumber = snapshot
+	}
+
+	if content, err = json.Marshal(eversion); err != nil {
+		return nil, err
 	}
 
 	u, _ := url.Parse(apiclient.GetBaseIntegrationURL())
@@ -106,6 +146,14 @@ func Patch(name string, version string, content []byte) (respBody []byte, err er
 	if err = json.Unmarshal(content, &iversion); err != nil {
 		return nil, err
 	}
+
+	//remove any internal elements if exists
+	eversion := convertInternalToExternal(iversion)
+
+	if content, err = json.Marshal(eversion); err != nil {
+		return nil, err
+	}
+
 	u, _ := url.Parse(apiclient.GetBaseIntegrationURL())
 	u.Path = path.Join(u.Path, "integrations", name, "versions", version)
 	respBody, err = apiclient.HttpClient(apiclient.GetPrintOutput(), u.String(), string(content), "PATCH")
@@ -635,4 +683,15 @@ func asyncImportFlow(name string, folder string, conn int, pwg *sync.WaitGroup) 
 func getVersion(name string) (version string) {
 	s := strings.Split(name, "/")
 	return s[len(s)-1]
+}
+
+func convertInternalToExternal(internalVersion integrationVersion) (externalVersion integrationVersionExternal) {
+	externalVersion = integrationVersionExternal{}
+	externalVersion.Description = internalVersion.Description
+	externalVersion.SnapshotNumber = internalVersion.SnapshotNumber
+	externalVersion.TriggerConfigs = internalVersion.TriggerConfigs
+	externalVersion.TaskConfigs = internalVersion.TaskConfigs
+	externalVersion.IntegrationParameters = internalVersion.IntegrationParameters
+	externalVersion.UserLabel = internalVersion.UserLabel
+	return externalVersion
 }
