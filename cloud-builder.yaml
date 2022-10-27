@@ -11,16 +11,15 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
-# gcloud builds submit --config=deploy.yaml --project=project-name --substitutions _NAME=test,_SNAPSHOT=1,
-
+# gcloud builds submit --config=cloud-builder.yaml --project=project-name 
 steps:
-- id: 'Grab integrationcli, publish to a region'
-  name: gcr.io/$PROJECT_ID/integrationcli:1.0.0
-  entrypoint: 'bash'
-  args:
-    - -c
-    - |
-      gcloud auth print-access-token > /tmp/token
-      /tmp/integrationcli prefs set integrationcli prefs set --nocheck=true --apigee-integration=false --reg=$LOCATION --proj=$PROJECT_ID
-      /tmp/integrationcli integrations versions publish -n $_NAME --snapshot $_SNAPSHOT -t $(cat /tmp/token)
+# Build the container image
+- name: 'gcr.io/cloud-builders/docker'
+  args: ['build', '-t', 'gcr.io/$PROJECT_ID/integrationcli-builder', '-f', 'Dockerfile.builder', '.']
+# Push the container image to Container Registry
+- name: 'gcr.io/cloud-builders/docker'
+  args: ['push', 'gcr.io/$PROJECT_ID/integrationcli-builder']
+options:
+  env: ["DEBUG=true"]
+  machineType: N1_HIGHCPU_8
+  logging: CLOUD_LOGGING_ONLY  
