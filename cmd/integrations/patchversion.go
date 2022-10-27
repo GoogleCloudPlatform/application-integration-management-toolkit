@@ -16,6 +16,7 @@ package integrations
 
 import (
 	"io/ioutil"
+	"os"
 
 	"github.com/srinandan/integrationcli/apiclient"
 	"github.com/srinandan/integrationcli/client/integrations"
@@ -35,9 +36,9 @@ var PatchVerCmd = &cobra.Command{
 		return apiclient.SetProjectID(project)
 	},
 	RunE: func(cmd *cobra.Command, args []string) (err error) {
-		/*if _, err := os.Stat(filePath); err != nil {
+		if _, err := os.Stat(integrationFile); os.IsNotExist(err) {
 			return err
-		}*/
+		}
 
 		content, err := ioutil.ReadFile(integrationFile)
 		if err != nil {
@@ -55,7 +56,7 @@ func init() {
 	PatchVerCmd.Flags().StringVarP(&version, "ver", "v",
 		"", "Integration flow version")
 	PatchVerCmd.Flags().StringVarP(&integrationFile, "file", "f",
-		"", "Integration flow contents")
+		"", "Integration flow JSON file content")
 
 	_ = PatchVerCmd.MarkFlagRequired("name")
 	_ = PatchVerCmd.MarkFlagRequired("ver")
