@@ -15,6 +15,7 @@
 package integrations
 
 import (
+	"fmt"
 	"io/ioutil"
 	"os"
 
@@ -24,7 +25,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-//CreateCmd to list Integrations
+// CreateCmd to list Integrations
 var CreateCmd = &cobra.Command{
 	Use:   "create",
 	Short: "Create an integration flow with a draft version",
@@ -36,7 +37,8 @@ var CreateCmd = &cobra.Command{
 		return apiclient.SetProjectID(project)
 	},
 	RunE: func(cmd *cobra.Command, args []string) (err error) {
-		if _, err := os.Stat(filePath); err != nil {
+		if _, err := os.Stat(integrationFile); os.IsNotExist(err) {
+			fmt.Println(err)
 			return err
 		}
 
@@ -44,22 +46,21 @@ var CreateCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		_, err = integrations.Create(name, content, newIntegration)
+		_, err = integrations.CreateVersion(name, content, snapshot)
 		return
 
 	},
 }
 
 var integrationFile string
-var newIntegration bool
 
 func init() {
 	CreateCmd.Flags().StringVarP(&name, "name", "n",
 		"", "Integration flow name")
 	CreateCmd.Flags().StringVarP(&integrationFile, "file", "f",
-		"", "Integration flow instance")
-	CreateCmd.Flags().BoolVarP(&newIntegration, "new", "",
-		false, "Set this flag to true, if draft version is to be created for a brand new integration")
+		"", "Integration flow JSON file content")
+	CreateCmd.Flags().StringVarP(&snapshot, "snapshot", "s",
+		"", "Integration version snapshot number")
 
 	_ = CreateCmd.MarkFlagRequired("name")
 	_ = CreateCmd.MarkFlagRequired("file")

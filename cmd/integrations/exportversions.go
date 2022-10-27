@@ -21,7 +21,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-//ExportVerCmd to export integrations
+// ExportVerCmd to export integrations
 var ExportVerCmd = &cobra.Command{
 	Use:   "export",
 	Short: "Export Integrations flow versions to a folder",
@@ -38,7 +38,7 @@ var ExportVerCmd = &cobra.Command{
 		}
 
 		apiclient.SetExportToFile(folder)
-		_, err = integrations.ListVersions(name, -1, "", "", "", true, true)
+		_, err = integrations.ListVersions(name, -1, "", "", "", true, true, false)
 		return err
 	},
 }

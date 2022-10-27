@@ -1,4 +1,4 @@
-// Copyright 2021 Google LLC
+// Copyright 2022 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,17 +15,20 @@
 package integrations
 
 import (
+	"io/ioutil"
+	"os"
+
 	"github.com/srinandan/integrationcli/apiclient"
 	"github.com/srinandan/integrationcli/client/integrations"
 
 	"github.com/spf13/cobra"
 )
 
-// GetVerCmd to get integration flow
-var GetVerCmd = &cobra.Command{
-	Use:   "get",
-	Short: "Get an integration flow version",
-	Long:  "Get an integration flow version",
+// PatchVerCmd to get integration flow
+var PatchVerCmd = &cobra.Command{
+	Use:   "patch",
+	Short: "Patch an integration flow version",
+	Long:  "Patch an integration flow version",
 	Args: func(cmd *cobra.Command, args []string) (err error) {
 		if err = apiclient.SetRegion(region); err != nil {
 			return err
@@ -33,20 +36,29 @@ var GetVerCmd = &cobra.Command{
 		return apiclient.SetProjectID(project)
 	},
 	RunE: func(cmd *cobra.Command, args []string) (err error) {
-		_, err = integrations.Get(name, version, basic)
+		if _, err := os.Stat(integrationFile); os.IsNotExist(err) {
+			return err
+		}
+
+		content, err := ioutil.ReadFile(integrationFile)
+		if err != nil {
+			return err
+		}
+		_, err = integrations.Patch(name, version, content)
 		return
 
 	},
 }
 
 func init() {
-	GetVerCmd.Flags().StringVarP(&name, "name", "n",
+	PatchVerCmd.Flags().StringVarP(&name, "name", "n",
 		"", "Integration flow name")
-	GetVerCmd.Flags().StringVarP(&version, "ver", "v",
+	PatchVerCmd.Flags().StringVarP(&version, "ver", "v",
 		"", "Integration flow version")
-	GetVerCmd.Flags().BoolVarP(&basic, "basic", "b",
-		false, "Returns snapshot and version only")
+	PatchVerCmd.Flags().StringVarP(&integrationFile, "file", "f",
+		"", "Integration flow JSON file content")
 
-	_ = GetVerCmd.MarkFlagRequired("name")
-	_ = GetVerCmd.MarkFlagRequired("ver")
+	_ = PatchVerCmd.MarkFlagRequired("name")
+	_ = PatchVerCmd.MarkFlagRequired("ver")
+	_ = PatchVerCmd.MarkFlagRequired("file")
 }

@@ -1,0 +1,334 @@
+{
+	"name": "projects/102128743119/locations/us-west1/integrations/sample/versions/43e231af-d371-42e1-b8e0-3cb58ddc1fb3",
+	"taskConfigsInternal": [
+		{
+			"taskName": "GenericRestV2Task",
+			"taskNumber": "1",
+			"parameters": {
+				"throwError": {
+					"key": "throwError",
+					"value": {
+						"booleanValue": true
+					},
+					"dataType": "BOOLEAN_VALUE"
+				},
+				"responseBody": {
+					"key": "responseBody",
+					"value": {
+						"stringArray": {
+							"stringValues": [
+								"$`Task_1_responseBody`$"
+							]
+						}
+					},
+					"dataType": "STRING_ARRAY"
+				},
+				"disableSSLValidation": {
+					"key": "disableSSLValidation",
+					"value": {
+						"booleanValue": false
+					},
+					"dataType": "BOOLEAN_VALUE"
+				},
+				"httpParams": {
+					"key": "httpParams"
+				},
+				"responseHeader": {
+					"key": "responseHeader",
+					"value": {
+						"stringArray": {
+							"stringValues": [
+								"$`Task_1_responseHeader`$"
+							]
+						}
+					},
+					"dataType": "STRING_ARRAY"
+				},
+				"userAgent": {
+					"key": "userAgent",
+					"value": {
+						"stringValue": ""
+					},
+					"dataType": "STRING_VALUE"
+				},
+				"httpMethod": {
+					"key": "httpMethod",
+					"value": {
+						"stringValue": "GET"
+					},
+					"dataType": "STRING_VALUE"
+				},
+				"responseStatus": {
+					"key": "responseStatus",
+					"value": {
+						"stringArray": {
+							"stringValues": [
+								"$`Task_1_responseStatus`$"
+							]
+						}
+					},
+					"dataType": "STRING_ARRAY"
+				},
+				"url": {
+					"key": "url",
+					"value": {
+						"stringValue": "https://httpbin.org/get"
+					},
+					"dataType": "STRING_VALUE"
+				},
+				"urlFetchingService": {
+					"key": "urlFetchingService",
+					"value": {
+						"stringValue": "HARPOON"
+					},
+					"dataType": "STRING_VALUE"
+				},
+				"useSSL": {
+					"key": "useSSL",
+					"value": {
+						"booleanValue": false
+					},
+					"dataType": "BOOLEAN_VALUE"
+				},
+				"requestorId": {
+					"key": "requestorId",
+					"value": {
+						"stringValue": ""
+					},
+					"dataType": "STRING_VALUE"
+				},
+				"urlQueryStrings": {
+					"key": "urlQueryStrings"
+				},
+				"requestBody": {
+					"key": "requestBody",
+					"value": {
+						"stringValue": ""
+					},
+					"dataType": "STRING_VALUE"
+				},
+				"followRedirects": {
+					"key": "followRedirects",
+					"value": {
+						"booleanValue": true
+					},
+					"dataType": "BOOLEAN_VALUE"
+				},
+				"additionalHeaders": {
+					"key": "additionalHeaders"
+				}
+			},
+			"label": "Call httpbin service"
+		}
+	],
+	"triggerConfigsInternal": [
+		{
+			"label": "API Trigger",
+			"startTasks": [
+				{
+					"taskNumber": "1"
+				}
+			],
+			"properties": {
+				"Trigger name": "sample_API_1"
+			},
+			"triggerType": "API",
+			"triggerNumber": "1",
+			"enabledClients": [
+				"102128743119"
+			],
+			"triggerId": "api_trigger/sample_API_1"
+		}
+	],
+	"integrationParametersInternal": {
+		"parameters": [
+			{
+				"key": "`Task_1_responseHeader`",
+				"dataType": "STRING_VALUE",
+				"name": "`Task_1_responseHeader`",
+				"isTransient": true,
+				"producedBy": {
+					"elementType": "TASK_CONFIG",
+					"elementIdentifier": "1"
+				},
+				"producer": "1_1"
+			},
+			{
+				"key": "`Task_1_responseBody`",
+				"dataType": "STRING_VALUE",
+				"name": "`Task_1_responseBody`",
+				"isTransient": true,
+				"producedBy": {
+					"elementType": "TASK_CONFIG",
+					"elementIdentifier": "1"
+				},
+				"producer": "1_1"
+			},
+			{
+				"key": "`Task_1_responseStatus`",
+				"dataType": "STRING_VALUE",
+				"name": "`Task_1_responseStatus`",
+				"isTransient": true,
+				"producedBy": {
+					"elementType": "TASK_CONFIG",
+					"elementIdentifier": "1"
+				},
+				"producer": "1_1"
+			}
+		]
+	},
+	"origin": "UI",
+	"snapshotNumber": "2",
+	"updateTime": "2022-10-26T23:02:57.205Z",
+	"lockHolder": "srinandans@google.com",
+	"createTime": "2022-10-26T21:21:21.125Z",
+	"lastModifierEmail": "srinandans@google.com",
+	"triggerConfigs": [
+		{
+			"label": "API Trigger",
+			"startTasks": [
+				{
+					"taskId": "1"
+				}
+			],
+			"properties": {
+				"Trigger name": "sample_API_1"
+			},
+			"triggerType": "API",
+			"triggerNumber": "1",
+			"triggerId": "api_trigger/sample_API_1"
+		}
+	],
+	"taskConfigs": [
+		{
+			"task": "GenericRestV2Task",
+			"taskId": "1",
+			"parameters": {
+				"throwError": {
+					"key": "throwError",
+					"value": {
+						"booleanValue": true
+					}
+				},
+				"responseBody": {
+					"key": "responseBody",
+					"value": {
+						"stringArray": {
+							"stringValues": [
+								"$`Task_1_responseBody`$"
+							]
+						}
+					}
+				},
+				"disableSSLValidation": {
+					"key": "disableSSLValidation",
+					"value": {
+						"booleanValue": false
+					}
+				},
+				"httpParams": {
+					"key": "httpParams"
+				},
+				"responseHeader": {
+					"key": "responseHeader",
+					"value": {
+						"stringArray": {
+							"stringValues": [
+								"$`Task_1_responseHeader`$"
+							]
+						}
+					}
+				},
+				"userAgent": {
+					"key": "userAgent",
+					"value": {
+						"stringValue": ""
+					}
+				},
+				"httpMethod": {
+					"key": "httpMethod",
+					"value": {
+						"stringValue": "GET"
+					}
+				},
+				"responseStatus": {
+					"key": "responseStatus",
+					"value": {
+						"stringArray": {
+							"stringValues": [
+								"$`Task_1_responseStatus`$"
+							]
+						}
+					}
+				},
+				"url": {
+					"key": "url",
+					"value": {
+						"stringValue": "https://httpbin.org/get"
+					}
+				},
+				"urlFetchingService": {
+					"key": "urlFetchingService",
+					"value": {
+						"stringValue": "HARPOON"
+					}
+				},
+				"useSSL": {
+					"key": "useSSL",
+					"value": {
+						"booleanValue": false
+					}
+				},
+				"requestorId": {
+					"key": "requestorId",
+					"value": {
+						"stringValue": ""
+					}
+				},
+				"urlQueryStrings": {
+					"key": "urlQueryStrings"
+				},
+				"requestBody": {
+					"key": "requestBody",
+					"value": {
+						"stringValue": ""
+					}
+				},
+				"followRedirects": {
+					"key": "followRedirects",
+					"value": {
+						"booleanValue": true
+					}
+				},
+				"additionalHeaders": {
+					"key": "additionalHeaders"
+				}
+			},
+			"taskExecutionStrategy": "WHEN_ALL_SUCCEED",
+			"displayName": "Call httpbin service"
+		}
+	],
+	"integrationParameters": [
+		{
+			"key": "`Task_1_responseHeader`",
+			"dataType": "STRING_VALUE",
+			"displayName": "`Task_1_responseHeader`",
+			"isTransient": true,
+			"producer": "1_1"
+		},
+		{
+			"key": "`Task_1_responseBody`",
+			"dataType": "STRING_VALUE",
+			"displayName": "`Task_1_responseBody`",
+			"isTransient": true,
+			"producer": "1_1"
+		},
+		{
+			"key": "`Task_1_responseStatus`",
+			"dataType": "STRING_VALUE",
+			"displayName": "`Task_1_responseStatus`",
+			"isTransient": true,
+			"producer": "1_1"
+		}
+	]
+}

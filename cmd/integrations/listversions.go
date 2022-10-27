@@ -23,7 +23,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-//ListVerCmd to list versions of an integration flow
+// ListVerCmd to list versions of an integration flow
 var ListVerCmd = &cobra.Command{
 	Use:   "list",
 	Short: "List all versions of an integration flow",
@@ -41,13 +41,14 @@ var ListVerCmd = &cobra.Command{
 		return apiclient.SetProjectID(project)
 	},
 	RunE: func(cmd *cobra.Command, args []string) (err error) {
-		_, err = integrations.ListVersions(name, pageSize, pageToken, filter, orderBy, false, false)
+		_, err = integrations.ListVersions(name, pageSize, pageToken, filter, orderBy, false, false, basic)
 		return
 
 	},
 }
 
 var orderBy string
+var basic bool
 
 func init() {
 	ListVerCmd.Flags().StringVarP(&name, "name", "n",
@@ -60,6 +61,8 @@ func init() {
 		"", "Filter results")
 	ListVerCmd.Flags().StringVarP(&orderBy, "orderBy", "",
 		"", "The results would be returned in order")
+	ListVerCmd.Flags().BoolVarP(&basic, "basic", "b",
+		false, "Returns snapshot and version only")
 
 	_ = ListVerCmd.MarkFlagRequired("name")
 }
