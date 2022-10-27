@@ -15,6 +15,7 @@
 package integrations
 
 import (
+	"fmt"
 	"io/ioutil"
 	"os"
 
@@ -36,7 +37,8 @@ var CreateCmd = &cobra.Command{
 		return apiclient.SetProjectID(project)
 	},
 	RunE: func(cmd *cobra.Command, args []string) (err error) {
-		if _, err := os.Stat(filePath); err != nil {
+		if _, err := os.Stat(integrationFile); os.IsNotExist(err) {
+			fmt.Println(err)
 			return err
 		}
 
@@ -44,7 +46,7 @@ var CreateCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		_, err = integrations.Create(name, content)
+		_, err = integrations.CreateVersion(name, content, snapshot)
 		return
 
 	},
@@ -56,7 +58,9 @@ func init() {
 	CreateCmd.Flags().StringVarP(&name, "name", "n",
 		"", "Integration flow name")
 	CreateCmd.Flags().StringVarP(&integrationFile, "file", "f",
-		"", "Integration flow instance")
+		"", "Integration flow JSON file content")
+	CreateCmd.Flags().StringVarP(&snapshot, "snapshot", "s",
+		"", "Integration version snapshot number")
 
 	_ = CreateCmd.MarkFlagRequired("name")
 	_ = CreateCmd.MarkFlagRequired("file")

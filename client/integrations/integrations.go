@@ -79,12 +79,19 @@ type integration struct {
 	Active      bool   `json:"active,omitempty"`
 }
 
-// Create
-func Create(name string, content []byte) (respBody []byte, err error) {
+// CreateVersion
+func CreateVersion(name string, content []byte, snapshot string) (respBody []byte, err error) {
 
 	iversion := integrationVersion{}
 	if err = json.Unmarshal(content, &iversion); err != nil {
 		return nil, err
+	}
+
+	if snapshot != "" {
+		iversion.SnapshotNumber = snapshot
+		if content, err = json.Marshal(iversion); err != nil {
+			return nil, err
+		}
 	}
 
 	u, _ := url.Parse(apiclient.GetBaseIntegrationURL())
