@@ -46,7 +46,7 @@ var CreateCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		_, err = integrations.CreateVersion(name, content, snapshot)
+		_, err = integrations.CreateVersion(name, content, snapshot, userLabel)
 		return
 
 	},
@@ -61,6 +61,8 @@ func init() {
 		"", "Integration flow JSON file content")
 	CreateCmd.Flags().StringVarP(&snapshot, "snapshot", "s",
 		"", "Integration version snapshot number")
+	CreateCmd.Flags().StringVarP(&userLabel, "userlabel", "u",
+		"", "Integration version userlabel")
 
 	_ = CreateCmd.MarkFlagRequired("name")
 	_ = CreateCmd.MarkFlagRequired("file")
