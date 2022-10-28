@@ -14,3 +14,5 @@ RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -trimpath -a -ldflags='-s -w 
 
 FROM gcr.io/cloud-builders/gcloud
 COPY --from=builder /go/bin/integrationcli /tmp
+RUN apt-get update
+RUN apt-get install -y jq
