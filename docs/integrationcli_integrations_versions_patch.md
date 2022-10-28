@@ -1,23 +1,22 @@
-## integrationcli integrations versions download
+## integrationcli integrations versions patch
 
-Download an integration flow version
+Patch an integration flow version
 
 ### Synopsis
 
-Download an integration flow version
+Patch an integration flow version
 
 ```
-integrationcli integrations versions download [flags]
+integrationcli integrations versions patch [flags]
 ```
 
 ### Options
 
 ```
-  -h, --help                help for download
-  -n, --name string         Integration flow name
-  -s, --snapshot string     Integration flow snapshot number
-  -u, --user-label string   Integration flow user label
-  -v, --ver string          Integration flow version
+  -f, --file string   Integration flow JSON file content
+  -h, --help          help for patch
+  -n, --name string   Integration flow name
+  -v, --ver string    Integration flow version
 ```
 
 ### Options inherited from parent commands
