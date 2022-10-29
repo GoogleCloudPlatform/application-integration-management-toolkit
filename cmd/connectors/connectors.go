@@ -29,5 +29,6 @@ var region, project, name string
 
 func init() {
 	Cmd.AddCommand(ListCmd)
+	Cmd.AddCommand(GetCmd)
 	Cmd.AddCommand(IamCmd)
 }
