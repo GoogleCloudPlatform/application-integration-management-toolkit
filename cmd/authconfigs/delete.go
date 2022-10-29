@@ -21,11 +21,11 @@ import (
 	"github.com/spf13/cobra"
 )
 
-//DelCmd to get integration flow
+// DelCmd to get integration flow
 var DelCmd = &cobra.Command{
-	Use:   "get",
-	Short: "Get an authconfig from a region",
-	Long:  "Get an authconfig from a region",
+	Use:   "delete",
+	Short: "Delete an authconfig from a region",
+	Long:  "Delete an authconfig from a region",
 	Args: func(cmd *cobra.Command, args []string) (err error) {
 		if err = apiclient.SetRegion(region); err != nil {
 			return err
