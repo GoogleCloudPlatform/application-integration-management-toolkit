@@ -46,19 +46,32 @@ var CreateCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		_, err = integrations.CreateVersion(name, content, snapshot, userLabel)
+
+		if _, err := os.Stat(integrationFile); os.IsNotExist(err) {
+			fmt.Println(err)
+			return err
+		}
+
+		overridesContent, err := ioutil.ReadFile(overridesFile)
+		if err != nil {
+			return err
+		}
+
+		_, err = integrations.CreateVersion(name, content, overridesContent, snapshot, userLabel)
 		return
 
 	},
 }
 
-var integrationFile string
+var integrationFile, overridesFile string
 
 func init() {
 	CreateCmd.Flags().StringVarP(&name, "name", "n",
 		"", "Integration flow name")
 	CreateCmd.Flags().StringVarP(&integrationFile, "file", "f",
-		"", "Integration flow JSON file content")
+		"", "Integration flow JSON file path")
+	CreateCmd.Flags().StringVarP(&overridesFile, "overrides", "o",
+		"", "Integration flow overrides file path")
 	CreateCmd.Flags().StringVarP(&snapshot, "snapshot", "s",
 		"", "Integration version snapshot number")
 	CreateCmd.Flags().StringVarP(&userLabel, "userlabel", "u",
