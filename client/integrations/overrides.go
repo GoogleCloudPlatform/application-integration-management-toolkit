@@ -19,12 +19,46 @@ import (
 )
 
 type overrides struct {
-	TaskOverrides []taskconfig `json:"task_overrides,omitempty"`
+	TriggerOverrides []triggeroverrides `json:"trigger_overrides,omitempty"`
+	TaskOverrides    []taskconfig       `json:"task_overrides,omitempty"`
 }
+
+type triggeroverrides struct {
+	TriggerNumber string  `json:"triggerNumber,omitempty"`
+	TriggerType   string  `json:"triggerType,omitempty"`
+	ProjectId     *string `json:"projectId,omitempty"`
+	TopicName     *string `json:"topicName,omitempty"`
+	APIPath       *string `json:"apiPath,omitempty"`
+}
+
+const pubsubTrigger = "cloud_pubsub_external_trigger/projects/cloud-crm-eventbus-cpsexternal/subscriptions/"
+const apiTrigger = "api_trigger/"
 
 // mergeOverrides
 func mergeOverrides(eversion integrationVersionExternal, o overrides) integrationVersionExternal {
 
+	//apply trigger overrides
+	for _, triggerOverride := range o.TriggerOverrides {
+		foundOverride := false
+		for triggerIndex, trigger := range eversion.TriggerConfigs {
+			if triggerOverride.TriggerNumber == trigger.TriggerNumber {
+				switch trigger.TriggerType {
+				case "CLOUD_PUBSUB_EXTERNAL":
+					trigger.TriggerId = pubsubTrigger + *triggerOverride.ProjectId + "_" + *triggerOverride.TopicName
+					trigger.Properties["Subscription name"] = *triggerOverride.ProjectId + "_" + *triggerOverride.TopicName
+				case "API":
+					trigger.TriggerId = apiTrigger + *triggerOverride.APIPath
+				}
+				eversion.TriggerConfigs[triggerIndex] = trigger
+				foundOverride = true
+			}
+		}
+		if !foundOverride {
+			clilog.Warning.Printf("trigger override id %s was not found in the integration json\n", triggerOverride.TriggerNumber)
+		}
+	}
+
+	//apply task overrides
 	for _, taskOverride := range o.TaskOverrides {
 		foundOverride := false
 		for taskIndex, task := range eversion.TaskConfigs {
