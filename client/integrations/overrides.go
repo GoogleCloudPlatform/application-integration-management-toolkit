@@ -48,6 +48,8 @@ func mergeOverrides(eversion integrationVersionExternal, o overrides) integratio
 					trigger.Properties["Subscription name"] = *triggerOverride.ProjectId + "_" + *triggerOverride.TopicName
 				case "API":
 					trigger.TriggerId = apiTrigger + *triggerOverride.APIPath
+				default:
+					clilog.Warning.Printf("unsupported trigger type %s\n", trigger.TriggerType)
 				}
 				eversion.TriggerConfigs[triggerIndex] = trigger
 				foundOverride = true
