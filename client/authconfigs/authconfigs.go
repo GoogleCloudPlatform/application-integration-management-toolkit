@@ -20,6 +20,7 @@ import (
 	"net/url"
 	"path"
 	"strconv"
+	"strings"
 
 	"github.com/apigee/apigeecli/clilog"
 	"github.com/srinandan/integrationcli/apiclient"
@@ -45,11 +46,11 @@ type authConfig struct {
 	ValidTime           string `json:"validTime,omitempty"`
 }
 
-//Create
+// Create
 func Create(name string, content []byte, clientCertificate string) (respBody []byte, err error) {
 
 	aconfig := authConfig{}
-	if err = json.Unmarshal(content, aconfig); err != nil {
+	if err = json.Unmarshal(content, &aconfig); err != nil {
 		return nil, err
 	}
 
@@ -65,7 +66,7 @@ func Create(name string, content []byte, clientCertificate string) (respBody []b
 	return respBody, err
 }
 
-//Delete
+// Delete
 func Delete(name string) (respBody []byte, err error) {
 	u, _ := url.Parse(apiclient.GetBaseIntegrationURL())
 	u.Path = path.Join(u.Path, "authConfigs", name)
@@ -73,7 +74,7 @@ func Delete(name string) (respBody []byte, err error) {
 	return respBody, err
 }
 
-//Get
+// Get
 func Get(name string) (respBody []byte, err error) {
 	u, _ := url.Parse(apiclient.GetBaseIntegrationURL())
 	u.Path = path.Join(u.Path, "authConfigs", name)
@@ -81,7 +82,7 @@ func Get(name string) (respBody []byte, err error) {
 	return respBody, err
 }
 
-//List
+// List
 func List(pageSize int, pageToken string, filter string) (respBody []byte, err error) {
 	u, _ := url.Parse(apiclient.GetBaseIntegrationURL())
 	q := u.Query()
@@ -101,7 +102,34 @@ func List(pageSize int, pageToken string, filter string) (respBody []byte, err e
 	return respBody, err
 }
 
-//Export
+// Find
+func Find(name string, pageToken string) (version string, err error) {
+	ac := authConfigs{}
+
+	u, _ := url.Parse(apiclient.GetBaseIntegrationURL())
+	u.Path = path.Join(u.Path, "authConfigs")
+	respBody, err := apiclient.HttpClient(apiclient.GetPrintOutput(), u.String())
+	if err != nil {
+		return "", err
+	}
+	err = json.Unmarshal(respBody, &ac)
+	if err != nil {
+		return "", err
+	}
+
+	for _, config := range ac.AuthConfig {
+		if config.DisplayName == name {
+			version = config.Name[strings.LastIndex(config.Name, ",")+1:]
+			return version, nil
+		}
+	}
+	if ac.NextPageToken != "" {
+		Find(name, ac.NextPageToken)
+	}
+	return "", fmt.Errorf("authConfig not found")
+}
+
+// Export
 func Export(folder string) (err error) {
 
 	var respBody []byte
