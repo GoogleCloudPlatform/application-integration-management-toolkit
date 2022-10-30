@@ -17,7 +17,7 @@ package connectors
 import (
 	"github.com/spf13/cobra"
 	"github.com/srinandan/integrationcli/apiclient"
-	"github.com/srinandan/integrationcli/client/connectors"
+	"github.com/srinandan/integrationcli/client/connections"
 )
 
 // Cmd to manage tracing of apis
@@ -32,7 +32,7 @@ var GetIamCmd = &cobra.Command{
 		return apiclient.SetProjectID(project)
 	},
 	RunE: func(cmd *cobra.Command, args []string) (err error) {
-		_, err = connectors.GetIAM(name)
+		_, err = connections.GetIAM(name)
 		return
 	},
 }
