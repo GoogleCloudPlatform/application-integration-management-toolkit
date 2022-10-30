@@ -1,0 +1,20 @@
+{
+    "task_overrides": [{
+        "taskId": "1",
+        "task": "CloudFunctionTask",
+        "parameters":  {
+            "TriggerUrl": {
+                "key": "TriggerUrl",
+                "value": {
+                    "stringValue": "https://us-west2-nandanks-151422.cloudfunctions.net/helloWorld"
+                }
+            },            
+            "authConfig": {
+                "key": "authConfig",
+                "value": {
+                    "stringValue": "cf-helloworld"
+                }
+            }
+        }
+    }]
+}
