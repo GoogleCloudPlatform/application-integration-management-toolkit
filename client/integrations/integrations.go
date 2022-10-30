@@ -175,7 +175,9 @@ func CreateVersion(name string, content []byte, overridesContent []byte, snapsho
 		if err = json.Unmarshal(overridesContent, &o); err != nil {
 			return nil, err
 		}
-		eversion = mergeOverrides(eversion, o)
+		if eversion, err = mergeOverrides(eversion, o); err != nil {
+			return nil, err
+		}
 	}
 
 	if snapshot != "" {

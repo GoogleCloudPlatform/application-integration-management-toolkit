@@ -15,12 +15,19 @@
 package integrations
 
 import (
+	"encoding/json"
+	"fmt"
+	"strings"
+
 	"github.com/apigee/apigeecli/clilog"
+	"github.com/srinandan/integrationcli/apiclient"
+	"github.com/srinandan/integrationcli/client/connections"
 )
 
 type overrides struct {
-	TriggerOverrides []triggeroverrides `json:"trigger_overrides,omitempty"`
-	TaskOverrides    []taskconfig       `json:"task_overrides,omitempty"`
+	TriggerOverrides    []triggeroverrides    `json:"trigger_overrides,omitempty"`
+	TaskOverrides       []taskconfig          `json:"task_overrides,omitempty"`
+	ConnectionOverrides []connectionoverrides `json:"connection_overrides,omitempty"`
 }
 
 type triggeroverrides struct {
@@ -31,11 +38,33 @@ type triggeroverrides struct {
 	APIPath       *string `json:"apiPath,omitempty"`
 }
 
+type connectionoverrides struct {
+	TaskId     string                   `json:"taskId,omitempty"`
+	Task       string                   `json:"task,omitempty"`
+	Parameters connectionoverrideparams `json:"parameters,omitempty"`
+}
+
+type connectionoverrideparams struct {
+	ConnectionName string `json:"connectionName,omitempty"`
+}
+
+type connectiondetails struct {
+	Type       string           `json:"@type,omitempty"`
+	Connection connectionparams `json:"connection,omitempty"`
+	Operation  string           `json:"operation,omitempty"`
+}
+
+type connectionparams struct {
+	ServiceName       string `json:"serviceName,omitempty"`
+	ConnectionName    string `json:"connectionName,omitempty"`
+	ConnectionVersion string `json:"connectionVersion,omitempty"`
+}
+
 const pubsubTrigger = "cloud_pubsub_external_trigger/projects/cloud-crm-eventbus-cpsexternal/subscriptions/"
 const apiTrigger = "api_trigger/"
 
 // mergeOverrides
-func mergeOverrides(eversion integrationVersionExternal, o overrides) integrationVersionExternal {
+func mergeOverrides(eversion integrationVersionExternal, o overrides) (integrationVersionExternal, error) {
 
 	//apply trigger overrides
 	for _, triggerOverride := range o.TriggerOverrides {
@@ -64,9 +93,11 @@ func mergeOverrides(eversion integrationVersionExternal, o overrides) integratio
 	for _, taskOverride := range o.TaskOverrides {
 		foundOverride := false
 		for taskIndex, task := range eversion.TaskConfigs {
-			if taskOverride.TaskId == task.TaskId {
-				task.Parameters = overrideParameters(taskOverride.Parameters, task.Parameters)
-				eversion.TaskConfigs[taskIndex] = task
+			if taskOverride.TaskId == task.TaskId && taskOverride.Task == task.Task {
+				if task.Task != "GenericConnectorTask" {
+					task.Parameters = overrideParameters(taskOverride.Parameters, task.Parameters)
+					eversion.TaskConfigs[taskIndex] = task
+				}
 				foundOverride = true
 			}
 		}
@@ -74,7 +105,45 @@ func mergeOverrides(eversion integrationVersionExternal, o overrides) integratio
 			clilog.Warning.Printf("task override %s with id %s was not found in the integration json\n", taskOverride.DisplayName, taskOverride.TaskId)
 		}
 	}
-	return eversion
+
+	//apply connection overrides
+	for _, connectionOverride := range o.ConnectionOverrides {
+		foundOverride := false
+		for taskIndex, task := range eversion.TaskConfigs {
+			if connectionOverride.TaskId == task.TaskId && connectionOverride.Task == task.Task {
+				newcp, err := getNewConnectionParams(connectionOverride.Parameters.ConnectionName)
+				if err != nil {
+					return eversion, err
+				}
+
+				cparams := task.Parameters["config"]
+
+				cd, err := getConnectionDetails(*cparams.Value.JsonValue)
+				if err != nil {
+					return eversion, err
+				}
+
+				cd.Connection.ConnectionName = newcp.ConnectionName
+				cd.Connection.ConnectionVersion = newcp.ConnectionVersion
+				cd.Connection.ServiceName = newcp.ServiceName
+
+				jsonValue, err := stringifyValue(cd)
+				if err != nil {
+					return eversion, err
+				}
+
+				*cparams.Value.JsonValue = jsonValue
+				task.Parameters["config"] = cparams
+				eversion.TaskConfigs[taskIndex] = task
+
+				foundOverride = true
+			}
+		}
+		if !foundOverride {
+			clilog.Warning.Printf("task override with id %s was not found in the integration json\n", connectionOverride.TaskId)
+		}
+	}
+	return eversion, nil
 }
 
 // overrideParameters
@@ -88,4 +157,42 @@ func overrideParameters(overrideParameters map[string]eventparameter, taskParame
 		}
 	}
 	return taskParameters
+}
+
+func getNewConnectionParams(connectionName string) (connectionparams, error) {
+	cp := connectionparams{}
+	var connectionVersionResponse map[string]interface{}
+	apiclient.SetPrintOutput(false)
+	connResp, err := connections.Get(connectionName, "BASIC")
+	apiclient.SetPrintOutput(true)
+	if err != nil {
+		return cp, err
+	}
+
+	err = json.Unmarshal(connResp, &connectionVersionResponse)
+	if err != nil {
+		return cp, err
+	}
+
+	cp.ConnectionVersion = fmt.Sprintf("%v", connectionVersionResponse["connectorVersion"])
+	cp.ServiceName = fmt.Sprintf("%v", connectionVersionResponse["serviceDirectory"])
+	cp.ConnectionName = fmt.Sprintf("%v", connectionVersionResponse["name"])
+
+	return cp, nil
+}
+
+func getConnectionDetails(jsonValue string) (connectiondetails, error) {
+	cd := connectiondetails{}
+	t := strings.ReplaceAll(jsonValue, "\n", "")
+	t = strings.ReplaceAll(t, "\\", "")
+	err := json.Unmarshal([]byte(t), &cd)
+	return cd, err
+}
+
+func stringifyValue(cd connectiondetails) (string, error) {
+	jsonValue, err := json.Marshal(cd)
+	if err != nil {
+		return "", err
+	}
+	return string(jsonValue), nil
 }
