@@ -135,7 +135,7 @@
 			],
 			"properties": {
 				"IP Project name": "cloud-crm-eventbus-cpsexternal",
-				"Subscription name": "nandanks-151422_mytopic"
+				"Subscription name": "myproject_mytopic"
 			},
 			"triggerType": "CLOUD_PUBSUB_EXTERNAL",
 			"position": {
@@ -146,7 +146,7 @@
 			"enabledClients": [
 				"102128743119"
 			],
-			"triggerId": "cloud_pubsub_external_trigger/projects/cloud-crm-eventbus-cpsexternal/subscriptions/nandanks-151422_mytopic"
+			"triggerId": "cloud_pubsub_external_trigger/projects/cloud-crm-eventbus-cpsexternal/subscriptions/myproject_mytopic"
 		}
 	],
 	"integrationParametersInternal": {
@@ -230,9 +230,9 @@
 	"status": "DRAFT",
 	"snapshotNumber": "1",
 	"updateTime": "2022-10-29T21:05:56.965Z",
-	"lockHolder": "srinandans@google.com",
+	"lockHolder": "user@google.com",
 	"createTime": "2022-10-29T20:42:21.527Z",
-	"lastModifierEmail": "srinandans@google.com",
+	"lastModifierEmail": "user@google.com",
 	"state": "DRAFT",
 	"triggerConfigs": [
 		{
@@ -244,11 +244,11 @@
 			],
 			"properties": {
 				"IP Project name": "cloud-crm-eventbus-cpsexternal",
-				"Subscription name": "nandanks-151422_mytopic"
+				"Subscription name": "myproject_mytopic"
 			},
 			"triggerType": "CLOUD_PUBSUB_EXTERNAL",
 			"triggerNumber": "1",
-			"triggerId": "cloud_pubsub_external_trigger/projects/cloud-crm-eventbus-cpsexternal/subscriptions/nandanks-151422_mytopic"
+			"triggerId": "cloud_pubsub_external_trigger/projects/cloud-crm-eventbus-cpsexternal/subscriptions/myproject_mytopic"
 		}
 	],
 	"taskConfigs": [

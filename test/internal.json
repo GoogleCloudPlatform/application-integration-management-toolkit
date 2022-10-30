@@ -180,9 +180,9 @@
 	"origin": "UI",
 	"snapshotNumber": "2",
 	"updateTime": "2022-10-26T23:02:57.205Z",
-	"lockHolder": "srinandans@google.com",
+	"lockHolder": "user@google.com",
 	"createTime": "2022-10-26T21:21:21.125Z",
-	"lastModifierEmail": "srinandans@google.com",
+	"lastModifierEmail": "user@google.com",
 	"triggerConfigs": [
 		{
 			"label": "API Trigger",

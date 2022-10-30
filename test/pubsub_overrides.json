@@ -7,6 +7,7 @@
     }],
     "task_overrides": [{
         "taskId": "1",
+        "task": "GenericRestV2Task",
         "parameters":  {
             "url": {
                 "key": "url",
