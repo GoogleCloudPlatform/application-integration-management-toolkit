@@ -21,6 +21,7 @@ import (
 
 	"github.com/apigee/apigeecli/clilog"
 	"github.com/srinandan/integrationcli/apiclient"
+	"github.com/srinandan/integrationcli/client/authconfigs"
 	"github.com/srinandan/integrationcli/client/connections"
 )
 
@@ -62,6 +63,7 @@ type connectionparams struct {
 
 const pubsubTrigger = "cloud_pubsub_external_trigger/projects/cloud-crm-eventbus-cpsexternal/subscriptions/"
 const apiTrigger = "api_trigger/"
+const authConfigValue = "{  \"@type\": \"type.googleapis.com/enterprise.crm.eventbus.authconfig.AuthConfigTaskParam\",\"authConfigId\": \""
 
 // mergeOverrides
 func mergeOverrides(eversion integrationVersionExternal, o overrides) (integrationVersionExternal, error) {
@@ -93,11 +95,13 @@ func mergeOverrides(eversion integrationVersionExternal, o overrides) (integrati
 	for _, taskOverride := range o.TaskOverrides {
 		foundOverride := false
 		for taskIndex, task := range eversion.TaskConfigs {
-			if taskOverride.TaskId == task.TaskId && taskOverride.Task == task.Task {
-				if task.Task != "GenericConnectorTask" {
+			if taskOverride.TaskId == task.TaskId && taskOverride.Task == task.Task && task.Task != "GenericConnectorTask" {
+				if task.Task == "CloudFunctionTask" {
+					task.Parameters = overrideCfParameters(taskOverride.Parameters, task.Parameters)
+				} else {
 					task.Parameters = overrideParameters(taskOverride.Parameters, task.Parameters)
-					eversion.TaskConfigs[taskIndex] = task
 				}
+				eversion.TaskConfigs[taskIndex] = task
 				foundOverride = true
 			}
 		}
@@ -154,6 +158,30 @@ func overrideParameters(overrideParameters map[string]eventparameter, taskParame
 			taskParameters[overrideParamName] = overrideParam
 		} else {
 			clilog.Warning.Printf("override param %s was not found\n", overrideParamName)
+		}
+	}
+	return taskParameters
+}
+
+// overrideCfParameters
+func overrideCfParameters(overrideParameters map[string]eventparameter, taskParameters map[string]eventparameter) map[string]eventparameter {
+	for overrideParamName, overrideParam := range overrideParameters {
+		if overrideParam.Key == "authConfig" {
+			apiclient.SetPrintOutput(false)
+			acversion, err := authconfigs.Find(*overrideParam.Value.StringValue, "")
+			apiclient.SetPrintOutput(true)
+			if err != nil {
+				clilog.Warning.Println(err)
+				return taskParameters
+			}
+			*taskParameters[overrideParamName].Value.JsonValue = fmt.Sprintf("%s\"}", acversion)
+		} else {
+			_, found := taskParameters[overrideParamName]
+			if found {
+				taskParameters[overrideParamName] = overrideParam
+			} else {
+				clilog.Warning.Printf("override param %s was not found\n", overrideParamName)
+			}
 		}
 	}
 	return taskParameters
