@@ -1,19 +1,12 @@
 {
-  "kmsConfig": {
-    "keyRing": "app-integration",
-    "cryptoKey": "integration"
-  },
-  "authConfig": {
-    "displayName": "authconfig-sample",
-    "description": "this is a sample auth config",
+  "displayName": "authconfig-sample",
+  "description": "this is a sample auth config",
+  "visibility": "CLIENT_VISIBLE",
+  "decryptedCredential": {
     "credentialType": "AUTH_TOKEN",
-    "visibility": "CLIENT_VISIBLE",
-    "decryptedCredential": {
-      "credentialType": "AUTH_TOKEN",
-      "authToken": {
-        "type": "Bearer",
-        "token": "test"
-      }
+    "authToken": {
+      "type": "Bearer",
+      "token": "test"
     }
   }
 }
