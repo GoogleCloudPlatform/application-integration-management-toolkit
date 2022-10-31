@@ -9,6 +9,7 @@ COPY go.mod go.sum /go/src/integrationcli/
 WORKDIR /go/src/integrationcli
 
 ENV GO111MODULE=on
+RUN go mod tidy
 RUN go mod download
 RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -trimpath -a -ldflags='-s -w -extldflags "-static"' -o /go/bin/integrationcli /go/src/integrationcli/main.go
 
