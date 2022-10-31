@@ -34,11 +34,13 @@ var CreateCmd = &cobra.Command{
 		if err = apiclient.SetRegion(region); err != nil {
 			return err
 		}
+		if overridesFile == "" && supressWarnings {
+			return fmt.Errorf("supressWarnings must be used with overrides")
+		}
 		return apiclient.SetProjectID(project)
 	},
 	RunE: func(cmd *cobra.Command, args []string) (err error) {
 		if _, err := os.Stat(integrationFile); os.IsNotExist(err) {
-			fmt.Println(err)
 			return err
 		}
 
@@ -48,7 +50,6 @@ var CreateCmd = &cobra.Command{
 		}
 
 		if _, err := os.Stat(integrationFile); os.IsNotExist(err) {
-			fmt.Println(err)
 			return err
 		}
 
@@ -57,13 +58,14 @@ var CreateCmd = &cobra.Command{
 			return err
 		}
 
-		_, err = integrations.CreateVersion(name, content, overridesContent, snapshot, userLabel)
+		_, err = integrations.CreateVersion(name, content, overridesContent, snapshot, userLabel, supressWarnings)
 		return
 
 	},
 }
 
 var integrationFile, overridesFile string
+var supressWarnings bool
 
 func init() {
 	CreateCmd.Flags().StringVarP(&name, "name", "n",
@@ -76,6 +78,8 @@ func init() {
 		"", "Integration version snapshot number")
 	CreateCmd.Flags().StringVarP(&userLabel, "userlabel", "u",
 		"", "Integration version userlabel")
+	CreateCmd.Flags().BoolVarP(&supressWarnings, "supress-warnings", "",
+		false, "Supress override warnings, must be used with overrides flag")
 
 	_ = CreateCmd.MarkFlagRequired("name")
 	_ = CreateCmd.MarkFlagRequired("file")
