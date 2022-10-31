@@ -66,7 +66,7 @@ const apiTrigger = "api_trigger/"
 const authConfigValue = "{  \"@type\": \"type.googleapis.com/enterprise.crm.eventbus.authconfig.AuthConfigTaskParam\",\"authConfigId\": \""
 
 // mergeOverrides
-func mergeOverrides(eversion integrationVersionExternal, o overrides) (integrationVersionExternal, error) {
+func mergeOverrides(eversion integrationVersionExternal, o overrides, supressWarnings bool) (integrationVersionExternal, error) {
 
 	//apply trigger overrides
 	for _, triggerOverride := range o.TriggerOverrides {
@@ -80,13 +80,15 @@ func mergeOverrides(eversion integrationVersionExternal, o overrides) (integrati
 				case "API":
 					trigger.TriggerId = apiTrigger + *triggerOverride.APIPath
 				default:
-					clilog.Warning.Printf("unsupported trigger type %s\n", trigger.TriggerType)
+					if !supressWarnings {
+						clilog.Warning.Printf("unsupported trigger type %s\n", trigger.TriggerType)
+					}
 				}
 				eversion.TriggerConfigs[triggerIndex] = trigger
 				foundOverride = true
 			}
 		}
-		if !foundOverride {
+		if !foundOverride && !supressWarnings {
 			clilog.Warning.Printf("trigger override id %s was not found in the integration json\n", triggerOverride.TriggerNumber)
 		}
 	}
@@ -97,15 +99,15 @@ func mergeOverrides(eversion integrationVersionExternal, o overrides) (integrati
 		for taskIndex, task := range eversion.TaskConfigs {
 			if taskOverride.TaskId == task.TaskId && taskOverride.Task == task.Task && task.Task != "GenericConnectorTask" {
 				if task.Task == "CloudFunctionTask" {
-					task.Parameters = overrideCfParameters(taskOverride.Parameters, task.Parameters)
+					task.Parameters = overrideCfParameters(taskOverride.Parameters, task.Parameters, supressWarnings)
 				} else {
-					task.Parameters = overrideParameters(taskOverride.Parameters, task.Parameters)
+					task.Parameters = overrideParameters(taskOverride.Parameters, task.Parameters, supressWarnings)
 				}
 				eversion.TaskConfigs[taskIndex] = task
 				foundOverride = true
 			}
 		}
-		if !foundOverride {
+		if !foundOverride && !supressWarnings {
 			clilog.Warning.Printf("task override %s with id %s was not found in the integration json\n", taskOverride.DisplayName, taskOverride.TaskId)
 		}
 	}
@@ -143,7 +145,7 @@ func mergeOverrides(eversion integrationVersionExternal, o overrides) (integrati
 				foundOverride = true
 			}
 		}
-		if !foundOverride {
+		if !foundOverride && !supressWarnings {
 			clilog.Warning.Printf("task override with id %s was not found in the integration json\n", connectionOverride.TaskId)
 		}
 	}
@@ -151,20 +153,22 @@ func mergeOverrides(eversion integrationVersionExternal, o overrides) (integrati
 }
 
 // overrideParameters
-func overrideParameters(overrideParameters map[string]eventparameter, taskParameters map[string]eventparameter) map[string]eventparameter {
+func overrideParameters(overrideParameters map[string]eventparameter, taskParameters map[string]eventparameter, supressWarnings bool) map[string]eventparameter {
 	for overrideParamName, overrideParam := range overrideParameters {
 		_, found := taskParameters[overrideParamName]
 		if found {
 			taskParameters[overrideParamName] = overrideParam
 		} else {
-			clilog.Warning.Printf("override param %s was not found\n", overrideParamName)
+			if !supressWarnings {
+				clilog.Warning.Printf("override param %s was not found\n", overrideParamName)
+			}
 		}
 	}
 	return taskParameters
 }
 
 // overrideCfParameters
-func overrideCfParameters(overrideParameters map[string]eventparameter, taskParameters map[string]eventparameter) map[string]eventparameter {
+func overrideCfParameters(overrideParameters map[string]eventparameter, taskParameters map[string]eventparameter, supessWarnings bool) map[string]eventparameter {
 	for overrideParamName, overrideParam := range overrideParameters {
 		if overrideParam.Key == "authConfig" {
 			apiclient.SetPrintOutput(false)
@@ -180,7 +184,9 @@ func overrideCfParameters(overrideParameters map[string]eventparameter, taskPara
 			if found {
 				taskParameters[overrideParamName] = overrideParam
 			} else {
-				clilog.Warning.Printf("override param %s was not found\n", overrideParamName)
+				if !supessWarnings {
+					clilog.Warning.Printf("override param %s was not found\n", overrideParamName)
+				}
 			}
 		}
 	}
