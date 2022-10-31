@@ -24,6 +24,7 @@ import (
 
 	"github.com/apigee/apigeecli/clilog"
 	"github.com/srinandan/integrationcli/apiclient"
+	"github.com/srinandan/integrationcli/cloudkms"
 )
 
 type authConfigs struct {
@@ -31,35 +32,96 @@ type authConfigs struct {
 	NextPageToken string       `json:"nextPageToken,omitempty"`
 }
 
+type config struct {
+	KmsConfig  kmsconfig  `json:"kmsConfig,omitempty"`
+	AuthConfig authConfig `json:"authConfig,omitempty"`
+}
+
+type kmsconfig struct {
+	KeyRing   string `json:"keyRing,omitempty"`
+	CryptoKey string `json:"cryptoKey,omitempty"`
+}
+
 type authConfig struct {
-	Name                string `json:"name,omitempty"`
-	DisplayName         string `json:"displayName,omitempty"`
-	Description         string `json:"description,omitempty"`
-	EncryptedCredential string `json:"encryptedCredential,omitempty"`
-	CredentialType      string `json:"credentialType,omitempty"`
-	CreatorEmail        string `json:"creatorEmail,omitempty"`
-	CreateTime          string `json:"createTime,omitempty"`
-	LastModifierEmail   string `json:"lastModifierEmail,omitempty"`
-	Visibility          string `json:"visibility,omitempty"`
-	State               string `json:"state,omitempty"`
-	Reason              string `json:"reason,omitempty"`
-	ValidTime           string `json:"validTime,omitempty"`
+	Name                string               `json:"name,omitempty"`
+	DisplayName         string               `json:"displayName,omitempty"`
+	Description         string               `json:"description,omitempty"`
+	EncryptedCredential *string              `json:"encryptedCredential,omitempty"`
+	DecryptedCredential *decryptedCredential `json:"decryptedCredential,omitempty"`
+	CredentialType      string               `json:"credentialType,omitempty"`
+	CreatorEmail        string               `json:"creatorEmail,omitempty"`
+	CreateTime          string               `json:"createTime,omitempty"`
+	LastModifierEmail   string               `json:"lastModifierEmail,omitempty"`
+	Visibility          string               `json:"visibility,omitempty"`
+	State               string               `json:"state,omitempty"`
+	Reason              string               `json:"reason,omitempty"`
+	ValidTime           string               `json:"validTime,omitempty"`
+}
+
+type decryptedCredential struct {
+	UsernameAndPassword       *usernameAndPassword       `json:"usernameAndPassword,omitempty"`
+	OidcToken                 *oidcToken                 `json:"oidcToken,omitempty"`
+	Jwt                       *jwt                       `json:"jwt,omitempty"`
+	ServiceAccountCredentials *serviceAccountCredentials `json:"serviceAccountCredentials,omitempty"`
+	AuthToken                 *authToken                 `json:"authToken,omitempty"`
+}
+
+type usernameAndPassword struct {
+	Username string `json:"username,omitempty"`
+	Password string `json:"password,omitempty"`
+}
+
+type oidcToken struct {
+	ServiceAccountEmail string `json:"serviceAccountEmail,omitempty"`
+	Audience            string `json:"audience,omitempty"`
+}
+
+type jwt struct {
+	JwtHeader  string `json:"jwtHeader,omitempty"`
+	JwtPayload string `json:"jwtPayload,omitempty"`
+	Secret     string `json:"secret,omitempty"`
+}
+
+type serviceAccountCredentials struct {
+	ServiceAccount string `json:"serviceAccount,omitempty"`
+	Scope          string `json:"scope,omitempty"`
+}
+
+type authToken struct {
+	Type  string `json:"type,omitempty"`
+	Token string `json:"token,omitempty"`
 }
 
 // Create
-func Create(name string, content []byte, clientCertificate string) (respBody []byte, err error) {
+func Create(name string, content []byte) (respBody []byte, err error) {
+	c := config{}
 
-	aconfig := authConfig{}
-	if err = json.Unmarshal(content, &aconfig); err != nil {
+	if err = json.Unmarshal(content, &c); err != nil {
+		return nil, err
+	}
+
+	fmt.Printf("%+v\n", c.AuthConfig.DecryptedCredential)
+
+	clearText, err := json.Marshal(c.AuthConfig.DecryptedCredential.UsernameAndPassword)
+	if err != nil {
+		return nil, err
+	}
+
+	kmsKeyName := path.Join("projects", apiclient.GetProjectID(), "locations", apiclient.GetRegion(), "keyRings", c.KmsConfig.KeyRing, "cryptoKeys", c.KmsConfig.CryptoKey)
+
+	cipherText, err := cloudkms.EncryptSymmetric(kmsKeyName, clearText)
+	if err != nil {
+		return nil, err
+	}
+
+	c.AuthConfig.DecryptedCredential = nil
+	c.AuthConfig.EncryptedCredential = &cipherText
+
+	if content, err = json.Marshal(c.AuthConfig); err != nil {
 		return nil, err
 	}
 
 	u, _ := url.Parse(apiclient.GetBaseIntegrationURL())
-	q := u.Query()
-	if clientCertificate != "" {
-		q.Set("clientCertificate", clientCertificate)
-		u.RawQuery = q.Encode()
-	}
 
 	u.Path = path.Join(u.Path, "authConfigs")
 	respBody, err = apiclient.HttpClient(apiclient.GetPrintOutput(), u.String(), string(content))
@@ -105,15 +167,21 @@ func List(pageSize int, pageToken string, filter string) (respBody []byte, err e
 // Find
 func Find(name string, pageToken string) (version string, err error) {
 	ac := authConfigs{}
+	var respBody []byte
 
 	u, _ := url.Parse(apiclient.GetBaseIntegrationURL())
+	if pageToken != "" {
+		q := u.Query()
+		q.Set("pageToken", pageToken)
+		u.RawQuery = q.Encode()
+	}
+
 	u.Path = path.Join(u.Path, "authConfigs")
-	respBody, err := apiclient.HttpClient(apiclient.GetPrintOutput(), u.String())
-	if err != nil {
+	if respBody, err = apiclient.HttpClient(apiclient.GetPrintOutput(), u.String()); err != nil {
 		return "", err
 	}
-	err = json.Unmarshal(respBody, &ac)
-	if err != nil {
+
+	if err = json.Unmarshal(respBody, &ac); err != nil {
 		return "", err
 	}
 
