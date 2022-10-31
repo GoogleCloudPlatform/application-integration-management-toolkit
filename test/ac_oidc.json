@@ -1,20 +1,12 @@
 {
-  "kmsConfig": {
-    "keyRing": "app-integration",
-    "cryptoKey": "integration"
-  },
-  "authConfig": {
-    "displayName": "authconfig-sample",
-    "description": "this is a sample auth config",
+  "displayName": "authconfig-sample2",
+  "description": "this is a sample auth config",
+  "visibility": "CLIENT_VISIBLE",
+  "decryptedCredential": {
     "credentialType": "OIDC_TOKEN",
-    "visibility": "CLIENT_VISIBLE",
-    "decryptedCredential": {
-      "credentialType": "OIDC_TOKEN",
-      "oidcToken": {
-        "serviceAccountEmail": "terraform@nandanks-151422.iam.gserviceaccount.com",
-        "audience": "https://us-west2-nandanks-151422.cloudfunctions.net/helloWorld"
-      }
-    },
-    "validTime": "1970-01-01T00:00:00Z"
+    "oidcToken": {
+      "serviceAccountEmail": "terraform@nandanks-151422.iam.gserviceaccount.com",
+      "audience": "https://us-west2-nandanks-151422.cloudfunctions.net/helloWorld"
+    }
   }
 }

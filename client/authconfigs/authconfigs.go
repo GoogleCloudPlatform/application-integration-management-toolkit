@@ -24,22 +24,11 @@ import (
 
 	"github.com/apigee/apigeecli/clilog"
 	"github.com/srinandan/integrationcli/apiclient"
-	"github.com/srinandan/integrationcli/cloudkms"
 )
 
 type authConfigs struct {
 	AuthConfig    []authConfig `json:"authConfigs,omitempty"`
 	NextPageToken string       `json:"nextPageToken,omitempty"`
-}
-
-type config struct {
-	KmsConfig  kmsconfig  `json:"kmsConfig,omitempty"`
-	AuthConfig authConfig `json:"authConfig,omitempty"`
-}
-
-type kmsconfig struct {
-	KeyRing   string `json:"keyRing,omitempty"`
-	CryptoKey string `json:"cryptoKey,omitempty"`
 }
 
 type authConfig struct {
@@ -48,7 +37,6 @@ type authConfig struct {
 	Description         string               `json:"description,omitempty"`
 	EncryptedCredential *string              `json:"encryptedCredential,omitempty"`
 	DecryptedCredential *decryptedCredential `json:"decryptedCredential,omitempty"`
-	CredentialType      string               `json:"credentialType,omitempty"`
 	CreatorEmail        string               `json:"creatorEmail,omitempty"`
 	CreateTime          string               `json:"createTime,omitempty"`
 	LastModifierEmail   string               `json:"lastModifierEmail,omitempty"`
@@ -94,30 +82,9 @@ type authToken struct {
 
 // Create
 func Create(name string, content []byte) (respBody []byte, err error) {
-	c := config{}
+	c := authConfig{}
 
 	if err = json.Unmarshal(content, &c); err != nil {
-		return nil, err
-	}
-
-	fmt.Printf("%+v\n", c.AuthConfig.DecryptedCredential)
-
-	clearText, err := json.Marshal(c.AuthConfig.DecryptedCredential.UsernameAndPassword)
-	if err != nil {
-		return nil, err
-	}
-
-	kmsKeyName := path.Join("projects", apiclient.GetProjectID(), "locations", apiclient.GetRegion(), "keyRings", c.KmsConfig.KeyRing, "cryptoKeys", c.KmsConfig.CryptoKey)
-
-	cipherText, err := cloudkms.EncryptSymmetric(kmsKeyName, clearText)
-	if err != nil {
-		return nil, err
-	}
-
-	c.AuthConfig.DecryptedCredential = nil
-	c.AuthConfig.EncryptedCredential = &cipherText
-
-	if content, err = json.Marshal(c.AuthConfig); err != nil {
 		return nil, err
 	}
 

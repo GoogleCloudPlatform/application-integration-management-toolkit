@@ -20,6 +20,7 @@ import (
 	"os"
 
 	"github.com/srinandan/integrationcli/apiclient"
+	"github.com/srinandan/integrationcli/client/authconfigs"
 
 	"github.com/spf13/cobra"
 )
@@ -45,9 +46,10 @@ var CreateCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		fmt.Println(content)
-		//_, err = authconfigs.Create(name, content)
-		return fmt.Errorf("not implemented")
+		//fmt.Println(string(content))
+		_, err = authconfigs.Create(name, content)
+		return
+		//return fmt.Errorf("not implemented")
 
 	},
 }
