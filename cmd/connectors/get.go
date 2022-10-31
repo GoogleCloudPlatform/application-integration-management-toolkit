@@ -18,7 +18,7 @@ import (
 	"fmt"
 
 	"github.com/srinandan/integrationcli/apiclient"
-	"github.com/srinandan/integrationcli/client/connectors"
+	"github.com/srinandan/integrationcli/client/connections"
 
 	"github.com/spf13/cobra"
 )
@@ -38,7 +38,7 @@ var GetCmd = &cobra.Command{
 		return apiclient.SetProjectID(project)
 	},
 	RunE: func(cmd *cobra.Command, args []string) (err error) {
-		_, err = connectors.Get(name, view)
+		_, err = connections.Get(name, view)
 		return
 	},
 }

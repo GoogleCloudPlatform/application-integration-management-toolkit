@@ -1,4 +1,4 @@
-// Copyright 2022 Google LLC
+// Copyright 2021 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,19 +12,23 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package connectors
+package authconfigs
 
 import (
-	"github.com/spf13/cobra"
+	"fmt"
+	"io/ioutil"
+	"os"
+
 	"github.com/srinandan/integrationcli/apiclient"
-	"github.com/srinandan/integrationcli/client/connections"
+
+	"github.com/spf13/cobra"
 )
 
-// SetInvokeCmd to set admin role
-var SetInvokeCmd = &cobra.Command{
-	Use:   "setadmin",
-	Short: "Set Connection Invoke IAM policy on a Connection",
-	Long:  "Set Connection Invoke IAM policy on a Connection",
+// CreateCmd to create authconfigs
+var CreateCmd = &cobra.Command{
+	Use:   "create",
+	Short: "Create an authconfig",
+	Long:  "Create an authconfig",
 	Args: func(cmd *cobra.Command, args []string) (err error) {
 		if err = apiclient.SetRegion(region); err != nil {
 			return err
@@ -32,16 +36,30 @@ var SetInvokeCmd = &cobra.Command{
 		return apiclient.SetProjectID(project)
 	},
 	RunE: func(cmd *cobra.Command, args []string) (err error) {
-		return connections.SetIAM(name, memberName, "invoker", memberType)
+		if _, err := os.Stat(authConfigFile); os.IsNotExist(err) {
+			fmt.Println(err)
+			return err
+		}
+
+		content, err := ioutil.ReadFile(authConfigFile)
+		if err != nil {
+			return err
+		}
+		fmt.Println(content)
+		//_, err = authconfigs.Create(name, content)
+		return fmt.Errorf("not implemented")
+
 	},
 }
 
+var authConfigFile string
+
 func init() {
+	CreateCmd.Flags().StringVarP(&name, "name", "n",
+		"", "Integration flow name")
+	CreateCmd.Flags().StringVarP(&authConfigFile, "file", "f",
+		"", "Auth Config JSON file path")
 
-	SetInvokeCmd.Flags().StringVarP(&memberName, "member", "m",
-		"", "Member Name, example Service Account Name")
-	SetInvokeCmd.Flags().StringVarP(&memberType, "memberType", "p",
-		"serviceAccount", "memberType must be serviceAccount, user or group")
-
-	_ = SetInvokeCmd.MarkFlagRequired("name")
+	_ = CreateCmd.MarkFlagRequired("name")
+	_ = CreateCmd.MarkFlagRequired("file")
 }

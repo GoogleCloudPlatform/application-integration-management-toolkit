@@ -52,19 +52,19 @@ type integrationVersion struct {
 	CreateTime                    string                   `json:"createTime,omitempty"`
 	LastModifierEmail             string                   `json:"lastModifierEmail,omitempty"`
 	State                         string                   `json:"state,omitempty"`
-	TriggerConfigs                []map[string]interface{} `json:"triggerConfigs,omitempty"`
-	TaskConfigs                   []map[string]interface{} `json:"taskConfigs,omitempty"`
+	TriggerConfigs                []triggerconfig          `json:"triggerConfigs,omitempty"`
+	TaskConfigs                   []taskconfig             `json:"taskConfigs,omitempty"`
 	IntegrationParameters         []parameterExternal      `json:"integrationParameters,omitempty"`
 	UserLabel                     string                   `json:"userLabel,omitempty"`
 }
 
 type integrationVersionExternal struct {
-	Description           string                   `json:"description,omitempty"`
-	SnapshotNumber        string                   `json:"snapshotNumber,omitempty"`
-	TriggerConfigs        []map[string]interface{} `json:"triggerConfigs,omitempty"`
-	TaskConfigs           []map[string]interface{} `json:"taskConfigs,omitempty"`
-	IntegrationParameters []parameterExternal      `json:"integrationParameters,omitempty"`
-	UserLabel             string                   `json:"userLabel,omitempty"`
+	Description           string              `json:"description,omitempty"`
+	SnapshotNumber        string              `json:"snapshotNumber,omitempty"`
+	TriggerConfigs        []triggerconfig     `json:"triggerConfigs,omitempty"`
+	TaskConfigs           []taskconfig        `json:"taskConfigs,omitempty"`
+	IntegrationParameters []parameterExternal `json:"integrationParameters,omitempty"`
+	UserLabel             string              `json:"userLabel,omitempty"`
 }
 
 type listbasicIntegrationVersions struct {
@@ -115,8 +115,51 @@ type producedBy struct {
 	ElementIdentifier string `json:"elementIdentifier,omitempty"`
 }
 
+type triggerconfig struct {
+	Label                    string                   `json:"label,omitempty"`
+	TriggerType              string                   `json:"triggerType,omitempty"`
+	TriggerNumber            string                   `json:"triggerNumber,omitempty"`
+	TriggerId                string                   `json:"triggerId,omitempty"`
+	Description              string                   `json:"description,omitempty"`
+	StartTasks               []nexttask               `json:"startTasks,omitempty"`
+	NextTasksExecutionPolicy string                   `json:"nextTasksExecutionPolicy,omitempty"`
+	AlertConfig              []map[string]interface{} `json:"alterConfig,omitempty"`
+	Properties               map[string]string        `json:"properties,omitempty"`
+}
+
+type nexttask struct {
+	TaskConfigId string `json:"taskConfigId,omitempty"`
+	TaskId       string `json:"taskId,omitempty"`
+	Condition    string `json:"condition,omitempty"`
+	DisplayName  string `json:"displayName,omitempty"`
+	Description  string `json:"description,omitempty"`
+}
+
+type taskconfig struct {
+	Task        string                    `json:"task,omitempty"`
+	TaskId      string                    `json:"taskId,omitempty"`
+	Parameters  map[string]eventparameter `json:"parameters,omitempty"`
+	DisplayName string                    `json:"displayName,omitempty"`
+}
+
+type eventparameter struct {
+	Key   string     `json:"key,omitempty"`
+	Value eventvalue `json:"value,omitempty"`
+}
+
+type eventvalue struct {
+	StringValue  *string          `json:"stringValue,omitempty"`
+	BooleanValue *bool            `json:"booleanValue,omitempty"`
+	StringArray  *stringarraytype `json:"stringArray,omitempty"`
+	JsonValue    *string          `json:"jsonValue,omitempty"`
+}
+
+type stringarraytype struct {
+	StringValues []string `json:"stringValues,omitempty"`
+}
+
 // CreateVersion
-func CreateVersion(name string, content []byte, snapshot string, userlabel string) (respBody []byte, err error) {
+func CreateVersion(name string, content []byte, overridesContent []byte, snapshot string, userlabel string) (respBody []byte, err error) {
 
 	iversion := integrationVersion{}
 	if err = json.Unmarshal(content, &iversion); err != nil {
@@ -125,6 +168,17 @@ func CreateVersion(name string, content []byte, snapshot string, userlabel strin
 
 	//remove any internal elements if exists
 	eversion := convertInternalToExternal(iversion)
+
+	//merge overrides if overrides were provided
+	if len(overridesContent) > 0 {
+		o := overrides{}
+		if err = json.Unmarshal(overridesContent, &o); err != nil {
+			return nil, err
+		}
+		if eversion, err = mergeOverrides(eversion, o); err != nil {
+			return nil, err
+		}
+	}
 
 	if snapshot != "" {
 		eversion.SnapshotNumber = snapshot
@@ -347,10 +401,12 @@ func Get(name string, version string, basicInfo bool) ([]byte, error) {
 
 // GetBySnapshot
 func GetBySnapshot(name string, snapshot string) ([]byte, error) {
+	apiclient.SetPrintOutput(false)
 	listBody, err := ListVersions(name, -1, "", "snapshotNumber="+snapshot, "", false, false, true)
 	if err != nil {
 		return nil, err
 	}
+	apiclient.SetPrintOutput(true)
 
 	listBasicVersions := listbasicIntegrationVersions{}
 	err = json.Unmarshal(listBody, &listBasicVersions)
@@ -368,11 +424,12 @@ func GetBySnapshot(name string, snapshot string) ([]byte, error) {
 
 // GetByUserlabel
 func GetByUserlabel(name string, userLabel string) ([]byte, error) {
+	apiclient.SetPrintOutput(false)
 	listBody, err := ListVersions(name, -1, "", "userLabel="+userLabel, "", false, false, true)
 	if err != nil {
 		return nil, err
 	}
-
+	apiclient.SetPrintOutput(true)
 	listBasicVersions := listbasicIntegrationVersions{}
 	err = json.Unmarshal(listBody, &listBasicVersions)
 	if err != nil {

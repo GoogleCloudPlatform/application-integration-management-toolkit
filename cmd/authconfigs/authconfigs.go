@@ -18,7 +18,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-//Cmd to manage preferences
+// Cmd to manage preferences
 var Cmd = &cobra.Command{
 	Use:   "authconfigs",
 	Short: "Manage integrationcli preferences",
@@ -32,4 +32,5 @@ func init() {
 	Cmd.AddCommand(DelCmd)
 	Cmd.AddCommand(ListCmd)
 	Cmd.AddCommand(ExportCmd)
+	Cmd.AddCommand(CreateCmd)
 }

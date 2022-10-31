@@ -17,7 +17,7 @@ package connectors
 import (
 	"github.com/spf13/cobra"
 	"github.com/srinandan/integrationcli/apiclient"
-	"github.com/srinandan/integrationcli/client/connectors"
+	"github.com/srinandan/integrationcli/client/connections"
 )
 
 // SetAdminCmd to set admin role
@@ -32,7 +32,7 @@ var SetAdminCmd = &cobra.Command{
 		return apiclient.SetProjectID(project)
 	},
 	RunE: func(cmd *cobra.Command, args []string) (err error) {
-		return connectors.SetIAM(name, memberName, "admin", memberType)
+		return connections.SetIAM(name, memberName, "admin", memberType)
 	},
 }
 

@@ -16,7 +16,7 @@ package connectors
 
 import (
 	"github.com/srinandan/integrationcli/apiclient"
-	"github.com/srinandan/integrationcli/client/connectors"
+	"github.com/srinandan/integrationcli/client/connections"
 
 	"github.com/spf13/cobra"
 )
@@ -33,7 +33,7 @@ var ListCmd = &cobra.Command{
 		return apiclient.SetProjectID(project)
 	},
 	RunE: func(cmd *cobra.Command, args []string) (err error) {
-		_, err = connectors.List(pageSize, pageToken, filter, orderBy)
+		_, err = connections.List(pageSize, pageToken, filter, orderBy)
 		return
 
 	},

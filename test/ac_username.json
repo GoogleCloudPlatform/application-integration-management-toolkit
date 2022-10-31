@@ -1,0 +1,19 @@
+{
+  "kmsConfig": {
+    "keyRing": "app-integration",
+    "cryptoKey": "integration"
+  },
+  "authConfig": {
+    "displayName": "authconfig-sample",
+    "description": "this is a sample auth config",
+    "credentialType": "USERNAME_AND_PASSWORD",
+    "visibility": "CLIENT_VISIBLE",
+    "decryptedCredential": {
+      "credentialType": "USERNAME_AND_PASSWORD",
+      "usernameAndPassword": {
+        "username": "test",
+        "password": "test"
+      }
+    }
+  }
+}
