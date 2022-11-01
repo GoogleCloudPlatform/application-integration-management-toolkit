@@ -40,6 +40,8 @@ var CreateCmd = &cobra.Command{
 		return apiclient.SetProjectID(project)
 	},
 	RunE: func(cmd *cobra.Command, args []string) (err error) {
+		var overridesContent []byte
+
 		if _, err := os.Stat(integrationFile); os.IsNotExist(err) {
 			return err
 		}
@@ -53,9 +55,11 @@ var CreateCmd = &cobra.Command{
 			return err
 		}
 
-		overridesContent, err := ioutil.ReadFile(overridesFile)
-		if err != nil {
-			return err
+		if overridesFile != "" {
+			overridesContent, err = ioutil.ReadFile(overridesFile)
+			if err != nil {
+				return err
+			}
 		}
 
 		_, err = integrations.CreateVersion(name, content, overridesContent, snapshot, userLabel, supressWarnings)
