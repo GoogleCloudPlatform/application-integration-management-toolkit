@@ -77,7 +77,7 @@ var CreateCmd = &cobra.Command{
 			}
 		}
 
-		_, err = authconfigs.Create(name, content)
+		_, err = authconfigs.Create(content)
 		return
 	},
 }
@@ -85,14 +85,10 @@ var CreateCmd = &cobra.Command{
 var authConfigFile, encryptedFile, encryptionKey string
 
 func init() {
-	CreateCmd.Flags().StringVarP(&name, "name", "n",
-		"", "Integration flow name")
 	CreateCmd.Flags().StringVarP(&authConfigFile, "file", "f",
 		"", "Auth Config JSON file path")
 	CreateCmd.Flags().StringVarP(&encryptedFile, "encrypted-file", "e",
 		"", "Base64 encoded, Cloud KMS encrypted Auth Config JSON file path")
 	CreateCmd.Flags().StringVarP(&encryptionKey, "encryption-keyid", "k",
 		"", "Cloud KMS key for decrypting Auth Config; Format = keyRings/*/cryptoKeys/*")
-
-	_ = CreateCmd.MarkFlagRequired("name")
 }
