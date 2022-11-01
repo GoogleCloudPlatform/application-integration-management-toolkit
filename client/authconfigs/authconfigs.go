@@ -81,7 +81,7 @@ type authToken struct {
 }
 
 // Create
-func Create(name string, content []byte) (respBody []byte, err error) {
+func Create(content []byte) (respBody []byte, err error) {
 	c := authConfig{}
 
 	if err = json.Unmarshal(content, &c); err != nil {
