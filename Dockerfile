@@ -3,6 +3,7 @@ FROM golang:1.19 as builder
 ADD ./apiclient /go/src/integrationcli/apiclient
 ADD ./client /go/src/integrationcli/client
 ADD ./cmd /go/src/integrationcli/cmd
+ADD ./cloudkms /go/src/integrationcli/cloudkms
 
 COPY main.go /go/src/integrationcli/main.go
 COPY go.mod go.sum /go/src/integrationcli/
