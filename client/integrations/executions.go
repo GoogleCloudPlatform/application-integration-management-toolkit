@@ -15,6 +15,7 @@
 package integrations
 
 import (
+	"encoding/json"
 	"net/url"
 	"path"
 	"strconv"
@@ -22,7 +23,42 @@ import (
 	"github.com/srinandan/integrationcli/apiclient"
 )
 
-// List all executions
+type execute struct {
+	TriggerId           string                    `json:"triggerId,omitempty"`
+	DoNotPropagateError bool                      `json:"doNotPropagateError,omitempty"`
+	RequestId           string                    `json:"requestId,omitempty"`
+	InputParameters     map[string]inputparameter `json:"inputParameters,omitempty"`
+}
+
+type inputparameter struct {
+	StringValue  *string       `json:"stringValue,omitempty"`
+	IntValue     *string       `json:"intValue,omitempty"`
+	DoubleValue  *float32      `json:"doubleValue,omitempty"`
+	BooleanValue *bool         `json:"booleanValue,omitempty"`
+	JsonValue    *string       `json:"jsonValue,omitempty"`
+	StringArray  *stringarray  `json:"stringarray,omitempty"`
+	IntArray     *intarray     `json:"intarray,omitempty"`
+	DoubleArray  *doublearray  `json:"doubleArray,omitempty"`
+	BooleanArray *booleanarray `json:"booleanArray,omitempty"`
+}
+
+type stringarray struct {
+	StringValues []string `json:"stringValues,omitempty"`
+}
+
+type intarray struct {
+	IntValues []string `json:"intValues,omitempty"`
+}
+
+type doublearray struct {
+	DoubleValues []float32 `json:"doubleValues,omitempty"`
+}
+
+type booleanarray struct {
+	BooleanValues []bool
+}
+
+// ListExecutions lists all executions
 func ListExecutions(name string, pageSize int, pageToken string, filter string, orderBy string) (respBody []byte, err error) {
 	u, _ := url.Parse(apiclient.GetBaseIntegrationURL())
 	q := u.Query()
@@ -42,5 +78,18 @@ func ListExecutions(name string, pageSize int, pageToken string, filter string, 
 	u.RawQuery = q.Encode()
 	u.Path = path.Join(u.Path, "integrations", name, "executions")
 	respBody, err = apiclient.HttpClient(apiclient.GetPrintOutput(), u.String())
+	return respBody, err
+}
+
+// Execute
+func Execute(name string, content []byte) (respBody []byte, err error) {
+	e := execute{}
+	if err = json.Unmarshal(content, &e); err != nil {
+		return nil, err
+	}
+
+	u, _ := url.Parse(apiclient.GetBaseIntegrationURL())
+	u.Path = path.Join(u.Path, "integrations", name, ":execute")
+	respBody, err = apiclient.HttpClient(apiclient.GetPrintOutput(), u.String(), string(content))
 	return respBody, err
 }
