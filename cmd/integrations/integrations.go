@@ -38,6 +38,8 @@ func init() {
 
 	Cmd.AddCommand(ListCmd)
 	Cmd.AddCommand(VerCmd)
+	Cmd.AddCommand(CleanCmd)
+	Cmd.AddCommand(ExecuteCmd)
 	Cmd.AddCommand(ExecCmd)
 	Cmd.AddCommand(ExportCmd)
 	Cmd.AddCommand(ImportCmd)
