@@ -75,6 +75,7 @@ type listbasicIntegrationVersions struct {
 type basicIntegrationVersion struct {
 	Version        string `json:"version,omitempty"`
 	SnapshotNumber string `json:"snapshotNumber,omitempty"`
+	State          string `json:"state,omitempty"`
 }
 
 type listintegrations struct {
@@ -278,6 +279,7 @@ func ListVersions(name string, pageSize int, pageToken string, filter string, or
 				basicIVer := basicIntegrationVersion{}
 				basicIVer.SnapshotNumber = iVer.SnapshotNumber
 				basicIVer.Version = getVersion(iVer.Name)
+				basicIVer.State = iVer.State
 				listBIvers.BasicIntegrationVersions = append(listBIvers.BasicIntegrationVersions, basicIVer)
 			}
 			newResp, err := json.Marshal(listBIvers)
@@ -444,6 +446,14 @@ func GetByUserlabel(name string, userLabel string) ([]byte, error) {
 	return Get(name, version, false)
 }
 
+// Delete - THIS IS UNIMPLEMENTED!!!
+func Delete(name string, version string) (respBody []byte, err error) {
+	u, _ := url.Parse(apiclient.GetBaseIntegrationURL())
+	u.Path = path.Join(u.Path, "integrations", name, "versions", version)
+	//respBody, err = apiclient.HttpClient(apiclient.GetPrintOutput(), u.String(), "", "DELETE")
+	return respBody, fmt.Errorf("not implemented")
+}
+
 // Deactivate
 func Deactivate(name string, version string) (respBody []byte, err error) {
 	return changeState(name, version, "", ":deactivate")
@@ -567,6 +577,9 @@ func Export(folder string) (err error) {
 	apiclient.SetPrintOutput(false)
 
 	respBody, err := List(maxPageSize, "", "", "")
+	if err != nil {
+		return err
+	}
 
 	lintegrations := listintegrations{}
 
@@ -598,6 +611,10 @@ func Export(folder string) (err error) {
 // batchExport
 func batchExport(folder string, nextPageToken string) (err error) {
 	respBody, err := List(maxPageSize, nextPageToken, "", "")
+	if err != nil {
+		return err
+	}
+
 	lintegrations := listintegrations{}
 	if err = json.Unmarshal(respBody, &lintegrations); err != nil {
 		return err
