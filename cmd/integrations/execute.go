@@ -37,7 +37,7 @@ var ExecuteCmd = &cobra.Command{
 	},
 	RunE: func(cmd *cobra.Command, args []string) (err error) {
 
-		if _, err := os.Stat(integrationFile); os.IsNotExist(err) {
+		if _, err := os.Stat(executionFile); os.IsNotExist(err) {
 			return err
 		}
 

@@ -89,7 +89,7 @@ func Execute(name string, content []byte) (respBody []byte, err error) {
 	}
 
 	u, _ := url.Parse(apiclient.GetBaseIntegrationURL())
-	u.Path = path.Join(u.Path, "integrations", name, ":execute")
+	u.Path = path.Join(u.Path, "integrations", name+":execute")
 	respBody, err = apiclient.HttpClient(apiclient.GetPrintOutput(), u.String(), string(content))
 	return respBody, err
 }
