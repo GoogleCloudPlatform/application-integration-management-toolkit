@@ -16,8 +16,10 @@ package integrations
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/url"
 	"path"
+	"regexp"
 	"strconv"
 
 	"github.com/srinandan/integrationcli/apiclient"
@@ -58,6 +60,12 @@ type booleanarray struct {
 	BooleanValues []bool
 }
 
+type executionResponse struct {
+	ExecutionId      string              `json:"executionId,omitempty"`
+	EventParameters  *parametersInternal `json:"eventParameters,omitempty"`
+	OutputParameters interface{}         `json:"outputParameters,omitempty"`
+}
+
 // ListExecutions lists all executions
 func ListExecutions(name string, pageSize int, pageToken string, filter string, orderBy string) (respBody []byte, err error) {
 	u, _ := url.Parse(apiclient.GetBaseIntegrationURL())
@@ -88,8 +96,35 @@ func Execute(name string, content []byte) (respBody []byte, err error) {
 		return nil, err
 	}
 
+	regExTrigger := regexp.MustCompile(`api_trigger\/\w+`)
+	if !regExTrigger.MatchString(e.TriggerId) {
+		return nil, fmt.Errorf("triggerId must match the format api_trigger/*")
+	}
+
+	apiclient.SetPrintOutput(false)
 	u, _ := url.Parse(apiclient.GetBaseIntegrationURL())
 	u.Path = path.Join(u.Path, "integrations", name+":execute")
 	respBody, err = apiclient.HttpClient(apiclient.GetPrintOutput(), u.String(), string(content))
+	if err != nil {
+		return nil, err
+	}
+	apiclient.SetPrintOutput(false)
+
+	eresp := executionResponse{}
+	err = json.Unmarshal(respBody, &eresp)
+	if err != nil {
+		return nil, err
+	}
+
+	//remove from response
+	eresp.EventParameters = nil
+
+	respBody, err = json.Marshal(eresp)
+	if err != nil {
+		return nil, err
+	}
+
+	apiclient.PrettyPrint(respBody)
+
 	return respBody, err
 }

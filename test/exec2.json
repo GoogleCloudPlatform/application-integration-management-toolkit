@@ -1,0 +1,8 @@
+{
+    "triggerId": "api_trigger/fdic_API_1",
+    "inputParameters": {
+        "fdic_certificate_number": {
+            "stringValue": ""
+        }
+    }
+}
