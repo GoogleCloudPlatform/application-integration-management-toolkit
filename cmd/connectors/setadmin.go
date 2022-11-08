@@ -41,7 +41,7 @@ func init() {
 	SetAdminCmd.Flags().StringVarP(&memberName, "member", "m",
 		"", "Member Name, example Service Account Name")
 	SetAdminCmd.Flags().StringVarP(&memberType, "memberType", "p",
-		"serviceAccount", "memberType must be serviceAccount, user or group")
+		"serviceAccount", "memberType must be serviceAccount, user, or group (default serviceAccount)")
 
 	_ = SetAdminCmd.MarkFlagRequired("name")
 }
