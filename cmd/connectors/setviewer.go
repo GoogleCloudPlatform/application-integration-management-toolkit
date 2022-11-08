@@ -22,7 +22,7 @@ import (
 
 // SetViewerCmd to set viewer role
 var SetViewerCmd = &cobra.Command{
-	Use:   "setadmin",
+	Use:   "setviewer",
 	Short: "Set Connection Viewer IAM policy on a Connection",
 	Long:  "Set Connection Viewer IAM policy on a Connection",
 	Args: func(cmd *cobra.Command, args []string) (err error) {
@@ -41,7 +41,7 @@ func init() {
 	SetViewerCmd.Flags().StringVarP(&memberName, "member", "m",
 		"", "Member Name, example Service Account Name")
 	SetViewerCmd.Flags().StringVarP(&memberType, "memberType", "p",
-		"serviceAccount", "memberType must be serviceAccount, user or group")
+		"serviceAccount", "memberType must be serviceAccount, user, or group (default serviceAccount)")
 
 	_ = SetViewerCmd.MarkFlagRequired("name")
 }

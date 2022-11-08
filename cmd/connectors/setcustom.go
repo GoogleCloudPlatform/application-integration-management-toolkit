@@ -43,7 +43,7 @@ func init() {
 	SetCustomCmd.Flags().StringVarP(&role, "role", "r",
 		"", "Custom IAM role in the format projects/{project-id}/roles/{role}")
 	SetCustomCmd.Flags().StringVarP(&memberType, "memberType", "p",
-		"serviceAccount", "memberType must be serviceAccount, user or group")
+		"serviceAccount", "memberType must be serviceAccount, user, or group (default serviceAccount)")
 
 	_ = SetCustomCmd.MarkFlagRequired("name")
 	_ = SetCustomCmd.MarkFlagRequired("role")
