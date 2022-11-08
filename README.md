@@ -65,6 +65,12 @@ Use this access token for all subsequent calls (token expires in 1 hour)
 integrationcli token cache -a serviceaccount.json
 ```
 
+## Automate via Cloud Build
+
+A sample customer cloud builder has been created to demonstrate automation of deployments from Cloud Build. The custom cloud build has been created this [cloudbuild.yaml](./cloud-builder.yaml) file and [Dockerfile](./Dockerfile.builder). 
+
+This sample [cloud-build](./test/cloudbuild.yaml) demonstrates how to automate Integration version creation and publishing. Find more samples in this [repo](https://github.com/srinandan/integration-cicd)
+
 ___
 
 ## Support
