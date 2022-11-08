@@ -22,7 +22,7 @@ import (
 
 // SetInvokeCmd to set admin role
 var SetInvokeCmd = &cobra.Command{
-	Use:   "setadmin",
+	Use:   "setinvoke",
 	Short: "Set Connection Invoke IAM policy on a Connection",
 	Long:  "Set Connection Invoke IAM policy on a Connection",
 	Args: func(cmd *cobra.Command, args []string) (err error) {

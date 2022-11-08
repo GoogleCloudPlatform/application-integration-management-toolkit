@@ -22,7 +22,7 @@ import (
 
 // SetViewerCmd to set viewer role
 var SetViewerCmd = &cobra.Command{
-	Use:   "setadmin",
+	Use:   "setviewer",
 	Short: "Set Connection Viewer IAM policy on a Connection",
 	Long:  "Set Connection Viewer IAM policy on a Connection",
 	Args: func(cmd *cobra.Command, args []string) (err error) {
