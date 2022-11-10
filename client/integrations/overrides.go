@@ -46,7 +46,8 @@ type connectionoverrides struct {
 }
 
 type connectionoverrideparams struct {
-	ConnectionName string `json:"connectionName,omitempty"`
+	ConnectionName     string `json:"connectionName,omitempty"`
+	ConnectionLocation string `json:"connectionLocation,omitempty"`
 }
 
 type connectiondetails struct {
@@ -117,7 +118,7 @@ func mergeOverrides(eversion integrationVersionExternal, o overrides, supressWar
 		foundOverride := false
 		for taskIndex, task := range eversion.TaskConfigs {
 			if connectionOverride.TaskId == task.TaskId && connectionOverride.Task == task.Task {
-				newcp, err := getNewConnectionParams(connectionOverride.Parameters.ConnectionName)
+				newcp, err := getNewConnectionParams(connectionOverride.Parameters.ConnectionName, connectionOverride.Parameters.ConnectionLocation)
 				if err != nil {
 					return eversion, err
 				}
@@ -193,12 +194,21 @@ func overrideCfParameters(overrideParameters map[string]eventparameter, taskPara
 	return taskParameters
 }
 
-func getNewConnectionParams(connectionName string) (connectionparams, error) {
+func getNewConnectionParams(connectionName string, connectionLocation string) (connectionparams, error) {
 	cp := connectionparams{}
 	var connectionVersionResponse map[string]interface{}
+	var integrationRegion string
+
 	apiclient.SetPrintOutput(false)
-	connResp, err := connections.Get(connectionName, "BASIC")
+	if connectionLocation != "" {
+		integrationRegion = apiclient.GetRegion() //store the integration location
+		apiclient.SetRegion(connectionLocation)   //set the connector region
+	}
+	connResp, err := connections.Get(connectionName, "BASIC") //get connector details
 	apiclient.SetPrintOutput(true)
+	if connectionLocation != "" {
+		apiclient.SetRegion(integrationRegion) //set the integration region back
+	}
 	if err != nil {
 		return cp, err
 	}
