@@ -3,7 +3,8 @@
         "taskId": "1",
         "task": "GenericConnectorTask",
         "parameters": {
-            "connectionName": "fdic-banks"
+            "connectionName": "mysample",
+            "connectionLocation": "us-west1"
         }
     }]
 }
