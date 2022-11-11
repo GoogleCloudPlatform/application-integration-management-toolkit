@@ -15,8 +15,6 @@
 package integrations
 
 import (
-	"fmt"
-
 	"github.com/srinandan/integrationcli/apiclient"
 	"github.com/srinandan/integrationcli/client/integrations"
 
@@ -31,9 +29,6 @@ var LiftSuspCmd = &cobra.Command{
 	Args: func(cmd *cobra.Command, args []string) (err error) {
 		if err = apiclient.SetRegion(region); err != nil {
 			return err
-		}
-		if result != "Approved" && result != "Rejected" {
-			return fmt.Errorf("result must be Approved or Rejected")
 		}
 		return apiclient.SetProjectID(project)
 	},
