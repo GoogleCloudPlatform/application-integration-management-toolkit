@@ -15,8 +15,6 @@
 package integrations
 
 import (
-	"fmt"
-
 	"github.com/srinandan/integrationcli/apiclient"
 	"github.com/srinandan/integrationcli/client/integrations"
 
@@ -32,16 +30,10 @@ var ListSuspCmd = &cobra.Command{
 		if err = apiclient.SetRegion(region); err != nil {
 			return err
 		}
-		if allVersions && pageSize != -1 {
-			return fmt.Errorf("allVersions and pageSize cannot be combined")
-		}
-		if allVersions && pageToken != "" {
-			return fmt.Errorf("allVersions and pageToken cannot be combined")
-		}
 		return apiclient.SetProjectID(project)
 	},
 	RunE: func(cmd *cobra.Command, args []string) (err error) {
-		_, err = integrations.ListExecutions(name, pageSize, pageToken, filter, orderBy)
+		_, err = integrations.ListSuspensions(name, execution, pageSize, pageToken, filter, orderBy)
 		return
 
 	},
@@ -50,6 +42,8 @@ var ListSuspCmd = &cobra.Command{
 func init() {
 	ListSuspCmd.Flags().StringVarP(&name, "name", "n",
 		"", "Integration flow name")
+	ListSuspCmd.Flags().StringVarP(&execution, "execution", "e",
+		"", "Execution Id of the integration")
 	ListSuspCmd.Flags().IntVarP(&pageSize, "pageSize", "",
 		-1, "The maximum number of versions to return")
 	ListSuspCmd.Flags().StringVarP(&pageToken, "pageToken", "",
@@ -60,4 +54,5 @@ func init() {
 		"", "The results would be returned in order")
 
 	_ = ListSuspCmd.MarkFlagRequired("name")
+	_ = ListSuspCmd.MarkFlagRequired("execution")
 }

@@ -48,8 +48,8 @@ func ListSuspensions(name string, execution string, pageSize int, pageToken stri
 // Lift a suspension
 func Lift(name string, execution string, suspension string, result string) (respBody []byte, err error) {
 	u, _ := url.Parse(apiclient.GetBaseIntegrationURL())
-	u.Path = path.Join(u.Path, "integrations", name, "executions", execution, "suspensions", suspension)
-	payload := "{ \"suspensionResult\":" + result + "}"
+	u.Path = path.Join(u.Path, "integrations", name, "executions", execution, "suspensions", suspension, ":lift")
+	payload := "{ \"suspension_result\":\"" + result + "\"}"
 	respBody, err = apiclient.HttpClient(apiclient.GetPrintOutput(), u.String(), payload)
 	return respBody, err
 }
