@@ -35,6 +35,7 @@ func init() {
 	Cmd.PersistentFlags().StringVarP(&region, "reg", "r",
 		"", "Integration region name")
 
+	Cmd.AddCommand(CreateCmd)
 	Cmd.AddCommand(ListCmd)
 	Cmd.AddCommand(GetCmd)
 	Cmd.AddCommand(IamCmd)

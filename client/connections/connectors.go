@@ -16,6 +16,7 @@ package connections
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/url"
 	"path"
 	"strconv"
@@ -24,17 +25,17 @@ import (
 )
 
 type connectionRequest struct {
-	Name               string              `json:"name,omitempty"`
-	Labels             map[string]string   `json:"labels,omitempty"`
-	Description        string              `json:"description,omitempty"`
-	ConnectorVersion   string              `json:"connectorVersion,omitempty"`
-	ConfigVariables    []configVar         `json:"configVariables,omitempty"`
-	LockConfig         lockConfig          `json:"lockConfig,omitempty"`
-	DestinationConfigs []destinationConfig `json:"deatinationConfigs,omitempty"`
-	AuthConfig         authConfig          `json:"authConfig,omitempty"`
-	ServiceAccount     string              `json:"serviceAccount,omitempty"`
-	Suspended          bool                `json:"suspended,omitempty"`
-	NodeConfig         nodeConfig          `json:"nodeConfig,omitempty"`
+	Labels             *map[string]string   `json:"labels,omitempty"`
+	Description        *string              `json:"description,omitempty"`
+	ConnectorDetails   *connectorDetails    `json:"connectorDetails,omitempty"`
+	ConnectorVersion   *string              `json:"connectorVersion,omitempty"`
+	ConfigVariables    *[]configVar         `json:"configVariables,omitempty"`
+	LockConfig         *lockConfig          `json:"lockConfig,omitempty"`
+	DestinationConfigs *[]destinationConfig `json:"deatinationConfigs,omitempty"`
+	AuthConfig         *authConfig          `json:"authConfig,omitempty"`
+	ServiceAccount     *string              `json:"serviceAccount,omitempty"`
+	Suspended          *bool                `json:"suspended,omitempty"`
+	NodeConfig         *nodeConfig          `json:"nodeConfig,omitempty"`
 }
 
 type authConfig struct {
@@ -50,12 +51,17 @@ type lockConfig struct {
 	Reason string `json:"reason,omitempty"`
 }
 
+type connectorDetails struct {
+	Name    string `json:"name,omitempty"`
+	Version int    `json:"version,omitempty"`
+}
+
 type configVar struct {
-	Key         string `json:"key,omitempty"`
-	IntValue    string `json:"intValue,omitempty"`
-	BoolValue   bool   `json:"boolValue,omitempty"`
-	StringValue string `json:"stringValue,omitempty"`
-	SecretValue secret `json:"secretValue,omitempty"`
+	Key         string  `json:"key,omitempty"`
+	IntValue    *string `json:"intValue,omitempty"`
+	BoolValue   *bool   `json:"boolValue,omitempty"`
+	StringValue *string `json:"stringValue,omitempty"`
+	SecretValue *secret `json:"secretValue,omitempty"`
 }
 
 type destinationConfig struct {
@@ -114,11 +120,22 @@ func Create(name string, content []byte) (respBody []byte, err error) {
 		return nil, err
 	}
 
+	c.ConnectorVersion = new(string)
+	*c.ConnectorVersion = fmt.Sprintf("projects/%s/locations/global/providers/gcp/connectors/%s/versions/%d",
+		apiclient.GetProjectID(), c.ConnectorDetails.Name, c.ConnectorDetails.Version)
+
+	//remove the element
+	c.ConnectorDetails = nil
+
 	u, _ := url.Parse(apiclient.GetBaseConnectorURL())
 	q := u.Query()
 	q.Set("connectionId", name)
+	u.RawQuery = q.Encode()
 
-	u.Path = path.Join(u.Path, name)
+	if content, err = json.Marshal(c); err != nil {
+		return nil, err
+	}
+
 	respBody, err = apiclient.HttpClient(apiclient.GetPrintOutput(), u.String(), string(content))
 	return respBody, err
 }
