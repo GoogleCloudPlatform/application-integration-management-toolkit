@@ -18,7 +18,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-//Cmd to manage preferences
+// Cmd to manage preferences
 var Cmd = &cobra.Command{
 	Use:   "certificates",
 	Short: "Manage certificates used by Integration",
@@ -28,5 +28,11 @@ var Cmd = &cobra.Command{
 var region, project string
 
 func init() {
+	Cmd.PersistentFlags().StringVarP(&project, "proj", "p",
+		"", "Integration GCP Project name")
+
+	Cmd.PersistentFlags().StringVarP(&region, "reg", "r",
+		"", "Integration region name")
+
 	Cmd.AddCommand(ListCmd)
 }

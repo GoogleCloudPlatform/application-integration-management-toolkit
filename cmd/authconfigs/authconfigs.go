@@ -28,6 +28,13 @@ var Cmd = &cobra.Command{
 var project, region, name string
 
 func init() {
+
+	Cmd.PersistentFlags().StringVarP(&project, "proj", "p",
+		"", "Integration GCP Project name")
+
+	Cmd.PersistentFlags().StringVarP(&region, "reg", "r",
+		"", "Integration region name")
+
 	Cmd.AddCommand(GetCmd)
 	Cmd.AddCommand(DelCmd)
 	Cmd.AddCommand(ListCmd)
