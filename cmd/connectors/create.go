@@ -45,16 +45,19 @@ var CreateCmd = &cobra.Command{
 			return err
 		}
 
-		_, err = connections.Create(name, content)
+		_, err = connections.Create(name, content, grantPermission)
 		return
 	},
 }
 
 var connectionFile string
+var grantPermission bool
 
 func init() {
 	CreateCmd.Flags().StringVarP(&name, "name", "n",
 		"", "Connection name")
 	CreateCmd.Flags().StringVarP(&connectionFile, "file", "f",
 		"", "Connection details JSON file path")
+	CreateCmd.Flags().BoolVarP(&grantPermission, "grant-permission", "g",
+		false, "Grant the service account permission to the GCP resource")
 }
