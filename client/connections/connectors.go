@@ -23,6 +23,7 @@ import (
 	"path"
 	"strconv"
 
+	"github.com/apigee/apigeecli/clilog"
 	"github.com/srinandan/integrationcli/apiclient"
 	"github.com/srinandan/integrationcli/secmgr"
 )
@@ -126,13 +127,40 @@ type nodeConfig struct {
 }
 
 // Create
-func Create(name string, content []byte) (respBody []byte, err error) {
+func Create(name string, content []byte, grantPermission bool) (respBody []byte, err error) {
 
 	var secretVersion string
 
 	c := connectionRequest{}
 	if err = json.Unmarshal(content, &c); err != nil {
 		return nil, err
+	}
+
+	// check if permissions need to be set
+	if grantPermission && *c.ServiceAccount != "" {
+		switch c.ConnectorDetails.Name {
+		case "pubsub":
+			var projectId, topicName string
+
+			for _, configVar := range *c.ConfigVariables {
+				if configVar.Key == "project_id" {
+					projectId = *configVar.StringValue
+				}
+				if configVar.Key == "topic_id" {
+					topicName = *configVar.StringValue
+				}
+			}
+
+			if projectId == "" || topicName == "" {
+				return nil, fmt.Errorf("projectId or topicName was not set")
+			}
+
+			if err = apiclient.SetPubSubIAMPermission(projectId, topicName, *c.ServiceAccount); err != nil {
+				clilog.Warning.Printf("Unable to update permissions for the service account: %v\n", err)
+			}
+		case "bigquery":
+			clilog.Warning.Println("Updating service account permissions for BQ is not supported")
+		}
 	}
 
 	c.ConnectorVersion = new(string)
@@ -143,7 +171,7 @@ func Create(name string, content []byte) (respBody []byte, err error) {
 	c.ConnectorDetails = nil
 
 	//handle secrets for username
-	if c.AuthConfig.UserPassword.PasswordDetails != nil {
+	if c.AuthConfig != nil && c.AuthConfig.UserPassword.PasswordDetails != nil {
 		payload, err := readSecretFile(c.AuthConfig.UserPassword.PasswordDetails.Reference)
 		if err != nil {
 			return nil, err
@@ -166,8 +194,7 @@ func Create(name string, content []byte) (respBody []byte, err error) {
 		return nil, err
 	}
 
-	fmt.Println(string(content))
-	//respBody, err = apiclient.HttpClient(apiclient.GetPrintOutput(), u.String(), string(content))
+	respBody, err = apiclient.HttpClient(apiclient.GetPrintOutput(), u.String(), string(content))
 	return respBody, err
 }
 
