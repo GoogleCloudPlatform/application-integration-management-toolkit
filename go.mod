@@ -4,6 +4,7 @@ go 1.19
 
 require (
 	cloud.google.com/go v0.105.0
+	cloud.google.com/go/kms v1.6.0
 	github.com/apigee/apigeecli v0.0.0-20220602211911-fadd8fdbbc2a
 	github.com/lestrrat-go/jwx/v2 v2.0.1
 	github.com/spf13/cobra v1.2.1

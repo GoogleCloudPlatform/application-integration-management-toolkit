@@ -17,11 +17,14 @@ package connections
 import (
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"net/url"
+	"os"
 	"path"
 	"strconv"
 
 	"github.com/srinandan/integrationcli/apiclient"
+	"github.com/srinandan/integrationcli/secmgr"
 )
 
 type connectionRequest struct {
@@ -39,11 +42,11 @@ type connectionRequest struct {
 }
 
 type authConfig struct {
-	AuthType                string                  `json:"authType,omitempty"`
-	UserPassword            userPassword            `json:"userPassword,omitempty"`
-	Oauth2JwtBearer         oauth2JwtBearer         `json:"oauth2JwtBearer,omitempty"`
-	Oauth2ClientCredentials oauth2ClientCredentials `json:"oauth2ClientCredentials,omitempty"`
-	SshPublicKey            sshPublicKey            `json:"sshPublicKey,omitempty"`
+	AuthType                string                   `json:"authType,omitempty"`
+	UserPassword            *userPassword            `json:"userPassword,omitempty"`
+	Oauth2JwtBearer         *oauth2JwtBearer         `json:"oauth2JwtBearer,omitempty"`
+	Oauth2ClientCredentials *oauth2ClientCredentials `json:"oauth2ClientCredentials,omitempty"`
+	SshPublicKey            *sshPublicKey            `json:"sshPublicKey,omitempty"`
 }
 
 type lockConfig struct {
@@ -57,11 +60,12 @@ type connectorDetails struct {
 }
 
 type configVar struct {
-	Key         string  `json:"key,omitempty"`
-	IntValue    *string `json:"intValue,omitempty"`
-	BoolValue   *bool   `json:"boolValue,omitempty"`
-	StringValue *string `json:"stringValue,omitempty"`
-	SecretValue *secret `json:"secretValue,omitempty"`
+	Key           string         `json:"key,omitempty"`
+	IntValue      *string        `json:"intValue,omitempty"`
+	BoolValue     *bool          `json:"boolValue,omitempty"`
+	StringValue   *string        `json:"stringValue,omitempty"`
+	SecretValue   *secret        `json:"secretValue,omitempty"`
+	SecretDetails *secretDetails `json:"secretDetails,omitempty"`
 }
 
 type destinationConfig struct {
@@ -70,22 +74,30 @@ type destinationConfig struct {
 }
 
 type userPassword struct {
-	Username string `json:"username,omitempty"`
-	Password secret `json:"password,omitempty"`
+	Username        string         `json:"username,omitempty"`
+	Password        *secret        `json:"password,omitempty"`
+	PasswordDetails *secretDetails `json:"passwordDetails,omitempty"`
 }
 
 type oauth2JwtBearer struct {
-	ClientKey secret    `json:"clientKey,omitempty"`
-	JwtClaims jwtClaims `json:"jwtClaims,omitempty"`
+	ClientKey        *secret        `json:"clientKey,omitempty"`
+	ClientKeyDetails *secretDetails `json:"clientKeyDetails,omitempty"`
+	JwtClaims        jwtClaims      `json:"jwtClaims,omitempty"`
 }
 
 type oauth2ClientCredentials struct {
-	ClientId     string `json:"clientId,omitempty"`
-	ClientSecret secret `json:"clientSecret,omitempty"`
+	ClientId            string         `json:"clientId,omitempty"`
+	ClientSecret        *secret        `json:"clientSecret,omitempty"`
+	ClientSecretDetails *secretDetails `json:"clientSecretDetails,omitempty"`
 }
 
 type secret struct {
 	SecretVersion string `json:"secretVersion,omitempty"`
+}
+
+type secretDetails struct {
+	SecretName string `json:"secretName,omitempty"`
+	Reference  string `json:"reference,omitempty"`
 }
 
 type jwtClaims struct {
@@ -115,6 +127,9 @@ type nodeConfig struct {
 
 // Create
 func Create(name string, content []byte) (respBody []byte, err error) {
+
+	var secretVersion string
+
 	c := connectionRequest{}
 	if err = json.Unmarshal(content, &c); err != nil {
 		return nil, err
@@ -127,6 +142,21 @@ func Create(name string, content []byte) (respBody []byte, err error) {
 	//remove the element
 	c.ConnectorDetails = nil
 
+	//handle secrets for username
+	if c.AuthConfig.UserPassword.PasswordDetails != nil {
+		payload, err := readSecretFile(c.AuthConfig.UserPassword.PasswordDetails.Reference)
+		if err != nil {
+			return nil, err
+		}
+
+		if secretVersion, err = secmgr.Create(apiclient.GetProjectID(), c.AuthConfig.UserPassword.PasswordDetails.SecretName, payload); err != nil {
+			return nil, err
+		}
+		c.AuthConfig.UserPassword.Password = new(secret)
+		c.AuthConfig.UserPassword.Password.SecretVersion = secretVersion
+		c.AuthConfig.UserPassword.PasswordDetails = nil //clean the input
+	}
+
 	u, _ := url.Parse(apiclient.GetBaseConnectorURL())
 	q := u.Query()
 	q.Set("connectionId", name)
@@ -136,7 +166,8 @@ func Create(name string, content []byte) (respBody []byte, err error) {
 		return nil, err
 	}
 
-	respBody, err = apiclient.HttpClient(apiclient.GetPrintOutput(), u.String(), string(content))
+	fmt.Println(string(content))
+	//respBody, err = apiclient.HttpClient(apiclient.GetPrintOutput(), u.String(), string(content))
 	return respBody, err
 }
 
@@ -180,4 +211,16 @@ func List(pageSize int, pageToken string, filter string, orderBy string) (respBo
 	u.RawQuery = q.Encode()
 	respBody, err = apiclient.HttpClient(apiclient.GetPrintOutput(), u.String())
 	return respBody, err
+}
+
+func readSecretFile(name string) (payload []byte, err error) {
+	if _, err := os.Stat(name); os.IsNotExist(err) {
+		return nil, err
+	}
+
+	content, err := ioutil.ReadFile(name)
+	if err != nil {
+		return nil, err
+	}
+	return content, nil
 }
