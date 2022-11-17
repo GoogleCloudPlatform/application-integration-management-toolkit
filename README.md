@@ -106,7 +106,10 @@ Then execute via `integrationcli` like this:
 integrationcli connectors create -n name-of-the-connector -f ./test/pub_sub_connection.json
 ```
 
-NOTE: This command assumes the token is cached, otherwise pass the token via `-t`
+**NOTES:** 
+
+* This command assumes the token is cached, otherwise pass the token via `-t`
+* For PubSub, `integrationcli` adds the IAM permissions for the service account to publish to the topic
 
 ### Third Party Applications
 
