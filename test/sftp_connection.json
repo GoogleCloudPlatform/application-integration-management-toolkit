@@ -1,0 +1,27 @@
+{
+    "description": "SFTP Test for demo",
+    "connectorDetails": {
+        "name": "sftp",
+        "version": 1
+    },    
+    "configVariables": [
+        {
+            "key": "remote_host",
+            "stringValue": "test.rebex.net"
+        },
+        {
+            "key": "remote_port",
+            "stringValue": "22"
+        }
+    ],
+    "authConfig": {
+        "authType": "USER_PASSWORD",
+        "userPassword": {
+            "username": "demo",
+            "passwordDetails": {
+                "secretName": "sftp-rebex-demo",
+                "reference": "./test/password.txt"
+            }
+        }
+    }
+}

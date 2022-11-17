@@ -1,0 +1,16 @@
+{
+    "connectorDetails": {
+        "name": "salesforce",
+        "version": 1
+    },
+    "authConfig": {
+        "authType": "USER_PASSWORD",
+        "userPassword": {
+            "username": "salesforce@dynolab.io",
+            "passwordDetails": {
+                "secretName": "salesforce@example.com",
+                "reference": "./test/password.txt"
+            }            
+        }
+    }
+}
