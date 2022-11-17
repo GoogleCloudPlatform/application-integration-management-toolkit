@@ -133,3 +133,51 @@ func SetPubSubIAMPermission(project string, topic string, memberName string) (er
 	const role = "roles/pubsub.publisher"
 	return setIAMPermission(endpoint, topic, memberName, role, memberType)
 }
+
+func SetBigQueryIAMPermission(project string, datasetid string, memberName string) (err error) {
+	var endpoint = fmt.Sprintf("https://bigquery.googleapis.com/bigquery/v2/projects/%s/datasets/%s", project, datasetid)
+	const role = "WRITER"
+	var content []byte
+
+	//first fetch the information
+	respBody, err := HttpClient(false, endpoint)
+	if err != nil {
+		return err
+	}
+
+	type accessType struct {
+		Role         string  `json:"role,omitempty"`
+		IamMember    *string `json:"iamMember,omitempty"`
+		UserByEmail  *string `json:"userByEmail,omitempty"`
+		SpecialGroup *string `json:"specialGroup,omitempty"`
+		GroupByEmail *string `json:"groupByEmail,omitempty"`
+	}
+
+	type datasetType struct {
+		Access []accessType `json:"access,omitempty"`
+	}
+
+	dataset := datasetType{}
+	if err = json.Unmarshal(respBody, &dataset); err != nil {
+		return err
+	}
+
+	access := accessType{}
+	access.Role = role
+	access.UserByEmail = new(string)
+	*access.UserByEmail = memberName
+
+	//merge the updates
+	dataset.Access = append(dataset.Access, access)
+
+	if content, err = json.Marshal(dataset); err != nil {
+		return err
+	}
+
+	//patch the update
+	if _, err = HttpClient(false, endpoint, string(content), "PATCH"); err != nil {
+		return err
+	}
+
+	return nil
+}

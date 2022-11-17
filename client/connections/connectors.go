@@ -138,9 +138,11 @@ func Create(name string, content []byte, grantPermission bool) (respBody []byte,
 
 	// check if permissions need to be set
 	if grantPermission && *c.ServiceAccount != "" {
+		var projectId string
+
 		switch c.ConnectorDetails.Name {
 		case "pubsub":
-			var projectId, topicName string
+			var topicName string
 
 			for _, configVar := range *c.ConfigVariables {
 				if configVar.Key == "project_id" {
@@ -159,7 +161,27 @@ func Create(name string, content []byte, grantPermission bool) (respBody []byte,
 				clilog.Warning.Printf("Unable to update permissions for the service account: %v\n", err)
 			}
 		case "bigquery":
-			clilog.Warning.Println("Updating service account permissions for BQ is not supported")
+			var datasetId string
+
+			for _, configVar := range *c.ConfigVariables {
+				if configVar.Key == "project_id" {
+					projectId = *configVar.StringValue
+				}
+				if configVar.Key == "dataset_id" {
+					datasetId = *configVar.StringValue
+				}
+			}
+			if projectId == "" || datasetId == "" {
+				return nil, fmt.Errorf("projectId or datasetId was not set")
+			}
+
+			if err = apiclient.SetBigQueryIAMPermission(projectId, datasetId, *c.ServiceAccount); err != nil {
+				clilog.Warning.Printf("Unable to update permissions for the service account: %v\n", err)
+			}
+		case "gcs":
+			clilog.Warning.Println("Updating SA permissions for GCS is not currently supported")
+		case "cloudsql-postgresql":
+			clilog.Warning.Println("Updating SA permissions for cloudsql-postgresql is not currently supported")
 		}
 	}
 
