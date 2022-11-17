@@ -37,7 +37,7 @@ func SetIAM(name string, memberName string, permission string, memberType string
 	if !isValidMemberType(memberType) {
 		return fmt.Errorf("invalid memberType. Valid types are %v", validMemberTypes)
 	}
-	return apiclient.SetIAMPermission(name, memberName, permission, memberType)
+	return apiclient.SetConnectorIAMPermission(name, memberName, permission, memberType)
 }
 
 // TestIAM
