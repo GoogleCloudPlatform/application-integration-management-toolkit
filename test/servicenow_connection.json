@@ -1,0 +1,26 @@
+{
+    "connectorDetails": {
+        "name": "servicenow",
+        "version": 1
+    }, 
+    "authConfig": {
+        "authType": "USER_PASSWORD",
+        "userPassword": {
+            "username": "example",
+            "passwordDetails": {
+                "secretName": "servicenow-pwd",
+                "reference": "./test/password.txt"
+            }            
+        }
+    },
+    "destinationConfigs": [
+        {
+            "key": "host_url",
+            "destinations": [
+                {
+                    "host": "https://example.service-now.com"
+                }
+            ]
+        }
+    ]
+}

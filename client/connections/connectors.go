@@ -15,12 +15,188 @@
 package connections
 
 import (
+	"encoding/json"
+	"fmt"
+	"io/ioutil"
 	"net/url"
+	"os"
 	"path"
 	"strconv"
 
+	"github.com/apigee/apigeecli/clilog"
 	"github.com/srinandan/integrationcli/apiclient"
+	"github.com/srinandan/integrationcli/secmgr"
 )
+
+type connectionRequest struct {
+	Labels             *map[string]string   `json:"labels,omitempty"`
+	Description        *string              `json:"description,omitempty"`
+	ConnectorDetails   *connectorDetails    `json:"connectorDetails,omitempty"`
+	ConnectorVersion   *string              `json:"connectorVersion,omitempty"`
+	ConfigVariables    *[]configVar         `json:"configVariables,omitempty"`
+	LockConfig         *lockConfig          `json:"lockConfig,omitempty"`
+	DestinationConfigs *[]destinationConfig `json:"deatinationConfigs,omitempty"`
+	AuthConfig         *authConfig          `json:"authConfig,omitempty"`
+	ServiceAccount     *string              `json:"serviceAccount,omitempty"`
+	Suspended          *bool                `json:"suspended,omitempty"`
+	NodeConfig         *nodeConfig          `json:"nodeConfig,omitempty"`
+}
+
+type authConfig struct {
+	AuthType                string                   `json:"authType,omitempty"`
+	UserPassword            *userPassword            `json:"userPassword,omitempty"`
+	Oauth2JwtBearer         *oauth2JwtBearer         `json:"oauth2JwtBearer,omitempty"`
+	Oauth2ClientCredentials *oauth2ClientCredentials `json:"oauth2ClientCredentials,omitempty"`
+	SshPublicKey            *sshPublicKey            `json:"sshPublicKey,omitempty"`
+}
+
+type lockConfig struct {
+	Locked bool   `json:"locked,omitempty"`
+	Reason string `json:"reason,omitempty"`
+}
+
+type connectorDetails struct {
+	Name    string `json:"name,omitempty"`
+	Version int    `json:"version,omitempty"`
+}
+
+type configVar struct {
+	Key           string         `json:"key,omitempty"`
+	IntValue      *string        `json:"intValue,omitempty"`
+	BoolValue     *bool          `json:"boolValue,omitempty"`
+	StringValue   *string        `json:"stringValue,omitempty"`
+	SecretValue   *secret        `json:"secretValue,omitempty"`
+	SecretDetails *secretDetails `json:"secretDetails,omitempty"`
+}
+
+type destinationConfig struct {
+	Key          string        `json:"key,omitempty"`
+	Destinations []destination `json:"destinations,omitempty"`
+}
+
+type userPassword struct {
+	Username        string         `json:"username,omitempty"`
+	Password        *secret        `json:"password,omitempty"`
+	PasswordDetails *secretDetails `json:"passwordDetails,omitempty"`
+}
+
+type oauth2JwtBearer struct {
+	ClientKey        *secret        `json:"clientKey,omitempty"`
+	ClientKeyDetails *secretDetails `json:"clientKeyDetails,omitempty"`
+	JwtClaims        jwtClaims      `json:"jwtClaims,omitempty"`
+}
+
+type oauth2ClientCredentials struct {
+	ClientId            string         `json:"clientId,omitempty"`
+	ClientSecret        *secret        `json:"clientSecret,omitempty"`
+	ClientSecretDetails *secretDetails `json:"clientSecretDetails,omitempty"`
+}
+
+type secret struct {
+	SecretVersion string `json:"secretVersion,omitempty"`
+}
+
+type secretDetails struct {
+	SecretName string `json:"secretName,omitempty"`
+	Reference  string `json:"reference,omitempty"`
+}
+
+type jwtClaims struct {
+	Issuer   string `json:"issuer,omitempty"`
+	Subject  string `json:"subject,omitempty"`
+	Audience string `json:"audience,omitempty"`
+}
+
+type sshPublicKey struct {
+	Username          string `json:"username,omitempty"`
+	Password          secret `json:"password,omitempty"`
+	SshClientCert     secret `json:"sshClientCert,omitempty"`
+	CertType          string `json:"certType,omitempty"`
+	SslClientCertPass secret `json:"sslClientCertPass,omitempty"`
+}
+
+type destination struct {
+	Port              int    `json:"port,omitempty"`
+	ServiceAttachment string `json:"serviceAttachment,omitempty"`
+	Host              string `json:"host,omitempty"`
+}
+
+type nodeConfig struct {
+	MinNodeCount string `json:"minNodeCount,omitempty"`
+	MaxNodeCount string `json:"maxNodeCount,omitempty"`
+}
+
+// Create
+func Create(name string, content []byte, grantPermission bool) (respBody []byte, err error) {
+
+	var secretVersion string
+
+	c := connectionRequest{}
+	if err = json.Unmarshal(content, &c); err != nil {
+		return nil, err
+	}
+
+	// check if permissions need to be set
+	if grantPermission && *c.ServiceAccount != "" {
+		switch c.ConnectorDetails.Name {
+		case "pubsub":
+			var projectId, topicName string
+
+			for _, configVar := range *c.ConfigVariables {
+				if configVar.Key == "project_id" {
+					projectId = *configVar.StringValue
+				}
+				if configVar.Key == "topic_id" {
+					topicName = *configVar.StringValue
+				}
+			}
+
+			if projectId == "" || topicName == "" {
+				return nil, fmt.Errorf("projectId or topicName was not set")
+			}
+
+			if err = apiclient.SetPubSubIAMPermission(projectId, topicName, *c.ServiceAccount); err != nil {
+				clilog.Warning.Printf("Unable to update permissions for the service account: %v\n", err)
+			}
+		case "bigquery":
+			clilog.Warning.Println("Updating service account permissions for BQ is not supported")
+		}
+	}
+
+	c.ConnectorVersion = new(string)
+	*c.ConnectorVersion = fmt.Sprintf("projects/%s/locations/global/providers/gcp/connectors/%s/versions/%d",
+		apiclient.GetProjectID(), c.ConnectorDetails.Name, c.ConnectorDetails.Version)
+
+	//remove the element
+	c.ConnectorDetails = nil
+
+	//handle secrets for username
+	if c.AuthConfig != nil && c.AuthConfig.UserPassword.PasswordDetails != nil {
+		payload, err := readSecretFile(c.AuthConfig.UserPassword.PasswordDetails.Reference)
+		if err != nil {
+			return nil, err
+		}
+
+		if secretVersion, err = secmgr.Create(apiclient.GetProjectID(), c.AuthConfig.UserPassword.PasswordDetails.SecretName, payload); err != nil {
+			return nil, err
+		}
+		c.AuthConfig.UserPassword.Password = new(secret)
+		c.AuthConfig.UserPassword.Password.SecretVersion = secretVersion
+		c.AuthConfig.UserPassword.PasswordDetails = nil //clean the input
+	}
+
+	u, _ := url.Parse(apiclient.GetBaseConnectorURL())
+	q := u.Query()
+	q.Set("connectionId", name)
+	u.RawQuery = q.Encode()
+
+	if content, err = json.Marshal(c); err != nil {
+		return nil, err
+	}
+
+	respBody, err = apiclient.HttpClient(apiclient.GetPrintOutput(), u.String(), string(content))
+	return respBody, err
+}
 
 // Delete
 func Delete(name string) (respBody []byte, err error) {
@@ -62,4 +238,16 @@ func List(pageSize int, pageToken string, filter string, orderBy string) (respBo
 	u.RawQuery = q.Encode()
 	respBody, err = apiclient.HttpClient(apiclient.GetPrintOutput(), u.String())
 	return respBody, err
+}
+
+func readSecretFile(name string) (payload []byte, err error) {
+	if _, err := os.Stat(name); os.IsNotExist(err) {
+		return nil, err
+	}
+
+	content, err := ioutil.ReadFile(name)
+	if err != nil {
+		return nil, err
+	}
+	return content, nil
 }

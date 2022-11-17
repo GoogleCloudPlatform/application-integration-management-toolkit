@@ -50,27 +50,10 @@ type setIamPolicy struct {
 	Policy iamPolicy `json:"policy,omitempty"`
 }
 
-// SetIAMPermission set permissions for a member on a connection
-func SetIAMPermission(name string, memberName string, iamRole string, memberType string) (err error) {
-	var role string
+// setIAMPermission set permissions for a member
+func setIAMPermission(endpoint string, name string, memberName string, role string, memberType string) (err error) {
 
-	switch iamRole {
-	case "admin":
-		role = "roles/connectors.admin"
-	case "invoker":
-		role = "roles/connectors.invoker"
-	case "viewer":
-		role = "roles/connectors.viewer"
-	default: //assume this is a custom role definition
-		re := regexp.MustCompile(`projects\/([a-zA-Z0-9_-]+)\/roles\/([a-zA-Z0-9_-]+)`)
-		result := re.FindString(iamRole)
-		if result == "" {
-			return fmt.Errorf("custom role must be of the format projects/{project-id}/roles/{role-name}")
-		}
-		role = iamRole
-	}
-
-	u, _ := url.Parse(GetBaseConnectorURL())
+	u, _ := url.Parse(endpoint)
 	u.Path = path.Join(u.Path, name+":getIamPolicy")
 	getIamPolicyBody, err := HttpClient(false, u.String())
 	if err != nil {
@@ -103,7 +86,7 @@ func SetIAMPermission(name string, memberName string, iamRole string, memberType
 		getIamPolicy.Bindings = append(getIamPolicy.Bindings, binding)
 	}
 
-	u, _ = url.Parse(GetBaseConnectorURL())
+	u, _ = url.Parse(endpoint)
 	u.Path = path.Join(u.Path, name+":setIamPolicy")
 
 	setIamPolicy := setIamPolicy{}
@@ -118,4 +101,35 @@ func SetIAMPermission(name string, memberName string, iamRole string, memberType
 	_, err = HttpClient(false, u.String(), string(setIamPolicyBody))
 
 	return err
+}
+
+// SetConnectorIAMPermission set permissions for a member on a connection
+func SetConnectorIAMPermission(name string, memberName string, iamRole string, memberType string) (err error) {
+	var role string
+
+	switch iamRole {
+	case "admin":
+		role = "roles/connectors.admin"
+	case "invoker":
+		role = "roles/connectors.invoker"
+	case "viewer":
+		role = "roles/connectors.viewer"
+	default: //assume this is a custom role definition
+		re := regexp.MustCompile(`projects\/([a-zA-Z0-9_-]+)\/roles\/([a-zA-Z0-9_-]+)`)
+		result := re.FindString(iamRole)
+		if result == "" {
+			return fmt.Errorf("custom role must be of the format projects/{project-id}/roles/{role-name}")
+		}
+		role = iamRole
+	}
+
+	return setIAMPermission(GetBaseConnectorURL(), name, memberName, role, memberType)
+}
+
+// SetPubSubIAMPermission set permissions for a SA on a topic
+func SetPubSubIAMPermission(project string, topic string, memberName string) (err error) {
+	var endpoint = fmt.Sprintf("https://pubsub.googleapis.com/v1/projects/%s/topics", project)
+	const memberType = "serviceAccount"
+	const role = "roles/pubsub.publisher"
+	return setIAMPermission(endpoint, topic, memberName, role, memberType)
 }

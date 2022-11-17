@@ -1,0 +1,18 @@
+{
+    "connectorDetails": {
+        "name": "bigquery",
+        "version": 1
+    },     
+    "description": "Covid 19 open data on BQ",
+    "configVariables": [
+        {
+            "key": "project_id",
+            "stringValue": "my-project"
+        },
+        {
+            "key": "dataset_id",
+            "stringValue": "covid19_open_data2"
+        }
+    ],
+    "serviceAccount": "service-account@my-project.iam.gserviceaccount.com"
+}
