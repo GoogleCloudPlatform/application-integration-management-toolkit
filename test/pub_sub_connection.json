@@ -7,12 +7,12 @@
     "configVariables": [
         {
             "key": "project_id",
-            "stringValue": "nandanks-151422"
+            "stringValue": "add-project-here"
         },
         {
             "key": "topic_id",
             "stringValue": "mytopic"
         }
     ],    
-    "serviceAccount": "connectors@nandanks-151422.iam.gserviceaccount.com"
+    "serviceAccount": "connectors@my-project.iam.gserviceaccount.com"
 }

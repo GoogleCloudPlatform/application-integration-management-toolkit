@@ -6,9 +6,9 @@
     "authConfig": {
         "authType": "USER_PASSWORD",
         "userPassword": {
-            "username": "salesforce@dynolab.io",
+            "username": "salesforce@example.com",
             "passwordDetails": {
-                "secretName": "salesforce@example.com",
+                "secretName": "salesforcepwd",
                 "reference": "./test/password.txt"
             }            
         }
