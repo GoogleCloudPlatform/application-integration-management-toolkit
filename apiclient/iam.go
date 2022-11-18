@@ -181,3 +181,62 @@ func SetBigQueryIAMPermission(project string, datasetid string, memberName strin
 
 	return nil
 }
+
+func SetCloudStorageIAMPermission(project string, memberName string) (err error) {
+	var getendpoint = fmt.Sprintf("https://cloudresourcemanager.googleapis.com/v1/projects/%s:getIamPolicy", project)
+	var setendpoint = fmt.Sprintf("https://cloudresourcemanager.googleapis.com/v1/projects/%s:setIamPolicy", project)
+	//the connector currently requires storage.buckets.list. other built-in roles didn't have this permission
+	const role = "roles/storage.admin"
+
+	//Get the current IAM policies for the project
+	respBody, err := HttpClient(true, getendpoint, "")
+	if err != nil {
+		return err
+	}
+
+	//binding for IAM Roles
+	type roleBinding struct {
+		Role      string     `json:"role,omitempty"`
+		Members   []string   `json:"members,omitempty"`
+		Condition *condition `json:"condition,omitempty"`
+	}
+
+	// IamPolicy holds the response
+	type iamPolicy struct {
+		Version  int           `json:"version,omitempty"`
+		Etag     string        `json:"etag,omitempty"`
+		Bindings []roleBinding `json:"bindings,omitempty"`
+	}
+
+	//iamPolicyRequest holds the request to set IAM
+	type iamPolicyRequest struct {
+		Policy iamPolicy `json:"policy,omitempty"`
+	}
+
+	policy := iamPolicy{}
+
+	err = json.Unmarshal(respBody, &policy)
+	if err != nil {
+		return err
+	}
+
+	binding := roleBinding{}
+	binding.Role = role
+	binding.Members = append(binding.Members, "serviceAccount:"+memberName)
+
+	policy.Bindings = append(policy.Bindings, binding)
+
+	policyRequest := iamPolicyRequest{}
+	policyRequest.Policy = policy
+	policyRequestBody, err := json.Marshal(policyRequest)
+	if err != nil {
+		return err
+	}
+
+	_, err = HttpClient(true, setendpoint, string(policyRequestBody))
+	if err != nil {
+		return err
+	}
+
+	return nil
+}

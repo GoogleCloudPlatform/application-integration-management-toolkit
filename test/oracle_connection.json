@@ -1,0 +1,33 @@
+{
+    "connectorDetails": {
+        "name": "oracle",
+        "version": 1
+    },
+    "configVariables": [
+        {
+            "key": "port",
+            "stringValue": "1521"
+        },
+        {
+            "key": "server",
+            "stringValue": "0.0.0.0"
+        },
+        {
+            "key": "service_name",
+            "stringValue": "XE"
+        },
+        {
+            "key": "data_source"
+        }
+    ],
+    "authConfig": {
+        "authType": "USER_PASSWORD",
+        "userPassword": {
+            "username": "SYSTEM",
+            "passwordDetails": {
+                "secretName": "oracle-demo",
+                "reference": "./test/password.txt"
+            }
+        }
+    }
+}

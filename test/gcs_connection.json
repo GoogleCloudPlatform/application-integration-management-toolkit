@@ -1,7 +1,7 @@
 {
-    "description": "This is a sample",
+    "description": "test gcs connection",
     "connectorDetails": {
-        "name": "pubsub",
+        "name": "gcs",
         "version": 1
     },
     "configVariables": [
@@ -10,9 +10,9 @@
             "stringValue": "add-project-here"
         },
         {
-            "key": "topic_id",
-            "stringValue": "mytopic"
+            "key": "AuthScheme",
+            "stringValue": "GCPInstanceAccount"
         }
-    ],    
+    ],
     "serviceAccount": "connectors@my-project.iam.gserviceaccount.com"
 }
