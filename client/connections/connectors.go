@@ -48,6 +48,7 @@ type authConfig struct {
 	Oauth2JwtBearer         *oauth2JwtBearer         `json:"oauth2JwtBearer,omitempty"`
 	Oauth2ClientCredentials *oauth2ClientCredentials `json:"oauth2ClientCredentials,omitempty"`
 	SshPublicKey            *sshPublicKey            `json:"sshPublicKey,omitempty"`
+	AdditionalVariables     *[]configVar             `json:"additionalVariables,omitempty"`
 }
 
 type lockConfig struct {
