@@ -160,6 +160,9 @@ NOTE: This command assumes the token is cached, otherwise pass the token via `-t
 * [Big Query](./test/bq_connection.json)
 * [Service Now](./test/servicenow_connection.json)
 * [Salesforce](./test/salesforce_connections.json)
+* [Salesfoce with JWT](./test/salesforce_jwt_connection.json)
+* [Oracle](./test/oracle_connection.json)
+* [GCS](./test/gcs_connection.json)
 
 ___
 

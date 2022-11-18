@@ -1,0 +1,19 @@
+{
+    "connectorDetails": {
+        "name": "salesforce",
+        "version": 1
+    },
+    "authConfig": {
+        "authType": "OAUTH2_JWT_BEARER",
+        "oauth2JwtBearer": {
+            "clientKeyDetails": {
+                "secretName": "sfclientkey",
+                "reference": "./test/clientkey.txt"
+            },
+            "jwtClaims": {
+                "issuer": "add-issuer-here",
+                "subject": "add-subject-here"
+            }
+        }
+    }
+}
