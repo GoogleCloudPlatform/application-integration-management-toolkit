@@ -1,0 +1,18 @@
+{
+    "description": "test gcs connection",
+    "connectorDetails": {
+        "name": "gcs",
+        "version": 1
+    },
+    "configVariables": [
+        {
+            "key": "project_id",
+            "stringValue": "nandanks-151422"
+        },
+        {
+            "key": "AuthScheme",
+            "stringValue": "GCPInstanceAccount"
+        }
+    ],
+    "serviceAccount": "connectors@nandanks-151422.iam.gserviceaccount.com"
+}

@@ -137,7 +137,7 @@ func Create(name string, content []byte, grantPermission bool) (respBody []byte,
 	}
 
 	// check if permissions need to be set
-	if grantPermission && *c.ServiceAccount != "" {
+	if grantPermission && c.ServiceAccount != nil {
 		var projectId string
 
 		switch c.ConnectorDetails.Name {
@@ -179,9 +179,17 @@ func Create(name string, content []byte, grantPermission bool) (respBody []byte,
 				clilog.Warning.Printf("Unable to update permissions for the service account: %v\n", err)
 			}
 		case "gcs":
-			clilog.Warning.Println("Updating SA permissions for GCS is not currently supported")
-		case "cloudsql-postgresql":
-			clilog.Warning.Println("Updating SA permissions for cloudsql-postgresql is not currently supported")
+			for _, configVar := range *c.ConfigVariables {
+				if configVar.Key == "project_id" {
+					projectId = *configVar.StringValue
+				}
+			}
+			if err = apiclient.SetCloudStorageIAMPermission(projectId, *c.ServiceAccount); err != nil {
+				clilog.Warning.Printf("Unable to update permissions for the service account: %v\n", err)
+			}
+			if true {
+				return nil, nil
+			}
 		}
 	}
 
