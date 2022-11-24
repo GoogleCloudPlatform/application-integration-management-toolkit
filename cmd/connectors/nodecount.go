@@ -1,4 +1,4 @@
-// Copyright 2021 Google LLC
+// Copyright 2022 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -18,27 +18,14 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// Cmd to manage preferences
-var Cmd = &cobra.Command{
-	Use:   "connectors",
-	Short: "Manage connections for Integration Connectors",
-	Long:  "Manage connections for Integration Connectors",
+// NodeCountCmd to manage integration flows
+var NodeCountCmd = &cobra.Command{
+	Use:     "nodecount",
+	Aliases: []string{"nc"},
+	Short:   "Manage connection node count",
+	Long:    "Manage connection node count",
 }
 
-var region, project, name string
-
 func init() {
-
-	Cmd.PersistentFlags().StringVarP(&project, "proj", "p",
-		"", "Integration GCP Project name")
-
-	Cmd.PersistentFlags().StringVarP(&region, "reg", "r",
-		"", "Integration region name")
-
-	Cmd.AddCommand(CreateCmd)
-	Cmd.AddCommand(DelCmd)
-	Cmd.AddCommand(ListCmd)
-	Cmd.AddCommand(GetCmd)
-	Cmd.AddCommand(IamCmd)
-	Cmd.AddCommand(NodeCountCmd)
+	NodeCountCmd.AddCommand(UpdateNodeCountCmd)
 }
