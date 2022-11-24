@@ -22,6 +22,7 @@ import (
 	"os"
 	"path"
 	"strconv"
+	"strings"
 
 	"github.com/apigee/apigeecli/clilog"
 	"github.com/srinandan/integrationcli/apiclient"
@@ -275,6 +276,22 @@ func List(pageSize int, pageToken string, filter string, orderBy string) (respBo
 	u.RawQuery = q.Encode()
 	respBody, err = apiclient.HttpClient(apiclient.GetPrintOutput(), u.String())
 	return respBody, err
+}
+
+func Patch(name string, content []byte, updateMask []string) (respBody []byte, err error) {
+	c := connectionRequest{}
+	if err = json.Unmarshal(content, &c); err != nil {
+		return nil, err
+	}
+	u, _ := url.Parse(apiclient.GetBaseConnectorURL())
+	if len(updateMask) != 0 {
+		updates := strings.Join(updateMask, ",")
+		q := u.Query()
+		q.Set("updateMask", updates)
+		u.RawQuery = q.Encode()
+	}
+
+	return apiclient.HttpClient(apiclient.GetPrintOutput(), u.String(), string(content), "PATCH")
 }
 
 func readSecretFile(name string) (payload []byte, err error) {
