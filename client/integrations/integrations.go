@@ -33,6 +33,11 @@ import (
 
 const maxPageSize = 1000
 
+type uploadIntegrationFormat struct {
+	Content    string `json:"content" binding:"required"`
+	FileFormat string `json:"fileFormat"`
+}
+
 type listIntegrationVersions struct {
 	IntegrationVersions []integrationVersion `json:"integrationVersions,omitempty"`
 	NextPageToken       string               `json:"nextPageToken,omitempty"`
@@ -200,10 +205,23 @@ func CreateVersion(name string, content []byte, overridesContent []byte, snapsho
 }
 
 // Upload
-func Upload(name string, content string) (respBody []byte, err error) {
+func Upload(name string, content []byte) (respBody []byte, err error) {
+
+	uploadVersion := uploadIntegrationFormat{}
+	if err = json.Unmarshal(content, &uploadVersion); err != nil {
+		clilog.Error.Println("invalid format for upload. Upload must have the json field content which contains " +
+			"stringified integration json and optionally the file format")
+		return nil, err
+	}
+
+	if uploadVersion.Content == "" {
+		return nil, fmt.Errorf("invalid format for upload. Upload must have the json field content which contains " +
+			"stringified integration json and optionally the file format")
+	}
+
 	u, _ := url.Parse(apiclient.GetBaseIntegrationURL())
 	u.Path = path.Join(u.Path, "integrations", name, "versions:upload")
-	respBody, err = apiclient.HttpClient(apiclient.GetPrintOutput(), u.String(), content)
+	respBody, err = apiclient.HttpClient(apiclient.GetPrintOutput(), u.String(), string(content))
 	return respBody, err
 }
 
@@ -723,7 +741,7 @@ func uploadAsync(name string, filePath string, wg *sync.WaitGroup) {
 		return
 	}
 
-	if _, err := Upload(name, string(content)); err != nil {
+	if _, err := Upload(name, content); err != nil {
 		clilog.Error.Println(err)
 	} else {
 		fmt.Printf("Uploaded file %s for Integration flow %s\n", filePath, name)

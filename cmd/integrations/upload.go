@@ -24,7 +24,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-//UploadCmd to upload integrations
+// UploadCmd to upload integrations
 var UploadCmd = &cobra.Command{
 	Use:   "upload",
 	Short: "Upload an Integration flow",
@@ -45,7 +45,7 @@ var UploadCmd = &cobra.Command{
 			return err
 		}
 
-		_, err = integrations.Upload(name, string(content))
+		_, err = integrations.Upload(name, content)
 
 		return err
 	},
@@ -56,9 +56,8 @@ var filePath string
 func init() {
 	UploadCmd.Flags().StringVarP(&name, "name", "n",
 		"", "File containing Integration flow name")
-
 	UploadCmd.Flags().StringVarP(&filePath, "file", "f",
-		"", "File containing an Integration flow json")
+		"", "File containing an Integration flow json in stringified format. To send json, see integrationcli integrations versions patch")
 
 	_ = UploadCmd.MarkFlagRequired("file")
 }
