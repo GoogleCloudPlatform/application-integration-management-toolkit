@@ -15,6 +15,8 @@
 package integrations
 
 import (
+	"fmt"
+
 	"github.com/srinandan/integrationcli/apiclient"
 	"github.com/srinandan/integrationcli/client/integrations"
 
@@ -30,10 +32,28 @@ var GetVerCmd = &cobra.Command{
 		if err = apiclient.SetRegion(region); err != nil {
 			return err
 		}
+		if snapshot == "" && userLabel == "" && version == "" {
+			return fmt.Errorf("at least one of snapshot, userLabel and version must be supplied")
+		}
+		if snapshot != "" && (userLabel != "" || version != "") {
+			return fmt.Errorf("snapshot cannot be combined with userLabel or version")
+		}
+		if userLabel != "" && (snapshot != "" || version != "") {
+			return fmt.Errorf("userLabel cannot be combined with snapshot or version")
+		}
+		if version != "" && (snapshot != "" || userLabel != "") {
+			return fmt.Errorf("version cannot be combined with snapshot or version")
+		}
 		return apiclient.SetProjectID(project)
 	},
 	RunE: func(cmd *cobra.Command, args []string) (err error) {
-		_, err = integrations.Get(name, version, basic)
+		if version != "" {
+			_, err = integrations.Get(name, version, basic)
+		} else if snapshot != "" {
+			_, err = integrations.GetBySnapshot(name, snapshot)
+		} else {
+			_, err = integrations.GetByUserlabel(name, userLabel)
+		}
 		return
 
 	},
@@ -44,9 +64,12 @@ func init() {
 		"", "Integration flow name")
 	GetVerCmd.Flags().StringVarP(&version, "ver", "v",
 		"", "Integration flow version")
+	GetVerCmd.Flags().StringVarP(&snapshot, "snapshot", "s",
+		"", "Integration flow snapshot number")
+	GetVerCmd.Flags().StringVarP(&userLabel, "user-label", "u",
+		"", "Integration flow user label")
 	GetVerCmd.Flags().BoolVarP(&basic, "basic", "b",
 		false, "Returns snapshot and version only")
 
 	_ = GetVerCmd.MarkFlagRequired("name")
-	_ = GetVerCmd.MarkFlagRequired("ver")
 }

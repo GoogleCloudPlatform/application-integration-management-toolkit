@@ -262,11 +262,13 @@ func ListVersions(name string, pageSize int, pageToken string, filter string, or
 
 	if !allVersions {
 		if basicInfo {
+			printSetting := apiclient.GetPrintOutput()
 			apiclient.SetPrintOutput(false)
 			respBody, err = apiclient.HttpClient(apiclient.GetPrintOutput(), u.String())
 			if err != nil {
 				return nil, err
 			}
+			apiclient.SetPrintOutput(printSetting)
 			listIvers := listIntegrationVersions{}
 			listBIvers := listbasicIntegrationVersions{}
 
@@ -283,7 +285,9 @@ func ListVersions(name string, pageSize int, pageToken string, filter string, or
 				listBIvers.BasicIntegrationVersions = append(listBIvers.BasicIntegrationVersions, basicIVer)
 			}
 			newResp, err := json.Marshal(listBIvers)
-			apiclient.PrettyPrint(newResp)
+			if apiclient.GetPrintOutput() {
+				apiclient.PrettyPrint(newResp)
+			}
 			return newResp, err
 		}
 		respBody, err = apiclient.HttpClient(apiclient.GetPrintOutput(), u.String())
@@ -376,25 +380,16 @@ func Get(name string, version string, basicInfo bool) ([]byte, error) {
 	u.Path = path.Join(u.Path, "integrations", name, "versions", version)
 
 	if basicInfo {
-		iVer := integrationVersion{}
-		bIVer := basicIntegrationVersion{}
-
+		//store print setting
+		printSetting := apiclient.GetPrintOutput()
 		apiclient.SetPrintOutput(false)
 		respBody, err := apiclient.HttpClient(apiclient.GetPrintOutput(), u.String())
 		if err != nil {
 			return nil, err
 		}
-
-		if err = json.Unmarshal(respBody, &iVer); err != nil {
-			return nil, err
-		}
-
-		bIVer.SnapshotNumber = iVer.SnapshotNumber
-		bIVer.Version = getVersion(iVer.Name)
-
-		newResp, err := json.Marshal(bIVer)
-		apiclient.PrettyPrint(newResp)
-		return newResp, err
+		//restore print setting
+		apiclient.SetPrintOutput(printSetting)
+		return getBasicInfo(respBody)
 	}
 
 	respBody, err := apiclient.HttpClient(apiclient.GetPrintOutput(), u.String())
@@ -822,4 +817,23 @@ func convertInternalToExternal(internalVersion integrationVersion) (externalVers
 	externalVersion.IntegrationParameters = internalVersion.IntegrationParameters
 	externalVersion.UserLabel = internalVersion.UserLabel
 	return externalVersion
+}
+
+func getBasicInfo(respBody []byte) (newResp []byte, err error) {
+
+	iVer := integrationVersion{}
+	bIVer := basicIntegrationVersion{}
+
+	if err = json.Unmarshal(respBody, &iVer); err != nil {
+		return nil, err
+	}
+
+	bIVer.SnapshotNumber = iVer.SnapshotNumber
+	bIVer.Version = getVersion(iVer.Name)
+
+	if newResp, err = json.Marshal(bIVer); err != nil && apiclient.GetPrintOutput() {
+		apiclient.PrettyPrint(newResp)
+	}
+
+	return newResp, err
 }
