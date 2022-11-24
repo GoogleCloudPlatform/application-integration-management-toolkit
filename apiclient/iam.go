@@ -20,6 +20,7 @@ import (
 	"net/url"
 	"path"
 	"regexp"
+	"strings"
 
 	"github.com/apigee/apigeecli/clilog"
 )
@@ -48,6 +49,30 @@ type iamPolicy struct {
 // SetIamPolicy holds the request to set IAM
 type setIamPolicy struct {
 	Policy iamPolicy `json:"policy,omitempty"`
+}
+
+func CreateServiceAccount(iamname string) (err error) {
+	projectid, name, err := getNameAndProject(iamname)
+	if err != nil {
+		return err
+	}
+
+	var getendpoint = fmt.Sprintf("https://iam.googleapis.com/v1/projects/%s/serviceAccounts/%s", projectid, iamname)
+	var createendpoint = fmt.Sprintf("https://iam.googleapis.com/v1/projects/%s/serviceAccounts", projectid)
+
+	if _, err = HttpClient(false, getendpoint); err != nil { //then the service doesn't exist, create one
+		iamPayload := []string{}
+		iamPayload = append(iamPayload, "\"accountId\":\""+iamname+"\"")
+		iamPayload = append(iamPayload, "\"serviceAccount\": {\"displayName\": \""+name+"\"}")
+		payload := "{" + strings.Join(iamPayload, ",") + "}"
+
+		if _, err = HttpClient(false, createendpoint, payload); err != nil {
+			clilog.Error.Println(err)
+			return err
+		}
+	}
+
+	return nil
 }
 
 // setIAMPermission set permissions for a member
@@ -239,4 +264,17 @@ func SetCloudStorageIAMPermission(project string, memberName string) (err error)
 	}
 
 	return nil
+}
+
+func getNameAndProject(iamFullName string) (name string, projectid string, err error) {
+	parts := strings.Split(iamFullName, "@")
+	if len(parts) != 2 {
+		return "", "", fmt.Errorf("invalid iam name")
+	}
+	name = parts[0]
+	projectid = strings.Split(parts[1], ".iam.gserviceaccount.com")[0]
+	if name == "" || projectid == "" {
+		return "", "", fmt.Errorf("invalid iam name")
+	}
+	return name, projectid, nil
 }

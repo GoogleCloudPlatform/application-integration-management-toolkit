@@ -137,6 +137,12 @@ func Create(name string, content []byte, grantPermission bool) (respBody []byte,
 		return nil, err
 	}
 
+	if c.ServiceAccount != nil {
+		if err = apiclient.CreateServiceAccount(*c.ServiceAccount); err != nil {
+			return nil, err
+		}
+	}
+
 	// check if permissions need to be set
 	if grantPermission && c.ServiceAccount != nil {
 		var projectId string
