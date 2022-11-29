@@ -12,23 +12,23 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package integrations
+package connectors
 
 import (
 	"io/ioutil"
 	"os"
 
 	"github.com/srinandan/integrationcli/apiclient"
-	"github.com/srinandan/integrationcli/client/integrations"
+	"github.com/srinandan/integrationcli/client/connections"
 
 	"github.com/spf13/cobra"
 )
 
-// UploadCmd to upload integrations
-var UploadCmd = &cobra.Command{
-	Use:   "upload",
-	Short: "Upload an Integration flow",
-	Long:  "Upload an Integration flow",
+// PatchCmd to create a new connection
+var PatchCmd = &cobra.Command{
+	Use:   "update",
+	Short: "Update an existing connection",
+	Long:  "Update an existing connection in a region",
 	Args: func(cmd *cobra.Command, args []string) (err error) {
 		if err = apiclient.SetRegion(region); err != nil {
 			return err
@@ -36,28 +36,29 @@ var UploadCmd = &cobra.Command{
 		return apiclient.SetProjectID(project)
 	},
 	RunE: func(cmd *cobra.Command, args []string) (err error) {
-		if _, err := os.Stat(filePath); err != nil {
+		if _, err := os.Stat(connectionFile); os.IsNotExist(err) {
 			return err
 		}
 
-		content, err := ioutil.ReadFile(filePath)
+		content, err := ioutil.ReadFile(connectionFile)
 		if err != nil {
 			return err
 		}
 
-		_, err = integrations.Upload(name, content)
-
-		return err
+		_, err = connections.Patch(name, content, updateMask)
+		return
 	},
 }
 
-var filePath string
+var updateMask []string
 
 func init() {
-	UploadCmd.Flags().StringVarP(&name, "name", "n",
-		"", "File containing Integration flow name")
-	UploadCmd.Flags().StringVarP(&filePath, "file", "f",
-		"", "File containing an Integration flow json in stringified format. To send json, see integrationcli integrations versions patch")
+	PatchCmd.Flags().StringVarP(&name, "name", "n",
+		"", "Connection name")
+	PatchCmd.Flags().StringVarP(&connectionFile, "file", "f",
+		"", "Connection details JSON file path")
+	PatchCmd.Flags().StringArrayVarP(&updateMask, "update-mask", "",
+		nil, "Update mask: A list of comma separates values to update")
 
-	_ = UploadCmd.MarkFlagRequired("file")
+	_ = PatchCmd.MarkFlagRequired("updateMask")
 }

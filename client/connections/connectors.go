@@ -22,6 +22,7 @@ import (
 	"os"
 	"path"
 	"strconv"
+	"strings"
 
 	"github.com/apigee/apigeecli/clilog"
 	"github.com/srinandan/integrationcli/apiclient"
@@ -123,8 +124,8 @@ type destination struct {
 }
 
 type nodeConfig struct {
-	MinNodeCount string `json:"minNodeCount,omitempty"`
-	MaxNodeCount string `json:"maxNodeCount,omitempty"`
+	MinNodeCount int `json:"minNodeCount,omitempty"`
+	MaxNodeCount int `json:"maxNodeCount,omitempty"`
 }
 
 // Create
@@ -135,6 +136,12 @@ func Create(name string, content []byte, grantPermission bool) (respBody []byte,
 	c := connectionRequest{}
 	if err = json.Unmarshal(content, &c); err != nil {
 		return nil, err
+	}
+
+	if c.ServiceAccount != nil {
+		if err = apiclient.CreateServiceAccount(*c.ServiceAccount); err != nil {
+			return nil, err
+		}
 	}
 
 	// check if permissions need to be set
@@ -185,11 +192,11 @@ func Create(name string, content []byte, grantPermission bool) (respBody []byte,
 					projectId = *configVar.StringValue
 				}
 			}
+			if projectId == "" {
+				return nil, fmt.Errorf("projectId was not set")
+			}
 			if err = apiclient.SetCloudStorageIAMPermission(projectId, *c.ServiceAccount); err != nil {
 				clilog.Warning.Printf("Unable to update permissions for the service account: %v\n", err)
-			}
-			if true {
-				return nil, nil
 			}
 		}
 	}
@@ -269,6 +276,26 @@ func List(pageSize int, pageToken string, filter string, orderBy string) (respBo
 	u.RawQuery = q.Encode()
 	respBody, err = apiclient.HttpClient(apiclient.GetPrintOutput(), u.String())
 	return respBody, err
+}
+
+func Patch(name string, content []byte, updateMask []string) (respBody []byte, err error) {
+	c := connectionRequest{}
+	if err = json.Unmarshal(content, &c); err != nil {
+		return nil, err
+	}
+
+	u, _ := url.Parse(apiclient.GetBaseConnectorURL())
+
+	if len(updateMask) != 0 {
+		updates := strings.Join(updateMask, ",")
+		q := u.Query()
+		q.Set("updateMask", updates)
+		u.RawQuery = q.Encode()
+	}
+
+	u.Path = path.Join(u.Path, name)
+
+	return apiclient.HttpClient(apiclient.GetPrintOutput(), u.String(), string(content), "PATCH")
 }
 
 func readSecretFile(name string) (payload []byte, err error) {

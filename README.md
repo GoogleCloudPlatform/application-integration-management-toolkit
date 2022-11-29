@@ -109,7 +109,8 @@ integrationcli connectors create -n name-of-the-connector -f ./test/pub_sub_conn
 **NOTES:** 
 
 * This command assumes the token is cached, otherwise pass the token via `-t`
-* For PubSub & BigQuery, `integrationcli` adds the IAM permissions for the service account to the resource
+* If the service account doesn't exist, it will be created
+* For PubSub & BigQuery and GCS `integrationcli` adds the IAM permissions for the service account to the resource
 
 ### Third Party Applications
 

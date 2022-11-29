@@ -33,6 +33,11 @@ import (
 
 const maxPageSize = 1000
 
+type uploadIntegrationFormat struct {
+	Content    string `json:"content" binding:"required"`
+	FileFormat string `json:"fileFormat"`
+}
+
 type listIntegrationVersions struct {
 	IntegrationVersions []integrationVersion `json:"integrationVersions,omitempty"`
 	NextPageToken       string               `json:"nextPageToken,omitempty"`
@@ -200,10 +205,23 @@ func CreateVersion(name string, content []byte, overridesContent []byte, snapsho
 }
 
 // Upload
-func Upload(name string, content string) (respBody []byte, err error) {
+func Upload(name string, content []byte) (respBody []byte, err error) {
+
+	uploadVersion := uploadIntegrationFormat{}
+	if err = json.Unmarshal(content, &uploadVersion); err != nil {
+		clilog.Error.Println("invalid format for upload. Upload must have the json field content which contains " +
+			"stringified integration json and optionally the file format")
+		return nil, err
+	}
+
+	if uploadVersion.Content == "" {
+		return nil, fmt.Errorf("invalid format for upload. Upload must have the json field content which contains " +
+			"stringified integration json and optionally the file format")
+	}
+
 	u, _ := url.Parse(apiclient.GetBaseIntegrationURL())
 	u.Path = path.Join(u.Path, "integrations", name, "versions:upload")
-	respBody, err = apiclient.HttpClient(apiclient.GetPrintOutput(), u.String(), content)
+	respBody, err = apiclient.HttpClient(apiclient.GetPrintOutput(), u.String(), string(content))
 	return respBody, err
 }
 
@@ -262,11 +280,13 @@ func ListVersions(name string, pageSize int, pageToken string, filter string, or
 
 	if !allVersions {
 		if basicInfo {
+			printSetting := apiclient.GetPrintOutput()
 			apiclient.SetPrintOutput(false)
 			respBody, err = apiclient.HttpClient(apiclient.GetPrintOutput(), u.String())
 			if err != nil {
 				return nil, err
 			}
+			apiclient.SetPrintOutput(printSetting)
 			listIvers := listIntegrationVersions{}
 			listBIvers := listbasicIntegrationVersions{}
 
@@ -283,7 +303,9 @@ func ListVersions(name string, pageSize int, pageToken string, filter string, or
 				listBIvers.BasicIntegrationVersions = append(listBIvers.BasicIntegrationVersions, basicIVer)
 			}
 			newResp, err := json.Marshal(listBIvers)
-			apiclient.PrettyPrint(newResp)
+			if apiclient.GetPrintOutput() {
+				apiclient.PrettyPrint(newResp)
+			}
 			return newResp, err
 		}
 		respBody, err = apiclient.HttpClient(apiclient.GetPrintOutput(), u.String())
@@ -376,25 +398,16 @@ func Get(name string, version string, basicInfo bool) ([]byte, error) {
 	u.Path = path.Join(u.Path, "integrations", name, "versions", version)
 
 	if basicInfo {
-		iVer := integrationVersion{}
-		bIVer := basicIntegrationVersion{}
-
+		//store print setting
+		printSetting := apiclient.GetPrintOutput()
 		apiclient.SetPrintOutput(false)
 		respBody, err := apiclient.HttpClient(apiclient.GetPrintOutput(), u.String())
 		if err != nil {
 			return nil, err
 		}
-
-		if err = json.Unmarshal(respBody, &iVer); err != nil {
-			return nil, err
-		}
-
-		bIVer.SnapshotNumber = iVer.SnapshotNumber
-		bIVer.Version = getVersion(iVer.Name)
-
-		newResp, err := json.Marshal(bIVer)
-		apiclient.PrettyPrint(newResp)
-		return newResp, err
+		//restore print setting
+		apiclient.SetPrintOutput(printSetting)
+		return getBasicInfo(respBody)
 	}
 
 	respBody, err := apiclient.HttpClient(apiclient.GetPrintOutput(), u.String())
@@ -728,7 +741,7 @@ func uploadAsync(name string, filePath string, wg *sync.WaitGroup) {
 		return
 	}
 
-	if _, err := Upload(name, string(content)); err != nil {
+	if _, err := Upload(name, content); err != nil {
 		clilog.Error.Println(err)
 	} else {
 		fmt.Printf("Uploaded file %s for Integration flow %s\n", filePath, name)
@@ -822,4 +835,23 @@ func convertInternalToExternal(internalVersion integrationVersion) (externalVers
 	externalVersion.IntegrationParameters = internalVersion.IntegrationParameters
 	externalVersion.UserLabel = internalVersion.UserLabel
 	return externalVersion
+}
+
+func getBasicInfo(respBody []byte) (newResp []byte, err error) {
+
+	iVer := integrationVersion{}
+	bIVer := basicIntegrationVersion{}
+
+	if err = json.Unmarshal(respBody, &iVer); err != nil {
+		return nil, err
+	}
+
+	bIVer.SnapshotNumber = iVer.SnapshotNumber
+	bIVer.Version = getVersion(iVer.Name)
+
+	if newResp, err = json.Marshal(bIVer); err != nil && apiclient.GetPrintOutput() {
+		apiclient.PrettyPrint(newResp)
+	}
+
+	return newResp, err
 }
