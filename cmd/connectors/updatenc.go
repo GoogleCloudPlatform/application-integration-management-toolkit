@@ -38,7 +38,7 @@ var UpdateNodeCountCmd = &cobra.Command{
 		if min == 0 || max == 0 {
 			return fmt.Errorf("min or max cannot be set to 0")
 		}
-		if min > max {
+		if min > max && max != -1 {
 			return fmt.Errorf("min cannot be set higher than max")
 		}
 		return apiclient.SetProjectID(project)
@@ -76,4 +76,6 @@ func init() {
 		-1, "Min node count for a connection")
 	UpdateNodeCountCmd.Flags().IntVarP(&max, "max", "",
 		-1, "Max node count for a connection")
+
+	_ = UpdateNodeCountCmd.MarkFlagRequired("name")
 }

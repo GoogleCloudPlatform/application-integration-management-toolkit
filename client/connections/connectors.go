@@ -124,8 +124,8 @@ type destination struct {
 }
 
 type nodeConfig struct {
-	MinNodeCount string `json:"minNodeCount,omitempty"`
-	MaxNodeCount string `json:"maxNodeCount,omitempty"`
+	MinNodeCount int `json:"minNodeCount,omitempty"`
+	MaxNodeCount int `json:"maxNodeCount,omitempty"`
 }
 
 // Create
@@ -283,13 +283,17 @@ func Patch(name string, content []byte, updateMask []string) (respBody []byte, e
 	if err = json.Unmarshal(content, &c); err != nil {
 		return nil, err
 	}
+
 	u, _ := url.Parse(apiclient.GetBaseConnectorURL())
+
 	if len(updateMask) != 0 {
 		updates := strings.Join(updateMask, ",")
 		q := u.Query()
 		q.Set("updateMask", updates)
 		u.RawQuery = q.Encode()
 	}
+
+	u.Path = path.Join(u.Path, name)
 
 	return apiclient.HttpClient(apiclient.GetPrintOutput(), u.String(), string(content), "PATCH")
 }
