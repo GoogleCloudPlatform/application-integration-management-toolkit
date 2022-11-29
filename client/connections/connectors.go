@@ -195,9 +195,6 @@ func Create(name string, content []byte, grantPermission bool) (respBody []byte,
 			if err = apiclient.SetCloudStorageIAMPermission(projectId, *c.ServiceAccount); err != nil {
 				clilog.Warning.Printf("Unable to update permissions for the service account: %v\n", err)
 			}
-			if true {
-				return nil, nil
-			}
 		}
 	}
 

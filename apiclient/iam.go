@@ -16,7 +16,10 @@ package apiclient
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
+	"io/ioutil"
+	"net/http"
 	"net/url"
 	"path"
 	"regexp"
@@ -51,28 +54,102 @@ type setIamPolicy struct {
 	Policy iamPolicy `json:"policy,omitempty"`
 }
 
+func iamServiceAccountExists(iamname string) (code int, err error) {
+
+	var resp *http.Response
+	var req *http.Request
+
+	projectid, _, err := getNameAndProject(iamname)
+	if err != nil {
+		clilog.Error.Println(err)
+		return -1, err
+	}
+
+	var getendpoint = fmt.Sprintf("https://iam.googleapis.com/v1/projects/%s/serviceAccounts/%s", projectid, iamname)
+	var contentType = "application/json"
+
+	client, err := getHttpClient()
+	if err != nil {
+		clilog.Error.Println(err)
+		return -1, err
+	}
+
+	if DryRun() {
+		return 200, nil
+	}
+
+	req, err = http.NewRequest("GET", getendpoint, nil)
+	if err != nil {
+		clilog.Error.Println("error in client: ", err)
+		return -1, err
+	}
+
+	req, err = setAuthHeader(req)
+	if err != nil {
+		clilog.Error.Println(err)
+		return -1, err
+	}
+
+	clilog.Info.Println("Content-Type : ", contentType)
+	req.Header.Set("Content-Type", contentType)
+
+	resp, err = client.Do(req)
+	if err != nil {
+		clilog.Error.Println("error connecting: ", err)
+		return resp.StatusCode, err
+	}
+
+	if resp != nil {
+		defer resp.Body.Close()
+	}
+
+	if resp == nil {
+		return -1, fmt.Errorf("error in response: Response was null")
+	}
+
+	respBody, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		clilog.Error.Println("error in response: ", err)
+		return -1, err
+	} else if resp.StatusCode > 399 && resp.StatusCode != 404 {
+		clilog.Error.Printf("status code %d, error in response: %s\n", resp.StatusCode, string(respBody))
+		return resp.StatusCode, errors.New("error in response")
+	} else {
+		return resp.StatusCode, nil
+	}
+}
+
 func CreateServiceAccount(iamname string) (err error) {
-	projectid, name, err := getNameAndProject(iamname)
+
+	var statusCode int
+
+	projectid, displayname, err := getNameAndProject(iamname)
 	if err != nil {
 		return err
 	}
 
-	var getendpoint = fmt.Sprintf("https://iam.googleapis.com/v1/projects/%s/serviceAccounts/%s", projectid, iamname)
-	var createendpoint = fmt.Sprintf("https://iam.googleapis.com/v1/projects/%s/serviceAccounts", projectid)
+	if statusCode, err = iamServiceAccountExists(iamname); err != nil {
+		return err
+	}
 
-	if _, err = HttpClient(false, getendpoint); err != nil { //then the service doesn't exist, create one
+	switch statusCode {
+	case 200:
+		return nil
+	case 404:
+		var createendpoint = fmt.Sprintf("https://iam.googleapis.com/v1/projects/%s/serviceAccounts", projectid)
 		iamPayload := []string{}
-		iamPayload = append(iamPayload, "\"accountId\":\""+iamname+"\"")
-		iamPayload = append(iamPayload, "\"serviceAccount\": {\"displayName\": \""+name+"\"}")
+		iamPayload = append(iamPayload, "\"accountId\":\""+displayname+"\"")
+		iamPayload = append(iamPayload, "\"serviceAccount\": {\"displayName\": \""+displayname+"\"}")
 		payload := "{" + strings.Join(iamPayload, ",") + "}"
 
 		if _, err = HttpClient(false, createendpoint, payload); err != nil {
 			clilog.Error.Println(err)
 			return err
 		}
+		return nil
+	default:
+		return fmt.Errorf("unable to fetch service account details, err: %d", statusCode)
 	}
-
-	return nil
 }
 
 // setIAMPermission set permissions for a member
@@ -213,9 +290,12 @@ func SetCloudStorageIAMPermission(project string, memberName string) (err error)
 	//the connector currently requires storage.buckets.list. other built-in roles didn't have this permission
 	const role = "roles/storage.admin"
 
+	//this method treats errors as info since this is not a blocking problem
+
 	//Get the current IAM policies for the project
-	respBody, err := HttpClient(true, getendpoint, "")
+	respBody, err := HttpClient(false, getendpoint, "")
 	if err != nil {
+		clilog.Info.Printf("error getting IAM policies for the project %s: %v", project, err)
 		return err
 	}
 
@@ -242,6 +322,7 @@ func SetCloudStorageIAMPermission(project string, memberName string) (err error)
 
 	err = json.Unmarshal(respBody, &policy)
 	if err != nil {
+		clilog.Info.Println(err)
 		return err
 	}
 
@@ -255,18 +336,23 @@ func SetCloudStorageIAMPermission(project string, memberName string) (err error)
 	policyRequest.Policy = policy
 	policyRequestBody, err := json.Marshal(policyRequest)
 	if err != nil {
+		clilog.Info.Println(err)
 		return err
 	}
 
-	_, err = HttpClient(true, setendpoint, string(policyRequestBody))
+	_, err = HttpClient(false, setendpoint, string(policyRequestBody))
 	if err != nil {
+		clilog.Info.Printf("error setting IAM policies for the project %s: %v", project, err)
 		return err
 	}
 
 	return nil
 }
 
-func getNameAndProject(iamFullName string) (name string, projectid string, err error) {
+func getNameAndProject(iamFullName string) (projectid string, name string, err error) {
+
+	riam := regexp.MustCompile(`^[a-zA-Z0-9-]{6,30}$`)
+
 	parts := strings.Split(iamFullName, "@")
 	if len(parts) != 2 {
 		return "", "", fmt.Errorf("invalid iam name")
@@ -276,5 +362,8 @@ func getNameAndProject(iamFullName string) (name string, projectid string, err e
 	if name == "" || projectid == "" {
 		return "", "", fmt.Errorf("invalid iam name")
 	}
-	return name, projectid, nil
+	if ok := riam.Match([]byte(name)); !ok {
+		return "", "", fmt.Errorf("the ID must be between 6 and 30 characters")
+	}
+	return projectid, name, nil
 }
