@@ -15,6 +15,7 @@
 package integrations
 
 import (
+	"fmt"
 	"io/ioutil"
 	"os"
 
@@ -33,17 +34,26 @@ var ExecuteCmd = &cobra.Command{
 		if err = apiclient.SetRegion(region); err != nil {
 			return err
 		}
+		if executionFile != "" && triggerId != "" {
+			return fmt.Errorf("cannot pass trigger id and execution file")
+		}
 		return apiclient.SetProjectID(project)
 	},
 	RunE: func(cmd *cobra.Command, args []string) (err error) {
 
-		if _, err := os.Stat(executionFile); os.IsNotExist(err) {
-			return err
-		}
+		var content byte[]
 
-		content, err := ioutil.ReadFile(executionFile)
-		if err != nil {
-			return err
+		if executionFile != "" {
+			if _, err := os.Stat(executionFile); os.IsNotExist(err) {
+				return err
+			}
+
+			content, err = ioutil.ReadFile(executionFile)
+			if err != nil {
+				return err
+			}
+		} else if triggerId != "" {
+			content = []byte(fmt.Sprintf("{\"triggerId\": \"api_trigger/%s\",\"inputParameters\": {}}", triggerId))
 		}
 
 		_, err = integrations.Execute(name, content)
@@ -52,7 +62,7 @@ var ExecuteCmd = &cobra.Command{
 	},
 }
 
-var executionFile string
+var executionFile, triggerId string
 
 func init() {
 	ExecuteCmd.Flags().StringVarP(&name, "name", "n",
@@ -60,6 +70,8 @@ func init() {
 	ExecuteCmd.Flags().StringVarP(&executionFile, "file", "f",
 		"", "Integration payload JSON file path. For the payload structure, visit docs at"+
 			" https://cloud.google.com/application-integration/docs/reference/rest/v1/projects.locations.integrations/execute#request-body")
+	ExecuteCmd.Flags().StringVarP(&executionFile, "trigger-id", "",
+		"", "Specify only the trigger id of the integration if there are no input parameters to be sent. Cannot be combined with -f")
 
 	_ = ExecuteCmd.MarkFlagRequired("name")
 	_ = ExecuteCmd.MarkFlagRequired("file")
