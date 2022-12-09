@@ -22,27 +22,38 @@ Run this script to download & install the latest version (on Linux or Darwin)
 curl -L https://raw.githubusercontent.com/srinandan/integrationcli/master/downloadLatest.sh | sh -
 ```
 
-## Selecting the endpoint
 
-By default `integrationcli` uses Application Integration endpoints. This can be changed per command through the flag `--apigee-integration=true` or set permanently by leveraging preferences. See the `preferences` section below.
+## Getting Started
 
-## Available Commands
+### User Tokens
+The simplest way to get started with integrationcli is 
 
-Here is a [list](./docs/integrationcli.md) of available commands
+```
+token=$(gcloud auth print-access-token)
+project=$(gcloud config get-value project | head -n 1)
+region=<set region here>
 
-## Preferences
-
-Users can set a default project and region via preferences and those settings will be used for all subsequent commands
-
-```bash
-integrationcli prefs set -p project-name -r region
-
-integrationcli integrations list #if you don't have a token cached, don't forget to include -t
+integrationcli integrations list -p $project -r $ region -t $token
 ```
 
-NOTE: the second command uses the org name from perferences
+### Set Preferences
+If you are using the same GCP project for Integration, then consider setting up preferences so they don't have to be included in every command
 
-## Access Token Generation
+```
+project=$(gcloud config get-value project | head -n 1)
+region=<set region here>
+
+integrationcli prefs set --reg=$region --proj=$project
+```
+
+Subsequent commands can be like this:
+
+```
+token=$(gcloud auth print-access-token)
+integrationcli integrations list -t $token
+```
+
+### Access Token Generation
 
 `integrationcli` can use the service account directly and obtain an access token.
 
@@ -57,13 +68,29 @@ The following parameters are supported. See Common Reference for a list of addit
 
 Use this access token for all subsequent calls (token expires in 1 hour)
 
-## Access Token Caching
+### Access Token Caching
 
 `integrationcli` caches the OAuth Access token for subsequent calls (until the token expires). The access token is stored in `$HOME/.integrationcli`. This path must be readable/writeable by the `integrationcli` process.
 
 ```bash
 integrationcli token cache -a serviceaccount.json
 ```
+
+or 
+```bash
+token=$(gcloud auth print-access-token)
+integrationcli token cache -t $token
+```
+
+
+## Available Commands
+
+Here is a [list](./docs/integrationcli.md) of available commands
+
+## Selecting the endpoint
+
+By default `integrationcli` uses Application Integration endpoints. This can be changed per command through the flag `--apigee-integration=true` or set permanently by leveraging preferences. See the `preferences` section below.
+
 
 ## Automate via Cloud Build
 
