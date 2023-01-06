@@ -15,13 +15,16 @@
 package authconfigs
 
 import (
+	"fmt"
+	"path"
+
 	"github.com/srinandan/integrationcli/apiclient"
 	"github.com/srinandan/integrationcli/client/authconfigs"
 
 	"github.com/spf13/cobra"
 )
 
-//GetCmd to get integration flow
+// GetCmd to get integration flow
 var GetCmd = &cobra.Command{
 	Use:   "get",
 	Short: "Get an authconfig from a region",
@@ -30,18 +33,37 @@ var GetCmd = &cobra.Command{
 		if err = apiclient.SetRegion(region); err != nil {
 			return err
 		}
+		if id == "" && name == "" {
+			return fmt.Errorf("id and name cannot be empty")
+		}
+		if id != "" && name != "" {
+			return fmt.Errorf("id and name both cannot be set")
+		}
 		return apiclient.SetProjectID(project)
 	},
 	RunE: func(cmd *cobra.Command, args []string) (err error) {
-		_, err = authconfigs.Get(name)
+		if name != "" {
+			apiclient.SetPrintOutput(false)
+			version, err := authconfigs.Find(name, "")
+			if err != nil {
+				return err
+			}
+			apiclient.SetPrintOutput(true)
+			_, err = authconfigs.Get(path.Base(version))
+			return err
+		} else {
+			_, err = authconfigs.Get(id)
+		}
 		return
 
 	},
 }
 
-func init() {
-	GetCmd.Flags().StringVarP(&name, "name", "n",
-		"", "Integration flow name")
+var id string
 
-	_ = GetCmd.MarkFlagRequired("name")
+func init() {
+	GetCmd.Flags().StringVarP(&id, "id", "i",
+		"", "Authconfig name (uuid)")
+	GetCmd.Flags().StringVarP(&name, "name", "n",
+		"", "Authconfig display name")
 }
