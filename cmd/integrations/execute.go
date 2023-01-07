@@ -41,7 +41,7 @@ var ExecuteCmd = &cobra.Command{
 	},
 	RunE: func(cmd *cobra.Command, args []string) (err error) {
 
-		var content byte[]
+		var content []byte
 
 		if executionFile != "" {
 			if _, err := os.Stat(executionFile); os.IsNotExist(err) {
