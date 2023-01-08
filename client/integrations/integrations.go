@@ -127,25 +127,26 @@ type triggerconfig struct {
 	TriggerNumber            string                   `json:"triggerNumber,omitempty"`
 	TriggerId                string                   `json:"triggerId,omitempty"`
 	Description              string                   `json:"description,omitempty"`
-	StartTasks               []nexttask               `json:"startTasks,omitempty"`
+	StartTasks               []nextTask               `json:"startTasks,omitempty"`
 	NextTasksExecutionPolicy string                   `json:"nextTasksExecutionPolicy,omitempty"`
 	AlertConfig              []map[string]interface{} `json:"alterConfig,omitempty"`
 	Properties               map[string]string        `json:"properties,omitempty"`
-}
-
-type nexttask struct {
-	TaskConfigId string `json:"taskConfigId,omitempty"`
-	TaskId       string `json:"taskId,omitempty"`
-	Condition    string `json:"condition,omitempty"`
-	DisplayName  string `json:"displayName,omitempty"`
-	Description  string `json:"description,omitempty"`
+	CloudSchedulerConfig     cloudSchedulerConfig     `json:"cloudSchedulerConfig,omitempty"`
 }
 
 type taskconfig struct {
-	Task        string                    `json:"task,omitempty"`
-	TaskId      string                    `json:"taskId,omitempty"`
-	Parameters  map[string]eventparameter `json:"parameters,omitempty"`
-	DisplayName string                    `json:"displayName,omitempty"`
+	Task                         string                    `json:"task,omitempty"`
+	TaskId                       string                    `json:"taskId,omitempty"`
+	Parameters                   map[string]eventparameter `json:"parameters,omitempty"`
+	DisplayName                  string                    `json:"displayName,omitempty"`
+	NextTasks                    []nextTask                `json:"nextTasks,omitempty"`
+	NextTasksExecutionPolicy     string                    `json:"nextTasksExecutionPolicy,omitempty"`
+	TaskExecutionStrategy        string                    `json:"taskExecutionStrategy,omitempty"`
+	JsonValidationOption         string                    `json:"jsonValidationOption,omitempty"`
+	SuccessPolicy                successPolicy             `json:"successPolicy,omitempty"`
+	TaskTemplate                 string                    `json:"taskTemplate,omitempty"`
+	FailurePolicy                failurePolicy             `json:"failurePolicy,omitempty"`
+	SynchronousCallFailurePolicy failurePolicy             `json:"synchronousCallFailurePolicy,omitempty"`
 }
 
 type eventparameter struct {
@@ -162,6 +163,31 @@ type eventvalue struct {
 
 type stringarraytype struct {
 	StringValues []string `json:"stringValues,omitempty"`
+}
+
+type nextTask struct {
+	TaskConfigId string `json:"taskConfigId,omitempty"`
+	TaskId       string `json:"taskId,omitempty"`
+	Condition    string `json:"condition,omitempty"`
+	DisplayName  string `json:"displayName,omitempty"`
+	Description  string `json:"description,omitempty"`
+}
+
+type successPolicy struct {
+	FinalState string `json:"finalState,omitempty"`
+}
+
+type failurePolicy struct {
+	RetryStrategy string `json:"retryStrategy,omitempty"`
+	MaxRetries    int    `json:"maxRetries,omitempty"`
+	IntervalTime  string `json:"intervalTime,omitempty"`
+}
+
+type cloudSchedulerConfig struct {
+	ServiceAccountEmail string `json:"serviceAccountEmail,omitempty"`
+	CronTab             string `json:"cronTab,omitempty"`
+	Location            string `json:"location,omitempty"`
+	ErrorMessage        string `json:"errorMessage,omitempty"`
 }
 
 // CreateVersion
