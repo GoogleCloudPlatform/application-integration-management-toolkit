@@ -32,11 +32,14 @@ type overrides struct {
 }
 
 type triggeroverrides struct {
-	TriggerNumber string  `json:"triggerNumber,omitempty"`
-	TriggerType   string  `json:"triggerType,omitempty"`
-	ProjectId     *string `json:"projectId,omitempty"`
-	TopicName     *string `json:"topicName,omitempty"`
-	APIPath       *string `json:"apiPath,omitempty"`
+	TriggerNumber                string  `json:"triggerNumber,omitempty"`
+	TriggerType                  string  `json:"triggerType,omitempty"`
+	ProjectId                    *string `json:"projectId,omitempty"`
+	TopicName                    *string `json:"topicName,omitempty"`
+	APIPath                      *string `json:"apiPath,omitempty"`
+	CloudSchedulerServiceAccount *string `json:"cloudSchedulerServiceAccount,omitempty"`
+	CloudSchedulerLocation       *string `json:"cloudSchedulerLocation,omitempty"`
+	CloudSchedulerCronTab        *string `json:"cloudSchedulerCronTab,omitempty"`
 }
 
 type connectionoverrides struct {
