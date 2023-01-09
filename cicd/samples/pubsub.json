@@ -1,0 +1,395 @@
+{
+	"name": "projects/102128743119/locations/us-west1/integrations/pubsub/versions/c4b1f352-1200-4a0f-97c0-4a740d19158e",
+	"taskConfigsInternal": [
+		{
+			"taskName": "GenericRestV2Task",
+			"taskNumber": "1",
+			"parameters": {
+				"throwError": {
+					"key": "throwError",
+					"value": {
+						"booleanValue": true
+					},
+					"dataType": "BOOLEAN_VALUE"
+				},
+				"responseBody": {
+					"key": "responseBody",
+					"value": {
+						"stringArray": {
+							"stringValues": [
+								"$`Task_1_responseBody`$"
+							]
+						}
+					},
+					"dataType": "STRING_ARRAY"
+				},
+				"disableSSLValidation": {
+					"key": "disableSSLValidation",
+					"value": {
+						"booleanValue": false
+					},
+					"dataType": "BOOLEAN_VALUE"
+				},
+				"httpParams": {
+					"key": "httpParams"
+				},
+				"responseHeader": {
+					"key": "responseHeader",
+					"value": {
+						"stringArray": {
+							"stringValues": [
+								"$`Task_1_responseHeader`$"
+							]
+						}
+					},
+					"dataType": "STRING_ARRAY"
+				},
+				"userAgent": {
+					"key": "userAgent",
+					"value": {
+						"stringValue": ""
+					},
+					"dataType": "STRING_VALUE"
+				},
+				"httpMethod": {
+					"key": "httpMethod",
+					"value": {
+						"stringValue": "GET"
+					},
+					"dataType": "STRING_VALUE"
+				},
+				"responseStatus": {
+					"key": "responseStatus",
+					"value": {
+						"stringArray": {
+							"stringValues": [
+								"$`Task_1_responseStatus`$"
+							]
+						}
+					},
+					"dataType": "STRING_ARRAY"
+				},
+				"url": {
+					"key": "url",
+					"value": {
+						"stringValue": "https://httpbin.org/get"
+					},
+					"dataType": "STRING_VALUE"
+				},
+				"urlFetchingService": {
+					"key": "urlFetchingService",
+					"value": {
+						"stringValue": "HARPOON"
+					},
+					"dataType": "STRING_VALUE"
+				},
+				"useSSL": {
+					"key": "useSSL",
+					"value": {
+						"booleanValue": false
+					},
+					"dataType": "BOOLEAN_VALUE"
+				},
+				"requestorId": {
+					"key": "requestorId",
+					"value": {
+						"stringValue": ""
+					},
+					"dataType": "STRING_VALUE"
+				},
+				"urlQueryStrings": {
+					"key": "urlQueryStrings"
+				},
+				"requestBody": {
+					"key": "requestBody",
+					"value": {
+						"stringValue": ""
+					},
+					"dataType": "STRING_VALUE"
+				},
+				"followRedirects": {
+					"key": "followRedirects",
+					"value": {
+						"booleanValue": true
+					},
+					"dataType": "BOOLEAN_VALUE"
+				},
+				"additionalHeaders": {
+					"key": "additionalHeaders"
+				}
+			},
+			"position": {
+				"x": -168,
+				"y": -126
+			},
+			"label": "Call REST Endpoint"
+		}
+	],
+	"triggerConfigsInternal": [
+		{
+			"label": "Cloud Pub/Sub Trigger",
+			"startTasks": [
+				{
+					"taskNumber": "1"
+				}
+			],
+			"properties": {
+				"IP Project name": "cloud-crm-eventbus-cpsexternal",
+				"Subscription name": "myproject_mytopic"
+			},
+			"triggerType": "CLOUD_PUBSUB_EXTERNAL",
+			"position": {
+				"x": -168,
+				"y": -252
+			},
+			"triggerNumber": "1",
+			"enabledClients": [
+				"102128743119"
+			],
+			"triggerId": "cloud_pubsub_external_trigger/projects/cloud-crm-eventbus-cpsexternal/subscriptions/myproject_mytopic"
+		}
+	],
+	"integrationParametersInternal": {
+		"parameters": [
+			{
+				"key": "CloudPubSubMessage",
+				"dataType": "JSON_VALUE",
+				"attributes": {
+					"logSettings": {
+						"sanitizeOptions": {
+							"privacy": "PRIVACY_TYPE_UNSPECIFIED"
+						}
+					}
+				},
+				"name": "CloudPubSubMessage",
+				"isTransient": true,
+				"producedBy": {
+					"elementType": "TRIGGER_CONFIG",
+					"elementIdentifier": "1"
+				},
+				"jsonSchema": "{\n  \"$schema\": \"http://json-schema.org/draft-04/schema#\",\n  \"type\": \"object\",\n  \"title\": \"Cloud Pub/Sub Message\",\n  \"description\": \"Message received by Cloud Pub/Sub.\",\n  \"properties\": {\n    \"data\": {\n      \"type\": \"string\",\n      \"description\": \"The message data sent by the publisher\"\n    },\n    \"attributes\": {\n      \"type\": \"object\",\n      \"description\": \"Attributes for this message\"\n    },\n    \"messageId\": {\n      \"type\": \"string\",\n      \"description\": \"ID of this message, assigned by the server when the message is published. Guaranteed to be unique within the topic.\"\n    },\n    \"publishTime\": {\n      \"type\": \"string\",\n      \"description\": \"The time at which the message was published, populated by the server when it receives the topics.publish call\"\n    },\n    \"orderingKey\": {\n      \"type\": \"string\",\n      \"description\": \"Identifies related messages for which publish order should be respected.\"\n    }\n  }\n}",
+				"producer": "2_1"
+			},
+			{
+				"key": "`Task_1_responseHeader`",
+				"dataType": "STRING_VALUE",
+				"attributes": {
+					"logSettings": {
+						"sanitizeOptions": {
+							"privacy": "PRIVACY_TYPE_UNSPECIFIED"
+						}
+					}
+				},
+				"name": "`Task_1_responseHeader`",
+				"isTransient": true,
+				"producedBy": {
+					"elementType": "TASK_CONFIG",
+					"elementIdentifier": "1"
+				},
+				"producer": "1_1"
+			},
+			{
+				"key": "`Task_1_responseBody`",
+				"dataType": "STRING_VALUE",
+				"attributes": {
+					"logSettings": {
+						"sanitizeOptions": {
+							"privacy": "PRIVACY_TYPE_UNSPECIFIED"
+						}
+					}
+				},
+				"name": "`Task_1_responseBody`",
+				"isTransient": true,
+				"producedBy": {
+					"elementType": "TASK_CONFIG",
+					"elementIdentifier": "1"
+				},
+				"producer": "1_1"
+			},
+			{
+				"key": "`Task_1_responseStatus`",
+				"dataType": "STRING_VALUE",
+				"attributes": {
+					"logSettings": {
+						"sanitizeOptions": {
+							"privacy": "PRIVACY_TYPE_UNSPECIFIED"
+						}
+					}
+				},
+				"name": "`Task_1_responseStatus`",
+				"isTransient": true,
+				"producedBy": {
+					"elementType": "TASK_CONFIG",
+					"elementIdentifier": "1"
+				},
+				"producer": "1_1"
+			}
+		]
+	},
+	"origin": "UI",
+	"status": "DRAFT",
+	"snapshotNumber": "1",
+	"updateTime": "2022-10-29T21:05:56.965Z",
+	"lockHolder": "user@google.com",
+	"createTime": "2022-10-29T20:42:21.527Z",
+	"lastModifierEmail": "user@google.com",
+	"state": "DRAFT",
+	"triggerConfigs": [
+		{
+			"label": "Cloud Pub/Sub Trigger",
+			"startTasks": [
+				{
+					"taskId": "1"
+				}
+			],
+			"properties": {
+				"IP Project name": "cloud-crm-eventbus-cpsexternal",
+				"Subscription name": "myproject_mytopic"
+			},
+			"triggerType": "CLOUD_PUBSUB_EXTERNAL",
+			"triggerNumber": "1",
+			"triggerId": "cloud_pubsub_external_trigger/projects/cloud-crm-eventbus-cpsexternal/subscriptions/myproject_mytopic"
+		}
+	],
+	"taskConfigs": [
+		{
+			"task": "GenericRestV2Task",
+			"taskId": "1",
+			"parameters": {
+				"throwError": {
+					"key": "throwError",
+					"value": {
+						"booleanValue": true
+					}
+				},
+				"responseBody": {
+					"key": "responseBody",
+					"value": {
+						"stringArray": {
+							"stringValues": [
+								"$`Task_1_responseBody`$"
+							]
+						}
+					}
+				},
+				"disableSSLValidation": {
+					"key": "disableSSLValidation",
+					"value": {
+						"booleanValue": false
+					}
+				},
+				"httpParams": {
+					"key": "httpParams"
+				},
+				"responseHeader": {
+					"key": "responseHeader",
+					"value": {
+						"stringArray": {
+							"stringValues": [
+								"$`Task_1_responseHeader`$"
+							]
+						}
+					}
+				},
+				"userAgent": {
+					"key": "userAgent",
+					"value": {
+						"stringValue": ""
+					}
+				},
+				"httpMethod": {
+					"key": "httpMethod",
+					"value": {
+						"stringValue": "GET"
+					}
+				},
+				"responseStatus": {
+					"key": "responseStatus",
+					"value": {
+						"stringArray": {
+							"stringValues": [
+								"$`Task_1_responseStatus`$"
+							]
+						}
+					}
+				},
+				"url": {
+					"key": "url",
+					"value": {
+						"stringValue": "https://httpbin.org/get"
+					}
+				},
+				"urlFetchingService": {
+					"key": "urlFetchingService",
+					"value": {
+						"stringValue": "HARPOON"
+					}
+				},
+				"useSSL": {
+					"key": "useSSL",
+					"value": {
+						"booleanValue": false
+					}
+				},
+				"requestorId": {
+					"key": "requestorId",
+					"value": {
+						"stringValue": ""
+					}
+				},
+				"urlQueryStrings": {
+					"key": "urlQueryStrings"
+				},
+				"requestBody": {
+					"key": "requestBody",
+					"value": {
+						"stringValue": ""
+					}
+				},
+				"followRedirects": {
+					"key": "followRedirects",
+					"value": {
+						"booleanValue": true
+					}
+				},
+				"additionalHeaders": {
+					"key": "additionalHeaders"
+				}
+			},
+			"taskExecutionStrategy": "WHEN_ALL_SUCCEED",
+			"displayName": "Call REST Endpoint"
+		}
+	],
+	"integrationParameters": [
+		{
+			"key": "CloudPubSubMessage",
+			"dataType": "JSON_VALUE",
+			"displayName": "CloudPubSubMessage",
+			"isTransient": true,
+			"producer": "2_1",
+			"jsonSchema": "{\n  \"$schema\": \"http://json-schema.org/draft-04/schema#\",\n  \"type\": \"object\",\n  \"title\": \"Cloud Pub/Sub Message\",\n  \"description\": \"Message received by Cloud Pub/Sub.\",\n  \"properties\": {\n    \"data\": {\n      \"type\": \"string\",\n      \"description\": \"The message data sent by the publisher\"\n    },\n    \"attributes\": {\n      \"type\": \"object\",\n      \"description\": \"Attributes for this message\"\n    },\n    \"messageId\": {\n      \"type\": \"string\",\n      \"description\": \"ID of this message, assigned by the server when the message is published. Guaranteed to be unique within the topic.\"\n    },\n    \"publishTime\": {\n      \"type\": \"string\",\n      \"description\": \"The time at which the message was published, populated by the server when it receives the topics.publish call\"\n    },\n    \"orderingKey\": {\n      \"type\": \"string\",\n      \"description\": \"Identifies related messages for which publish order should be respected.\"\n    }\n  }\n}"
+		},
+		{
+			"key": "`Task_1_responseHeader`",
+			"dataType": "STRING_VALUE",
+			"displayName": "`Task_1_responseHeader`",
+			"isTransient": true,
+			"producer": "1_1"
+		},
+		{
+			"key": "`Task_1_responseBody`",
+			"dataType": "STRING_VALUE",
+			"displayName": "`Task_1_responseBody`",
+			"isTransient": true,
+			"producer": "1_1"
+		},
+		{
+			"key": "`Task_1_responseStatus`",
+			"dataType": "STRING_VALUE",
+			"displayName": "`Task_1_responseStatus`",
+			"isTransient": true,
+			"producer": "1_1"
+		}
+	]
+}
+

@@ -1,0 +1,134 @@
+{
+	"name": "projects/102128743119/locations/us-west1/integrations/cloudfunctions/versions/34cef967-ab29-4bb7-8818-55dbfb846aae",
+	"taskConfigsInternal": [
+		{
+			"taskName": "CloudFunctionTask",
+			"taskNumber": "1",
+			"parameters": {
+				"TriggerUrl": {
+					"key": "TriggerUrl",
+					"value": {
+						"stringValue": "https://us-west2-nandanks-151422.cloudfunctions.net/helloWorld"
+					},
+					"dataType": "STRING_VALUE"
+				},
+				"authConfig": {
+					"key": "authConfig",
+					"value": {
+						"protoValue": {
+							"@type": "type.googleapis.com/enterprise.crm.eventbus.authconfig.AuthConfigTaskParam",
+							"authConfigId": "8cb2f965-8f60-4376-8881-f86e93c93dc1"
+						}
+					},
+					"dataType": "PROTO_VALUE"
+				}
+			},
+			"position": {
+				"x": -252,
+				"y": -210
+			},
+			"label": "Cloud Function"
+		}
+	],
+	"triggerConfigsInternal": [
+		{
+			"label": "API Trigger",
+			"startTasks": [
+				{
+					"taskNumber": "1"
+				}
+			],
+			"properties": {
+				"Trigger name": "cloudfunctions_API_1"
+			},
+			"triggerType": "API",
+			"position": {
+				"x": -252,
+				"y": -336
+			},
+			"triggerNumber": "1",
+			"enabledClients": [
+				"102128743119"
+			],
+			"triggerId": "api_trigger/cloudfunctions_API_1"
+		}
+	],
+	"integrationParametersInternal": {
+		"parameters": [
+			{
+				"key": "out",
+				"dataType": "STRING_VALUE",
+				"defaultValue": {
+					"stringValue": ""
+				},
+				"attributes": {
+					"logSettings": {
+						"sanitizeOptions": {
+							"privacy": "PRIVACY_TYPE_UNSPECIFIED"
+						}
+					},
+					"searchable": "NO"
+				},
+				"name": "out",
+				"inOutType": "OUT"
+			}
+		]
+	},
+	"origin": "UI",
+	"status": "ACTIVE",
+	"snapshotNumber": "1",
+	"updateTime": "2022-10-30T03:53:14.418Z",
+	"createTime": "2022-10-30T03:42:54.727Z",
+	"lastModifierEmail": "user@google.com",
+	"state": "ACTIVE",
+	"triggerConfigs": [
+		{
+			"label": "API Trigger",
+			"startTasks": [
+				{
+					"taskId": "1"
+				}
+			],
+			"properties": {
+				"Trigger name": "cloudfunctions_API_1"
+			},
+			"triggerType": "API",
+			"triggerNumber": "1",
+			"triggerId": "api_trigger/cloudfunctions_API_1"
+		}
+	],
+	"taskConfigs": [
+		{
+			"task": "CloudFunctionTask",
+			"taskId": "1",
+			"parameters": {
+				"TriggerUrl": {
+					"key": "TriggerUrl",
+					"value": {
+						"stringValue": "https://us-west2-myproject.cloudfunctions.net/helloWorld"
+					}
+				},
+				"authConfig": {
+					"key": "authConfig",
+					"value": {
+						"jsonValue": "{\n  \"@type\": \"type.googleapis.com/enterprise.crm.eventbus.authconfig.AuthConfigTaskParam\",\n  \"authConfigId\": \"0aa0a000-0a00-0000-0000-a00a00a00aa0\"\n}"
+					}
+				}
+			},
+			"taskExecutionStrategy": "WHEN_ALL_SUCCEED",
+			"displayName": "Cloud Function"
+		}
+	],
+	"integrationParameters": [
+		{
+			"key": "out",
+			"dataType": "STRING_VALUE",
+			"defaultValue": {
+				"stringValue": ""
+			},
+			"displayName": "out",
+			"inputOutputType": "OUT"
+		}
+	]
+}
+
