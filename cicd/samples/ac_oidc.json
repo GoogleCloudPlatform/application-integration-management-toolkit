@@ -1,0 +1,12 @@
+{
+  "displayName": "authconfig-sample2",
+  "description": "this is a sample auth config",
+  "visibility": "CLIENT_VISIBLE",
+  "decryptedCredential": {
+    "credentialType": "OIDC_TOKEN",
+    "oidcToken": {
+      "serviceAccountEmail": "terraform@nandanks-151422.iam.gserviceaccount.com",
+      "audience": "https://us-west2-nandanks-151422.cloudfunctions.net/helloWorld"
+    }
+  }
+}
