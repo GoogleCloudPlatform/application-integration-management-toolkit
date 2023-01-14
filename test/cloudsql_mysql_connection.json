@@ -7,7 +7,7 @@
     "configVariables":[
        {
           "key":"project_id",
-          "stringValue":"integration-demo-364406"
+          "stringValue":"$PROJECT$"
        },
        {
           "key":"database_region",
@@ -22,7 +22,6 @@
           "stringValue":"catalog"
        }
     ],
-    "serviceAccount":"reservation-demo@integration-demo-364406.iam.gserviceaccount.com",
     "authConfig":{
        "authType":"USER_PASSWORD",
        "userPassword":{

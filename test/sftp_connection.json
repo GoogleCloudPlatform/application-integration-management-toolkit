@@ -3,7 +3,7 @@
     "connectorDetails": {
         "name": "sftp",
         "version": 1
-    },    
+    },
     "configVariables": [
         {
             "key": "remote_host",

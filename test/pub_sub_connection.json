@@ -13,6 +13,5 @@
             "key": "topic_id",
             "stringValue": "mytopic"
         }
-    ],    
-    "serviceAccount": "connectors@my-project.iam.gserviceaccount.com"
+    ]
 }
