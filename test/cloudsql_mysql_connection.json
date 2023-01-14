@@ -1,35 +1,35 @@
 {
-    "description":"This is a sample",
-    "connectorDetails":{
-       "name":"cloudsql-mysql",
-       "version":1
+    "description": "This is a sample",
+    "connectorDetails": {
+        "name": "cloudsql-mysql",
+        "version": 1
     },
-    "configVariables":[
-       {
-          "key":"project_id",
-          "stringValue":"$PROJECT$"
-       },
-       {
-          "key":"database_region",
-          "stringValue":"us-west1"
-       },
-       {
-          "key":"instance_id",
-          "stringValue":"integration-demo"
-       },
-       {
-          "key":"database_name",
-          "stringValue":"catalog"
-       }
-    ],
-    "authConfig":{
-       "authType":"USER_PASSWORD",
-       "userPassword":{
-          "username":"integration-demo",
-          "passwordDetails": {
-            "secretName": "integration-demo",
-            "reference": "./test/password.txt"
+    "configVariables": [
+        {
+            "key": "project_id",
+            "stringValue": "$PROJECT_ID$"
+        },
+        {
+            "key": "database_region",
+            "stringValue": "$REGION$"
+        },
+        {
+            "key": "instance_id",
+            "stringValue": "integration-demo"
+        },
+        {
+            "key": "database_name",
+            "stringValue": "catalog"
         }
-       }
+    ],
+    "authConfig": {
+        "authType": "USER_PASSWORD",
+        "userPassword": {
+            "username": "integration-demo",
+            "passwordDetails": {
+                "secretName": "integration-demo",
+                "reference": "./test/b64_enc_password.txt"
+            }
+        }
     }
 }
