@@ -114,7 +114,7 @@ Google managed applications include systems like BigQuery, PubSub, Cloud SQL etc
     "configVariables": [ ## these values are specific to each connector type. this example is for pubsub
         {
             "key": "project_id",
-            "stringValue": "$PROJECT" ## if the project id is the same as the connection, use the variable. Otherwise set the project id explicitly
+            "stringValue": "$PROJECT_ID" ## if the project id is the same as the connection, use the variable. Otherwise set the project id explicitly
         },
         {
             "key": "topic_id",
@@ -123,6 +123,8 @@ Google managed applications include systems like BigQuery, PubSub, Cloud SQL etc
     ]
 }
 ```
+
+NOTE: For ConfigVariables that take a region (ex: CloudSQL), you can also use `$REGION$`
 
 Then execute via `integrationcli` like this:
 
@@ -202,6 +204,7 @@ The file for the password can be in clear text or encrypted text. If encrypted, 
 
 ```sh
 gcloud kms encrypt --plaintext-file=./test/password.txt --keyring $key-ring --project $project --location us-west1 --ciphertext-file=enc_passsword.txt --key=$key
+base64 ./test/enc_password.txt > ./test/b64_enc_password.txt # on MacOS, use base64 -i ./test/enc_password.txt > ./test/b64_enc_password.txt
 ```
 
 ### Examples of Creating Connectors
