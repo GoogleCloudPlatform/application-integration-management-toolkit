@@ -64,10 +64,10 @@ var CreateCmd = &cobra.Command{
 		} else {
 
 			if encryptionKey != "" {
-				re := regexp.MustCompile(`projects\/([a-zA-Z0-9_-]+)\/locations\/([a-zA-Z0-9_-]+)\/keyRings\/([a-zA-Z0-9_-]+)\/cryptoKeys\/([a-zA-Z0-9_-]+)`)
+				re := regexp.MustCompile(`locations\/([a-zA-Z0-9_-]+)\/keyRings\/([a-zA-Z0-9_-]+)\/cryptoKeys\/([a-zA-Z0-9_-]+)`)
 				ok := re.Match([]byte(encryptionKey))
 				if !ok {
-					return fmt.Errorf("encryption key must be of the format projects/{project-id}/locations/{location}/keyRings/{test}/cryptoKeys/{cryptoKey}")
+					return fmt.Errorf("encryption key must be of the format locations/{location}/keyRings/{test}/cryptoKeys/{cryptoKey}")
 				}
 			}
 
@@ -80,7 +80,7 @@ var CreateCmd = &cobra.Command{
 				return err
 			}
 
-			fullEncryptionKey := path.Join("projects", apiclient.GetProjectID(), "locations", apiclient.GetRegion(), encryptionKey)
+			fullEncryptionKey := path.Join("projects", apiclient.GetProjectID(), encryptionKey)
 			content, err = cloudkms.DecryptSymmetric(fullEncryptionKey, encryptedContent)
 			if err != nil {
 				return err
@@ -100,5 +100,5 @@ func init() {
 	CreateCmd.Flags().StringVarP(&encryptedFile, "encrypted-file", "e",
 		"", "Base64 encoded, Cloud KMS encrypted Auth Config JSON file path")
 	CreateCmd.Flags().StringVarP(&encryptionKey, "encryption-keyid", "k",
-		"", "Cloud KMS key for decrypting Auth Config; Format = keyRings/*/cryptoKeys/*")
+		"", "Cloud KMS key for decrypting Auth Config; Format = locations/*keyRings/*/cryptoKeys/*")
 }

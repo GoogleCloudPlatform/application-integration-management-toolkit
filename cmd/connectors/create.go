@@ -48,10 +48,10 @@ var CreateCmd = &cobra.Command{
 		}
 
 		if encryptionKey != "" {
-			re := regexp.MustCompile(`projects\/([a-zA-Z0-9_-]+)\/locations\/([a-zA-Z0-9_-]+)\/keyRings\/([a-zA-Z0-9_-]+)\/cryptoKeys\/([a-zA-Z0-9_-]+)`)
+			re := regexp.MustCompile(`locations\/([a-zA-Z0-9_-]+)\/keyRings\/([a-zA-Z0-9_-]+)\/cryptoKeys\/([a-zA-Z0-9_-]+)`)
 			ok := re.Match([]byte(encryptionKey))
 			if !ok {
-				return fmt.Errorf("encryption key must be of the format projects/{project-id}/locations/{location}/keyRings/{test}/cryptoKeys/{cryptoKey}")
+				return fmt.Errorf("encryption key must be of the format locations/{location}/keyRings/{test}/cryptoKeys/{cryptoKey}")
 			}
 		}
 
@@ -73,9 +73,9 @@ func init() {
 	CreateCmd.Flags().StringVarP(&serviceAccountName, "sa", "",
 		"", "Service Account name for the connection")
 	CreateCmd.Flags().StringVarP(&serviceAccountProject, "sp", "",
-		project, "Service Account Project for the connection")
+		"", "Service Account Project for the connection. Default is the connection's project id")
 	CreateCmd.Flags().StringVarP(&encryptionKey, "encryption-keyid", "k",
-		"", "Cloud KMS key for decrypting Auth Config; Format = keyRings/*/cryptoKeys/*")
+		"", "Cloud KMS key for decrypting Auth Config; Format = locations/*/keyRings/*/cryptoKeys/*")
 
 	_ = CreateCmd.MarkFlagRequired("name")
 	_ = CreateCmd.MarkFlagRequired("file")
