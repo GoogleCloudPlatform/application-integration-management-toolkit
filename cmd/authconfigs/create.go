@@ -19,6 +19,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path"
+	"regexp"
 
 	"github.com/srinandan/integrationcli/apiclient"
 	"github.com/srinandan/integrationcli/client/authconfigs"
@@ -61,6 +62,15 @@ var CreateCmd = &cobra.Command{
 				return err
 			}
 		} else {
+
+			if encryptionKey != "" {
+				re := regexp.MustCompile(`projects\/([a-zA-Z0-9_-]+)\/locations\/([a-zA-Z0-9_-]+)\/keyRings\/([a-zA-Z0-9_-]+)\/cryptoKeys\/([a-zA-Z0-9_-]+)`)
+				ok := re.Match([]byte(encryptionKey))
+				if !ok {
+					return fmt.Errorf("encryption key must be of the format projects/{project-id}/locations/{location}/keyRings/{test}/cryptoKeys/{cryptoKey}")
+				}
+			}
+
 			if _, err := os.Stat(encryptedFile); err != nil {
 				return err
 			}

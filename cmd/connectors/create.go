@@ -15,8 +15,10 @@
 package connectors
 
 import (
+	"fmt"
 	"io/ioutil"
 	"os"
+	"regexp"
 
 	"github.com/srinandan/integrationcli/apiclient"
 	"github.com/srinandan/integrationcli/client/connections"
@@ -45,12 +47,20 @@ var CreateCmd = &cobra.Command{
 			return err
 		}
 
-		_, err = connections.Create(name, content, grantPermission)
+		if encryptionKey != "" {
+			re := regexp.MustCompile(`projects\/([a-zA-Z0-9_-]+)\/locations\/([a-zA-Z0-9_-]+)\/keyRings\/([a-zA-Z0-9_-]+)\/cryptoKeys\/([a-zA-Z0-9_-]+)`)
+			ok := re.Match([]byte(encryptionKey))
+			if !ok {
+				return fmt.Errorf("encryption key must be of the format projects/{project-id}/locations/{location}/keyRings/{test}/cryptoKeys/{cryptoKey}")
+			}
+		}
+
+		_, err = connections.Create(name, content, serviceAccountName, serviceAccountProject, encryptionKey, grantPermission)
 		return
 	},
 }
 
-var connectionFile string
+var connectionFile, serviceAccountName, serviceAccountProject, encryptionKey string
 var grantPermission bool
 
 func init() {
@@ -60,4 +70,13 @@ func init() {
 		"", "Connection details JSON file path")
 	CreateCmd.Flags().BoolVarP(&grantPermission, "grant-permission", "g",
 		false, "Grant the service account permission to the GCP resource")
+	CreateCmd.Flags().StringVarP(&serviceAccountName, "sa", "",
+		"", "Service Account name for the connection")
+	CreateCmd.Flags().StringVarP(&serviceAccountProject, "sp", "",
+		project, "Service Account Project for the connection")
+	CreateCmd.Flags().StringVarP(&encryptionKey, "encryption-keyid", "k",
+		"", "Cloud KMS key for decrypting Auth Config; Format = keyRings/*/cryptoKeys/*")
+
+	_ = CreateCmd.MarkFlagRequired("name")
+	_ = CreateCmd.MarkFlagRequired("file")
 }
