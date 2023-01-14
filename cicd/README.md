@@ -28,6 +28,20 @@ Grant the Application Integration Admin role to the Cloud Build Service Agent
         --role="roles/integrations.integrationAdmin"
 ```
 
+## Recommended Folder Structure
+
+```bash
+├── cloudbuild.yaml #the cloud build deployment file
+├── connectors
+│   └── <connector-name>.json #there is one file per connector. the connector name is the file name.
+├── authconfig
+│   └── <authconfig-name>.json #there is one file per authconfig. the authconfig name is the file name.
+├── overrides
+│   └── overrides.json #always name this overrides.json. there is only one file in this folder
+└── src
+    └── <integration-name>.json #there only one file in the folder. the integration name is the file name.
+```
+
 ## Steps
 
 1. Download the integration from the UI or using `integrationcli`. Here is an example to download via CLI:

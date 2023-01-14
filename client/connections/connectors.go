@@ -144,6 +144,14 @@ func Create(name string, content []byte, grantPermission bool) (respBody []byte,
 		}
 	}
 
+	if c.ConnectorDetails == nil {
+		return nil, fmt.Errorf("connectorDetails must be set. See https://github.com/srinandan/integrationcli#connectors-for-third-party-applications for more details")
+	}
+
+	if c.ConnectorDetails.Name == "" || c.ConnectorDetails.Version < 0 {
+		return nil, fmt.Errorf("connectorDetails Name and Version must be set. See https://github.com/srinandan/integrationcli#connectors-for-third-party-applications for more details")
+	}
+
 	// check if permissions need to be set
 	if grantPermission && c.ServiceAccount != nil {
 		var projectId string
@@ -230,6 +238,12 @@ func Create(name string, content []byte, grantPermission bool) (respBody []byte,
 
 	if content, err = json.Marshal(c); err != nil {
 		return nil, err
+	}
+
+	fmt.Println(string(content))
+
+	if true {
+		return nil, nil
 	}
 
 	respBody, err = apiclient.HttpClient(apiclient.GetPrintOutput(), u.String(), string(content))

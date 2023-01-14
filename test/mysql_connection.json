@@ -1,0 +1,36 @@
+{
+    "description":"This is a sample",
+    "connectorDetails":{
+       "name":"cloudsql-mysql",
+       "version":1
+    },
+    "configVariables":[
+       {
+          "key":"project_id",
+          "stringValue":"integration-demo-364406"
+       },
+       {
+          "key":"database_region",
+          "stringValue":"us-west1"
+       },
+       {
+          "key":"instance_id",
+          "stringValue":"integration-demo"
+       },
+       {
+          "key":"database_name",
+          "stringValue":"catalog"
+       }
+    ],
+    "serviceAccount":"reservation-demo@integration-demo-364406.iam.gserviceaccount.com",
+    "authConfig":{
+       "authType":"USER_PASSWORD",
+       "userPassword":{
+          "username":"integration-demo",
+          "passwordDetails": {
+            "secretName": "integration-demo",
+            "reference": "./test/password.txt"
+        }
+       }
+    }
+}
