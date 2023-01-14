@@ -240,12 +240,6 @@ func Create(name string, content []byte, grantPermission bool) (respBody []byte,
 		return nil, err
 	}
 
-	fmt.Println(string(content))
-
-	if true {
-		return nil, nil
-	}
-
 	respBody, err = apiclient.HttpClient(apiclient.GetPrintOutput(), u.String(), string(content))
 	return respBody, err
 }
