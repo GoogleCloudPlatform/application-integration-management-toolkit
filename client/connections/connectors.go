@@ -26,6 +26,7 @@ import (
 
 	"github.com/apigee/apigeecli/clilog"
 	"github.com/srinandan/integrationcli/apiclient"
+	"github.com/srinandan/integrationcli/cloudkms"
 	"github.com/srinandan/integrationcli/secmgr"
 )
 
@@ -129,13 +130,22 @@ type nodeConfig struct {
 }
 
 // Create
-func Create(name string, content []byte, grantPermission bool) (respBody []byte, err error) {
+func Create(name string, content []byte, serviceAccountName string, serviceAccountProject string, encryptionKey string, grantPermission bool) (respBody []byte, err error) {
 
 	var secretVersion string
 
 	c := connectionRequest{}
 	if err = json.Unmarshal(content, &c); err != nil {
 		return nil, err
+	}
+
+	//service account overrides have been provided, use them
+	if serviceAccountName != "" {
+		serviceAccountName = fmt.Sprintf("%s@%s.iam.gserviceaccount.com", serviceAccountName, serviceAccountProject)
+		if c.ServiceAccount == nil {
+			c.ServiceAccount = new(string)
+		}
+		*c.ServiceAccount = serviceAccountName
 	}
 
 	if c.ServiceAccount != nil {
@@ -223,12 +233,29 @@ func Create(name string, content []byte, grantPermission bool) (respBody []byte,
 			return nil, err
 		}
 
+		//check if a Cloud KMS key was passsed, assume the file is encrypted
+		if encryptionKey != "" {
+			payload, err = cloudkms.DecryptSymmetric(encryptionKey, payload)
+			if err != nil {
+				return nil, err
+			}
+		}
+
 		if secretVersion, err = secmgr.Create(apiclient.GetProjectID(), c.AuthConfig.UserPassword.PasswordDetails.SecretName, payload); err != nil {
 			return nil, err
 		}
 		c.AuthConfig.UserPassword.Password = new(secret)
 		c.AuthConfig.UserPassword.Password.SecretVersion = secretVersion
 		c.AuthConfig.UserPassword.PasswordDetails = nil //clean the input
+	}
+
+	//handle project id overrides
+	if *c.ConfigVariables != nil && len(*c.ConfigVariables) > 0 {
+		for index := range *c.ConfigVariables {
+			if (*c.ConfigVariables)[index].Key == "project_id" && *(*c.ConfigVariables)[index].StringValue == "$PROJECT_ID$" {
+				*(*c.ConfigVariables)[index].StringValue = apiclient.GetProjectID()
+			}
+		}
 	}
 
 	u, _ := url.Parse(apiclient.GetBaseConnectorURL())
