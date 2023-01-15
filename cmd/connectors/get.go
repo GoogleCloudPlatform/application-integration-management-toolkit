@@ -50,4 +50,6 @@ func init() {
 		"", "The name of the connection")
 	GetCmd.Flags().StringVarP(&view, "view", "",
 		"BASIC", "fields of the Connection to be returned; default is BASIC. FULL is the other option")
+
+	_ = GetCmd.MarkFlagRequired("name")
 }

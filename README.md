@@ -114,16 +114,17 @@ Google managed applications include systems like BigQuery, PubSub, Cloud SQL etc
     "configVariables": [ ## these values are specific to each connector type. this example is for pubsub
         {
             "key": "project_id",
-            "stringValue": "your-project-id" ## replace this
+            "stringValue": "$PROJECT_ID" ## if the project id is the same as the connection, use the variable. Otherwise set the project id explicitly
         },
         {
             "key": "topic_id",
             "stringValue": "mytopic"
         }
-    ],
-    "serviceAccount": "sa-name@your-project-id.iam.gserviceaccount.com" ## replace this with a SA that has access to the application
+    ]
 }
 ```
+
+NOTE: For ConfigVariables that take a region (ex: CloudSQL), you can also use `$REGION$`
 
 Then execute via `integrationcli` like this:
 
@@ -131,9 +132,16 @@ Then execute via `integrationcli` like this:
 integrationcli connectors create -n name-of-the-connector -f ./test/pub_sub_connection.json
 ```
 
+You can optionally pass the service account to be used from the command line:
+
+```sh
+integrationcli connectors create -n name-of-the-connector -f ./test/pub_sub_connection.json -sa <sa-name> -sp <sa-project-id>
+```
+
 **NOTES:**
 
 * This command assumes the token is cached, otherwise pass the token via `-t`
+* If the service account project is not passed and the service account name is passed, then the connection's project id is used
 * If the service account doesn't exist, it will be created
 * For PubSub & BigQuery and GCS `integrationcli` adds the IAM permissions for the service account to the resource
 
@@ -164,7 +172,7 @@ Third party application include connectors like Salesforce, Service Now, etc. To
             "username": "demo",
             "passwordDetails": {
                 "secretName": "sftp-demo", ## this secret is provisioned if it doesn't already exist
-                "reference": "./test/password.txt" ## this file contains the data/contents to put in secret manager
+                "reference": "./test/password.txt" ## this file contains the data/contents (encrypted or clear) to put in secret manager
             }
         }
     }
@@ -181,6 +189,24 @@ integrationcli connectors create -n name-of-the-connector -f ./test/sftp_connect
 
 NOTE: This command assumes the token is cached, otherwise pass the token via `-t`
 
+### Encrypting the Password
+
+When setting the `passwordDetails`, the contents of the password can be encrypted using Cloud KMS
+
+```json
+"passwordDetails": {
+    "secretName": "sftp-demo",
+    "reference": "./test/password.txt" ## the file containing the password - clear text or encrypted
+}
+```
+
+The file for the password can be in clear text or encrypted text. If encrypted, then a cloud kms key can be passed for decryption. Before storing the file, the file can be encrypted like this:
+
+```sh
+gcloud kms encrypt --plaintext-file=./test/password.txt --keyring $key-ring --project $project --location us-west1 --ciphertext-file=enc_passsword.txt --key=$key
+base64 ./test/enc_password.txt > ./test/b64_enc_password.txt # on MacOS, use base64 -i ./test/enc_password.txt > ./test/b64_enc_password.txt
+```
+
 ### Examples of Creating Connectors
 
 * [Big Query](./test/bq_connection.json)
@@ -189,6 +215,7 @@ NOTE: This command assumes the token is cached, otherwise pass the token via `-t
 * [Salesfoce with JWT](./test/salesforce_jwt_connection.json)
 * [Oracle](./test/oracle_connection.json)
 * [GCS](./test/gcs_connection.json)
+* [CloudSQL - MySQL](./test/cloudsql_mysql_connection.json)
 
 ___
 

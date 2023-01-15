@@ -13,6 +13,5 @@
             "key": "AuthScheme",
             "stringValue": "GCPInstanceAccount"
         }
-    ],
-    "serviceAccount": "connectors@my-project.iam.gserviceaccount.com"
+    ]
 }

@@ -119,39 +119,6 @@ func iamServiceAccountExists(iamname string) (code int, err error) {
 	}
 }
 
-func CreateServiceAccount(iamname string) (err error) {
-
-	var statusCode int
-
-	projectid, displayname, err := getNameAndProject(iamname)
-	if err != nil {
-		return err
-	}
-
-	if statusCode, err = iamServiceAccountExists(iamname); err != nil {
-		return err
-	}
-
-	switch statusCode {
-	case 200:
-		return nil
-	case 404:
-		var createendpoint = fmt.Sprintf("https://iam.googleapis.com/v1/projects/%s/serviceAccounts", projectid)
-		iamPayload := []string{}
-		iamPayload = append(iamPayload, "\"accountId\":\""+displayname+"\"")
-		iamPayload = append(iamPayload, "\"serviceAccount\": {\"displayName\": \""+displayname+"\"}")
-		payload := "{" + strings.Join(iamPayload, ",") + "}"
-
-		if _, err = HttpClient(false, createendpoint, payload); err != nil {
-			clilog.Error.Println(err)
-			return err
-		}
-		return nil
-	default:
-		return fmt.Errorf("unable to fetch service account details, err: %d", statusCode)
-	}
-}
-
 // setIAMPermission set permissions for a member
 func setIAMPermission(endpoint string, name string, memberName string, role string, memberType string) (err error) {
 
@@ -205,90 +172,10 @@ func setIAMPermission(endpoint string, name string, memberName string, role stri
 	return err
 }
 
-// SetConnectorIAMPermission set permissions for a member on a connection
-func SetConnectorIAMPermission(name string, memberName string, iamRole string, memberType string) (err error) {
-	var role string
-
-	switch iamRole {
-	case "admin":
-		role = "roles/connectors.admin"
-	case "invoker":
-		role = "roles/connectors.invoker"
-	case "viewer":
-		role = "roles/connectors.viewer"
-	default: //assume this is a custom role definition
-		re := regexp.MustCompile(`projects\/([a-zA-Z0-9_-]+)\/roles\/([a-zA-Z0-9_-]+)`)
-		result := re.FindString(iamRole)
-		if result == "" {
-			return fmt.Errorf("custom role must be of the format projects/{project-id}/roles/{role-name}")
-		}
-		role = iamRole
-	}
-
-	return setIAMPermission(GetBaseConnectorURL(), name, memberName, role, memberType)
-}
-
-// SetPubSubIAMPermission set permissions for a SA on a topic
-func SetPubSubIAMPermission(project string, topic string, memberName string) (err error) {
-	var endpoint = fmt.Sprintf("https://pubsub.googleapis.com/v1/projects/%s/topics", project)
-	const memberType = "serviceAccount"
-	const role = "roles/pubsub.publisher"
-	return setIAMPermission(endpoint, topic, memberName, role, memberType)
-}
-
-func SetBigQueryIAMPermission(project string, datasetid string, memberName string) (err error) {
-	var endpoint = fmt.Sprintf("https://bigquery.googleapis.com/bigquery/v2/projects/%s/datasets/%s", project, datasetid)
-	const role = "WRITER"
-	var content []byte
-
-	//first fetch the information
-	respBody, err := HttpClient(false, endpoint)
-	if err != nil {
-		return err
-	}
-
-	type accessType struct {
-		Role         string  `json:"role,omitempty"`
-		IamMember    *string `json:"iamMember,omitempty"`
-		UserByEmail  *string `json:"userByEmail,omitempty"`
-		SpecialGroup *string `json:"specialGroup,omitempty"`
-		GroupByEmail *string `json:"groupByEmail,omitempty"`
-	}
-
-	type datasetType struct {
-		Access []accessType `json:"access,omitempty"`
-	}
-
-	dataset := datasetType{}
-	if err = json.Unmarshal(respBody, &dataset); err != nil {
-		return err
-	}
-
-	access := accessType{}
-	access.Role = role
-	access.UserByEmail = new(string)
-	*access.UserByEmail = memberName
-
-	//merge the updates
-	dataset.Access = append(dataset.Access, access)
-
-	if content, err = json.Marshal(dataset); err != nil {
-		return err
-	}
-
-	//patch the update
-	if _, err = HttpClient(false, endpoint, string(content), "PATCH"); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func SetCloudStorageIAMPermission(project string, memberName string) (err error) {
+// setProjectIAMPermission
+func setProjectIAMPermission(project string, memberName string, role string) (err error) {
 	var getendpoint = fmt.Sprintf("https://cloudresourcemanager.googleapis.com/v1/projects/%s:getIamPolicy", project)
 	var setendpoint = fmt.Sprintf("https://cloudresourcemanager.googleapis.com/v1/projects/%s:setIamPolicy", project)
-	//the connector currently requires storage.buckets.list. other built-in roles didn't have this permission
-	const role = "roles/storage.admin"
 
 	//this method treats errors as info since this is not a blocking problem
 
@@ -347,6 +234,146 @@ func SetCloudStorageIAMPermission(project string, memberName string) (err error)
 	}
 
 	return nil
+}
+
+// CreateServiceAccount
+func CreateServiceAccount(iamname string) (err error) {
+
+	var statusCode int
+
+	projectid, displayname, err := getNameAndProject(iamname)
+	if err != nil {
+		return err
+	}
+
+	if statusCode, err = iamServiceAccountExists(iamname); err != nil {
+		return err
+	}
+
+	switch statusCode {
+	case 200:
+		return nil
+	case 404:
+		var createendpoint = fmt.Sprintf("https://iam.googleapis.com/v1/projects/%s/serviceAccounts", projectid)
+		iamPayload := []string{}
+		iamPayload = append(iamPayload, "\"accountId\":\""+displayname+"\"")
+		iamPayload = append(iamPayload, "\"serviceAccount\": {\"displayName\": \""+displayname+"\"}")
+		payload := "{" + strings.Join(iamPayload, ",") + "}"
+
+		if _, err = HttpClient(false, createendpoint, payload); err != nil {
+			clilog.Error.Println(err)
+			return err
+		}
+		return nil
+	default:
+		return fmt.Errorf("unable to fetch service account details, err: %d", statusCode)
+	}
+}
+
+// SetConnectorIAMPermission set permissions for a member on a connection
+func SetConnectorIAMPermission(name string, memberName string, iamRole string, memberType string) (err error) {
+	var role string
+
+	switch iamRole {
+	case "admin":
+		role = "roles/connectors.admin"
+	case "invoker":
+		role = "roles/connectors.invoker"
+	case "viewer":
+		role = "roles/connectors.viewer"
+	default: //assume this is a custom role definition
+		re := regexp.MustCompile(`projects\/([a-zA-Z0-9_-]+)\/roles\/([a-zA-Z0-9_-]+)`)
+		result := re.FindString(iamRole)
+		if result == "" {
+			return fmt.Errorf("custom role must be of the format projects/{project-id}/roles/{role-name}")
+		}
+		role = iamRole
+	}
+
+	return setIAMPermission(GetBaseConnectorURL(), name, memberName, role, memberType)
+}
+
+// SetPubSubIAMPermission set permissions for a SA on a topic
+func SetPubSubIAMPermission(project string, topic string, memberName string) (err error) {
+	var endpoint = fmt.Sprintf("https://pubsub.googleapis.com/v1/projects/%s/topics", project)
+	const memberType = "serviceAccount"
+	const role = "roles/pubsub.publisher"
+	return setIAMPermission(endpoint, topic, memberName, role, memberType)
+}
+
+// SetSecretManagerIAMPermission set permissions for a SA on a secret
+func SetSecretManagerIAMPermission(project string, secretName string, memberName string) (err error) {
+	var endpoint = fmt.Sprintf("https://secretmanager.googleapis.com/v1/projects/%s/secrets", project)
+	const memberType = "serviceAccount"
+	const role1 = "roles/secretmanager.secretAccessor"
+	const role2 = "roles/secretmanager.viewer"
+	if err = setIAMPermission(endpoint, secretName, memberName, role1, memberType); err != nil {
+		return err
+	}
+	return setIAMPermission(endpoint, secretName, memberName, role2, memberType)
+}
+
+// SetBigQueryIAMPermission
+func SetBigQueryIAMPermission(project string, datasetid string, memberName string) (err error) {
+	var endpoint = fmt.Sprintf("https://bigquery.googleapis.com/bigquery/v2/projects/%s/datasets/%s", project, datasetid)
+	const role = "WRITER"
+	var content []byte
+
+	//first fetch the information
+	respBody, err := HttpClient(false, endpoint)
+	if err != nil {
+		return err
+	}
+
+	type accessType struct {
+		Role         string  `json:"role,omitempty"`
+		IamMember    *string `json:"iamMember,omitempty"`
+		UserByEmail  *string `json:"userByEmail,omitempty"`
+		SpecialGroup *string `json:"specialGroup,omitempty"`
+		GroupByEmail *string `json:"groupByEmail,omitempty"`
+	}
+
+	type datasetType struct {
+		Access []accessType `json:"access,omitempty"`
+	}
+
+	dataset := datasetType{}
+	if err = json.Unmarshal(respBody, &dataset); err != nil {
+		return err
+	}
+
+	access := accessType{}
+	access.Role = role
+	access.UserByEmail = new(string)
+	*access.UserByEmail = memberName
+
+	//merge the updates
+	dataset.Access = append(dataset.Access, access)
+
+	if content, err = json.Marshal(dataset); err != nil {
+		return err
+	}
+
+	//patch the update
+	if _, err = HttpClient(false, endpoint, string(content), "PATCH"); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// SetCloudStorageIAMPermission
+func SetCloudStorageIAMPermission(project string, memberName string) (err error) {
+	//the connector currently requires storage.buckets.list. other built-in roles didn't have this permission
+	const role = "roles/storage.admin"
+
+	return setProjectIAMPermission(project, memberName, role)
+}
+
+// SetCloudSQLIAMPermission
+func SetCloudSQLIAMPermission(project string, memberName string) (err error) {
+	const role = "roles/cloudsql.editor"
+	return setProjectIAMPermission(project, memberName, role)
 }
 
 func getNameAndProject(iamFullName string) (projectid string, name string, err error) {

@@ -26,6 +26,7 @@ import (
 
 	"github.com/apigee/apigeecli/clilog"
 	"github.com/srinandan/integrationcli/apiclient"
+	"github.com/srinandan/integrationcli/cloudkms"
 	"github.com/srinandan/integrationcli/secmgr"
 )
 
@@ -129,7 +130,7 @@ type nodeConfig struct {
 }
 
 // Create
-func Create(name string, content []byte, grantPermission bool) (respBody []byte, err error) {
+func Create(name string, content []byte, serviceAccountName string, serviceAccountProject string, encryptionKey string, grantPermission bool) (respBody []byte, err error) {
 
 	var secretVersion string
 
@@ -138,9 +139,41 @@ func Create(name string, content []byte, grantPermission bool) (respBody []byte,
 		return nil, err
 	}
 
+	//service account overrides have been provided, use them
+	if serviceAccountName != "" {
+		//set the project id if one was not presented
+		if serviceAccountProject == "" {
+			serviceAccountProject = apiclient.GetProjectID()
+		}
+		serviceAccountName = fmt.Sprintf("%s@%s.iam.gserviceaccount.com", serviceAccountName, serviceAccountProject)
+		if c.ServiceAccount == nil {
+			c.ServiceAccount = new(string)
+		}
+		*c.ServiceAccount = serviceAccountName
+	}
+
 	if c.ServiceAccount != nil {
 		if err = apiclient.CreateServiceAccount(*c.ServiceAccount); err != nil {
 			return nil, err
+		}
+	}
+
+	if c.ConnectorDetails == nil {
+		return nil, fmt.Errorf("connectorDetails must be set. See https://github.com/srinandan/integrationcli#connectors-for-third-party-applications for more details")
+	}
+
+	if c.ConnectorDetails.Name == "" || c.ConnectorDetails.Version < 0 {
+		return nil, fmt.Errorf("connectorDetails Name and Version must be set. See https://github.com/srinandan/integrationcli#connectors-for-third-party-applications for more details")
+	}
+
+	//handle project id & region overrides
+	if *c.ConfigVariables != nil && len(*c.ConfigVariables) > 0 {
+		for index := range *c.ConfigVariables {
+			if (*c.ConfigVariables)[index].Key == "project_id" && *(*c.ConfigVariables)[index].StringValue == "$PROJECT_ID$" {
+				*(*c.ConfigVariables)[index].StringValue = apiclient.GetProjectID()
+			} else if strings.Contains((*c.ConfigVariables)[index].Key, "_region") && *(*c.ConfigVariables)[index].StringValue == "$REGION$" {
+				*(*c.ConfigVariables)[index].StringValue = apiclient.GetRegion()
+			}
 		}
 	}
 
@@ -198,6 +231,18 @@ func Create(name string, content []byte, grantPermission bool) (respBody []byte,
 			if err = apiclient.SetCloudStorageIAMPermission(projectId, *c.ServiceAccount); err != nil {
 				clilog.Warning.Printf("Unable to update permissions for the service account: %v\n", err)
 			}
+		case "cloudsql-mysql", "cloudsql-postgresql", "cloudsql-sqlserver":
+			for _, configVar := range *c.ConfigVariables {
+				if configVar.Key == "project_id" {
+					projectId = *configVar.StringValue
+				}
+			}
+			if projectId == "" {
+				return nil, fmt.Errorf("projectId was not set")
+			}
+			if err = apiclient.SetCloudSQLIAMPermission(projectId, *c.ServiceAccount); err != nil {
+				clilog.Warning.Printf("Unable to update permissions for the service account: %v\n", err)
+			}
 		}
 	}
 
@@ -215,12 +260,27 @@ func Create(name string, content []byte, grantPermission bool) (respBody []byte,
 			return nil, err
 		}
 
+		//check if a Cloud KMS key was passsed, assume the file is encrypted
+		if encryptionKey != "" {
+			encryptionKey := path.Join("projects", apiclient.GetProjectID(), encryptionKey)
+			payload, err = cloudkms.DecryptSymmetric(encryptionKey, payload)
+			if err != nil {
+				return nil, err
+			}
+		}
+
 		if secretVersion, err = secmgr.Create(apiclient.GetProjectID(), c.AuthConfig.UserPassword.PasswordDetails.SecretName, payload); err != nil {
 			return nil, err
 		}
+		secretName := c.AuthConfig.UserPassword.PasswordDetails.SecretName
 		c.AuthConfig.UserPassword.Password = new(secret)
 		c.AuthConfig.UserPassword.Password.SecretVersion = secretVersion
 		c.AuthConfig.UserPassword.PasswordDetails = nil //clean the input
+
+		//grant connector service account access to secretVersion
+		if err = apiclient.SetSecretManagerIAMPermission(apiclient.GetProjectID(), secretName, serviceAccountName); err != nil {
+			return nil, err
+		}
 	}
 
 	u, _ := url.Parse(apiclient.GetBaseConnectorURL())

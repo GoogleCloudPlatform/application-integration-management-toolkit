@@ -46,4 +46,6 @@ var DelCmd = &cobra.Command{
 func init() {
 	DelCmd.Flags().StringVarP(&name, "name", "n",
 		"", "The name of the connection")
+
+	_ = DelCmd.MarkFlagRequired("name")
 }

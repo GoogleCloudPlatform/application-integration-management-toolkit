@@ -10,7 +10,7 @@
             "passwordDetails": {
                 "secretName": "salesforcepwd",
                 "reference": "./test/password.txt"
-            }            
+            }
         }
     }
 }

@@ -2,7 +2,7 @@
     "connectorDetails": {
         "name": "servicenow",
         "version": 1
-    }, 
+    },
     "authConfig": {
         "authType": "USER_PASSWORD",
         "userPassword": {
@@ -10,7 +10,7 @@
             "passwordDetails": {
                 "secretName": "servicenow-pwd",
                 "reference": "./test/password.txt"
-            }            
+            }
         }
     },
     "destinationConfigs": [
