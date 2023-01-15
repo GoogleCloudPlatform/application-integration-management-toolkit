@@ -114,7 +114,7 @@ Google managed applications include systems like BigQuery, PubSub, Cloud SQL etc
     "configVariables": [ ## these values are specific to each connector type. this example is for pubsub
         {
             "key": "project_id",
-            "stringValue": "$PROJECT_ID" ## if the project id is the same as the connection, use the variable. Otherwise set the project id explicitly
+            "stringValue": "$PROJECT_ID$" ## if the project id is the same as the connection, use the variable. Otherwise set the project id explicitly
         },
         {
             "key": "topic_id",
@@ -124,7 +124,7 @@ Google managed applications include systems like BigQuery, PubSub, Cloud SQL etc
 }
 ```
 
-NOTE: For ConfigVariables that take a region (ex: CloudSQL), you can also use `$REGION$`
+NOTE: For `ConfigVariables` that take a `region` as a parameter (ex: CloudSQL), you can also use `$REGION$`
 
 Then execute via `integrationcli` like this:
 
@@ -143,7 +143,7 @@ integrationcli connectors create -n name-of-the-connector -f ./test/pub_sub_conn
 * This command assumes the token is cached, otherwise pass the token via `-t`
 * If the service account project is not passed and the service account name is passed, then the connection's project id is used
 * If the service account doesn't exist, it will be created
-* For PubSub & BigQuery and GCS `integrationcli` adds the IAM permissions for the service account to the resource
+* For Google connectors `integrationcli` adds the IAM permissions for the service account to the resource (if the -g flag is passed)
 
 ### Connectors for Third Party Applications
 
