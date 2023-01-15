@@ -141,6 +141,10 @@ func Create(name string, content []byte, serviceAccountName string, serviceAccou
 
 	//service account overrides have been provided, use them
 	if serviceAccountName != "" {
+		//set the project id if one was not presented
+		if serviceAccountProject == "" {
+			serviceAccountProject = apiclient.GetProjectID()
+		}
 		serviceAccountName = fmt.Sprintf("%s@%s.iam.gserviceaccount.com", serviceAccountName, serviceAccountProject)
 		if c.ServiceAccount == nil {
 			c.ServiceAccount = new(string)
@@ -160,6 +164,17 @@ func Create(name string, content []byte, serviceAccountName string, serviceAccou
 
 	if c.ConnectorDetails.Name == "" || c.ConnectorDetails.Version < 0 {
 		return nil, fmt.Errorf("connectorDetails Name and Version must be set. See https://github.com/srinandan/integrationcli#connectors-for-third-party-applications for more details")
+	}
+
+	//handle project id & region overrides
+	if *c.ConfigVariables != nil && len(*c.ConfigVariables) > 0 {
+		for index := range *c.ConfigVariables {
+			if (*c.ConfigVariables)[index].Key == "project_id" && *(*c.ConfigVariables)[index].StringValue == "$PROJECT_ID$" {
+				*(*c.ConfigVariables)[index].StringValue = apiclient.GetProjectID()
+			} else if strings.Contains((*c.ConfigVariables)[index].Key, "_region") && *(*c.ConfigVariables)[index].StringValue == "$REGION$" {
+				*(*c.ConfigVariables)[index].StringValue = apiclient.GetRegion()
+			}
+		}
 	}
 
 	// check if permissions need to be set
@@ -216,6 +231,18 @@ func Create(name string, content []byte, serviceAccountName string, serviceAccou
 			if err = apiclient.SetCloudStorageIAMPermission(projectId, *c.ServiceAccount); err != nil {
 				clilog.Warning.Printf("Unable to update permissions for the service account: %v\n", err)
 			}
+		case "cloudsql-mysql":
+			for _, configVar := range *c.ConfigVariables {
+				if configVar.Key == "project_id" {
+					projectId = *configVar.StringValue
+				}
+			}
+			if projectId == "" {
+				return nil, fmt.Errorf("projectId was not set")
+			}
+			if err = apiclient.SetCloudSQLIAMPermission(projectId, *c.ServiceAccount); err != nil {
+				clilog.Warning.Printf("Unable to update permissions for the service account: %v\n", err)
+			}
 		}
 	}
 
@@ -235,6 +262,7 @@ func Create(name string, content []byte, serviceAccountName string, serviceAccou
 
 		//check if a Cloud KMS key was passsed, assume the file is encrypted
 		if encryptionKey != "" {
+			encryptionKey := path.Join("projects", apiclient.GetProjectID(), encryptionKey)
 			payload, err = cloudkms.DecryptSymmetric(encryptionKey, payload)
 			if err != nil {
 				return nil, err
@@ -244,17 +272,14 @@ func Create(name string, content []byte, serviceAccountName string, serviceAccou
 		if secretVersion, err = secmgr.Create(apiclient.GetProjectID(), c.AuthConfig.UserPassword.PasswordDetails.SecretName, payload); err != nil {
 			return nil, err
 		}
+		secretName := c.AuthConfig.UserPassword.PasswordDetails.SecretName
 		c.AuthConfig.UserPassword.Password = new(secret)
 		c.AuthConfig.UserPassword.Password.SecretVersion = secretVersion
 		c.AuthConfig.UserPassword.PasswordDetails = nil //clean the input
-	}
 
-	//handle project id overrides
-	if *c.ConfigVariables != nil && len(*c.ConfigVariables) > 0 {
-		for index := range *c.ConfigVariables {
-			if (*c.ConfigVariables)[index].Key == "project_id" && *(*c.ConfigVariables)[index].StringValue == "$PROJECT_ID$" {
-				*(*c.ConfigVariables)[index].StringValue = apiclient.GetProjectID()
-			}
+		//grant connector service account access to secretVersion
+		if err = apiclient.SetSecretManagerIAMPermission(apiclient.GetProjectID(), secretName, serviceAccountName); err != nil {
+			return nil, err
 		}
 	}
 
