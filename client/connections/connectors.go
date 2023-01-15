@@ -231,7 +231,7 @@ func Create(name string, content []byte, serviceAccountName string, serviceAccou
 			if err = apiclient.SetCloudStorageIAMPermission(projectId, *c.ServiceAccount); err != nil {
 				clilog.Warning.Printf("Unable to update permissions for the service account: %v\n", err)
 			}
-		case "cloudsql-mysql":
+		case "cloudsql-mysql", "cloudsql-postgresql", "cloudsql-sqlserver":
 			for _, configVar := range *c.ConfigVariables {
 				if configVar.Key == "project_id" {
 					projectId = *configVar.StringValue

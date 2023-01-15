@@ -172,7 +172,7 @@ Third party application include connectors like Salesforce, Service Now, etc. To
             "username": "demo",
             "passwordDetails": {
                 "secretName": "sftp-demo", ## this secret is provisioned if it doesn't already exist
-                "reference": "./test/password.txt" ## this file contains the data/contents to put in secret manager
+                "reference": "./test/password.txt" ## this file contains the data/contents (encrypted or clear) to put in secret manager
             }
         }
     }
@@ -215,6 +215,7 @@ base64 ./test/enc_password.txt > ./test/b64_enc_password.txt # on MacOS, use bas
 * [Salesfoce with JWT](./test/salesforce_jwt_connection.json)
 * [Oracle](./test/oracle_connection.json)
 * [GCS](./test/gcs_connection.json)
+* [CloudSQL - MySQL](./test/cloudsql_mysql_connection.json)
 
 ___
 
