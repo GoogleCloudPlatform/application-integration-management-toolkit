@@ -7,7 +7,7 @@
     "configVariables": [
         {
             "key": "project_id",
-            "stringValue": "add-project-here"
+            "stringValue": "$PROJECT_ID$"
         },
         {
             "key": "AuthScheme",
