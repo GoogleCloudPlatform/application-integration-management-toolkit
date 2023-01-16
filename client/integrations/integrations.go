@@ -109,11 +109,15 @@ type parameterInternal struct {
 }
 
 type parameterExternal struct {
-	Key         string `json:"key,omitempty"`
-	DataType    string `json:"dataType,omitempty"`
-	Name        string `json:"name,omitempty"`
-	IsTransient bool   `json:"isTransient,omitempty"`
-	Producer    string `json:"producer,omitempty"`
+	Key             string    `json:"key,omitempty"`
+	DataType        string    `json:"dataType,omitempty"`
+	DefaultValue    valueType `json:"defaultValue,omitempty"`
+	Name            string    `json:"name,omitempty"`
+	IsTransient     bool      `json:"isTransient,omitempty"`
+	InputOutputType string    `json:"inputOutputType,omitempty"`
+	Producer        string    `json:"producer,omitempty"`
+	Searchable      bool      `json:"searchable,omitempty"`
+	JsonSchema      string    `json:"jsonSchema,omitempty"`
 }
 
 type producedBy struct {
@@ -131,7 +135,7 @@ type triggerconfig struct {
 	NextTasksExecutionPolicy string                   `json:"nextTasksExecutionPolicy,omitempty"`
 	AlertConfig              []map[string]interface{} `json:"alterConfig,omitempty"`
 	Properties               map[string]string        `json:"properties,omitempty"`
-	CloudSchedulerConfig     cloudSchedulerConfig     `json:"cloudSchedulerConfig,omitempty"`
+	CloudSchedulerConfig     *cloudSchedulerConfig    `json:"cloudSchedulerConfig,omitempty"`
 }
 
 type taskconfig struct {
@@ -150,15 +154,19 @@ type taskconfig struct {
 }
 
 type eventparameter struct {
-	Key   string     `json:"key,omitempty"`
-	Value eventvalue `json:"value,omitempty"`
+	Key   string    `json:"key,omitempty"`
+	Value valueType `json:"value,omitempty"`
 }
 
-type eventvalue struct {
+type valueType struct {
 	StringValue  *string          `json:"stringValue,omitempty"`
 	BooleanValue *bool            `json:"booleanValue,omitempty"`
 	StringArray  *stringarraytype `json:"stringArray,omitempty"`
 	JsonValue    *string          `json:"jsonValue,omitempty"`
+	DoubleValue  float64          `json:"doubleValue,omitempty"`
+	IntArray     *intarray        `json:"intArray,omitempty"`
+	DoubleArray  *doublearray     `json:"doubleArray,omitempty"`
+	BooleanArray *booleanarray    `json:"booleanArray,omitempty"`
 }
 
 type stringarraytype struct {
