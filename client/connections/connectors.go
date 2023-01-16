@@ -139,6 +139,10 @@ func Create(name string, content []byte, serviceAccountName string, serviceAccou
 		return nil, err
 	}
 
+	if c.ServiceAccount == nil {
+		c.ServiceAccount = new(string)
+	}
+
 	//service account overrides have been provided, use them
 	if serviceAccountName != "" {
 		//set the project id if one was not presented
@@ -146,17 +150,18 @@ func Create(name string, content []byte, serviceAccountName string, serviceAccou
 			serviceAccountProject = apiclient.GetProjectID()
 		}
 		serviceAccountName = fmt.Sprintf("%s@%s.iam.gserviceaccount.com", serviceAccountName, serviceAccountProject)
-		if c.ServiceAccount == nil {
-			c.ServiceAccount = new(string)
+		//create the SA if it doesn't exist
+		if err = apiclient.CreateServiceAccount(serviceAccountName); err != nil {
+			return nil, err
 		}
-		*c.ServiceAccount = serviceAccountName
-	}
-
-	if c.ServiceAccount != nil {
-		if err = apiclient.CreateServiceAccount(*c.ServiceAccount); err != nil {
+	} else { //use the default compute engine SA
+		serviceAccountName, err = apiclient.GetComputeEngineDefaultServiceAccount(apiclient.GetProjectID())
+		if err != nil {
 			return nil, err
 		}
 	}
+
+	*c.ServiceAccount = serviceAccountName
 
 	if c.ConnectorDetails == nil {
 		return nil, fmt.Errorf("connectorDetails must be set. See https://github.com/srinandan/integrationcli#connectors-for-third-party-applications for more details")
@@ -277,9 +282,11 @@ func Create(name string, content []byte, serviceAccountName string, serviceAccou
 		c.AuthConfig.UserPassword.Password.SecretVersion = secretVersion
 		c.AuthConfig.UserPassword.PasswordDetails = nil //clean the input
 
-		//grant connector service account access to secretVersion
-		if err = apiclient.SetSecretManagerIAMPermission(apiclient.GetProjectID(), secretName, serviceAccountName); err != nil {
-			return nil, err
+		if grantPermission {
+			//grant connector service account access to secretVersion
+			if err = apiclient.SetSecretManagerIAMPermission(apiclient.GetProjectID(), secretName, serviceAccountName); err != nil {
+				return nil, err
+			}
 		}
 	}
 

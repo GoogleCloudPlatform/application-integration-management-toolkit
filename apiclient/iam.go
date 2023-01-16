@@ -394,3 +394,46 @@ func getNameAndProject(iamFullName string) (projectid string, name string, err e
 	}
 	return projectid, name, nil
 }
+
+// GetDefaultServiceAccount
+func GetComputeEngineDefaultServiceAccount(projectId string) (serviceAccount string, err error) {
+	var getendpoint = fmt.Sprintf("https://cloudresourcemanager.googleapis.com/v3/projects/%s", projectId)
+
+	//Get the project number
+	respBody, err := HttpClient(false, getendpoint, "")
+	if err != nil {
+		clilog.Info.Printf("error getting details for the project %s: %v", projectId, err)
+		return serviceAccount, err
+	}
+
+	type projectResponse struct {
+		Name        string            `json:"name,omitempty"`
+		Parent      string            `json:"parent,omitempty"`
+		ProjectId   string            `json:"projectId,omitempty"`
+		State       string            `json:"state,omitempty"`
+		DisplayName string            `json:"displayName,omitempty"`
+		CreateTime  string            `json:"createTime,omitempty"`
+		UpdateTime  string            `json:"updateTime,omitempty"`
+		DeleteTime  string            `json:"deleteTime,omitempty"`
+		Etag        string            `json:"etag,omitempty"`
+		Labels      map[string]string `json:"labels,omitempty"`
+	}
+
+	p := projectResponse{}
+
+	err = json.Unmarshal(respBody, &p)
+	if err != nil {
+		clilog.Info.Println(err)
+		return serviceAccount, err
+	}
+
+	if p.Name == "" {
+		return serviceAccount, fmt.Errorf("project number was not available")
+	}
+
+	//get the project number
+	projectNumber := strings.Split(p.Name, "/")[1]
+	serviceAccount = fmt.Sprintf("%s-compute@developer.gserviceaccount.com", projectNumber)
+
+	return serviceAccount, nil
+}
