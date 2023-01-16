@@ -73,7 +73,7 @@ func Execute() {
 }
 
 var accessToken, serviceAccount string
-var disableCheck, useApigee, noOutput bool
+var disableCheck, useApigee, noOutput, verbose bool
 
 func init() {
 	cobra.OnInitialize(initConfig)
@@ -93,6 +93,9 @@ func init() {
 	RootCmd.PersistentFlags().BoolVarP(&noOutput, "no-output", "",
 		false, "Disable printing API responses from the control plane")
 
+	RootCmd.PersistentFlags().BoolVarP(&verbose, "verbose", "",
+		false, "Enable verbose output from integrationcli")
+
 	RootCmd.AddCommand(integrations.Cmd)
 	RootCmd.AddCommand(preferences.Cmd)
 	RootCmd.AddCommand(authconfigs.Cmd)
@@ -105,7 +108,7 @@ func initConfig() {
 	var skipLogInfo = true
 	var skipCache bool
 
-	if os.Getenv("INTEGRATIONCLI_SKIPLOG") == "false" {
+	if os.Getenv("INTEGRATIONCLI_SKIPLOG") == "false" || verbose {
 		skipLogInfo = false
 	}
 
