@@ -16,7 +16,6 @@ package apiclient
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -113,7 +112,7 @@ func iamServiceAccountExists(iamname string) (code int, err error) {
 		return -1, err
 	} else if resp.StatusCode > 399 && resp.StatusCode != 404 {
 		clilog.Error.Printf("status code %d, error in response: %s\n", resp.StatusCode, string(respBody))
-		return resp.StatusCode, errors.New("error in response")
+		return resp.StatusCode, fmt.Errorf("status code %d, error in response: %s", resp.StatusCode, string(respBody))
 	} else {
 		return resp.StatusCode, nil
 	}

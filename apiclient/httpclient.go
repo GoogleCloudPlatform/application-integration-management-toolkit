@@ -178,7 +178,7 @@ func DownloadFile(url string, auth bool) (resp *http.Response, err error) {
 		return nil, err
 	} else if resp.StatusCode > 299 {
 		clilog.Error.Printf("error in response, status %d: %s", resp.StatusCode, resp.Body)
-		return nil, errors.New("error in response")
+		return nil, fmt.Errorf("error in response, status %d: %s", resp.StatusCode, resp.Body)
 	}
 
 	if resp == nil {
@@ -365,11 +365,11 @@ func handleResponse(print bool, resp *http.Response) (respBody []byte, err error
 
 	respBody, err = ioutil.ReadAll(resp.Body)
 	if err != nil {
-		clilog.Error.Println("error in response: ", err)
+		clilog.Error.Printf("error in response: %v\n", err)
 		return nil, err
 	} else if resp.StatusCode > 399 {
 		clilog.Error.Printf("status code %d, error in response: %s\n", resp.StatusCode, string(respBody))
-		return nil, errors.New("error in response")
+		return nil, fmt.Errorf("status code %d, error in response: %s", resp.StatusCode, string(respBody))
 	}
 	if print {
 		return respBody, PrettyPrint(respBody)

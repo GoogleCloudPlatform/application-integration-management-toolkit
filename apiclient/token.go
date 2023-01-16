@@ -92,7 +92,7 @@ func generateJWT(privateKey string) (string, error) {
 	return string(payload), nil
 }
 
-//generateAccessToken generates a Google OAuth access token from a service account
+// generateAccessToken generates a Google OAuth access token from a service account
 func generateAccessToken(privateKey string) (string, error) {
 
 	const grantType = "urn:ietf:params:oauth:grant-type:jwt-bearer"
@@ -144,11 +144,11 @@ func generateAccessToken(privateKey string) (string, error) {
 	clilog.Info.Printf("Response: %s\n", string(respBody))
 
 	if err != nil {
-		clilog.Error.Println("error in response: ", err)
-		return "", fmt.Errorf("error in response: ", err)
+		clilog.Error.Printf("error in response: %v\n", err)
+		return "", err
 	} else if resp.StatusCode > 399 {
 		clilog.Error.Printf("status code %d, error in response: %s\n", resp.StatusCode, string(respBody))
-		return "", fmt.Errorf("status code %d, error in response: %s\n", resp.StatusCode, string(respBody))
+		return "", fmt.Errorf("status code %d, error in response: %s", resp.StatusCode, string(respBody))
 	}
 
 	accessToken := oAuthAccessToken{}
@@ -222,7 +222,7 @@ func checkAccessToken() bool {
 	return true
 }
 
-//SetAccessToken read from cache or if not found or expired will generate a new one
+// SetAccessToken read from cache or if not found or expired will generate a new one
 func SetAccessToken() error {
 	if GetIntegrationToken() == "" && GetServiceAccount() == "" {
 		SetIntegrationToken(GetToken()) //read from configuration
