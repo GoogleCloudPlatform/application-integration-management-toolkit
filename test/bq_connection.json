@@ -7,7 +7,7 @@
     "configVariables": [
         {
             "key": "project_id",
-            "stringValue": "my-project"
+            "stringValue": "$PROJECT_ID$"
         },
         {
             "key": "dataset_id",
