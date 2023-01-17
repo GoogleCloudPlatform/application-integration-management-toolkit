@@ -60,9 +60,9 @@ type connectiondetails struct {
 }
 
 type connectionparams struct {
-	ServiceName       string `json:"serviceName,omitempty"`
-	ConnectionName    string `json:"connectionName,omitempty"`
-	ConnectionVersion string `json:"connectionVersion,omitempty"`
+	ServiceName      string `json:"serviceName,omitempty"`
+	ConnectionName   string `json:"connectionName,omitempty"`
+	ConnectorVersion string `json:"connectorVersion,omitempty"`
 }
 
 const pubsubTrigger = "cloud_pubsub_external_trigger/projects/cloud-crm-eventbus-cpsexternal/subscriptions/"
@@ -134,7 +134,7 @@ func mergeOverrides(eversion integrationVersionExternal, o overrides, supressWar
 				}
 
 				cd.Connection.ConnectionName = newcp.ConnectionName
-				cd.Connection.ConnectionVersion = newcp.ConnectionVersion
+				cd.Connection.ConnectorVersion = newcp.ConnectorVersion
 				cd.Connection.ServiceName = newcp.ServiceName
 
 				jsonValue, err := stringifyValue(cd)
@@ -221,7 +221,7 @@ func getNewConnectionParams(connectionName string, connectionLocation string) (c
 		return cp, err
 	}
 
-	cp.ConnectionVersion = fmt.Sprintf("%v", connectionVersionResponse["connectorVersion"])
+	cp.ConnectorVersion = fmt.Sprintf("%v", connectionVersionResponse["connectorVersion"])
 	cp.ServiceName = fmt.Sprintf("%v", connectionVersionResponse["serviceDirectory"])
 	cp.ConnectionName = fmt.Sprintf("%v", connectionVersionResponse["name"])
 
