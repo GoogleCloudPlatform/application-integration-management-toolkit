@@ -109,15 +109,15 @@ type parameterInternal struct {
 }
 
 type parameterExternal struct {
-	Key             string    `json:"key,omitempty"`
-	DataType        string    `json:"dataType,omitempty"`
-	DefaultValue    valueType `json:"defaultValue,omitempty"`
-	Name            string    `json:"name,omitempty"`
-	IsTransient     bool      `json:"isTransient,omitempty"`
-	InputOutputType string    `json:"inputOutputType,omitempty"`
-	Producer        string    `json:"producer,omitempty"`
-	Searchable      bool      `json:"searchable,omitempty"`
-	JsonSchema      string    `json:"jsonSchema,omitempty"`
+	Key             string     `json:"key,omitempty"`
+	DataType        string     `json:"dataType,omitempty"`
+	DefaultValue    *valueType `json:"defaultValue,omitempty"`
+	Name            string     `json:"name,omitempty"`
+	IsTransient     bool       `json:"isTransient,omitempty"`
+	InputOutputType string     `json:"inputOutputType,omitempty"`
+	Producer        string     `json:"producer,omitempty"`
+	Searchable      bool       `json:"searchable,omitempty"`
+	JsonSchema      string     `json:"jsonSchema,omitempty"`
 }
 
 type producedBy struct {
@@ -147,10 +147,10 @@ type taskconfig struct {
 	NextTasksExecutionPolicy     string                    `json:"nextTasksExecutionPolicy,omitempty"`
 	TaskExecutionStrategy        string                    `json:"taskExecutionStrategy,omitempty"`
 	JsonValidationOption         string                    `json:"jsonValidationOption,omitempty"`
-	SuccessPolicy                successPolicy             `json:"successPolicy,omitempty"`
+	SuccessPolicy                *successPolicy            `json:"successPolicy,omitempty"`
 	TaskTemplate                 string                    `json:"taskTemplate,omitempty"`
-	FailurePolicy                failurePolicy             `json:"failurePolicy,omitempty"`
-	SynchronousCallFailurePolicy failurePolicy             `json:"synchronousCallFailurePolicy,omitempty"`
+	FailurePolicy                *failurePolicy            `json:"failurePolicy,omitempty"`
+	SynchronousCallFailurePolicy *failurePolicy            `json:"synchronousCallFailurePolicy,omitempty"`
 }
 
 type eventparameter struct {
