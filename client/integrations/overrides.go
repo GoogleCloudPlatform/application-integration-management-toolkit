@@ -117,40 +117,42 @@ func mergeOverrides(eversion integrationVersionExternal, o overrides, supressWar
 	}
 
 	//apply connection overrides
-	for _, connectionOverride := range o.ConnectionOverrides {
-		foundOverride := false
-		for taskIndex, task := range eversion.TaskConfigs {
-			if connectionOverride.TaskId == task.TaskId && connectionOverride.Task == task.Task {
-				newcp, err := getNewConnectionParams(connectionOverride.Parameters.ConnectionName, connectionOverride.Parameters.ConnectionLocation)
-				if err != nil {
-					return eversion, err
+	if !apiclient.DryRun() {
+		for _, connectionOverride := range o.ConnectionOverrides {
+			foundOverride := false
+			for taskIndex, task := range eversion.TaskConfigs {
+				if connectionOverride.TaskId == task.TaskId && connectionOverride.Task == task.Task {
+					newcp, err := getNewConnectionParams(connectionOverride.Parameters.ConnectionName, connectionOverride.Parameters.ConnectionLocation)
+					if err != nil {
+						return eversion, err
+					}
+
+					cparams := task.Parameters["config"]
+
+					cd, err := getConnectionDetails(*cparams.Value.JsonValue)
+					if err != nil {
+						return eversion, err
+					}
+
+					cd.Connection.ConnectionName = newcp.ConnectionName
+					cd.Connection.ConnectorVersion = newcp.ConnectorVersion
+					cd.Connection.ServiceName = newcp.ServiceName
+
+					jsonValue, err := stringifyValue(cd)
+					if err != nil {
+						return eversion, err
+					}
+
+					*cparams.Value.JsonValue = jsonValue
+					task.Parameters["config"] = cparams
+					eversion.TaskConfigs[taskIndex] = task
+
+					foundOverride = true
 				}
-
-				cparams := task.Parameters["config"]
-
-				cd, err := getConnectionDetails(*cparams.Value.JsonValue)
-				if err != nil {
-					return eversion, err
-				}
-
-				cd.Connection.ConnectionName = newcp.ConnectionName
-				cd.Connection.ConnectorVersion = newcp.ConnectorVersion
-				cd.Connection.ServiceName = newcp.ServiceName
-
-				jsonValue, err := stringifyValue(cd)
-				if err != nil {
-					return eversion, err
-				}
-
-				*cparams.Value.JsonValue = jsonValue
-				task.Parameters["config"] = cparams
-				eversion.TaskConfigs[taskIndex] = task
-
-				foundOverride = true
 			}
-		}
-		if !foundOverride && !supressWarnings {
-			clilog.Warning.Printf("task override with id %s was not found in the integration json\n", connectionOverride.TaskId)
+			if !foundOverride && !supressWarnings {
+				clilog.Warning.Printf("task override with id %s was not found in the integration json\n", connectionOverride.TaskId)
+			}
 		}
 	}
 	return eversion, nil
