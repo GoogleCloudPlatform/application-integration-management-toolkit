@@ -179,7 +179,7 @@ func setProjectIAMPermission(project string, memberName string, role string) (er
 	//this method treats errors as info since this is not a blocking problem
 
 	//Get the current IAM policies for the project
-	respBody, err := HttpClient(false, getendpoint)
+	respBody, err := HttpClient(false, getendpoint, "")
 	if err != nil {
 		clilog.Info.Printf("error getting IAM policies for the project %s: %v", project, err)
 		return err
@@ -399,7 +399,7 @@ func GetComputeEngineDefaultServiceAccount(projectId string) (serviceAccount str
 	var getendpoint = fmt.Sprintf("https://cloudresourcemanager.googleapis.com/v3/projects/%s", projectId)
 
 	//Get the project number
-	respBody, err := HttpClient(false, getendpoint)
+	respBody, err := HttpClient(false, getendpoint, "")
 	if err != nil {
 		clilog.Info.Printf("error getting details for the project %s: %v", projectId, err)
 		return serviceAccount, err
