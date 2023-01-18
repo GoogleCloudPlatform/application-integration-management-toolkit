@@ -60,7 +60,7 @@ type integrationVersion struct {
 	TriggerConfigs                []triggerconfig          `json:"triggerConfigs,omitempty"`
 	TaskConfigs                   []taskconfig             `json:"taskConfigs,omitempty"`
 	IntegrationParameters         []parameterExternal      `json:"integrationParameters,omitempty"`
-	UserLabel                     string                   `json:"userLabel,omitempty"`
+	UserLabel                     *string                  `json:"userLabel,omitempty"`
 }
 
 type integrationVersionExternal struct {
@@ -69,7 +69,7 @@ type integrationVersionExternal struct {
 	TriggerConfigs        []triggerconfig     `json:"triggerConfigs,omitempty"`
 	TaskConfigs           []taskconfig        `json:"taskConfigs,omitempty"`
 	IntegrationParameters []parameterExternal `json:"integrationParameters,omitempty"`
-	UserLabel             string              `json:"userLabel,omitempty"`
+	UserLabel             *string             `json:"userLabel,omitempty"`
 }
 
 type listbasicIntegrationVersions struct {
@@ -225,11 +225,16 @@ func CreateVersion(name string, content []byte, overridesContent []byte, snapsho
 	}
 
 	if userlabel != "" {
-		eversion.UserLabel = userlabel
+		eversion.UserLabel = new(string)
+		*eversion.UserLabel = userlabel
 	}
 
 	if content, err = json.Marshal(eversion); err != nil {
 		return nil, err
+	}
+
+	if apiclient.DryRun() {
+		clilog.Info.Println(string(content))
 	}
 
 	u, _ := url.Parse(apiclient.GetBaseIntegrationURL())
@@ -867,7 +872,9 @@ func convertInternalToExternal(internalVersion integrationVersion) (externalVers
 	externalVersion.TriggerConfigs = internalVersion.TriggerConfigs
 	externalVersion.TaskConfigs = internalVersion.TaskConfigs
 	externalVersion.IntegrationParameters = internalVersion.IntegrationParameters
-	externalVersion.UserLabel = internalVersion.UserLabel
+	if internalVersion.UserLabel != nil {
+		*externalVersion.UserLabel = *internalVersion.UserLabel
+	}
 	return externalVersion
 }
 

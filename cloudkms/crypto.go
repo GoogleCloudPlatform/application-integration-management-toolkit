@@ -15,6 +15,7 @@
 package cloudkms
 
 import (
+	"bytes"
 	"context"
 	"encoding/base64"
 	"fmt"
@@ -87,5 +88,5 @@ func DecryptSymmetric(name string, b64CipherText []byte) ([]byte, error) {
 		return nil, fmt.Errorf("decrypt: %v", err)
 	}
 
-	return resp.Plaintext, nil
+	return bytes.TrimSpace(resp.Plaintext), nil
 }

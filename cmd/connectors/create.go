@@ -15,10 +15,12 @@
 package connectors
 
 import (
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"os"
 	"regexp"
+	"time"
 
 	"github.com/srinandan/integrationcli/apiclient"
 	"github.com/srinandan/integrationcli/client/connections"
@@ -55,13 +57,64 @@ var CreateCmd = &cobra.Command{
 			}
 		}
 
-		_, err = connections.Create(name, content, serviceAccountName, serviceAccountProject, encryptionKey, grantPermission)
+		type status struct {
+			Code    int    `json:"code,omitempty"`
+			Message string `json:"message,omitempty"`
+		}
+
+		type operation struct {
+			Name     string  `json:"name,omitempty"`
+			Done     bool    `json:"done,omitempty"`
+			Error    *status `json:"error,omitempty"`
+			Response *string `json:"response,omitempty"`
+		}
+
+		operationsBytes, err := connections.Create(name, content, serviceAccountName, serviceAccountProject, encryptionKey, grantPermission)
+
+		if wait {
+			o := operation{}
+			if err = json.Unmarshal(operationsBytes, &o); err != nil {
+				return err
+			}
+
+			fmt.Printf("Checking connector status in %d seconds\n", interval)
+
+			apiclient.SetPrintOutput(false)
+
+			stop := apiclient.Every(interval*time.Second, func(time.Time) bool {
+				var respBody []byte
+
+				if respBody, err = connections.GetOperation(o.Name); err != nil {
+					return false
+				}
+
+				if err = json.Unmarshal(respBody, &o); err != nil {
+					return false
+				}
+
+				if o.Done {
+					if o.Error != nil {
+						fmt.Printf("Connection completed with error: %v\n", o.Error)
+					} else {
+						fmt.Println("Connection completed successfully!")
+					}
+					return false
+				} else {
+					fmt.Printf("Connection status is: %t. Waiting %d seconds.\n", o.Done, interval)
+					return true
+				}
+			})
+
+			<-stop
+		}
 		return
 	},
 }
 
 var connectionFile, serviceAccountName, serviceAccountProject, encryptionKey string
-var grantPermission bool
+var grantPermission, wait bool
+
+const interval = 10
 
 func init() {
 	CreateCmd.Flags().StringVarP(&name, "name", "n",
@@ -76,6 +129,8 @@ func init() {
 		"", "Service Account Project for the connection. Default is the connection's project id")
 	CreateCmd.Flags().StringVarP(&encryptionKey, "encryption-keyid", "k",
 		"", "Cloud KMS key for decrypting Auth Config; Format = locations/*/keyRings/*/cryptoKeys/*")
+	CreateCmd.Flags().BoolVarP(&wait, "wait", "",
+		false, "Waits for the connector to finish, with success or error")
 
 	_ = CreateCmd.MarkFlagRequired("name")
 	_ = CreateCmd.MarkFlagRequired("file")
