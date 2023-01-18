@@ -25,6 +25,7 @@ import (
 const integrationBaseURL = "https://%s-integrations.googleapis.com/v1/projects/%s/locations/%s/products/apigee/"
 const appIntegrationBaseURL = "https://%s-integrations.googleapis.com/v1/projects/%s/locations/%s/"
 const connectorBaseURL = "https://connectors.googleapis.com/v1/projects/%s/locations/%s/connections"
+const connectorOperationsBaseURL = "https://connectors.googleapis.com/v1/projects/%s/locations/%s/operations"
 
 var integrationRegions = []string{"us", "us-west1"}
 
@@ -217,6 +218,14 @@ func GetBaseConnectorURL() (connectorUrl string) {
 		return ""
 	}
 	return fmt.Sprintf(connectorBaseURL, GetProjectID(), GetRegion())
+}
+
+// GetBaseConnectorOperationsURL
+func GetBaseConnectorOperationsrURL() (connectorUrl string) {
+	if options.ProjectID == "" || options.Region == "" {
+		return ""
+	}
+	return fmt.Sprintf(connectorOperationsBaseURL, GetProjectID(), GetRegion())
 }
 
 // GetIntegrationRegions

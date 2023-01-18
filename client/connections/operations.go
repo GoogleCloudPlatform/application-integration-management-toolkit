@@ -23,8 +23,8 @@ import (
 
 // GetOperation
 func GetOperation(name string) (respBody []byte, err error) {
-	u, _ := url.Parse(apiclient.GetBaseConnectorURL())
-	u.Path = path.Join(u.Path, "operations", name)
+	u, _ := url.Parse(apiclient.GetBaseConnectorOperationsrURL())
+	u.Path = path.Join(u.Path, name)
 	respBody, err = apiclient.HttpClient(apiclient.GetPrintOutput(), u.String())
 	return respBody, err
 }

@@ -19,6 +19,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"path/filepath"
 	"regexp"
 	"time"
 
@@ -63,10 +64,10 @@ var CreateCmd = &cobra.Command{
 		}
 
 		type operation struct {
-			Name     string  `json:"name,omitempty"`
-			Done     bool    `json:"done,omitempty"`
-			Error    *status `json:"error,omitempty"`
-			Response *string `json:"response,omitempty"`
+			Name     string                  `json:"name,omitempty"`
+			Done     bool                    `json:"done,omitempty"`
+			Error    *status                 `json:"error,omitempty"`
+			Response *map[string]interface{} `json:"response,omitempty"`
 		}
 
 		operationsBytes, err := connections.Create(name, content, serviceAccountName, serviceAccountProject, encryptionKey, grantPermission)
@@ -77,14 +78,15 @@ var CreateCmd = &cobra.Command{
 				return err
 			}
 
-			fmt.Printf("Checking connector status in %d seconds\n", interval)
+			operationId := filepath.Base(o.Name)
+			fmt.Printf("Checking connection status for %s in %d seconds\n", operationId, interval)
 
 			apiclient.SetPrintOutput(false)
 
 			stop := apiclient.Every(interval*time.Second, func(time.Time) bool {
 				var respBody []byte
 
-				if respBody, err = connections.GetOperation(o.Name); err != nil {
+				if respBody, err = connections.GetOperation(operationId); err != nil {
 					return false
 				}
 
