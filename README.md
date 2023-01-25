@@ -33,7 +33,7 @@ token=$(gcloud auth print-access-token)
 project=$(gcloud config get-value project | head -n 1)
 region=<set region here>
 
-integrationcli integrations list -p $project -r $ region -t $token
+integrationcli integrations list -p $project -r $region -t $token
 ```
 
 ### Set Preferences
