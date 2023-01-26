@@ -27,6 +27,7 @@ var Cmd = &cobra.Command{
 
 var project, region, name string
 var userLabel, snapshot string
+var overrides bool
 
 func init() {
 

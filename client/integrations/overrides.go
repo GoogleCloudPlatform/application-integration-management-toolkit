@@ -158,6 +158,35 @@ func mergeOverrides(eversion integrationVersionExternal, o overrides, supressWar
 	return eversion, nil
 }
 
+func extractOverrides(iversion integrationVersion) (overrides, error) {
+	taskoverride := overrides{}
+	for _, task := range iversion.TaskConfigs {
+		if task.Task != "GenericConnectorTask" {
+			continue
+		}
+		co := connectionoverrides{}
+		co.TaskId = task.TaskId
+		co.Task = task.Task
+
+		cparams, ok := task.Parameters["config"]
+		if !ok {
+			continue
+		}
+		cd, err := getConnectionDetails(*cparams.Value.JsonValue)
+		if err != nil {
+			return taskoverride, err
+		}
+
+		fullconnName := strings.TrimSuffix(cd.Connection.ConnectionName, "/")
+		parts := strings.Split(fullconnName, "/")
+		connName := parts[len(parts)-1]
+
+		co.Parameters.ConnectionName = connName
+		taskoverride.ConnectionOverrides = append(taskoverride.ConnectionOverrides, co)
+	}
+	return taskoverride, nil
+}
+
 // overrideParameters
 func overrideParameters(overrideParameters map[string]eventparameter, taskParameters map[string]eventparameter, supressWarnings bool) map[string]eventparameter {
 	for overrideParamName, overrideParam := range overrideParameters {
