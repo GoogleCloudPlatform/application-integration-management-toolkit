@@ -48,11 +48,11 @@ var GetVerCmd = &cobra.Command{
 	},
 	RunE: func(cmd *cobra.Command, args []string) (err error) {
 		if version != "" {
-			_, err = integrations.Get(name, version, basic)
+			_, err = integrations.Get(name, version, basic, overrides)
 		} else if snapshot != "" {
-			_, err = integrations.GetBySnapshot(name, snapshot)
+			_, err = integrations.GetBySnapshot(name, snapshot, overrides)
 		} else {
-			_, err = integrations.GetByUserlabel(name, userLabel)
+			_, err = integrations.GetByUserlabel(name, userLabel, overrides)
 		}
 		return
 
@@ -70,6 +70,8 @@ func init() {
 		"", "Integration flow user label")
 	GetVerCmd.Flags().BoolVarP(&basic, "basic", "b",
 		false, "Returns snapshot and version only")
+	GetVerCmd.Flags().BoolVarP(&overrides, "overrides", "o",
+		false, "Returns overrides only for integration")
 
 	_ = GetVerCmd.MarkFlagRequired("name")
 }

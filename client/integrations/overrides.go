@@ -158,6 +158,54 @@ func mergeOverrides(eversion integrationVersionExternal, o overrides, supressWar
 	return eversion, nil
 }
 
+func extractOverrides(iversion integrationVersion) (overrides, error) {
+	taskOverrides := overrides{}
+	for _, task := range iversion.TaskConfigs {
+		if task.Task == "GenericConnectorTask" {
+			if err := handleGenericConnectorTask(task, &taskOverrides); err != nil {
+				return taskOverrides, err
+			}
+		} else if task.Task == "GenericRestV2Task" {
+			if err := handleGenericRestV2Task(task, &taskOverrides); err != nil {
+				return taskOverrides, err
+			}
+		}
+	}
+	return taskOverrides, nil
+}
+
+func handleGenericRestV2Task(taskConfig taskconfig, taskOverrides *overrides) error {
+	tc := taskconfig{}
+	tc.TaskId = taskConfig.TaskId
+	tc.Task = taskConfig.Task
+	tc.Parameters = map[string]eventparameter{}
+	tc.Parameters["url"] = taskConfig.Parameters["url"]
+	taskOverrides.TaskOverrides = append(taskOverrides.TaskOverrides, tc)
+	return nil
+}
+
+func handleGenericConnectorTask(taskConfig taskconfig, taskOverrides *overrides) error {
+	co := connectionoverrides{}
+	co.TaskId = taskConfig.TaskId
+	co.Task = taskConfig.Task
+
+	cparams, ok := taskConfig.Parameters["config"]
+	if !ok {
+		return nil
+	}
+	cd, err := getConnectionDetails(*cparams.Value.JsonValue)
+	if err != nil {
+		return err
+	}
+
+	parts := strings.Split(cd.Connection.ConnectionName, "/")
+	connName := parts[len(parts)-1]
+	co.Parameters.ConnectionName = connName
+
+	taskOverrides.ConnectionOverrides = append(taskOverrides.ConnectionOverrides, co)
+	return nil
+}
+
 // overrideParameters
 func overrideParameters(overrideParameters map[string]eventparameter, taskParameters map[string]eventparameter, supressWarnings bool) map[string]eventparameter {
 	for overrideParamName, overrideParam := range overrideParameters {
