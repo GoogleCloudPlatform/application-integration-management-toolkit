@@ -432,7 +432,7 @@ func List(pageSize int, pageToken string, filter string, orderBy string) (respBo
 }
 
 // Get
-func Get(name string, version string, basicInfo bool, orides bool) ([]byte, error) {
+func Get(name string, version string, basicInfo bool, override bool) ([]byte, error) {
 	u, _ := url.Parse(apiclient.GetBaseIntegrationURL())
 	u.Path = path.Join(u.Path, "integrations", name, "versions", version)
 	if basicInfo {
@@ -448,9 +448,9 @@ func Get(name string, version string, basicInfo bool, orides bool) ([]byte, erro
 		apiclient.SetPrintOutput(printSetting)
 		return getBasicInfo(respBody)
 	}
-	apiclient.SetPrintOutput(!orides)
+	apiclient.SetPrintOutput(!override)
 	respBody, err := apiclient.HttpClient(apiclient.GetPrintOutput(), u.String())
-	if orides {
+	if override {
 		iversion := integrationVersion{}
 		json.Unmarshal(respBody, &iversion)
 		or := overrides{}
@@ -466,7 +466,7 @@ func Get(name string, version string, basicInfo bool, orides bool) ([]byte, erro
 }
 
 // GetBySnapshot
-func GetBySnapshot(name string, snapshot string, ovrides bool) ([]byte, error) {
+func GetBySnapshot(name string, snapshot string, override bool) ([]byte, error) {
 	apiclient.SetPrintOutput(false)
 	listBody, err := ListVersions(name, -1, "", "snapshotNumber="+snapshot, "", false, false, true)
 	if err != nil {
@@ -485,11 +485,11 @@ func GetBySnapshot(name string, snapshot string, ovrides bool) ([]byte, error) {
 	}
 
 	version := getVersion(listBasicVersions.BasicIntegrationVersions[0].Version)
-	return Get(name, version, false, ovrides)
+	return Get(name, version, false, override)
 }
 
 // GetByUserlabel
-func GetByUserlabel(name string, userLabel string, ovrides bool) ([]byte, error) {
+func GetByUserlabel(name string, userLabel string, override bool) ([]byte, error) {
 	apiclient.SetPrintOutput(false)
 	listBody, err := ListVersions(name, -1, "", "userLabel="+userLabel, "", false, false, true)
 	if err != nil {
@@ -507,7 +507,7 @@ func GetByUserlabel(name string, userLabel string, ovrides bool) ([]byte, error)
 	}
 
 	version := getVersion(listBasicVersions.BasicIntegrationVersions[0].Version)
-	return Get(name, version, false, ovrides)
+	return Get(name, version, false, override)
 }
 
 // Delete - THIS IS UNIMPLEMENTED!!!

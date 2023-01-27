@@ -159,32 +159,51 @@ func mergeOverrides(eversion integrationVersionExternal, o overrides, supressWar
 }
 
 func extractOverrides(iversion integrationVersion) (overrides, error) {
-	taskoverride := overrides{}
+	taskOverrides := overrides{}
 	for _, task := range iversion.TaskConfigs {
-		if task.Task != "GenericConnectorTask" {
-			continue
+		if task.Task == "GenericConnectorTask" {
+			if err := handleGenericConnectorTask(task, &taskOverrides); err != nil {
+				return taskOverrides, err
+			}
+		} else if task.Task == "GenericRestV2Task" {
+			if err := handleGenericRestV2Task(task, &taskOverrides); err != nil {
+				return taskOverrides, err
+			}
 		}
-		co := connectionoverrides{}
-		co.TaskId = task.TaskId
-		co.Task = task.Task
-
-		cparams, ok := task.Parameters["config"]
-		if !ok {
-			continue
-		}
-		cd, err := getConnectionDetails(*cparams.Value.JsonValue)
-		if err != nil {
-			return taskoverride, err
-		}
-
-		fullconnName := strings.TrimSuffix(cd.Connection.ConnectionName, "/")
-		parts := strings.Split(fullconnName, "/")
-		connName := parts[len(parts)-1]
-
-		co.Parameters.ConnectionName = connName
-		taskoverride.ConnectionOverrides = append(taskoverride.ConnectionOverrides, co)
 	}
-	return taskoverride, nil
+	return taskOverrides, nil
+}
+
+func handleGenericRestV2Task(taskConfig taskconfig, taskOverrides *overrides) error {
+	tc := taskconfig{}
+	tc.TaskId = taskConfig.TaskId
+	tc.Task = taskConfig.Task
+	tc.Parameters = map[string]eventparameter{}
+	tc.Parameters["url"] = taskConfig.Parameters["url"]
+	taskOverrides.TaskOverrides = append(taskOverrides.TaskOverrides, tc)
+	return nil
+}
+
+func handleGenericConnectorTask(taskConfig taskconfig, taskOverrides *overrides) error {
+	co := connectionoverrides{}
+	co.TaskId = taskConfig.TaskId
+	co.Task = taskConfig.Task
+
+	cparams, ok := taskConfig.Parameters["config"]
+	if !ok {
+		return nil
+	}
+	cd, err := getConnectionDetails(*cparams.Value.JsonValue)
+	if err != nil {
+		return err
+	}
+
+	parts := strings.Split(cd.Connection.ConnectionName, "/")
+	connName := parts[len(parts)-1]
+	co.Parameters.ConnectionName = connName
+
+	taskOverrides.ConnectionOverrides = append(taskOverrides.ConnectionOverrides, co)
+	return nil
 }
 
 // overrideParameters
