@@ -127,7 +127,7 @@ func mergeOverrides(eversion integrationVersionExternal, o overrides, supressWar
 
 		}
 		if !foundOverride && !supressWarnings {
-			clilog.Warning.Printf("task override %s with id %s was not found in the integration json\n", paramOverride.Key, paramOverride.DataType)
+			clilog.Warning.Printf("param override key %s with dataTpe %s was not found in the integration json\n", paramOverride.Key, paramOverride.DataType)
 		}
 	}
 
