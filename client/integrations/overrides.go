@@ -29,6 +29,7 @@ type overrides struct {
 	TriggerOverrides    []triggeroverrides    `json:"trigger_overrides,omitempty"`
 	TaskOverrides       []taskconfig          `json:"task_overrides,omitempty"`
 	ConnectionOverrides []connectionoverrides `json:"connection_overrides,omitempty"`
+	ParamOverrides      []parameterExternal   `json:"param_overrides,omitempty"`
 }
 
 type triggeroverrides struct {
@@ -71,7 +72,6 @@ const authConfigValue = "{  \"@type\": \"type.googleapis.com/enterprise.crm.even
 
 // mergeOverrides
 func mergeOverrides(eversion integrationVersionExternal, o overrides, supressWarnings bool) (integrationVersionExternal, error) {
-
 	//apply trigger overrides
 	for _, triggerOverride := range o.TriggerOverrides {
 		foundOverride := false
@@ -113,6 +113,21 @@ func mergeOverrides(eversion integrationVersionExternal, o overrides, supressWar
 		}
 		if !foundOverride && !supressWarnings {
 			clilog.Warning.Printf("task override %s with id %s was not found in the integration json\n", taskOverride.DisplayName, taskOverride.TaskId)
+		}
+	}
+
+	for _, paramOverride := range o.ParamOverrides {
+		foundOverride := false
+		for ipIndex, ip := range eversion.IntegrationParameters {
+			if paramOverride.Key == ip.Key {
+				ip.DefaultValue = paramOverride.DefaultValue
+			}
+			eversion.IntegrationParameters[ipIndex] = ip
+			foundOverride = true
+
+		}
+		if !foundOverride && !supressWarnings {
+			clilog.Warning.Printf("task override %s with id %s was not found in the integration json\n", paramOverride.Key, paramOverride.DataType)
 		}
 	}
 
@@ -160,6 +175,7 @@ func mergeOverrides(eversion integrationVersionExternal, o overrides, supressWar
 
 func extractOverrides(iversion integrationVersion) (overrides, error) {
 	taskOverrides := overrides{}
+
 	for _, task := range iversion.TaskConfigs {
 		if task.Task == "GenericConnectorTask" {
 			if err := handleGenericConnectorTask(task, &taskOverrides); err != nil {
@@ -173,6 +189,14 @@ func extractOverrides(iversion integrationVersion) (overrides, error) {
 			if err := handleCloudFunctionTask(task, &taskOverrides); err != nil {
 				return taskOverrides, err
 			}
+		}
+	}
+	for _, param := range iversion.IntegrationParameters {
+		if strings.HasPrefix(param.Key, "_") {
+			ip := parameterExternal{}
+			ip.Key = param.Key
+			ip.DefaultValue = param.DefaultValue
+			taskOverrides.ParamOverrides = append(taskOverrides.ParamOverrides, ip)
 		}
 	}
 	return taskOverrides, nil
