@@ -169,6 +169,10 @@ func extractOverrides(iversion integrationVersion) (overrides, error) {
 			if err := handleGenericRestV2Task(task, &taskOverrides); err != nil {
 				return taskOverrides, err
 			}
+		} else if task.Task == "CloudFunctionTask" {
+			if err := handleCloudFunctionTask(task, &taskOverrides); err != nil {
+				return taskOverrides, err
+			}
 		}
 	}
 	return taskOverrides, nil
@@ -180,6 +184,16 @@ func handleGenericRestV2Task(taskConfig taskconfig, taskOverrides *overrides) er
 	tc.Task = taskConfig.Task
 	tc.Parameters = map[string]eventparameter{}
 	tc.Parameters["url"] = taskConfig.Parameters["url"]
+	taskOverrides.TaskOverrides = append(taskOverrides.TaskOverrides, tc)
+	return nil
+}
+
+func handleCloudFunctionTask(taskConfig taskconfig, taskOverrides *overrides) error {
+	tc := taskconfig{}
+	tc.TaskId = taskConfig.TaskId
+	tc.Task = taskConfig.Task
+	tc.Parameters = map[string]eventparameter{}
+	tc.Parameters["TriggerUrl"] = taskConfig.Parameters["TriggerUrl"]
 	taskOverrides.TaskOverrides = append(taskOverrides.TaskOverrides, tc)
 	return nil
 }
