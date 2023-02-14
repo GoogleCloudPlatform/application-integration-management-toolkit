@@ -149,6 +149,37 @@ Auth Configs must be created in each GCP project. The auth config name (which co
 }
 ```
 
+### Generate Overrides
+
+Common overrides for tasks can be generated from `integrationcli`.
+
+```yaml
+integrationcli integrations versions get -n sampple -s 1 -o true -t $token
+```
+
+Can generate the overrides JSON:
+
+```yaml
+{
+	"task_overrides": [
+		{
+			"task": "GenericRestV2Task",
+			"taskId": "3",
+			"parameters": {
+				"url": {
+					"key": "url",
+					"value": {
+						"stringValue": "xxxxx"
+					}
+				}
+			}
+		}
+	]
+}
+```
+
+Users can add other overrides and/or modify the values.
+
 ### Encrypted Auth Config
 
 If one wishes to store auth config in the source code repo, the file can be encrypted (and base64 encoded) and stored in the repo. To check in an encrypted auth config file, encrypt the clear text auth config file as follows:
