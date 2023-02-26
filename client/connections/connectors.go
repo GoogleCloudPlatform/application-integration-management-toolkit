@@ -331,14 +331,41 @@ func Delete(name string) (respBody []byte, err error) {
 }
 
 // Get
-func Get(name string, view string) (respBody []byte, err error) {
+func Get(name string, view string, minimal bool) (respBody []byte, err error) {
 	u, _ := url.Parse(apiclient.GetBaseConnectorURL())
 	q := u.Query()
 	if view != "" {
 		q.Set("view", view)
 	}
 	u.Path = path.Join(u.Path, name)
+
+	tmp := apiclient.GetPrintOutput()
+
+	if minimal {
+		apiclient.SetPrintOutput(false)
+	}
+
 	respBody, err = apiclient.HttpClient(apiclient.GetPrintOutput(), u.String())
+
+	if minimal {
+		c := connection{}
+		err := json.Unmarshal(respBody, &c)
+		if err != nil {
+			return nil, err
+		}
+		c.ConnectorDetails = new(connectorDetails)
+		c.ConnectorDetails.Name = getConnectorName(*c.ConnectorVersion)
+		c.ConnectorDetails.Version = getConnectorVersion(*c.ConnectorVersion)
+		c.ConnectorVersion = nil
+		c.Name = nil
+		connectionPayload, err := json.Marshal(c)
+		if err != nil {
+			return nil, err
+		}
+		apiclient.SetPrintOutput(tmp) //set original print output
+		apiclient.PrettyPrint(connectionPayload)
+		return connectionPayload, err
+	}
 	return respBody, err
 }
 
@@ -419,7 +446,7 @@ func Import(folder string) (err error) {
 			return err
 		}
 
-		if _, err := Get(name, ""); err != nil { //create only if connection doesn't exist
+		if _, err := Get(name, "", false); err != nil { //create only if connection doesn't exist
 			_, err = Create(name, content, "", "", "", false)
 			if err != nil {
 				errs = append(errs, err.Error())
