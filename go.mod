@@ -3,8 +3,8 @@ module github.com/srinandan/integrationcli
 go 1.19
 
 require (
-	cloud.google.com/go v0.105.0
 	cloud.google.com/go/kms v1.6.0
+	cloud.google.com/go/secretmanager v1.9.0
 	github.com/apigee/apigeecli v0.0.0-20220602211911-fadd8fdbbc2a
 	github.com/lestrrat-go/jwx/v2 v2.0.1
 	github.com/spf13/cobra v1.2.1
@@ -15,7 +15,6 @@ require (
 	cloud.google.com/go/compute v1.12.1 // indirect
 	cloud.google.com/go/compute/metadata v0.2.1 // indirect
 	cloud.google.com/go/iam v0.7.0 // indirect
-	cloud.google.com/go/secretmanager v1.9.0 // indirect
 	github.com/cpuguy83/go-md2man/v2 v2.0.0 // indirect
 	github.com/decred/dcrd/dcrec/secp256k1/v4 v4.0.1 // indirect
 	github.com/goccy/go-json v0.9.7 // indirect
@@ -35,10 +34,10 @@ require (
 	github.com/spf13/pflag v1.0.5 // indirect
 	go.opencensus.io v0.23.0 // indirect
 	golang.org/x/crypto v0.0.0-20220427172511-eb4f295cb31f // indirect
-	golang.org/x/net v0.0.0-20221014081412-f15817d10f9b // indirect
+	golang.org/x/net v0.7.0 // indirect
 	golang.org/x/oauth2 v0.0.0-20221014153046-6fdb5e3db783 // indirect
-	golang.org/x/sys v0.0.0-20220728004956-3c1f35247d10 // indirect
-	golang.org/x/text v0.4.0 // indirect
+	golang.org/x/sys v0.5.0 // indirect
+	golang.org/x/text v0.7.0 // indirect
 	google.golang.org/api v0.102.0 // indirect
 	google.golang.org/appengine v1.6.7 // indirect
 	google.golang.org/grpc v1.50.1 // indirect
