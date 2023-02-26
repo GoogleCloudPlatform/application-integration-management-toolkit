@@ -295,7 +295,7 @@ func getNewConnectionParams(connectionName string, connectionLocation string) (c
 		integrationRegion = apiclient.GetRegion() //store the integration location
 		apiclient.SetRegion(connectionLocation)   //set the connector region
 	}
-	connResp, err := connections.Get(connectionName, "BASIC") //get connector details
+	connResp, err := connections.Get(connectionName, "BASIC", false) //get connector details
 	apiclient.SetPrintOutput(true)
 	if connectionLocation != "" {
 		apiclient.SetRegion(integrationRegion) //set the integration region back

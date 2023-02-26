@@ -38,18 +38,21 @@ var GetCmd = &cobra.Command{
 		return apiclient.SetProjectID(project)
 	},
 	RunE: func(cmd *cobra.Command, args []string) (err error) {
-		_, err = connections.Get(name, view)
+		_, err = connections.Get(name, view, minimal)
 		return
 	},
 }
 
 var view string
+var minimal bool
 
 func init() {
 	GetCmd.Flags().StringVarP(&name, "name", "n",
 		"", "The name of the connection")
 	GetCmd.Flags().StringVarP(&view, "view", "",
 		"BASIC", "fields of the Connection to be returned; default is BASIC. FULL is the other option")
+	GetCmd.Flags().BoolVarP(&minimal, "minimal", "",
+		false, "fields of the Connection to be returned; default is false")
 
 	_ = GetCmd.MarkFlagRequired("name")
 }
