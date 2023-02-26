@@ -16,11 +16,13 @@ package connections
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"net/url"
 	"os"
 	"path"
+	"path/filepath"
 	"strconv"
 	"strings"
 
@@ -392,6 +394,52 @@ func readSecretFile(name string) (payload []byte, err error) {
 		return nil, err
 	}
 	return content, nil
+}
+
+// Import
+func Import(folder string) (err error) {
+
+	apiclient.SetPrintOutput(false)
+	errs := []string{}
+
+	err = filepath.Walk(folder, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			clilog.Warning.Println("connection folder not found")
+			return nil
+		}
+		if info.IsDir() {
+			return nil
+		}
+		if filepath.Ext(path) != ".json" {
+			return nil
+		}
+		name := strings.TrimSuffix(filepath.Base(path), filepath.Ext(filepath.Base(path)))
+		content, err := ioutil.ReadFile(path)
+		if err != nil {
+			return err
+		}
+
+		if _, err := Get(name, ""); err != nil { //create only if connection doesn't exist
+			_, err = Create(name, content, "", "", "", false)
+			if err != nil {
+				errs = append(errs, err.Error())
+			}
+			fmt.Printf("creating connection %s\n", name)
+		} else {
+			fmt.Printf("connection %s already exists, skipping creations\n", name)
+		}
+
+		return nil
+	})
+
+	if err != nil {
+		return nil
+	}
+
+	if len(errs) > 0 {
+		return errors.New(strings.Join(errs, "\n"))
+	}
+	return nil
 }
 
 // Export
