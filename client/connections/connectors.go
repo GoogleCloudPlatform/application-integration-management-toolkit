@@ -30,6 +30,24 @@ import (
 	"github.com/srinandan/integrationcli/secmgr"
 )
 
+const maxPageSize = 1000
+
+type listconnections struct {
+	Connections   []connection `json:"connections,omitempty"`
+	NextPageToken string       `json:"nextPageToken,omitempty"`
+}
+
+type connection struct {
+	Name              *string           `json:"name,omitempty"`
+	Description       string            `json:"description,omitempty"`
+	ConnectorVersion  *string           `json:"connectorVersion,omitempty"`
+	ConnectorDetails  *connectorDetails `json:"connectorDetails,omitempty"`
+	ConfigVariables   []configVar       `json:"configVariables,omitempty"`
+	AuthConfig        authConfig        `json:"authConfig,omitempty"`
+	DestinationConfig destinationConfig `json:"destinationConfig,omitempty"`
+	Suspended         bool              `json:"suspended,omitempty"`
+}
+
 type connectionRequest struct {
 	Labels             *map[string]string   `json:"labels,omitempty"`
 	Description        *string              `json:"description,omitempty"`
@@ -374,4 +392,59 @@ func readSecretFile(name string) (payload []byte, err error) {
 		return nil, err
 	}
 	return content, nil
+}
+
+// Export
+func Export(folder string) (err error) {
+	apiclient.SetExportToFile(folder)
+	apiclient.SetPrintOutput(false)
+
+	respBody, err := List(maxPageSize, "", "", "")
+	if err != nil {
+		return err
+	}
+
+	lconnections := listconnections{}
+
+	if err = json.Unmarshal(respBody, &lconnections); err != nil {
+		return err
+	}
+
+	//no connections where found
+	if len(lconnections.Connections) == 0 {
+		return nil
+	}
+
+	for _, lconnection := range lconnections.Connections {
+		lconnection.ConnectorDetails = new(connectorDetails)
+		lconnection.ConnectorDetails.Name = getConnectorName(*lconnection.ConnectorVersion)
+		lconnection.ConnectorDetails.Version = getConnectorVersion(*lconnection.ConnectorVersion)
+		lconnection.ConnectorVersion = nil
+		fileName := getConnectionName(*lconnection.Name) + ".json"
+		lconnection.Name = nil
+		connectionPayload, err := json.Marshal(lconnection)
+		if err != nil {
+			return err
+		}
+		if err = apiclient.WriteByteArrayToFile(path.Join(apiclient.GetExportToFile(), fileName), false, connectionPayload); err != nil {
+			clilog.Error.Println(err)
+			return err
+		}
+		fmt.Printf("Downloaded %s\n", fileName)
+	}
+
+	return nil
+}
+
+func getConnectorName(version string) string {
+	return strings.Split(version, "/")[7]
+}
+
+func getConnectorVersion(version string) int {
+	i, _ := strconv.Atoi(strings.Split(version, "/")[9])
+	return i
+}
+
+func getConnectionName(name string) string {
+	return name[strings.LastIndex(name, "/")+1:]
 }

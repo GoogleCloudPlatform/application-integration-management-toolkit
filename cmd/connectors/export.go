@@ -12,20 +12,20 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package authconfigs
+package connectors
 
 import (
 	"github.com/srinandan/integrationcli/apiclient"
-	"github.com/srinandan/integrationcli/client/authconfigs"
+	"github.com/srinandan/integrationcli/client/connections"
 
 	"github.com/spf13/cobra"
 )
 
-// ExportCmd to export integrations
+// ExportCmd to export connections
 var ExportCmd = &cobra.Command{
 	Use:   "export",
-	Short: "Export authconfigs in a region to a folder",
-	Long:  "Export authconfigs in a region to a folder",
+	Short: "Export connections in a region to a folder",
+	Long:  "Export connections in a region to a folder",
 	Args: func(cmd *cobra.Command, args []string) (err error) {
 		if err = apiclient.SetRegion(region); err != nil {
 			return err
@@ -37,7 +37,7 @@ var ExportCmd = &cobra.Command{
 			return err
 		}
 
-		return authconfigs.Export(folder)
+		return connections.Export(folder)
 	},
 }
 
@@ -45,7 +45,7 @@ var folder string
 
 func init() {
 	ExportCmd.Flags().StringVarP(&folder, "folder", "f",
-		"", "Folder to export authconfig")
+		"", "Folder to export connections")
 
 	_ = ExportCmd.MarkFlagRequired("folder")
 }
