@@ -180,6 +180,8 @@ Can generate the overrides JSON:
 
 Users can add other overrides and/or modify the values.
 
+NOTE: Any variable with the prefix `_` is also extracted as an override. This excludes `Input` and `Output` variables.
+
 ### Encrypted Auth Config
 
 If one wishes to store auth config in the source code repo, the file can be encrypted (and base64 encoded) and stored in the repo. To check in an encrypted auth config file, encrypt the clear text auth config file as follows:
