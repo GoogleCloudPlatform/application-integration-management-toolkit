@@ -558,6 +558,21 @@ func Publish(name string, version string) (respBody []byte, err error) {
 	return changeState(name, version, "", ":publish")
 }
 
+// Unpublish
+func Unpublish(name string, version string) (respBody []byte, err error) {
+	return changeState(name, version, "", ":unpublish")
+}
+
+// UnpublishSnapshot
+func UnpublishSnapshot(name string, snapshot string) (respBody []byte, err error) {
+	return changeState(name, "", "snapshotNumber="+snapshot, ":unpublish")
+}
+
+// UnpublishUserLabel
+func UnpublishUserLabel(name string, userLabel string) (respBody []byte, err error) {
+	return changeState(name, "", "userLabel="+userLabel, ":unpublish")
+}
+
 // Download
 func Download(name string, version string) (respBody []byte, err error) {
 	return changeState(name, version, "", ":download")
@@ -574,13 +589,13 @@ func DeactivateSnapshot(name string, snapshot string) (respBody []byte, err erro
 }
 
 // ArchiveUserLabel
-func ArchiveUserLabel(name string, snapshot string) (respBody []byte, err error) {
-	return changeState(name, "", "userLabel="+snapshot, ":archive")
+func ArchiveUserLabel(name string, userLabel string) (respBody []byte, err error) {
+	return changeState(name, "", "userLabel="+userLabel, ":archive")
 }
 
 // DeactivateUserLabel
-func DeactivateUserLabel(name string, snapshot string) (respBody []byte, err error) {
-	return changeState(name, "", "userLabel="+snapshot, ":deactivate")
+func DeactivateUserLabel(name string, userLabel string) (respBody []byte, err error) {
+	return changeState(name, "", "userLabel="+userLabel, ":deactivate")
 }
 
 // PublishUserLabel
