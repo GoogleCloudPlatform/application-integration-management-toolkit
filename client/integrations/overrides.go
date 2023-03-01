@@ -192,7 +192,7 @@ func extractOverrides(iversion integrationVersion) (overrides, error) {
 		}
 	}
 	for _, param := range iversion.IntegrationParameters {
-		if strings.HasPrefix(param.Key, "_") {
+		if strings.HasPrefix(param.Key, "_") && !inputOutputVariable(param.InputOutputType) {
 			ip := parameterExternal{}
 			ip.Key = param.Key
 			ip.DefaultValue = param.DefaultValue
@@ -200,6 +200,13 @@ func extractOverrides(iversion integrationVersion) (overrides, error) {
 		}
 	}
 	return taskOverrides, nil
+}
+
+func inputOutputVariable(variable string) bool {
+	if variable == "IN" || variable == "OUT" || variable == "IN_OUT" {
+		return true
+	}
+	return false
 }
 
 func handleGenericRestV2Task(taskConfig taskconfig, taskOverrides *overrides) error {
