@@ -36,6 +36,6 @@ func init() {
 	VerCmd.AddCommand(ImportflowCmd)
 	VerCmd.AddCommand(PublishVerCmd)
 	VerCmd.AddCommand(UnPublishVerCmd)
-	VerCmd.AddCommand(ArchiveVerCmd)
 	VerCmd.AddCommand(DownloadVerCmd)
+	VerCmd.AddCommand(DelVerCmd)
 }

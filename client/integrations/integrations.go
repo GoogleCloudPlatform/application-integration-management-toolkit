@@ -535,12 +535,61 @@ func GetByUserlabel(name string, userLabel string, minimal bool, override bool) 
 	return Get(name, version, false, minimal, override)
 }
 
-// Delete - THIS IS UNIMPLEMENTED!!!
-func Delete(name string, version string) (respBody []byte, err error) {
+// Delete
+func Delete(name string) (respBody []byte, err error) {
+	u, _ := url.Parse(apiclient.GetBaseIntegrationURL())
+	u.Path = path.Join(u.Path, "integrations", name)
+	respBody, err = apiclient.HttpClient(apiclient.GetPrintOutput(), u.String(), "", "DELETE")
+	return respBody, err
+}
+
+// DeleteVersion
+func DeleteVersion(name string, version string) (respBody []byte, err error) {
 	u, _ := url.Parse(apiclient.GetBaseIntegrationURL())
 	u.Path = path.Join(u.Path, "integrations", name, "versions", version)
-	//respBody, err = apiclient.HttpClient(apiclient.GetPrintOutput(), u.String(), "", "DELETE")
-	return respBody, fmt.Errorf("not implemented")
+	respBody, err = apiclient.HttpClient(apiclient.GetPrintOutput(), u.String(), "", "DELETE")
+	return respBody, err
+}
+
+// DeleteByUserlabel
+func DeleteByUserlabel(name string, userLabel string) (respBody []byte, err error) {
+
+	print := apiclient.GetPrintOutput()
+	apiclient.SetPrintOutput(false)
+	iversionBytes, err := GetByUserlabel(name, userLabel, false, false)
+	if err != nil {
+		return nil, err
+	}
+
+	iversion := integrationVersion{}
+	err = json.Unmarshal(iversionBytes, &iversion)
+	if err != nil {
+		return nil, err
+	}
+
+	version := getVersion(iversion.Name)
+	apiclient.SetPrintOutput(print)
+	return DeleteVersion(name, version)
+}
+
+// DeleteBySnapshot
+func DeleteBySnapshot(name string, snapshot string) (respBody []byte, err error) {
+	print := apiclient.GetPrintOutput()
+	apiclient.SetPrintOutput(false)
+	iversionBytes, err := GetBySnapshot(name, snapshot, false, false)
+	if err != nil {
+		return nil, err
+	}
+
+	iversion := integrationVersion{}
+	err = json.Unmarshal(iversionBytes, &iversion)
+	if err != nil {
+		return nil, err
+	}
+
+	version := getVersion(iversion.Name)
+	apiclient.SetPrintOutput(print)
+	return DeleteVersion(name, version)
 }
 
 // Deactivate

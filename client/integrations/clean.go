@@ -56,7 +56,7 @@ func Clean(name string, reportOnly bool, keepList []string) (err error) {
 			if reportOnly {
 				fmt.Println("[REPORT]: Integration '" + name + "' Version: " + iversion.Version + " and Snapshot " + iversion.SnapshotNumber + " can be cleaned")
 			} else {
-				_, err = Delete(name, iversion.Version)
+				_, err = DeleteVersion(name, iversion.Version)
 				if err != nil {
 					return err
 				}
