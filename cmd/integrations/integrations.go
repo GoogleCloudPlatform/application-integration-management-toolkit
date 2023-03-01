@@ -46,4 +46,5 @@ func init() {
 	Cmd.AddCommand(ImportCmd)
 	Cmd.AddCommand(UploadCmd)
 	Cmd.AddCommand(CreateCmd)
+	Cmd.AddCommand(DelCmd)
 }
