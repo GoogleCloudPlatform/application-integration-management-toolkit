@@ -21,11 +21,11 @@ import (
 	"github.com/spf13/cobra"
 )
 
-//UnPublishVerCmd to publish an integration flow version
+// UnPublishVerCmd to publish an integration flow version
 var UnPublishVerCmd = &cobra.Command{
 	Use:   "unpublish",
-	Short: "Deactivate an integration flow version",
-	Long:  "Deactivate an integration flow version",
+	Short: "Unpublish an integration flow version",
+	Long:  "Unpublish an integration flow version",
 	Args: func(cmd *cobra.Command, args []string) (err error) {
 		if err = apiclient.SetRegion(region); err != nil {
 			return err
@@ -37,11 +37,11 @@ var UnPublishVerCmd = &cobra.Command{
 	},
 	RunE: func(cmd *cobra.Command, args []string) (err error) {
 		if version != "" {
-			_, err = integrations.Deactivate(name, version)
+			_, err = integrations.Unpublish(name, version)
 		} else if userLabel != "" {
-			_, err = integrations.DeactivateUserLabel(name, userLabel)
+			_, err = integrations.UnpublishUserLabel(name, userLabel)
 		} else if snapshot != "" {
-			_, err = integrations.DeactivateSnapshot(name, snapshot)
+			_, err = integrations.UnpublishSnapshot(name, snapshot)
 		}
 		return
 
