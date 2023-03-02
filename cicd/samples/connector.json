@@ -81,7 +81,6 @@
 					"descriptiveName": "Connectors",
 					"description": "Executes an operation through Connectors Task.",
 					"iconLink": "http://gstatic.com/enterprise/crm/eventbus/images/icons/blue/connectors_48px_blue.png",
-					"codeSearchLink": "https://cs.corp.google.com/piper///depot/google3/java/com/google/enterprise/crm/eventbus/connectors/generic/GenericConnectorTask.java",
 					"activeTaskName": "GenericConnectorTask",
 					"category": "CUSTOM",
 					"defaultJsonValidationOption": "PRE_POST_EXECUTION",
