@@ -31,8 +31,8 @@ import (
 // ScaffoldCmd to publish an integration flow version
 var ScaffoldCmd = &cobra.Command{
 	Use:   "scaffold",
-	Short: "Create a skaffolding for the integration flow",
-	Long:  "Create a skaffolding for the integration flow and dependencies",
+	Short: "Create a scaffolding for the integration flow",
+	Long:  "Create a scaffolding for the integration flow and dependencies",
 	Args: func(cmd *cobra.Command, args []string) (err error) {
 		if err = apiclient.SetRegion(region); err != nil {
 			return err
