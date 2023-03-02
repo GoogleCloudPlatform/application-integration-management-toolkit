@@ -28,9 +28,9 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// SkaffoldCmd to publish an integration flow version
-var SkaffoldCmd = &cobra.Command{
-	Use:   "skaffold",
+// ScaffoldCmd to publish an integration flow version
+var ScaffoldCmd = &cobra.Command{
+	Use:   "scaffold",
 	Short: "Create a skaffolding for the integration flow",
 	Long:  "Create a skaffolding for the integration flow and dependencies",
 	Args: func(cmd *cobra.Command, args []string) (err error) {
@@ -162,18 +162,18 @@ var SkaffoldCmd = &cobra.Command{
 }
 
 func init() {
-	SkaffoldCmd.Flags().StringVarP(&name, "name", "n",
+	ScaffoldCmd.Flags().StringVarP(&name, "name", "n",
 		"", "Integration flow name")
-	SkaffoldCmd.Flags().StringVarP(&version, "ver", "v",
+	ScaffoldCmd.Flags().StringVarP(&version, "ver", "v",
 		"", "Integration flow version")
-	SkaffoldCmd.Flags().StringVarP(&userLabel, "user-label", "u",
+	ScaffoldCmd.Flags().StringVarP(&userLabel, "user-label", "u",
 		"", "Integration flow user label")
-	SkaffoldCmd.Flags().StringVarP(&snapshot, "snapshot", "s",
+	ScaffoldCmd.Flags().StringVarP(&snapshot, "snapshot", "s",
 		"", "Integration flow snapshot number")
-	SkaffoldCmd.Flags().StringVarP(&folder, "folder", "f",
+	ScaffoldCmd.Flags().StringVarP(&folder, "folder", "f",
 		"", "Folder to generate the skaffolding")
 
-	_ = SkaffoldCmd.MarkFlagRequired("name")
+	_ = ScaffoldCmd.MarkFlagRequired("name")
 }
 
 func generateFolder(name string) (err error) {
