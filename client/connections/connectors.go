@@ -339,7 +339,7 @@ func Get(name string, view string, minimal bool) (respBody []byte, err error) {
 	}
 	u.Path = path.Join(u.Path, name)
 
-	tmp := apiclient.GetPrintOutput()
+	printSetting := apiclient.GetPrintOutput()
 
 	if minimal {
 		apiclient.SetPrintOutput(false)
@@ -362,8 +362,10 @@ func Get(name string, view string, minimal bool) (respBody []byte, err error) {
 		if err != nil {
 			return nil, err
 		}
-		apiclient.SetPrintOutput(tmp) //set original print output
-		apiclient.PrettyPrint(connectionPayload)
+		apiclient.SetPrintOutput(printSetting) //set original print output
+		if apiclient.GetPrintOutput() {
+			apiclient.PrettyPrint(connectionPayload)
+		}
 		return connectionPayload, err
 	}
 	return respBody, err

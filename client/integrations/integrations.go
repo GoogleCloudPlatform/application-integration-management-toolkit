@@ -449,7 +449,7 @@ func Get(name string, version string, basicInfo bool, minimal bool, override boo
 		return getBasicInfo(respBody)
 	}
 
-	tmp := apiclient.GetPrintOutput()
+	printSetting := apiclient.GetPrintOutput()
 
 	if override || minimal {
 		apiclient.SetPrintOutput(false)
@@ -466,8 +466,10 @@ func Get(name string, version string, basicInfo bool, minimal bool, override boo
 
 		eversion := convertInternalToExternal(iversion)
 		respBody, err = json.Marshal(eversion)
-		apiclient.SetPrintOutput(tmp)
-		apiclient.PrettyPrint(respBody)
+		apiclient.SetPrintOutput(printSetting)
+		if apiclient.GetPrintOutput() {
+			apiclient.PrettyPrint(respBody)
+		}
 	}
 
 	if override {
@@ -484,20 +486,25 @@ func Get(name string, version string, basicInfo bool, minimal bool, override boo
 		if respBody, err = json.Marshal(or); err != nil {
 			return nil, err
 		}
-		apiclient.SetPrintOutput(tmp)
-		apiclient.PrettyPrint(respBody)
+		apiclient.SetPrintOutput(printSetting)
+		if apiclient.GetPrintOutput() {
+			apiclient.PrettyPrint(respBody)
+		}
 	}
 	return respBody, err
 }
 
 // GetBySnapshot
 func GetBySnapshot(name string, snapshot string, minimal bool, override bool) ([]byte, error) {
+
+	printSetting := apiclient.GetPrintOutput()
 	apiclient.SetPrintOutput(false)
+
 	listBody, err := ListVersions(name, -1, "", "snapshotNumber="+snapshot, "", false, false, true)
 	if err != nil {
 		return nil, err
 	}
-	apiclient.SetPrintOutput(true)
+	apiclient.SetPrintOutput(printSetting)
 
 	listBasicVersions := listbasicIntegrationVersions{}
 	err = json.Unmarshal(listBody, &listBasicVersions)
@@ -515,12 +522,16 @@ func GetBySnapshot(name string, snapshot string, minimal bool, override bool) ([
 
 // GetByUserlabel
 func GetByUserlabel(name string, userLabel string, minimal bool, override bool) ([]byte, error) {
+	printSetting := apiclient.GetPrintOutput()
 	apiclient.SetPrintOutput(false)
+
 	listBody, err := ListVersions(name, -1, "", "userLabel="+userLabel, "", false, false, true)
 	if err != nil {
 		return nil, err
 	}
-	apiclient.SetPrintOutput(true)
+
+	apiclient.SetPrintOutput(printSetting)
+
 	listBasicVersions := listbasicIntegrationVersions{}
 	err = json.Unmarshal(listBody, &listBasicVersions)
 	if err != nil {
@@ -673,6 +684,49 @@ func DownloadUserLabel(name string, userlabel string) (respBody []byte, err erro
 		return nil, err
 	}
 	return Download(name, version)
+}
+
+// GetAuthConfigs
+func GetAuthConfigs(integration []byte) (authconfigs []string, err error) {
+	iversion := integrationVersion{}
+
+	err = json.Unmarshal(integration, &iversion)
+	if err != nil {
+		return authconfigs, err
+	}
+
+	for _, taskConfig := range iversion.TaskConfigs {
+		if taskConfig.Task == "GenericRestV2Task" {
+			authConfigParams := taskConfig.Parameters["authConfig"]
+			if authConfigParams.Key == "authConfig" {
+				authConfigUuid := getAuthConfigUuid(*authConfigParams.Value.JsonValue)
+				authconfigs = append(authconfigs, authConfigUuid)
+			}
+		}
+	}
+
+	return authconfigs, err
+}
+
+// GetConnections
+func GetConnections(integration []byte) (connections []string, err error) {
+	iversion := integrationVersion{}
+
+	err = json.Unmarshal(integration, &iversion)
+	if err != nil {
+		return connections, err
+	}
+
+	for _, taskConfig := range iversion.TaskConfigs {
+		if taskConfig.Task == "GenericConnectorTask" {
+			connectionParams := taskConfig.Parameters["config"]
+			if connectionParams.Key == "config" {
+				connectionName := getConnectionName(*connectionParams.Value.JsonValue)
+				connections = append(connections, connectionName)
+			}
+		}
+	}
+	return connections, err
 }
 
 // changeState
@@ -974,6 +1028,7 @@ func convertInternalToExternal(internalVersion integrationVersion) (externalVers
 	externalVersion.TaskConfigs = internalVersion.TaskConfigs
 	externalVersion.IntegrationParameters = internalVersion.IntegrationParameters
 	if internalVersion.UserLabel != nil {
+		externalVersion.UserLabel = new(string)
 		*externalVersion.UserLabel = *internalVersion.UserLabel
 	}
 	return externalVersion
@@ -996,4 +1051,33 @@ func getBasicInfo(respBody []byte) (newResp []byte, err error) {
 	}
 
 	return newResp, err
+}
+
+// getAuthConfigUuid
+func getAuthConfigUuid(jsonValue string) string {
+	var m map[string]string
+	jsonValue = strings.Replace(jsonValue, "\n", "", -1)
+	json.Unmarshal([]byte(jsonValue), &m)
+	return m["authConfigId"]
+}
+
+// getConnectionName
+func getConnectionName(jsonValue string) string {
+	type connection struct {
+		ConnectionName    string `json:"connectionName,omitempty"`
+		ServiceName       string `json:"serviceName,omitempty"`
+		ConnectionVersion string `json:"connectionVersion,omitempty"`
+	}
+
+	type config struct {
+		Type       string     `json:"@type,omitempty"`
+		Connection connection `json:"connection,omitempty"`
+		Operation  string     `json:"operation,omitempty"`
+	}
+
+	c := config{}
+
+	json.Unmarshal([]byte(jsonValue), &c)
+	name := c.Connection.ConnectionName
+	return name[strings.LastIndex(name, "/")+1:]
 }
