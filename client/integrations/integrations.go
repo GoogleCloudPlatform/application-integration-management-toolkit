@@ -702,10 +702,36 @@ func GetAuthConfigs(integration []byte) (authconfigs []string, err error) {
 				authConfigUuid := getAuthConfigUuid(*authConfigParams.Value.JsonValue)
 				authconfigs = append(authconfigs, authConfigUuid)
 			}
+		} else if taskConfig.Task == "CloudFunctionTask" {
+			authConfigParams := taskConfig.Parameters["authConfig"]
+			if authConfigParams.Key == "authConfig" {
+				authConfigUuid := getAuthConfigUuid(*authConfigParams.Value.JsonValue)
+				authconfigs = append(authconfigs, authConfigUuid)
+			}
 		}
 	}
 
 	return authconfigs, err
+}
+
+// GetSfdcInstances
+func GetSfdcInstances(integration []byte) (instances map[string]string, err error) {
+	iversion := integrationVersion{}
+
+	err = json.Unmarshal(integration, &iversion)
+	if err != nil {
+		return instances, err
+	}
+
+	instances = make(map[string]string)
+
+	for _, triggerConfig := range iversion.TriggerConfigs {
+		if triggerConfig.TriggerType == "SFDC_CHANNEL" {
+			instances[triggerConfig.Properties["SFDC instance name"]] = triggerConfig.Properties["Channel name"]
+		}
+	}
+
+	return instances, err
 }
 
 // GetConnections

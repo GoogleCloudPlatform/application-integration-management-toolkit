@@ -199,6 +199,19 @@ func extractOverrides(iversion integrationVersion) (overrides, error) {
 			taskOverrides.ParamOverrides = append(taskOverrides.ParamOverrides, ip)
 		}
 	}
+	for _, triggerConfig := range iversion.TriggerConfigs {
+		if triggerConfig.TriggerType == "CLOUD_PUBSUB_EXTERNAL" {
+			subscription := triggerConfig.Properties["Subscription name"]
+			triggerOverride := triggeroverrides{}
+			triggerOverride.ProjectId = new(string)
+			triggerOverride.TopicName = new(string)
+			*triggerOverride.ProjectId = strings.Split(subscription, "_")[0]
+			*triggerOverride.TopicName = strings.Split(subscription, "_")[1]
+			triggerOverride.TriggerNumber = triggerConfig.TriggerNumber
+			taskOverrides.TriggerOverrides = append(taskOverrides.TriggerOverrides, triggerOverride)
+		}
+	}
+
 	return taskOverrides, nil
 }
 
@@ -302,7 +315,7 @@ func getNewConnectionParams(connectionName string, connectionLocation string) (c
 		integrationRegion = apiclient.GetRegion() //store the integration location
 		apiclient.SetRegion(connectionLocation)   //set the connector region
 	}
-	connResp, err := connections.Get(connectionName, "BASIC", false) //get connector details
+	connResp, err := connections.Get(connectionName, "BASIC", false, false) //get connector details
 	apiclient.SetPrintOutput(true)
 	if connectionLocation != "" {
 		apiclient.SetRegion(integrationRegion) //set the integration region back

@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package authconfigs
+package sfdcinstances
 
 import (
 	"github.com/spf13/cobra"
@@ -20,12 +20,12 @@ import (
 
 // Cmd to manage preferences
 var Cmd = &cobra.Command{
-	Use:   "authconfigs",
-	Short: "Manage integration auth configurations",
-	Long:  "Manage integration auth configurations",
+	Use:   "sfdcinstances",
+	Short: "Manage SFDC instances in Application Integration",
+	Long:  "Manage SFDC instances in Application Integration",
 }
 
-var project, region, name string
+var project, region, id, name string
 
 func init() {
 
@@ -36,8 +36,5 @@ func init() {
 		"", "Integration region name")
 
 	Cmd.AddCommand(GetCmd)
-	Cmd.AddCommand(DelCmd)
 	Cmd.AddCommand(ListCmd)
-	Cmd.AddCommand(ExportCmd)
-	Cmd.AddCommand(CreateCmd)
 }
