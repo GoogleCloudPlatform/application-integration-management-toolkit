@@ -22,16 +22,16 @@ import (
 	"os"
 	"strconv"
 
-	"github.com/srinandan/integrationcli/cmd/authconfigs"
-	"github.com/srinandan/integrationcli/cmd/certificates"
-	"github.com/srinandan/integrationcli/cmd/connectors"
-	"github.com/srinandan/integrationcli/cmd/integrations"
-	"github.com/srinandan/integrationcli/cmd/preferences"
-	"github.com/srinandan/integrationcli/cmd/sfdcchannels"
-	"github.com/srinandan/integrationcli/cmd/sfdcinstances"
-	"github.com/srinandan/integrationcli/cmd/token"
+	"github.com/GoogleCloudPlatform/application-integration-management-toolkit/cmd/authconfigs"
+	"github.com/GoogleCloudPlatform/application-integration-management-toolkit/cmd/certificates"
+	"github.com/GoogleCloudPlatform/application-integration-management-toolkit/cmd/connectors"
+	"github.com/GoogleCloudPlatform/application-integration-management-toolkit/cmd/integrations"
+	"github.com/GoogleCloudPlatform/application-integration-management-toolkit/cmd/preferences"
+	"github.com/GoogleCloudPlatform/application-integration-management-toolkit/cmd/sfdcchannels"
+	"github.com/GoogleCloudPlatform/application-integration-management-toolkit/cmd/sfdcinstances"
+	"github.com/GoogleCloudPlatform/application-integration-management-toolkit/cmd/token"
 
-	"github.com/srinandan/integrationcli/apiclient"
+	"github.com/GoogleCloudPlatform/application-integration-management-toolkit/apiclient"
 
 	"github.com/apigee/apigeecli/clilog"
 	"github.com/spf13/cobra"
@@ -133,7 +133,7 @@ func GetRootCmd() *cobra.Command {
 
 func getLatestVersion() (version string, err error) {
 	var req *http.Request
-	const endpoint = "https://api.github.com/repos/srinandan/integrationcli/releases/latest"
+	const endpoint = "https://api.github.com/repos/GoogleCloudPlatform/application-integration-management-toolkit/releases/latest"
 
 	client := &http.Client{}
 	contentType := "application/json"

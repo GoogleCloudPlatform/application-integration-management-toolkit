@@ -26,7 +26,7 @@ fi
 
 # Determine the latest INTEGRATIONCLI version by version number ignoring alpha, beta, and rc versions.
 if [ "${INTEGRATIONCLI_VERSION}" = "" ] ; then
-  INTEGRATIONCLI_VERSION="$(curl -sL https://github.com/srinandan/integrationcli/releases/latest | \
+  INTEGRATIONCLI_VERSION="$(curl -sL https://github.com/GoogleCloudPlatform/application-integration-management-toolkit/releases/latest | \
                   grep -i release | grep -v beta | grep -o 'v[0-9]\.[0-9]*' | head -1)"
   INTEGRATIONCLI_VERSION="${INTEGRATIONCLI_VERSION##*/}"
 fi
@@ -59,7 +59,7 @@ tmp=$(mktemp -d /tmp/integrationcli.XXXXXX)
 NAME="integrationcli_$INTEGRATIONCLI_VERSION"
 
 cd "$tmp" || exit
-URL="https://github.com/srinandan/integrationcli/releases/download/${INTEGRATIONCLI_VERSION}/integrationcli_${INTEGRATIONCLI_VERSION}_${OSEXT}_${INTEGRATIONCLI_ARCH}.zip"
+URL="https://github.com/GoogleCloudPlatform/application-integration-management-toolkit/releases/download/${INTEGRATIONCLI_VERSION}/integrationcli_${INTEGRATIONCLI_VERSION}_${OSEXT}_${INTEGRATIONCLI_ARCH}.zip"
 
 download_cli() {
   printf "\nDownloading %s from %s ...\n" "$NAME" "$URL"

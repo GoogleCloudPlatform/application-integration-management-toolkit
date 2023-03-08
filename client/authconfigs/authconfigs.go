@@ -22,8 +22,8 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/GoogleCloudPlatform/application-integration-management-toolkit/apiclient"
 	"github.com/apigee/apigeecli/clilog"
-	"github.com/srinandan/integrationcli/apiclient"
 )
 
 type authConfigs struct {

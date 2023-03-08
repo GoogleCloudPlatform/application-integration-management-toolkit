@@ -17,8 +17,8 @@ package sfdcinstances
 import (
 	"fmt"
 
-	"github.com/srinandan/integrationcli/apiclient"
-	"github.com/srinandan/integrationcli/client/sfdc"
+	"github.com/GoogleCloudPlatform/application-integration-management-toolkit/apiclient"
+	"github.com/GoogleCloudPlatform/application-integration-management-toolkit/client/sfdc"
 
 	"github.com/spf13/cobra"
 )

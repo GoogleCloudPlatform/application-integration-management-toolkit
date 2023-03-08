@@ -19,7 +19,7 @@ import (
 	"net/url"
 	"path"
 
-	"github.com/srinandan/integrationcli/apiclient"
+	"github.com/GoogleCloudPlatform/application-integration-management-toolkit/apiclient"
 )
 
 var validMemberTypes = []string{"serviceAccount", "group", "user", "domain"}

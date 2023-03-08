@@ -22,13 +22,13 @@ name: Cloud Builder Docker
 on:
   push:
     # Publish semver tags as releases.
-    tags:        
+    tags:
       - v[0-1].[0-9]+
       - v[0-1].[0-9]+.[0-9]+-beta
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: srinandan/integrationcli-builder
+  IMAGE_NAME: GoogleCloudPlatform/application-integration-management-toolkit/integrationcli-builder
 
 
 jobs:

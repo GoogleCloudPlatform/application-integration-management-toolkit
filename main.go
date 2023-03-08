@@ -17,10 +17,10 @@ package main
 import (
 	"os"
 
-	"github.com/srinandan/integrationcli/cmd"
+	"github.com/GoogleCloudPlatform/application-integration-management-toolkit/cmd"
 )
 
-//Version
+// Version
 var Version, Git string
 
 func main() {

@@ -20,12 +20,12 @@ import (
 	"os"
 	"path"
 
-	"github.com/srinandan/integrationcli/apiclient"
-	"github.com/srinandan/integrationcli/client/authconfigs"
-	"github.com/srinandan/integrationcli/client/connections"
-	"github.com/srinandan/integrationcli/client/integrations"
-	"github.com/srinandan/integrationcli/client/sfdc"
-	"github.com/srinandan/integrationcli/cmd/utils"
+	"github.com/GoogleCloudPlatform/application-integration-management-toolkit/apiclient"
+	"github.com/GoogleCloudPlatform/application-integration-management-toolkit/client/authconfigs"
+	"github.com/GoogleCloudPlatform/application-integration-management-toolkit/client/connections"
+	"github.com/GoogleCloudPlatform/application-integration-management-toolkit/client/integrations"
+	"github.com/GoogleCloudPlatform/application-integration-management-toolkit/client/sfdc"
+	"github.com/GoogleCloudPlatform/application-integration-management-toolkit/cmd/utils"
 
 	"github.com/spf13/cobra"
 )

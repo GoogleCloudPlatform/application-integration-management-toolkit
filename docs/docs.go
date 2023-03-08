@@ -17,7 +17,7 @@ package main
 import (
 	"log"
 
-	cmd "github.com/srinandan/integrationcli/cmd"
+	cmd "github.com/GoogleCloudPlatform/application-integration-management-toolkit/cmd"
 
 	"github.com/spf13/cobra/doc"
 )

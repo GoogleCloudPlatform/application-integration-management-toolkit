@@ -21,9 +21,9 @@ import (
 	"path"
 	"regexp"
 
-	"github.com/srinandan/integrationcli/apiclient"
-	"github.com/srinandan/integrationcli/client/authconfigs"
-	"github.com/srinandan/integrationcli/cloudkms"
+	"github.com/GoogleCloudPlatform/application-integration-management-toolkit/apiclient"
+	"github.com/GoogleCloudPlatform/application-integration-management-toolkit/client/authconfigs"
+	"github.com/GoogleCloudPlatform/application-integration-management-toolkit/cloudkms"
 
 	"github.com/spf13/cobra"
 )

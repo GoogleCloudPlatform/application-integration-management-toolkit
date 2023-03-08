@@ -15,8 +15,8 @@
 package authconfigs
 
 import (
-	"github.com/srinandan/integrationcli/apiclient"
-	"github.com/srinandan/integrationcli/client/authconfigs"
+	"github.com/GoogleCloudPlatform/application-integration-management-toolkit/apiclient"
+	"github.com/GoogleCloudPlatform/application-integration-management-toolkit/client/authconfigs"
 
 	"github.com/spf13/cobra"
 )

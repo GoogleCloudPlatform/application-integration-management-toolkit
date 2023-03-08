@@ -15,13 +15,13 @@
 package integrations
 
 import (
-	"github.com/srinandan/integrationcli/apiclient"
-	"github.com/srinandan/integrationcli/client/integrations"
+	"github.com/GoogleCloudPlatform/application-integration-management-toolkit/apiclient"
+	"github.com/GoogleCloudPlatform/application-integration-management-toolkit/client/integrations"
 
 	"github.com/spf13/cobra"
 )
 
-//ImportCmd to export integrations
+// ImportCmd to export integrations
 var ImportCmd = &cobra.Command{
 	Use:   "import",
 	Short: "Import all Integration flows from folder",

@@ -21,7 +21,7 @@ import (
 	"path"
 	"strings"
 
-	"github.com/srinandan/integrationcli/apiclient"
+	"github.com/GoogleCloudPlatform/application-integration-management-toolkit/apiclient"
 )
 
 type instance struct {

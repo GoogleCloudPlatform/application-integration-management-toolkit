@@ -18,8 +18,8 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"github.com/GoogleCloudPlatform/application-integration-management-toolkit/apiclient"
 	"github.com/apigee/apigeecli/clilog"
-	"github.com/srinandan/integrationcli/apiclient"
 )
 
 func Clean(name string, reportOnly bool, keepList []string) (err error) {

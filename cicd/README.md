@@ -173,14 +173,14 @@ To use this encrypted file in the automation, add the following lines to cloudbu
 
 ## Customize Cloud Builder
 
-This repo uses a custom cloud builder. The cloud builder is hosted at `ghcr.io/srinandan/integrationcli-builder:latest`. The cloud builder can be customized from
+This repo uses a custom cloud builder. The cloud builder is hosted at `ghcr.io/GoogleCloudPlatform/application-integration-management-toolkit/integrationcli-builder:latest`. The cloud builder can be customized from
 
 1. The [cloud-builder.yaml](../cloud-builder.yaml) file
 2. The [Dockerfile](../Dockerfile.builder)
 
 ```sh
 
-git clone https://github.com/srinandan/integrationcli.git
+git clone https://github.com/GoogleCloudPlatform/application-integration-management-toolkit.git
 gcloud builds submit --config=cloud-builder.yaml --project=project-name
 ```
 

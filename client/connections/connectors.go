@@ -26,10 +26,10 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/GoogleCloudPlatform/application-integration-management-toolkit/apiclient"
+	"github.com/GoogleCloudPlatform/application-integration-management-toolkit/cloudkms"
+	"github.com/GoogleCloudPlatform/application-integration-management-toolkit/secmgr"
 	"github.com/apigee/apigeecli/clilog"
-	"github.com/srinandan/integrationcli/apiclient"
-	"github.com/srinandan/integrationcli/cloudkms"
-	"github.com/srinandan/integrationcli/secmgr"
 )
 
 const maxPageSize = 1000
@@ -183,11 +183,11 @@ func Create(name string, content []byte, serviceAccountName string, serviceAccou
 	}
 
 	if c.ConnectorDetails == nil {
-		return nil, fmt.Errorf("connectorDetails must be set. See https://github.com/srinandan/integrationcli#connectors-for-third-party-applications for more details")
+		return nil, fmt.Errorf("connectorDetails must be set. See https://github.com/GoogleCloudPlatform/application-integration-management-toolkit#connectors-for-third-party-applications for more details")
 	}
 
 	if c.ConnectorDetails.Name == "" || c.ConnectorDetails.Version < 0 {
-		return nil, fmt.Errorf("connectorDetails Name and Version must be set. See https://github.com/srinandan/integrationcli#connectors-for-third-party-applications for more details")
+		return nil, fmt.Errorf("connectorDetails Name and Version must be set. See https://github.com/GoogleCloudPlatform/application-integration-management-toolkit#connectors-for-third-party-applications for more details")
 	}
 
 	//handle project id & region overrides

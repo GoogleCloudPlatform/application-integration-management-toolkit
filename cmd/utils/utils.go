@@ -33,7 +33,7 @@ const cloudBuild = `# Copyright 2023 Google LLC
 
 steps:
 - id: 'Create connections if not present'
-  name: ghcr.io/srinandan/integrationcli-builder:latest
+  name: ghcr.io/GoogleCloudPlatform/application-integration-management-toolkit/integrationcli-builder:latest
   entrypoint: 'bash'
   args:
     - -c
@@ -72,7 +72,7 @@ steps:
       done
 
 - id: 'Create authconfigs if not present'
-  name: ghcr.io/srinandan/integrationcli-builder:latest
+  name: ghcr.io/GoogleCloudPlatform/application-integration-management-toolkit/integrationcli-builder:latest
   entrypoint: 'bash'
   args:
     - -c
@@ -102,7 +102,7 @@ steps:
 
 
 - id: 'Create and publish the integration version'
-  name: ghcr.io/srinandan/integrationcli-builder:latest
+  name: ghcr.io/GoogleCloudPlatform/application-integration-management-toolkit/integrationcli-builder:latest
   entrypoint: 'bash'
   args:
     - -c

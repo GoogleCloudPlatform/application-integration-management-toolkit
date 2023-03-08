@@ -22,7 +22,7 @@ import (
 	"regexp"
 	"strconv"
 
-	"github.com/srinandan/integrationcli/apiclient"
+	"github.com/GoogleCloudPlatform/application-integration-management-toolkit/apiclient"
 )
 
 type execute struct {
