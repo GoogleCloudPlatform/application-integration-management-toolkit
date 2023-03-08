@@ -1,4 +1,4 @@
-// Copyright 2022 Google LLC
+// Copyright 2021 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,22 +12,20 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package integrations
+package sfdcchannels
 
 import (
 	"github.com/spf13/cobra"
 )
 
-// Cmd to manage integration flows
+// Cmd to manage preferences
 var Cmd = &cobra.Command{
-	Use:   "integrations",
-	Short: "Manage integrations in a GCP project",
-	Long:  "Manage integrations in a GCP project",
+	Use:   "sfdcchannels",
+	Short: "Manage SFDC channels in Application Integration",
+	Long:  "Manage SFDC channels in Application Integration",
 }
 
-var project, region, name string
-var userLabel, snapshot string
-var overrides bool
+var project, region, name, instance string
 
 func init() {
 
@@ -37,15 +35,6 @@ func init() {
 	Cmd.PersistentFlags().StringVarP(&region, "reg", "r",
 		"", "Integration region name")
 
+	Cmd.AddCommand(GetCmd)
 	Cmd.AddCommand(ListCmd)
-	Cmd.AddCommand(VerCmd)
-	Cmd.AddCommand(CleanCmd)
-	Cmd.AddCommand(ExecuteCmd)
-	Cmd.AddCommand(ExecCmd)
-	Cmd.AddCommand(ExportCmd)
-	Cmd.AddCommand(ImportCmd)
-	Cmd.AddCommand(UploadCmd)
-	Cmd.AddCommand(CreateCmd)
-	Cmd.AddCommand(DelCmd)
-	Cmd.AddCommand(ScaffoldCmd)
 }

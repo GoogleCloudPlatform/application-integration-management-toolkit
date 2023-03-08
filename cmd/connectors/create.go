@@ -70,7 +70,7 @@ var CreateCmd = &cobra.Command{
 			Response *map[string]interface{} `json:"response,omitempty"`
 		}
 
-		operationsBytes, err := connections.Create(name, content, serviceAccountName, serviceAccountProject, encryptionKey, grantPermission)
+		operationsBytes, err := connections.Create(name, content, serviceAccountName, serviceAccountProject, encryptionKey, grantPermission, createSecret)
 
 		if wait {
 			o := operation{}
@@ -114,7 +114,7 @@ var CreateCmd = &cobra.Command{
 }
 
 var connectionFile, serviceAccountName, serviceAccountProject, encryptionKey string
-var grantPermission, wait bool
+var grantPermission, wait, createSecret bool
 
 const interval = 10
 
@@ -133,6 +133,8 @@ func init() {
 		"", "Cloud KMS key for decrypting Auth Config; Format = locations/*/keyRings/*/cryptoKeys/*")
 	CreateCmd.Flags().BoolVarP(&wait, "wait", "",
 		false, "Waits for the connector to finish, with success or error")
+	CreateCmd.Flags().BoolVarP(&createSecret, "create-secret", "",
+		true, "Create Secret Manager secrets when creating the connection")
 
 	_ = CreateCmd.MarkFlagRequired("name")
 	_ = CreateCmd.MarkFlagRequired("file")
