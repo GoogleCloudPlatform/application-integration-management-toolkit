@@ -44,42 +44,17 @@ Grant the Application Integration Admin role to the Cloud Build Service Agent
 
 ## Steps
 
-1. Download the integration from the UI or using `integrationcli`. Here is an example to download via CLI:
+1. Generate a scaffolding:
 
 ```sh
 
 token=$(gcloud auth print-access-token)
-integrationcli integrations versions get -n <integration-name> -v <version> -p <project-id> -r <region-name> -t $token > ./src/<integration-name>.json
+integrationcli integrations scaffolding -n <integration-name> -s <snapShot> -p <project-id> -r <region-name> -t $token
 ```
 
-You can also download via a snapshot number like this:
+Inspect the generated `overrides`, `connectors` and `authconfigs`
 
-```sh
-
-token=$(gcloud auth print-access-token)
-integrationcli integrations versions get -n <integration-name> -s <snapshot> -p <dev-project-id> -r <region-name> -t $token > ./src/<integration-name>.json
-```
-
-2. Author overrides (specific for the environment) and store them in the overrides folder. Here is an example overrides for the URL in the REST task
-
-```json
-{
-    "task_overrides": [{
-        "taskId": "1",
-        "task:": "GenericRestV2Task",
-        "parameters":  {
-            "url": {
-                "key": "url",
-                "value": {
-                    "stringValue": "https://httpbin.org/ip"
-                }
-            }
-        }
-    }]
-}
-```
-
-3. Trigger the build manually
+2. Trigger the build manually
 
 ```sh
 

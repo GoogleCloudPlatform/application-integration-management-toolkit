@@ -27,6 +27,8 @@ import (
 	"github.com/srinandan/integrationcli/cmd/connectors"
 	"github.com/srinandan/integrationcli/cmd/integrations"
 	"github.com/srinandan/integrationcli/cmd/preferences"
+	"github.com/srinandan/integrationcli/cmd/sfdcchannels"
+	"github.com/srinandan/integrationcli/cmd/sfdcinstances"
 	"github.com/srinandan/integrationcli/cmd/token"
 
 	"github.com/srinandan/integrationcli/apiclient"
@@ -102,6 +104,8 @@ func init() {
 	RootCmd.AddCommand(connectors.Cmd)
 	RootCmd.AddCommand(token.Cmd)
 	RootCmd.AddCommand(certificates.Cmd)
+	RootCmd.AddCommand(sfdcinstances.Cmd)
+	RootCmd.AddCommand(sfdcchannels.Cmd)
 }
 
 func initConfig() {

@@ -46,7 +46,15 @@ type authConfig struct {
 	ValidTime           string               `json:"validTime,omitempty"`
 }
 
+type authConfigExternal struct {
+	DisplayName         string               `json:"displayName,omitempty"`
+	Description         string               `json:"description,omitempty"`
+	Visibility          string               `json:"visibility,omitempty"`
+	DecryptedCredential *decryptedCredential `json:"decryptedCredential,omitempty"`
+}
+
 type decryptedCredential struct {
+	CredentialType            string                     `json:"credentialType,omitempty"`
 	UsernameAndPassword       *usernameAndPassword       `json:"usernameAndPassword,omitempty"`
 	OidcToken                 *oidcToken                 `json:"oidcToken,omitempty"`
 	Jwt                       *jwt                       `json:"jwt,omitempty"`
@@ -104,10 +112,31 @@ func Delete(name string) (respBody []byte, err error) {
 }
 
 // Get
-func Get(name string) (respBody []byte, err error) {
+func Get(name string, minimal bool) (respBody []byte, err error) {
 	u, _ := url.Parse(apiclient.GetBaseIntegrationURL())
 	u.Path = path.Join(u.Path, "authConfigs", name)
+
+	printSetting := apiclient.GetPrintOutput()
+	if minimal {
+		apiclient.SetPrintOutput(false)
+	}
 	respBody, err = apiclient.HttpClient(apiclient.GetPrintOutput(), u.String())
+	if minimal {
+		iversion := authConfig{}
+		err := json.Unmarshal(respBody, &iversion)
+		if err != nil {
+			return nil, err
+		}
+		eversion := convertInternalToExternal(iversion)
+		respBody, err = json.Marshal(eversion)
+		if err != nil {
+			return nil, err
+		}
+		if printSetting {
+			apiclient.PrettyPrint(respBody)
+		}
+	}
+	apiclient.SetPrintOutput(printSetting)
 	return respBody, err
 }
 
@@ -209,4 +238,15 @@ func Export(folder string) (err error) {
 	}
 
 	return nil
+}
+
+// convertInternalToExternal
+func convertInternalToExternal(internalVersion authConfig) (externalVersion authConfigExternal) {
+	externalVersion = authConfigExternal{}
+	externalVersion.DisplayName = internalVersion.DisplayName
+	externalVersion.Description = internalVersion.Description
+	externalVersion.Visibility = internalVersion.Visibility
+	externalVersion.DecryptedCredential = new(decryptedCredential)
+	externalVersion.DecryptedCredential = internalVersion.DecryptedCredential
+	return externalVersion
 }

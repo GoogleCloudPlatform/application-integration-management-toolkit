@@ -150,7 +150,7 @@ type nodeConfig struct {
 }
 
 // Create
-func Create(name string, content []byte, serviceAccountName string, serviceAccountProject string, encryptionKey string, grantPermission bool) (respBody []byte, err error) {
+func Create(name string, content []byte, serviceAccountName string, serviceAccountProject string, encryptionKey string, grantPermission bool, createSecret bool) (respBody []byte, err error) {
 
 	var secretVersion string
 
@@ -278,34 +278,54 @@ func Create(name string, content []byte, serviceAccountName string, serviceAccou
 	c.ConnectorDetails = nil
 
 	//handle secrets for username
-	if c.AuthConfig != nil && c.AuthConfig.UserPassword.PasswordDetails != nil {
-		payload, err := readSecretFile(c.AuthConfig.UserPassword.PasswordDetails.Reference)
-		if err != nil {
-			return nil, err
-		}
+	if c.AuthConfig != nil {
+		switch c.AuthConfig.AuthType {
+		case "USER_PASSWORD":
+			if c.AuthConfig.UserPassword.PasswordDetails != nil {
+				if createSecret {
+					payload, err := readSecretFile(c.AuthConfig.UserPassword.PasswordDetails.Reference)
+					if err != nil {
+						return nil, err
+					}
 
-		//check if a Cloud KMS key was passsed, assume the file is encrypted
-		if encryptionKey != "" {
-			encryptionKey := path.Join("projects", apiclient.GetProjectID(), encryptionKey)
-			payload, err = cloudkms.DecryptSymmetric(encryptionKey, payload)
-			if err != nil {
-				return nil, err
+					//check if a Cloud KMS key was passsed, assume the file is encrypted
+					if encryptionKey != "" {
+						encryptionKey := path.Join("projects", apiclient.GetProjectID(), encryptionKey)
+						payload, err = cloudkms.DecryptSymmetric(encryptionKey, payload)
+						if err != nil {
+							return nil, err
+						}
+					}
+
+					if secretVersion, err = secmgr.Create(apiclient.GetProjectID(), c.AuthConfig.UserPassword.PasswordDetails.SecretName, payload); err != nil {
+						return nil, err
+					}
+
+					secretName := c.AuthConfig.UserPassword.PasswordDetails.SecretName
+					c.AuthConfig.UserPassword.Password = new(secret)
+					c.AuthConfig.UserPassword.Password.SecretVersion = secretVersion
+					c.AuthConfig.UserPassword.PasswordDetails = nil //clean the input
+					if grantPermission && c.ServiceAccount != nil {
+						//grant connector service account access to secretVersion
+						if err = apiclient.SetSecretManagerIAMPermission(apiclient.GetProjectID(), secretName, *c.ServiceAccount); err != nil {
+							return nil, err
+						}
+					}
+				} else {
+					c.AuthConfig.UserPassword.Password = new(secret)
+					c.AuthConfig.UserPassword.Password.SecretVersion = fmt.Sprintf("projects/%s/secrets/%s/versions/1", apiclient.GetProjectID(), c.AuthConfig.UserPassword.PasswordDetails.SecretName)
+					c.AuthConfig.UserPassword.PasswordDetails = nil //clean the input
+				}
 			}
-		}
-
-		if secretVersion, err = secmgr.Create(apiclient.GetProjectID(), c.AuthConfig.UserPassword.PasswordDetails.SecretName, payload); err != nil {
-			return nil, err
-		}
-		secretName := c.AuthConfig.UserPassword.PasswordDetails.SecretName
-		c.AuthConfig.UserPassword.Password = new(secret)
-		c.AuthConfig.UserPassword.Password.SecretVersion = secretVersion
-		c.AuthConfig.UserPassword.PasswordDetails = nil //clean the input
-
-		if grantPermission && c.ServiceAccount != nil {
-			//grant connector service account access to secretVersion
-			if err = apiclient.SetSecretManagerIAMPermission(apiclient.GetProjectID(), secretName, *c.ServiceAccount); err != nil {
-				return nil, err
+		case "OAUTH2_JWT_BEARER":
+			if createSecret {
+				clilog.Warning.Println("Creating secrets for OAUTH2_JET_BEARER is not implemented")
+			} else {
+				c.AuthConfig.Oauth2JwtBearer.ClientKey.SecretVersion = fmt.Sprintf("projects/%s/secrets/%s/versions/1", apiclient.GetProjectID(), c.AuthConfig.Oauth2JwtBearer.ClientKeyDetails.SecretName)
 			}
+		case "OAUTH2_CLIENT_CREDENTIALS":
+		default:
+			clilog.Warning.Printf("Creating secrets for %s is not implemented\n", c.AuthConfig.AuthType)
 		}
 	}
 
@@ -331,7 +351,7 @@ func Delete(name string) (respBody []byte, err error) {
 }
 
 // Get
-func Get(name string, view string, minimal bool) (respBody []byte, err error) {
+func Get(name string, view string, minimal bool, overrides bool) (respBody []byte, err error) {
 	u, _ := url.Parse(apiclient.GetBaseConnectorURL())
 	q := u.Query()
 	if view != "" {
@@ -339,7 +359,7 @@ func Get(name string, view string, minimal bool) (respBody []byte, err error) {
 	}
 	u.Path = path.Join(u.Path, name)
 
-	tmp := apiclient.GetPrintOutput()
+	printSetting := apiclient.GetPrintOutput()
 
 	if minimal {
 		apiclient.SetPrintOutput(false)
@@ -358,12 +378,35 @@ func Get(name string, view string, minimal bool) (respBody []byte, err error) {
 		c.ConnectorDetails.Version = getConnectorVersion(*c.ConnectorVersion)
 		c.ConnectorVersion = nil
 		c.Name = nil
+		if overrides {
+			switch c.AuthConfig.AuthType {
+			case "USER_PASSWORD":
+				p := c.AuthConfig.UserPassword.Password.SecretVersion
+				c.AuthConfig.UserPassword.PasswordDetails = new(secretDetails)
+				c.AuthConfig.UserPassword.PasswordDetails.SecretName = strings.Split(p, "/")[3]
+				c.AuthConfig.UserPassword.Password = nil
+			case "OAUTH2_JWT_BEARER":
+				p := c.AuthConfig.Oauth2JwtBearer.ClientKey.SecretVersion
+				c.AuthConfig.Oauth2JwtBearer.ClientKeyDetails = new(secretDetails)
+				c.AuthConfig.Oauth2JwtBearer.ClientKeyDetails.SecretName = strings.Split(p, "/")[3]
+				c.AuthConfig.Oauth2JwtBearer.ClientKey = nil
+			}
+			if isGoogleConnection(c.ConnectorDetails.Name) {
+				for _, configVar := range c.ConfigVariables {
+					if configVar.Key == "project_id" {
+						*configVar.StringValue = "$PROJECT_ID$"
+					}
+				}
+			}
+		}
 		connectionPayload, err := json.Marshal(c)
 		if err != nil {
 			return nil, err
 		}
-		apiclient.SetPrintOutput(tmp) //set original print output
-		apiclient.PrettyPrint(connectionPayload)
+		apiclient.SetPrintOutput(printSetting) //set original print output
+		if apiclient.GetPrintOutput() {
+			apiclient.PrettyPrint(connectionPayload)
+		}
 		return connectionPayload, err
 	}
 	return respBody, err
@@ -424,7 +467,7 @@ func readSecretFile(name string) (payload []byte, err error) {
 }
 
 // Import
-func Import(folder string) (err error) {
+func Import(folder string, createSecret bool) (err error) {
 
 	apiclient.SetPrintOutput(false)
 	errs := []string{}
@@ -446,8 +489,8 @@ func Import(folder string) (err error) {
 			return err
 		}
 
-		if _, err := Get(name, "", false); err != nil { //create only if connection doesn't exist
-			_, err = Create(name, content, "", "", "", false)
+		if _, err := Get(name, "", false, false); err != nil { //create only if connection doesn't exist
+			_, err = Create(name, content, "", "", "", false, createSecret)
 			if err != nil {
 				errs = append(errs, err.Error())
 			}
@@ -522,4 +565,12 @@ func getConnectorVersion(version string) int {
 
 func getConnectionName(name string) string {
 	return name[strings.LastIndex(name, "/")+1:]
+}
+
+func isGoogleConnection(connectionName string) bool {
+	if connectionName == "pubsub" || connectionName == "gcs" || connectionName == "biqguery" ||
+		connectionName == "cloudsql-mysql" || connectionName == "cloudsql-postgresql" || connectionName == "cloudsql-sqlserver" {
+		return true
+	}
+	return false
 }
