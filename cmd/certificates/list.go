@@ -15,13 +15,13 @@
 package certificates
 
 import (
-	"github.com/srinandan/integrationcli/apiclient"
-	"github.com/srinandan/integrationcli/client/certificates"
+	"github.com/GoogleCloudPlatform/application-integration-management-toolkit/apiclient"
+	"github.com/GoogleCloudPlatform/application-integration-management-toolkit/client/certificates"
 
 	"github.com/spf13/cobra"
 )
 
-//ListCmd to list Integrations
+// ListCmd to list Integrations
 var ListCmd = &cobra.Command{
 	Use:   "list",
 	Short: "List all certificates in the region",

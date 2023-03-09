@@ -47,4 +47,5 @@ func init() {
 	Cmd.AddCommand(UploadCmd)
 	Cmd.AddCommand(CreateCmd)
 	Cmd.AddCommand(DelCmd)
+	Cmd.AddCommand(ScaffoldCmd)
 }

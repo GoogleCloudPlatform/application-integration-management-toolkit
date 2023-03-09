@@ -1,14 +1,14 @@
 # integrationcli
 
-[![Go Report Card](https://goreportcard.com/badge/github.com/srinandan/integrationcli)](https://goreportcard.com/report/github.com/srinandan/integrationcli)
-[![GitHub release](https://img.shields.io/github/v/release/srinandan/integrationcli)](https://github.com/srinandan/integrationcli/releases)
+[![Go Report Card](https://goreportcard.com/badge/github.com/GoogleCloudPlatform/application-integration-management-toolkit)](https://goreportcard.com/report/github.com/GoogleCloudPlatform/application-integration-management-toolkit)
+[![GitHub release](https://img.shields.io/github/v/release/GoogleCloudPlatform/application-integration-management-toolkit)](https://github.com/GoogleCloudPlatform/application-integration-management-toolkit/releases)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 
 This is a tool to interact with [Application Integration APIs](https://cloud.google.com/application-integration/docs/reference/rest), [Apigee Integration APIs](https://cloud.google.com/apigee/docs/api-platform/integration/reference/rest) and [Connector APIs](https://cloud.google.com/integration-connectors/docs/reference/rest). The tool lets you manage (Create,Get, List, Update, Delete, Export and Import) Integration entities like integrations, authConfigs etc.
 
 ## Installation
 
-`integrationcli` is a binary and you can download the appropriate one for your platform from [here](https://github.com/srinandan/integrationcli/releases)
+`integrationcli` is a binary and you can download the appropriate one for your platform from [here](https://github.com/GoogleCloudPlatform/application-integration-management-toolkit/releases)
 
 NOTE: Supported platforms are:
 
@@ -19,7 +19,7 @@ NOTE: Supported platforms are:
 Run this script to download & install the latest version (on Linux or Darwin)
 
 ```sh
-curl -L https://raw.githubusercontent.com/srinandan/integrationcli/master/downloadLatest.sh | sh -
+curl -L https://raw.githubusercontent.com/GoogleCloudPlatform/application-integration-management-toolkit/main/downloadLatest.sh | sh -
 ```
 
 

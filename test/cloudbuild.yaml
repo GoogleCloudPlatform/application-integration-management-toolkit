@@ -17,7 +17,7 @@
 
 steps:
 - id: 'Import an integration version to a region'
-  name: ghcr.io/srinandan/integrationcli-builder:latest
+  name: ghcr.io/GoogleCloudPlatform/application-integration-management-toolkit/integrationcli-builder:latest
   entrypoint: 'bash'
   args:
     - -c

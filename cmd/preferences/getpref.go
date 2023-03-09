@@ -15,11 +15,11 @@
 package preferences
 
 import (
+	"github.com/GoogleCloudPlatform/application-integration-management-toolkit/apiclient"
 	"github.com/spf13/cobra"
-	"github.com/srinandan/integrationcli/apiclient"
 )
 
-//Cmd to get org details
+// Cmd to get org details
 var GetCmd = &cobra.Command{
 	Use:   "get",
 	Short: "Get preferences for integrationcli",

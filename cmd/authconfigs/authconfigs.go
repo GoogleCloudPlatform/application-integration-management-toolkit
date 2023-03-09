@@ -21,8 +21,8 @@ import (
 // Cmd to manage preferences
 var Cmd = &cobra.Command{
 	Use:   "authconfigs",
-	Short: "Manage integrationcli preferences",
-	Long:  "Manage integrationcli preferences",
+	Short: "Manage integration auth configurations",
+	Long:  "Manage integration auth configurations",
 }
 
 var project, region, name string

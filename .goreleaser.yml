@@ -40,6 +40,8 @@ builds:
     - -trimpath
     ldflags:
     - -s -w -a -extldflags "-static" -X main.Version={{.Tag}} -X main.Git={{.Commit}}
+    gcflags:
+    - all="-l"
     env:
       - CGO_ENABLED=0 
 
@@ -65,7 +67,7 @@ signs:
     args:
       [
         "-u",
-        "nandanks@gmail.com",
+        "13950006+srinandan@users.noreply.github.com",
         "--output",
         "${signature}",
         "--detach-sign",

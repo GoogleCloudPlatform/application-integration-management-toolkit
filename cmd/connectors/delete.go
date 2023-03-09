@@ -17,8 +17,8 @@ package connectors
 import (
 	"fmt"
 
-	"github.com/srinandan/integrationcli/apiclient"
-	"github.com/srinandan/integrationcli/client/connections"
+	"github.com/GoogleCloudPlatform/application-integration-management-toolkit/apiclient"
+	"github.com/GoogleCloudPlatform/application-integration-management-toolkit/client/connections"
 
 	"github.com/spf13/cobra"
 )

@@ -17,8 +17,8 @@ package connectors
 import (
 	"fmt"
 
-	"github.com/srinandan/integrationcli/apiclient"
-	"github.com/srinandan/integrationcli/client/connections"
+	"github.com/GoogleCloudPlatform/application-integration-management-toolkit/apiclient"
+	"github.com/GoogleCloudPlatform/application-integration-management-toolkit/client/connections"
 
 	"github.com/spf13/cobra"
 )
@@ -38,7 +38,7 @@ var GetCmd = &cobra.Command{
 		return apiclient.SetProjectID(project)
 	},
 	RunE: func(cmd *cobra.Command, args []string) (err error) {
-		_, err = connections.Get(name, view, minimal)
+		_, err = connections.Get(name, view, minimal, false)
 		return
 	},
 }

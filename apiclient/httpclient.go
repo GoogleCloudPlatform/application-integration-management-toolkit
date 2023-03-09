@@ -305,6 +305,16 @@ func PrettyPrint(body []byte) error {
 	return nil
 }
 
+func PrettifyJson(body []byte) (prettyJson []byte, err error) {
+	prettyJSON := bytes.Buffer{}
+	err = json.Indent(&prettyJSON, body, "", "\t")
+	if err != nil {
+		clilog.Error.Println("error parsing response: ", err)
+		return nil, err
+	}
+	return prettyJSON.Bytes(), err
+}
+
 func getRequest(params []string) (req *http.Request, err error) {
 	if params[2] == "DELETE" {
 		req, err = http.NewRequest("DELETE", params[0], nil)

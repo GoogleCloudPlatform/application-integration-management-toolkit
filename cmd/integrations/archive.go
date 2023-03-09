@@ -15,13 +15,13 @@
 package integrations
 
 import (
-	"github.com/srinandan/integrationcli/apiclient"
-	"github.com/srinandan/integrationcli/client/integrations"
+	"github.com/GoogleCloudPlatform/application-integration-management-toolkit/apiclient"
+	"github.com/GoogleCloudPlatform/application-integration-management-toolkit/client/integrations"
 
 	"github.com/spf13/cobra"
 )
 
-//ArchiveVerCmd to archive an integration flow version
+// ArchiveVerCmd to archive an integration flow version
 var ArchiveVerCmd = &cobra.Command{
 	Use:   "archive",
 	Short: "Archives an integration flow version",

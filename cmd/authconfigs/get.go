@@ -18,8 +18,8 @@ import (
 	"fmt"
 	"path"
 
-	"github.com/srinandan/integrationcli/apiclient"
-	"github.com/srinandan/integrationcli/client/authconfigs"
+	"github.com/GoogleCloudPlatform/application-integration-management-toolkit/apiclient"
+	"github.com/GoogleCloudPlatform/application-integration-management-toolkit/client/authconfigs"
 
 	"github.com/spf13/cobra"
 )
@@ -49,10 +49,10 @@ var GetCmd = &cobra.Command{
 				return err
 			}
 			apiclient.SetPrintOutput(true)
-			_, err = authconfigs.Get(path.Base(version))
+			_, err = authconfigs.Get(path.Base(version), minimal)
 			return err
 		} else {
-			_, err = authconfigs.Get(id)
+			_, err = authconfigs.Get(id, minimal)
 		}
 		return
 
@@ -60,10 +60,13 @@ var GetCmd = &cobra.Command{
 }
 
 var id string
+var minimal bool
 
 func init() {
 	GetCmd.Flags().StringVarP(&id, "id", "i",
 		"", "Authconfig name (uuid)")
 	GetCmd.Flags().StringVarP(&name, "name", "n",
 		"", "Authconfig display name")
+	GetCmd.Flags().BoolVarP(&minimal, "minimal", "",
+		false, "Minimal number of fields returned; default is false")
 }

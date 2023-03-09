@@ -17,12 +17,12 @@ package token
 import (
 	"fmt"
 
+	"github.com/GoogleCloudPlatform/application-integration-management-toolkit/apiclient"
 	"github.com/apigee/apigeecli/clilog"
 	"github.com/spf13/cobra"
-	"github.com/srinandan/integrationcli/apiclient"
 )
 
-//CacheCmd to cache token
+// CacheCmd to cache token
 var CacheCmd = &cobra.Command{
 	Use:   "cache",
 	Short: "Generate and cache a new access token",

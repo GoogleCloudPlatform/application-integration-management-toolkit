@@ -17,12 +17,12 @@ package token
 import (
 	"fmt"
 
+	"github.com/GoogleCloudPlatform/application-integration-management-toolkit/apiclient"
 	"github.com/apigee/apigeecli/clilog"
 	"github.com/spf13/cobra"
-	"github.com/srinandan/integrationcli/apiclient"
 )
 
-//GetCmd to generate a new access token
+// GetCmd to generate a new access token
 var GetCmd = &cobra.Command{
 	Use:   "gen",
 	Short: "Generate a new access token",

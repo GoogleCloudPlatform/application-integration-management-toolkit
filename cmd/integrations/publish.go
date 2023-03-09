@@ -17,13 +17,13 @@ package integrations
 import (
 	"fmt"
 
-	"github.com/srinandan/integrationcli/apiclient"
-	"github.com/srinandan/integrationcli/client/integrations"
+	"github.com/GoogleCloudPlatform/application-integration-management-toolkit/apiclient"
+	"github.com/GoogleCloudPlatform/application-integration-management-toolkit/client/integrations"
 
 	"github.com/spf13/cobra"
 )
 
-//PublishVerCmd to publish an integration flow version
+// PublishVerCmd to publish an integration flow version
 var PublishVerCmd = &cobra.Command{
 	Use:   "publish",
 	Short: "Publish an integration flow version",

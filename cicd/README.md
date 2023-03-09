@@ -44,42 +44,17 @@ Grant the Application Integration Admin role to the Cloud Build Service Agent
 
 ## Steps
 
-1. Download the integration from the UI or using `integrationcli`. Here is an example to download via CLI:
+1. Generate a scaffolding:
 
 ```sh
 
 token=$(gcloud auth print-access-token)
-integrationcli integrations versions get -n <integration-name> -v <version> -p <project-id> -r <region-name> -t $token > ./src/<integration-name>.json
+integrationcli integrations scaffolding -n <integration-name> -s <snapShot> -p <project-id> -r <region-name> -t $token
 ```
 
-You can also download via a snapshot number like this:
+Inspect the generated `overrides`, `connectors` and `authconfigs`
 
-```sh
-
-token=$(gcloud auth print-access-token)
-integrationcli integrations versions get -n <integration-name> -s <snapshot> -p <dev-project-id> -r <region-name> -t $token > ./src/<integration-name>.json
-```
-
-2. Author overrides (specific for the environment) and store them in the overrides folder. Here is an example overrides for the URL in the REST task
-
-```json
-{
-    "task_overrides": [{
-        "taskId": "1",
-        "task:": "GenericRestV2Task",
-        "parameters":  {
-            "url": {
-                "key": "url",
-                "value": {
-                    "stringValue": "https://httpbin.org/ip"
-                }
-            }
-        }
-    }]
-}
-```
-
-3. Trigger the build manually
+2. Trigger the build manually
 
 ```sh
 
@@ -198,14 +173,14 @@ To use this encrypted file in the automation, add the following lines to cloudbu
 
 ## Customize Cloud Builder
 
-This repo uses a custom cloud builder. The cloud builder is hosted at `ghcr.io/srinandan/integrationcli-builder:latest`. The cloud builder can be customized from
+This repo uses a custom cloud builder. The cloud builder is hosted at `ghcr.io/GoogleCloudPlatform/application-integration-management-toolkit/integrationcli-builder:latest`. The cloud builder can be customized from
 
 1. The [cloud-builder.yaml](../cloud-builder.yaml) file
 2. The [Dockerfile](../Dockerfile.builder)
 
 ```sh
 
-git clone https://github.com/srinandan/integrationcli.git
+git clone https://github.com/GoogleCloudPlatform/application-integration-management-toolkit.git
 gcloud builds submit --config=cloud-builder.yaml --project=project-name
 ```
 
