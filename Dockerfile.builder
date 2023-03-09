@@ -1,4 +1,4 @@
-FROM golang:1.19 as builder
+FROM golang:1.20 as builder
 
 ADD ./apiclient /go/src/integrationcli/apiclient
 ADD ./client /go/src/integrationcli/client
