@@ -65,7 +65,7 @@ signs:
     args:
       [
         "-u",
-        "nandanks@gmail.com",
+        "13950006+srinandan@users.noreply.github.com",
         "--output",
         "${signature}",
         "--detach-sign",
