@@ -22,7 +22,7 @@ name: Docker
 on:
   push:
     # Publish semver tags as releases.
-    tags:        
+    tags:
       - v[0-1].[0-9]+
       - v[0-1].[0-9]+.[0-9]+-beta
 

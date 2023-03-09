@@ -12,13 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# goreleaser version 1.8.3
-# commit: 63436392db6ac0557513535fc3ee4223a44810ed
-# built at: 2022-04-20T12:43:39Z
-# built by: goreleaser
+# goreleaser version 1.16.0
+#commit: 945b5453d953e36c7fcad8ff64206c021413271b
+# built by: homebrew
 # goos: darwin
-# goarch: amd64
-# module version: v1.8.3, checksum: h1:4vP28LV1VOL+mtEVvejCkN6KD1OU++7YNCh9dojxcO0=
+# goarch: arm64
 
 # .goreleaser.yml
 project_name: integrationcli
@@ -43,7 +41,7 @@ builds:
     gcflags:
     - all="-l"
     env:
-      - CGO_ENABLED=0 
+      - CGO_ENABLED=0
 
 archives:
   - id: integrationcli
@@ -64,7 +62,7 @@ checksum:
   name_template: 'checksums.txt'
 
 signs:
-  - 
+  -
     artifacts: all
     args:
       [

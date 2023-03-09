@@ -12,14 +12,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Generate documentation for integrationcli 
+# Generate documentation for integrationcli
 name: integrationcli Github Pages Pipeline
 
 on:
   push:
     # Publish semver tags as releases.
-    tags:        
-      - v[0-1].[0-9]+  
+    tags:
+      - v[0-1].[0-9]+
 
 jobs:
   publish-gh-pages:
@@ -32,7 +32,7 @@ jobs:
         run: |
           go run docs/docs.go
           git config --global user.name "integrationcli Publish Action"
-          git config --global user.email "integrationcli-bot@noreply.srinandans.com"
+          git config --global user.email "13950006+srinandan@users.noreply.github.com"
           git add --all
           git commit -m "Update GH Pages - $GITHUB_SHA" || echo "No Changes in docs"
           git push origin HEAD:refs/heads/main

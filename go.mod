@@ -1,6 +1,6 @@
 module github.com/GoogleCloudPlatform/application-integration-management-toolkit
 
-go 1.19
+go 1.20
 
 require (
 	cloud.google.com/go/kms v1.9.0
