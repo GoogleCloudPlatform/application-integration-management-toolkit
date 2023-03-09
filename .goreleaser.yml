@@ -48,12 +48,15 @@ builds:
 archives:
   - id: integrationcli
     format: zip
-    name_template: "{{ .ProjectName }}_{{.Tag}}_{{ .Os }}_{{ .Arch }}"
-    replacements:
-      darwin: Darwin
-      linux: Linux
-      amd64: x86_64
-      windows: Windows
+    name_template: >-
+      {{ .ProjectName }}_
+      {{ .Tag} }_
+      {{- title .Os }}_
+      {{- if eq .Arch "amd64" }}x86_64
+      {{- else if eq .Arch "linux" }}Linux
+      {{- else if eq .Arch "windows" }}Windows
+      {{- else if eq .Arch "darwin" }}Darwin
+      {{- else }}{{ .Arch }}{{ end }}
     wrap_in_directory: true
     builds:
       - integrationcli
