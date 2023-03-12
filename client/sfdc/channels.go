@@ -21,7 +21,7 @@ import (
 	"path"
 	"strings"
 
-	"github.com/GoogleCloudPlatform/application-integration-management-toolkit/apiclient"
+	"internal/apiclient"
 )
 
 type channel struct {

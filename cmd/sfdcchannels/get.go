@@ -15,7 +15,8 @@
 package sfdcchannels
 
 import (
-	"github.com/GoogleCloudPlatform/application-integration-management-toolkit/apiclient"
+	"internal/apiclient"
+
 	"github.com/GoogleCloudPlatform/application-integration-management-toolkit/client/sfdc"
 
 	"github.com/spf13/cobra"

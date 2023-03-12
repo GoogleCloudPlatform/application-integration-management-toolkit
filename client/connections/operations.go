@@ -18,7 +18,7 @@ import (
 	"net/url"
 	"path"
 
-	"github.com/GoogleCloudPlatform/application-integration-management-toolkit/apiclient"
+	"internal/apiclient"
 )
 
 // GetOperation
