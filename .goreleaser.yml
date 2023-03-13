@@ -55,6 +55,9 @@ archives:
       {{- else if eq .Arch "darwin" }}Darwin
       {{- else }}{{ .Arch }}{{ end }}
     wrap_in_directory: true
+    files:
+      - LICENSE.txt
+      - third-party-licenses.md
     builds:
       - integrationcli
 
