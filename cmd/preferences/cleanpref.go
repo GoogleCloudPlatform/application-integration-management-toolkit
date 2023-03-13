@@ -15,7 +15,8 @@
 package preferences
 
 import (
-	"github.com/GoogleCloudPlatform/application-integration-management-toolkit/apiclient"
+	"internal/apiclient"
+
 	"github.com/spf13/cobra"
 )
 

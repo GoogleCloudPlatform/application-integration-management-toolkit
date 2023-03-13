@@ -31,7 +31,7 @@ import (
 	"github.com/GoogleCloudPlatform/application-integration-management-toolkit/cmd/sfdcinstances"
 	"github.com/GoogleCloudPlatform/application-integration-management-toolkit/cmd/token"
 
-	"github.com/GoogleCloudPlatform/application-integration-management-toolkit/apiclient"
+	"internal/apiclient"
 
 	"github.com/apigee/apigeecli/clilog"
 	"github.com/spf13/cobra"

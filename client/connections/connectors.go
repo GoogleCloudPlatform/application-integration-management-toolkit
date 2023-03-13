@@ -26,9 +26,10 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/GoogleCloudPlatform/application-integration-management-toolkit/apiclient"
-	"github.com/GoogleCloudPlatform/application-integration-management-toolkit/cloudkms"
-	"github.com/GoogleCloudPlatform/application-integration-management-toolkit/secmgr"
+	"internal/apiclient"
+	"internal/cloudkms"
+	"internal/secmgr"
+
 	"github.com/apigee/apigeecli/clilog"
 )
 

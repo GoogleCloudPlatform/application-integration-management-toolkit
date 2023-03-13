@@ -19,7 +19,7 @@ import (
 	"path"
 	"strconv"
 
-	"github.com/GoogleCloudPlatform/application-integration-management-toolkit/apiclient"
+	"internal/apiclient"
 )
 
 // List all suspensions

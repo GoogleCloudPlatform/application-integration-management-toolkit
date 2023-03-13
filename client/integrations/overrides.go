@@ -19,7 +19,8 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/GoogleCloudPlatform/application-integration-management-toolkit/apiclient"
+	"internal/apiclient"
+
 	"github.com/GoogleCloudPlatform/application-integration-management-toolkit/client/authconfigs"
 	"github.com/GoogleCloudPlatform/application-integration-management-toolkit/client/connections"
 	"github.com/apigee/apigeecli/clilog"

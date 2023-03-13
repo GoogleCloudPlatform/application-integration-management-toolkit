@@ -20,7 +20,8 @@ import (
 	"os"
 	"path"
 
-	"github.com/GoogleCloudPlatform/application-integration-management-toolkit/apiclient"
+	"internal/apiclient"
+
 	"github.com/GoogleCloudPlatform/application-integration-management-toolkit/client/authconfigs"
 	"github.com/GoogleCloudPlatform/application-integration-management-toolkit/client/connections"
 	"github.com/GoogleCloudPlatform/application-integration-management-toolkit/client/integrations"

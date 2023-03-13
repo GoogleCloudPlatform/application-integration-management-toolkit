@@ -17,7 +17,8 @@ package integrations
 import (
 	"fmt"
 
-	"github.com/GoogleCloudPlatform/application-integration-management-toolkit/apiclient"
+	"internal/apiclient"
+
 	"github.com/GoogleCloudPlatform/application-integration-management-toolkit/client/integrations"
 
 	"github.com/spf13/cobra"
