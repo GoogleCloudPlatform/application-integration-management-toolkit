@@ -39,16 +39,20 @@ var ExportCmd = &cobra.Command{
 		}
 
 		// check if threads argument was passed, use default value if not
-		threads, _ := cmd.Flags().GetInt("threads")
-		return integrations.ExportWithThreads(folder, threads)
+		numConnections, _ := cmd.Flags().GetInt("connections")
+		if numConnections > 0 {
+			return integrations.ExportConcurrent(folder, numConnections)
+		}
+		return integrations.Export(folder)
+
 	},
 }
 
 func init() {
 	ExportCmd.Flags().StringVarP(&folder, "folder", "f",
 		"", "Folder to export Integration flows")
-	ExportCmd.Flags().IntVarP(&threads, "threads", "c",
-		3, "# of concurrent thread to use")
+	ExportCmd.Flags().IntVarP(&numConnections, "connections", "c",
+		-1, "# of concurrent routines to use")
 
 	_ = ExportCmd.MarkFlagRequired("folder")
 }

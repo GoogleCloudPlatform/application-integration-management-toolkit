@@ -811,11 +811,11 @@ func getVersionId(name string, filter string) (version string, err error) {
 }
 
 // ExportWithThreads exports all Integration Flows in the specified folder using a configurable number of threads
-func ExportWithThreads(folder string, numThreads int) error {
+func ExportConcurrent(folder string, numConnections int) error {
 	// Set export settings
 	apiclient.SetExportToFile(folder)
 	apiclient.SetPrintOutput(false)
-
+	var pwg sync.WaitGroup
 	// Build integration URL with max page size
 	u, _ := url.Parse(apiclient.GetBaseIntegrationURL())
 	q := u.Query()
@@ -834,8 +834,10 @@ func ExportWithThreads(folder string, numThreads int) error {
 	resultCh := make(chan error, len(lintegrations.Integrations))
 
 	// Start worker goroutines
-	for i := 0; i < numThreads; i++ {
-		go exportWorker(workCh, resultCh)
+	for i := 0; i < numConnections; i++ {
+		pwg.Add(1)
+
+		go exportWorker(workCh, resultCh, &pwg)
 	}
 
 	// Add integrations to work channel
@@ -870,10 +872,15 @@ func ExportWithThreads(folder string, numThreads int) error {
 		}
 	}
 
+	close(resultCh)
+
+	pwg.Wait()
+
 	return nil
 }
 
-func exportWorker(workCh <-chan *integrationInfo, resultCh chan<- error) {
+func exportWorker(workCh <-chan *integrationInfo, resultCh chan<- error, pwg *sync.WaitGroup) {
+	defer pwg.Done()
 	for work := range workCh {
 		integrationName := work.Name[strings.LastIndex(work.Name, "/")+1:]
 		fmt.Printf("Exporting all the revisions for Integration Flow %s\n", integrationName)
@@ -881,9 +888,9 @@ func exportWorker(workCh <-chan *integrationInfo, resultCh chan<- error) {
 		if _, err := ListVersions(integrationName, -1, "", "", "", true, true, false); err != nil {
 			resultCh <- err
 		}
-
 		resultCh <- nil
 	}
+
 }
 
 // fetchIntegrations fetches the first page of integrations from the integration API
