@@ -34,6 +34,12 @@ import (
 
 const maxPageSize = 1000
 
+// integrationInfo contains information about an Integration Flow to export
+type integrationInfo struct {
+	Name string
+	Path string
+}
+
 type uploadIntegrationFormat struct {
 	Content    string `json:"content" binding:"required"`
 	FileFormat string `json:"fileFormat"`
@@ -803,6 +809,120 @@ func getVersionId(name string, filter string) (version string, err error) {
 		return "", fmt.Errorf("filter condition not found")
 	}
 }
+
+// ExportWithThreads exports all Integration Flows in the specified folder using a configurable number of threads
+func ExportWithThreads(folder string, numThreads int) error {
+	// Set export settings
+	apiclient.SetExportToFile(folder)
+	apiclient.SetPrintOutput(false)
+
+	// Build integration URL with max page size
+	u, _ := url.Parse(apiclient.GetBaseIntegrationURL())
+	q := u.Query()
+	q.Set("pageSize", strconv.Itoa(maxPageSize))
+	u.RawQuery = q.Encode()
+	u.Path = path.Join(u.Path, "integrations")
+
+	// Fetch first page of integrations
+	lintegrations, err := fetchIntegrations(u.String())
+	if err != nil {
+		return err
+	}
+
+	// Create channels for work and results
+	workCh := make(chan *integrationInfo, len(lintegrations.Integrations))
+	resultCh := make(chan error, len(lintegrations.Integrations))
+
+	// Start worker goroutines
+	for i := 0; i < numThreads; i++ {
+		go exportWorker(workCh, resultCh)
+	}
+
+	// Add integrations to work channel
+	for _, lintegration := range lintegrations.Integrations {
+		workCh <- &integrationInfo{
+			Name: lintegration.Name,
+			Path: folder,
+		}
+	}
+
+	// Fetch remaining pages of integrations and add to work channel
+	for lintegrations.NextPageToken != "" {
+		lintegrations, err = fetchIntegrationsWithPageToken(u.String(), lintegrations.NextPageToken)
+		if err != nil {
+			return err
+		}
+		for _, lintegration := range lintegrations.Integrations {
+			workCh <- &integrationInfo{
+				Name: lintegration.Name,
+				Path: folder,
+			}
+		}
+	}
+
+	// Close the work channel to signal workers to exit when all work is done
+	close(workCh)
+
+	// Collect results from result channel
+	for i := 0; i < len(lintegrations.Integrations); i++ {
+		if err := <-resultCh; err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func exportWorker(workCh <-chan *integrationInfo, resultCh chan<- error) {
+	for work := range workCh {
+		integrationName := work.Name[strings.LastIndex(work.Name, "/")+1:]
+		fmt.Printf("Exporting all the revisions for Integration Flow %s\n", integrationName)
+
+		if _, err := ListVersions(integrationName, -1, "", "", "", true, true, false); err != nil {
+			resultCh <- err
+		}
+
+		resultCh <- nil
+	}
+}
+
+// fetchIntegrations fetches the first page of integrations from the integration API
+func fetchIntegrations(integrationURL string) (*listintegrations, error) {
+	respBody, err := apiclient.HttpClient(apiclient.GetPrintOutput(), integrationURL)
+	if err != nil {
+		return nil, err
+	}
+
+	var lintegrations listintegrations
+	if err := json.Unmarshal(respBody, &lintegrations); err != nil {
+		return nil, err
+	}
+
+	return &lintegrations, nil
+}
+
+// fetchIntegrationsWithPageToken fetches a page of integrations from the integration API using a page token
+func fetchIntegrationsWithPageToken(integrationURL string, pageToken string) (*listintegrations, error) {
+	u, _ := url.Parse(integrationURL)
+	q := u.Query()
+	q.Set("pageSize", strconv.Itoa(maxPageSize))
+	q.Set("pageToken", pageToken)
+	u.RawQuery = q.Encode()
+
+	respBody, err := apiclient.HttpClient(apiclient.GetPrintOutput(), u.String())
+	if err != nil {
+		return nil, err
+	}
+
+	var lintegrations listintegrations
+	if err := json.Unmarshal(respBody, &lintegrations); err != nil {
+		return nil, err
+	}
+
+	return &lintegrations, nil
+}
+
+// exportWorker exports all revisions
 
 // Export
 func Export(folder string) (err error) {

@@ -46,6 +46,7 @@ var ExportVerCmd = &cobra.Command{
 
 var folder string
 var allVersions bool
+var threads int
 
 func init() {
 	ExportVerCmd.Flags().StringVarP(&folder, "folder", "f",
