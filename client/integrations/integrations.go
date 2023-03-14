@@ -810,7 +810,7 @@ func getVersionId(name string, filter string) (version string, err error) {
 	}
 }
 
-// ExportWithThreads exports all Integration Flows in the specified folder using a configurable number of threads
+// ExportConcurrent exports all Integration Flows in the specified folder using a configurable number of connections
 func ExportConcurrent(folder string, numConnections int) error {
 	// Set export settings
 	apiclient.SetExportToFile(folder)

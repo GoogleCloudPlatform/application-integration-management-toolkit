@@ -38,7 +38,7 @@ var ExportCmd = &cobra.Command{
 			return err
 		}
 
-		// check if threads argument was passed, use default value if not
+		// check if connections argument was passed, use default value if not
 		numConnections, _ := cmd.Flags().GetInt("connections")
 		if numConnections > 0 {
 			return integrations.ExportConcurrent(folder, numConnections)
