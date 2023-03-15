@@ -59,7 +59,7 @@ tmp=$(mktemp -d /tmp/integrationcli.XXXXXX)
 NAME="integrationcli_$INTEGRATIONCLI_VERSION"
 
 cd "$tmp" || exit
-URL="https://github.com/GoogleCloudPlatform/application-integration-management-toolkit/releases/download/${INTEGRATIONCLI_VERSION}/integrationcli_${INTEGRATIONCLI_VERSION}_${OSEXT}_${INTEGRATIONCLI_ARCH}.zip"
+URL="https://github.com/GoogleCloudPlatform/application-integration-management-toolkit/releases/download/${INTEGRATIONCLI_VERSION}/integrationcli_${OSEXT}_${INTEGRATIONCLI_ARCH}.zip"
 
 download_cli() {
   printf "\nDownloading %s from %s ...\n" "$NAME" "$URL"
