@@ -68,7 +68,7 @@ download_cli() {
     exit 1
   fi
   curl -fsLO -H 'Cache-Control: no-cache, no-store' "$URL"
-  filename="integrationcli_${INTEGRATIONCLI_VERSION}_${OSEXT}_${INTEGRATIONCLI_ARCH}.zip"
+  filename="integrationcli_${OSEXT}_${INTEGRATIONCLI_ARCH}.zip"
   unzip "${filename}"
   rm "${filename}"
 }
@@ -77,7 +77,7 @@ download_cli() {
 download_cli
 
 printf ""
-printf "\integrationcli %s Download Complete!\n" "$INTEGRATIONCLI_VERSION"
+printf "\nintegrationcli %s Download Complete!\n" "$INTEGRATIONCLI_VERSION"
 printf "\n"
 printf "integrationcli has been successfully downloaded into the %s folder on your system.\n" "$tmp"
 printf "\n"
@@ -85,14 +85,14 @@ printf "\n"
 # setup INTEGRATIONCLI
 cd "$HOME" || exit
 mkdir -p "$HOME/.integrationcli/bin"
-mv "${tmp}/integrationcli_${INTEGRATIONCLI_VERSION}_${OSEXT}_${INTEGRATIONCLI_ARCH}/integrationcli" "$HOME/.integrationcli/bin"
+mv "${tmp}/integrationcli_${OSEXT}_${INTEGRATIONCLI_ARCH}/integrationcli" "$HOME/.integrationcli/bin"
 printf "Copied integrationcli into the $HOME/.integrationcli/bin folder.\n"
 chmod +x "$HOME/.integrationcli/bin/integrationcli"
 rm -r "${tmp}"
 
 # Print message
 printf "\n"
-printf "Added the integrationcli to your path with:"
+printf "Please add integrationcli to your path:"
 printf "\n"
 printf "  export PATH=\$PATH:\$HOME/.integrationcli/bin \n"
 printf "\n"
