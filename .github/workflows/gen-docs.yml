@@ -38,8 +38,8 @@ jobs:
           git config --global user.email "13950006+srinandan@users.noreply.github.com"
 
           GOBIN=/tmp/ go install github.com/google/go-licenses@latest
-          /tmp/go-licenses report github.com/GoogleCloudPlatform/application-integration-management-toolkit > third-party-licenses.txt
-          /tmp/go-licenses save . --save_path=third-party
+          /tmp/go-licenses report github.com/GoogleCloudPlatform/application-integration-management-toolkit > third-party-licenses.txt || echo "Ignore warnings"
+          /tmp/go-licenses save . --save_path=third-party || echo "Ignore warnings"
 
           git add third-party third-party-licenses.txt
           git commit -m "generate licenses - $GITHUB_SHA" || echo "No Changes in license"
