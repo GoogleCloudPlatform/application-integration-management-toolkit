@@ -17,7 +17,5 @@ test/
 cicd/
 
 README.md
-third-party-licenses.md
-LICENSE.txt
 CONTRIBUTING.md
 downloadLatest.sh
