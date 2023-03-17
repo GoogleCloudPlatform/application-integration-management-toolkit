@@ -57,7 +57,6 @@ archives:
     wrap_in_directory: true
     files:
       - LICENSE.txt
-      - third-party-licenses.md
     builds:
       - integrationcli
 
