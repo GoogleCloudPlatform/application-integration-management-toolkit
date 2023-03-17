@@ -16,5 +16,5 @@ RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -trimpath -a -ldflags='-s -w 
 FROM google/cloud-sdk:alpine
 COPY --from=builder /go/bin/integrationcli /tmp
 COPY LICENSE.txt /
-COPY third-party-licenses.md /
+COPY third-party-licenses.txt /
 RUN apk --update add jq

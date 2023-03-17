@@ -30,5 +30,5 @@ RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -trimpath -a -ldflags='-s -w 
 FROM gcr.io/distroless/static-debian11
 COPY --from=builder /go/bin/integrationcli /
 COPY LICENSE.txt /
-COPY third-party-licenses.md /
+COPY third-party-licenses.txt /
 CMD ["/integrationcli"]
