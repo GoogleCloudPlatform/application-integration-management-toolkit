@@ -37,7 +37,7 @@ jobs:
           go-licenses report github.com/GoogleCloudPlatform/application-integration-management-toolkit > third-party-licenses.txt
           go-licenses save . --save_path=third-party
 
-          git add third-party third-party-licenses.md
+          git add third-party third-party-licenses.txt
           git commit -m "generate licenses - $GITHUB_SHA" || echo "No Changes in license"
 
           go run docs/docs.go
