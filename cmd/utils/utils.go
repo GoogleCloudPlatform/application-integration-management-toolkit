@@ -47,7 +47,10 @@ steps:
       #find connection
       for connection in ./connectors/*.json
       do
-        /tmp/integrationcli connectors get -n  $(basename -s .json $connection) 2>&1 >/dev/null
+        basename $connection .json > /tmp/connection
+        echo "connection name: " $(cat /tmp/connection)
+
+        /tmp/integrationcli connectors get -n  $(cat /tmp/connection) 2>&1 >/dev/null
         echo $? > /tmp/result
         if [ $(cat /tmp/result) -ne 0 ]; then
           set -e
@@ -64,9 +67,8 @@ steps:
             echo " --g=true" >> /tmp/cmd
           fi
 
-          /tmp/integrationcli connectors create -n $(basename -s .json $connection) -f $connection $(cat /tmp/cmd) > /tmp/response
+          /tmp/integrationcli connectors create -n $(cat /tmp/connection) --create-secret=${_CREATE_SECRET} -f $connection $(cat /tmp/cmd) > /tmp/response
 
-          fi
           echo "connector response: " $(cat /tmp/response)
         fi
       done
@@ -132,6 +134,7 @@ steps:
 #the name of the service account  to use when setting up the connector
 substitutions:
   _GRANT_PERMISSIONS: "true"
+  _CREATE_SECRET: "false"
   _ENCRYPTED: "false"
   _DEFAULT_SA: "false"
   _SERVICE_ACCOUNT_NAME: "connectors"
@@ -139,7 +142,8 @@ substitutions:
   _KMS_KEY_NAME: "integration"
 
 options:
-  logging: CLOUD_LOGGING_ONLY`
+  logging: CLOUD_LOGGING_ONLY
+  substitution_option: "ALLOW_LOOSE"`
 
 func GetCloudBuildYaml() string {
 	return cloudBuild
