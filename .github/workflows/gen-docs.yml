@@ -34,7 +34,7 @@ jobs:
           git config --global user.email "13950006+srinandan@users.noreply.github.com"
 
           go install github.com/google/go-licenses@latest
-          go-licenses report github.com/GoogleCloudPlatform/application-integration-management-toolkit > third-party-licenses.md
+          go-licenses report github.com/GoogleCloudPlatform/application-integration-management-toolkit > third-party-licenses.txt
           go-licenses save . --save_path=third-party
 
           git add third-party third-party-licenses.md
