@@ -28,6 +28,10 @@ jobs:
     steps:
       - name: Checkout Code
         uses: actions/checkout@v3
+      - uses: actions/setup-go@v3
+        with:
+          go-version-file: './go.mod'
+          check-latest: true        
       - name: Push GH Pages
         run: |
           git config --global user.name "integrationcli Publish Action"
@@ -37,7 +41,7 @@ jobs:
           /tmp/go-licenses report github.com/GoogleCloudPlatform/application-integration-management-toolkit > third-party-licenses.txt
           /tmp/go-licenses save . --save_path=third-party
 
-          git add third-party third-party-licenses.md
+          git add third-party third-party-licenses.txt
           git commit -m "generate licenses - $GITHUB_SHA" || echo "No Changes in license"
 
           go run docs/docs.go
