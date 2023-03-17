@@ -30,12 +30,17 @@ jobs:
         uses: actions/checkout@v3
       - name: Push GH Pages
         run: |
-          go install github.com/google/go-licenses@latest
-          go-licenses report github.com/GoogleCloudPlatform/application-integration-management-toolkit > third-party-licenses.md
-
-          go run docs/docs.go
           git config --global user.name "integrationcli Publish Action"
           git config --global user.email "13950006+srinandan@users.noreply.github.com"
+
+          go install github.com/google/go-licenses@latest
+          go-licenses report github.com/GoogleCloudPlatform/application-integration-management-toolkit > third-party-licenses.txt
+          go-licenses save . --save_path=third-party
+
+          git add third-party third-party-licenses.md
+          git commit -m "generate licenses - $GITHUB_SHA" || echo "No Changes in license"
+
+          go run docs/docs.go
           git add --all
           git commit -m "Update GH Pages - $GITHUB_SHA" || echo "No Changes in docs"
           git push origin HEAD:refs/heads/main

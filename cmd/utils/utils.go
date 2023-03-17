@@ -53,18 +53,18 @@ steps:
           set -e
           #create the connection
           if [ ${_DEFAULT_SA} = "false" ]; then
-            _CMD=" --sa ${_SERVICE_ACCOUNT_NAME}"
+            echo " --sa ${_SERVICE_ACCOUNT_NAME}" >> /tmp/cmd
           fi
 
           if [ ${_ENCRYPTED} = "true" ]; then
-            _CMD=${_CMD}" -k locations/$LOCATION/keyRings/${_KMS_RING_NAME}/cryptoKeys/${_KMS_KEY_NAME}"
+            echo " -k locations/$LOCATION/keyRings/${_KMS_RING_NAME}/cryptoKeys/${_KMS_KEY_NAME}" >> /tmp/cmd
           fi
 
           if [ ${_GRANT_PERMISSION} = "true" ]; then
-            _CMD=${_CMD}" --g=true"
+            echo " --g=true" >> /tmp/cmd
           fi
 
-          /tmp/integrationcli connectors create -n $(basename -s .json $connection) -f $connection ${_CMD} > /tmp/response
+          /tmp/integrationcli connectors create -n $(basename -s .json $connection) -f $connection $(cat /tmp/cmd) > /tmp/response
 
           fi
           echo "connector response: " $(cat /tmp/response)
