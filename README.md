@@ -94,7 +94,18 @@ By default `integrationcli` uses Application Integration endpoints. This can be 
 
 ## Automate via Cloud Build
 
-Please see [here](./cicd/README.md) for details on how to automate deployments via Cloud Build
+Please see [here](./cicd/README.md) for details on how to automate deployments via Cloud Build. The container images for integrationcli are:
+
+* Container image for the CLI
+```
+docker pull gcr.io/appintegration-toolkit/integrationcli:latest
+```
+
+* Container image for cloud build
+
+```
+docker pull gcr.io/appintegration-toolkit/integrationcli-builder:latest
+```
 
 ## Creating Integration Connectors
 
