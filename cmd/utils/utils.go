@@ -33,7 +33,7 @@ const cloudBuild = `# Copyright 2023 Google LLC
 
 steps:
 - id: 'Create connections if not present'
-  name: gcr.io/appintegration-toolkit/integrationcli-builder:latest
+  name: us-docker.pkg.dev/appintegration-toolkit/images/integrationcli-builder:latest
   entrypoint: 'bash'
   args:
     - -c
@@ -72,7 +72,7 @@ steps:
       done
 
 - id: 'Create authconfigs if not present'
-  name: gcr.io/appintegration-toolkit/integrationcli-builder:latest
+  name: us-docker.pkg.dev/appintegration-toolkit/images/integrationcli-builder:latest
   entrypoint: 'bash'
   args:
     - -c
@@ -102,7 +102,7 @@ steps:
 
 
 - id: 'Create and publish the integration version'
-  name: gcr.io/appintegration-toolkit/integrationcli-builder:latest
+  name: us-docker.pkg.dev/appintegration-toolkit/images/integrationcli-builder:latest
   entrypoint: 'bash'
   args:
     - -c
@@ -139,7 +139,8 @@ substitutions:
   _KMS_KEY_NAME: "integration"
 
 options:
-  logging: CLOUD_LOGGING_ONLY`
+  logging: CLOUD_LOGGING_ONLY
+  substitution_option: "ALLOW_LOOSE"`
 
 func GetCloudBuildYaml() string {
 	return cloudBuild
