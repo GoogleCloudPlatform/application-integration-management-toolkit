@@ -17,7 +17,6 @@ package integrations
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"net/url"
 	"os"
 	"path"
@@ -480,7 +479,8 @@ func Get(name string, version string, basicInfo bool, minimal bool, override boo
 			return nil, err
 		}
 
-		or := overrides{}
+		var or overrides
+
 		if or, err = extractOverrides(iversion); err != nil {
 			return nil, err
 		}
@@ -957,7 +957,7 @@ func batchImport(name string, entities []string, pwg *sync.WaitGroup) {
 
 func uploadAsync(name string, filePath string, wg *sync.WaitGroup) {
 	defer wg.Done()
-	content, err := ioutil.ReadFile(filePath)
+	content, err := os.ReadFile(filePath)
 	if err != nil {
 		return
 	}
@@ -1084,7 +1084,7 @@ func getBasicInfo(respBody []byte) (newResp []byte, err error) {
 func getAuthConfigUuid(jsonValue string) string {
 	var m map[string]string
 	jsonValue = strings.Replace(jsonValue, "\n", "", -1)
-	json.Unmarshal([]byte(jsonValue), &m)
+	_ = json.Unmarshal([]byte(jsonValue), &m)
 	return m["authConfigId"]
 }
 
@@ -1104,7 +1104,7 @@ func getConnectionName(jsonValue string) string {
 
 	c := config{}
 
-	json.Unmarshal([]byte(jsonValue), &c)
+	_ = json.Unmarshal([]byte(jsonValue), &c)
 	name := c.Connection.ConnectionName
 	return name[strings.LastIndex(name, "/")+1:]
 }

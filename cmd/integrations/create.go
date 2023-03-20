@@ -16,7 +16,6 @@ package integrations
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 
 	"internal/apiclient"
@@ -47,7 +46,7 @@ var CreateCmd = &cobra.Command{
 			return err
 		}
 
-		content, err := ioutil.ReadFile(integrationFile)
+		content, err := os.ReadFile(integrationFile)
 		if err != nil {
 			return err
 		}
@@ -57,7 +56,7 @@ var CreateCmd = &cobra.Command{
 		}
 
 		if overridesFile != "" {
-			overridesContent, err = ioutil.ReadFile(overridesFile)
+			overridesContent, err = os.ReadFile(overridesFile)
 			if err != nil {
 				return err
 			}

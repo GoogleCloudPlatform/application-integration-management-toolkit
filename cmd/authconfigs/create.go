@@ -16,7 +16,6 @@ package authconfigs
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path"
 	"regexp"
@@ -58,7 +57,7 @@ var CreateCmd = &cobra.Command{
 				return err
 			}
 
-			content, err = ioutil.ReadFile(authConfigFile)
+			content, err = os.ReadFile(authConfigFile)
 			if err != nil {
 				return err
 			}
@@ -76,7 +75,7 @@ var CreateCmd = &cobra.Command{
 				return err
 			}
 
-			encryptedContent, err := ioutil.ReadFile(encryptedFile)
+			encryptedContent, err := os.ReadFile(encryptedFile)
 			if err != nil {
 				return err
 			}

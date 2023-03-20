@@ -17,7 +17,7 @@ package apiclient
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/url"
 	"path"
@@ -106,7 +106,7 @@ func iamServiceAccountExists(iamname string) (code int, err error) {
 		return -1, fmt.Errorf("error in response: Response was null")
 	}
 
-	respBody, err := ioutil.ReadAll(resp.Body)
+	respBody, err := io.ReadAll(resp.Body)
 	if err != nil {
 		clilog.Error.Println("error in response: ", err)
 		return -1, err

@@ -15,7 +15,6 @@
 package integrations
 
 import (
-	"io/ioutil"
 	"os"
 
 	"internal/apiclient"
@@ -41,7 +40,7 @@ var PatchVerCmd = &cobra.Command{
 			return err
 		}
 
-		content, err := ioutil.ReadFile(integrationFile)
+		content, err := os.ReadFile(integrationFile)
 		if err != nil {
 			return err
 		}

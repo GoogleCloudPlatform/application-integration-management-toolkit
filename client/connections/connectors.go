@@ -18,7 +18,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"net/url"
 	"os"
 	"path"
@@ -460,7 +459,7 @@ func readSecretFile(name string) (payload []byte, err error) {
 		return nil, err
 	}
 
-	content, err := ioutil.ReadFile(name)
+	content, err := os.ReadFile(name)
 	if err != nil {
 		return nil, err
 	}
@@ -485,7 +484,7 @@ func Import(folder string, createSecret bool) (err error) {
 			return nil
 		}
 		name := strings.TrimSuffix(filepath.Base(path), filepath.Ext(filepath.Base(path)))
-		content, err := ioutil.ReadFile(path)
+		content, err := os.ReadFile(path)
 		if err != nil {
 			return err
 		}

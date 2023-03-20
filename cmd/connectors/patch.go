@@ -15,7 +15,6 @@
 package connectors
 
 import (
-	"io/ioutil"
 	"os"
 
 	"internal/apiclient"
@@ -41,7 +40,7 @@ var PatchCmd = &cobra.Command{
 			return err
 		}
 
-		content, err := ioutil.ReadFile(connectionFile)
+		content, err := os.ReadFile(connectionFile)
 		if err != nil {
 			return err
 		}

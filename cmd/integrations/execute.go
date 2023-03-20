@@ -16,7 +16,6 @@ package integrations
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 
 	"internal/apiclient"
@@ -49,7 +48,7 @@ var ExecuteCmd = &cobra.Command{
 				return err
 			}
 
-			content, err = ioutil.ReadFile(executionFile)
+			content, err = os.ReadFile(executionFile)
 			if err != nil {
 				return err
 			}

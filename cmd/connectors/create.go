@@ -17,7 +17,6 @@ package connectors
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -46,7 +45,7 @@ var CreateCmd = &cobra.Command{
 			return err
 		}
 
-		content, err := ioutil.ReadFile(connectionFile)
+		content, err := os.ReadFile(connectionFile)
 		if err != nil {
 			return err
 		}

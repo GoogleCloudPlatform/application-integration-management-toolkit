@@ -16,7 +16,6 @@ package apiclient
 
 import (
 	"encoding/json"
-	"io/ioutil"
 	"os"
 	"os/user"
 	"path"
@@ -52,7 +51,7 @@ func ReadPreferencesFile() (err error) {
 		return err
 	}
 
-	prefFile, err := ioutil.ReadFile(path.Join(usr.HomeDir, integrationcliPath, integrationcliFile))
+	prefFile, err := os.ReadFile(path.Join(usr.HomeDir, integrationcliPath, integrationcliFile))
 	if err != nil {
 		clilog.Info.Println("Cached preferences was not found")
 		return err
