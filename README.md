@@ -98,13 +98,13 @@ Please see [here](./cicd/README.md) for details on how to automate deployments v
 
 * Container image for the CLI
 ```
-docker pull gcr.io/appintegration-toolkit/integrationcli:latest
+docker pull us-docker.pkg.dev/appintegration-toolkit/images/integrationcli:latest
 ```
 
 * Container image for cloud build
 
 ```
-docker pull gcr.io/appintegration-toolkit/integrationcli-builder:latest
+docker pull us-docker.pkg.dev/appintegration-toolkit/images/integrationcli-builder:latest
 ```
 
 ## Creating Integration Connectors

@@ -17,7 +17,7 @@
 
 steps:
 - id: 'Import an integration version to a region'
-  name: gcr.io/appintegration-toolkit/integrationcli-builder:latest
+  name: us-docker.pkg.dev/appintegration-toolkit/images/integrationcli-builder:latest
   entrypoint: 'bash'
   args:
     - -c
