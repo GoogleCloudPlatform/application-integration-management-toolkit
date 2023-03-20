@@ -38,6 +38,6 @@ substitutions:
 
 options:
   env: ["DEBUG=true"]
-  machineType: N1_HIGHCPU_8
+  machineType: E2_HIGHCPU_8
   logging: CLOUD_LOGGING_ONLY
   substitution_option: ALLOW_LOOSE
