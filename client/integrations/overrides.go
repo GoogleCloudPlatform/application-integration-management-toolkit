@@ -69,7 +69,8 @@ type connectionparams struct {
 
 const pubsubTrigger = "cloud_pubsub_external_trigger/projects/cloud-crm-eventbus-cpsexternal/subscriptions/"
 const apiTrigger = "api_trigger/"
-const authConfigValue = "{  \"@type\": \"type.googleapis.com/enterprise.crm.eventbus.authconfig.AuthConfigTaskParam\",\"authConfigId\": \""
+
+//const authConfigValue = "{  \"@type\": \"type.googleapis.com/enterprise.crm.eventbus.authconfig.AuthConfigTaskParam\",\"authConfigId\": \""
 
 // mergeOverrides
 func mergeOverrides(eversion integrationVersionExternal, o overrides, supressWarnings bool) (integrationVersionExternal, error) {
@@ -306,20 +307,26 @@ func overrideCfParameters(overrideParameters map[string]eventparameter, taskPara
 	return taskParameters
 }
 
-func getNewConnectionParams(connectionName string, connectionLocation string) (connectionparams, error) {
-	cp := connectionparams{}
+func getNewConnectionParams(connectionName string, connectionLocation string) (cp connectionparams, err error) {
+	cp = connectionparams{}
 	var connectionVersionResponse map[string]interface{}
 	var integrationRegion string
 
 	apiclient.SetPrintOutput(false)
 	if connectionLocation != "" {
-		integrationRegion = apiclient.GetRegion() //store the integration location
-		apiclient.SetRegion(connectionLocation)   //set the connector region
+		integrationRegion = apiclient.GetRegion()     //store the integration location
+		err = apiclient.SetRegion(connectionLocation) //set the connector region
+		if err != nil {
+			return cp, err
+		}
 	}
 	connResp, err := connections.Get(connectionName, "BASIC", false, false) //get connector details
 	apiclient.SetPrintOutput(true)
 	if connectionLocation != "" {
-		apiclient.SetRegion(integrationRegion) //set the integration region back
+		err = apiclient.SetRegion(integrationRegion) //set the integration region back
+		if err != nil {
+			return cp, err
+		}
 	}
 	if err != nil {
 		return cp, err

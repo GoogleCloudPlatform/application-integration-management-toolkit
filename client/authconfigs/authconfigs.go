@@ -189,7 +189,7 @@ func Find(name string, pageToken string) (version string, err error) {
 		}
 	}
 	if ac.NextPageToken != "" {
-		Find(name, ac.NextPageToken)
+		return Find(name, ac.NextPageToken)
 	}
 	return "", fmt.Errorf("authConfig not found")
 }

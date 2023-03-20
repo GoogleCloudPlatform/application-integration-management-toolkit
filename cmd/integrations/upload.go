@@ -15,7 +15,6 @@
 package integrations
 
 import (
-	"io/ioutil"
 	"os"
 
 	"internal/apiclient"
@@ -41,7 +40,7 @@ var UploadCmd = &cobra.Command{
 			return err
 		}
 
-		content, err := ioutil.ReadFile(filePath)
+		content, err := os.ReadFile(filePath)
 		if err != nil {
 			return err
 		}
