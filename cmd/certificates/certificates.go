@@ -25,7 +25,7 @@ var Cmd = &cobra.Command{
 	Long:  "Manage certificates used by Integration",
 }
 
-var region, project string
+var name, region, project string
 
 func init() {
 	Cmd.PersistentFlags().StringVarP(&project, "proj", "p",
@@ -35,4 +35,7 @@ func init() {
 		"", "Integration region name")
 
 	Cmd.AddCommand(ListCmd)
+	Cmd.AddCommand(DelCmd)
+	Cmd.AddCommand(GetCmd)
+	Cmd.AddCommand(CreateCmd)
 }
