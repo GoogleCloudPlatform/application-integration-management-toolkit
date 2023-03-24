@@ -28,6 +28,19 @@ Grant the Application Integration Admin role to the Cloud Build Service Agent
         --role="roles/integrations.integrationAdmin"
 ```
 
+Grant the Integration Connector Admin role to the Cloud Build Service Agent
+
+```
+    gcloud projects add-iam-policy-binding PROJECT_ID \
+        --member="serviceAccount:service-PROJECT_NUMBER@gcp-sa-cloudbuild.iam.gserviceaccount.com" \
+        --role="roles/connectors.admin"
+```
+
+NOTES
+
+1. You may need to provide secret manager access if you wish to provision secrets through Cloud Build
+2. You may need to provide Cloud KMS decrypt access if you wish to decrypt secrets
+
 ## Recommended Folder Structure
 
 ```bash
@@ -49,7 +62,7 @@ Grant the Application Integration Admin role to the Cloud Build Service Agent
 ```sh
 
 token=$(gcloud auth print-access-token)
-integrationcli integrations scaffolding -n <integration-name> -s <snapShot> -p <project-id> -r <region-name> -t $token
+integrationcli integrations scaffold -n <integration-name> -s <snapShot> -p <project-id> -r <region-name> -t $token
 ```
 
 Inspect the generated `overrides`, `connectors` and `authconfigs`
@@ -175,7 +188,7 @@ To use this encrypted file in the automation, add the following lines to cloudbu
 
 This repo uses a custom cloud builder. The cloud builder is hosted at `us-docker.pkg.dev/appintegration-toolkit/images/integrationcli-builder:latest`. The cloud builder can be customized from
 
-1. The [cloud-builder.yaml](../cloud-builder.yaml) file
+1. The [cloud-builder.yaml](../artifact-builder.yaml) file
 2. The [Dockerfile](../Dockerfile.builder)
 
 ```sh
