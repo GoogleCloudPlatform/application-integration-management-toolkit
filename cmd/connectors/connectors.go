@@ -43,4 +43,5 @@ func init() {
 	Cmd.AddCommand(NodeCountCmd)
 	Cmd.AddCommand(ExportCmd)
 	Cmd.AddCommand(ImportCmd)
+	Cmd.AddCommand(PatchCmd)
 }
