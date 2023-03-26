@@ -21,7 +21,7 @@ import (
 	"path"
 	"time"
 
-	"github.com/apigee/apigeecli/clilog"
+	"internal/clilog"
 )
 
 const integrationcliFile = "config.json"

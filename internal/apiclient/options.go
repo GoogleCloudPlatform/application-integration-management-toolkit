@@ -18,7 +18,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/apigee/apigeecli/clilog"
+	"internal/clilog"
 )
 
 // BaseURL is the Integration control plane endpoint

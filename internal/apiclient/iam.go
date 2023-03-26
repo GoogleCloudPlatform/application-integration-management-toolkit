@@ -24,7 +24,7 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/apigee/apigeecli/clilog"
+	"internal/clilog"
 )
 
 // condition for Bindings

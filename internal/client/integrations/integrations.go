@@ -28,7 +28,7 @@ import (
 
 	"internal/apiclient"
 
-	"github.com/apigee/apigeecli/clilog"
+	"internal/clilog"
 )
 
 const maxPageSize = 1000

@@ -19,7 +19,8 @@ import (
 
 	"internal/apiclient"
 
-	"github.com/apigee/apigeecli/clilog"
+	"internal/clilog"
+
 	"github.com/spf13/cobra"
 )
 

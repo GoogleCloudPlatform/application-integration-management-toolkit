@@ -17,7 +17,7 @@ package sfdcinstances
 import (
 	"internal/apiclient"
 
-	"github.com/GoogleCloudPlatform/application-integration-management-toolkit/client/sfdc"
+	"internal/client/sfdc"
 
 	"github.com/spf13/cobra"
 )

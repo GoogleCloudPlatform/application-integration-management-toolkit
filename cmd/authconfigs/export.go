@@ -17,7 +17,7 @@ package authconfigs
 import (
 	"internal/apiclient"
 
-	"github.com/GoogleCloudPlatform/application-integration-management-toolkit/client/authconfigs"
+	"internal/client/authconfigs"
 
 	"github.com/spf13/cobra"
 )

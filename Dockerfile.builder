@@ -1,7 +1,6 @@
 FROM golang:1.20 as builder
 
 ADD ./internal /go/src/integrationcli/internal
-ADD ./client /go/src/integrationcli/client
 ADD ./cmd /go/src/integrationcli/cmd
 
 COPY main.go /go/src/integrationcli/main.go

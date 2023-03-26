@@ -29,7 +29,7 @@ import (
 	"internal/cloudkms"
 	"internal/secmgr"
 
-	"github.com/apigee/apigeecli/clilog"
+	"internal/clilog"
 )
 
 const maxPageSize = 1000

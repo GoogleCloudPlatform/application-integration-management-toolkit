@@ -20,7 +20,7 @@ import (
 
 	"internal/apiclient"
 
-	"github.com/apigee/apigeecli/clilog"
+	"internal/clilog"
 )
 
 func Clean(name string, reportOnly bool, keepList []string) (err error) {

@@ -20,7 +20,7 @@ import (
 
 	"internal/apiclient"
 
-	"github.com/GoogleCloudPlatform/application-integration-management-toolkit/client/integrations"
+	"internal/client/integrations"
 
 	"github.com/spf13/cobra"
 )

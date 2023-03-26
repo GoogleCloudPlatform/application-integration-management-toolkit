@@ -21,9 +21,10 @@ import (
 
 	"internal/apiclient"
 
-	"github.com/GoogleCloudPlatform/application-integration-management-toolkit/client/authconfigs"
-	"github.com/GoogleCloudPlatform/application-integration-management-toolkit/client/connections"
-	"github.com/apigee/apigeecli/clilog"
+	"internal/clilog"
+
+	"internal/client/authconfigs"
+	"internal/client/connections"
 )
 
 type overrides struct {
