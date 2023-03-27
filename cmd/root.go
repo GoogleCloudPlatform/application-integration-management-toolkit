@@ -33,11 +33,12 @@ import (
 
 	"internal/apiclient"
 
-	"github.com/apigee/apigeecli/clilog"
+	"internal/clilog"
+
 	"github.com/spf13/cobra"
 )
 
-// RootCmd to manage apigeecli
+// RootCmd to manage integrationcli
 var RootCmd = &cobra.Command{
 	Use:   "integrationcli",
 	Short: "Utility to work with Integration & Connectors",

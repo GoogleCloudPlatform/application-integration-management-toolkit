@@ -19,13 +19,13 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/apigee/apigeecli/clilog"
+	"internal/clilog"
 )
 
-//entityPayloadList stores list of entities
+// entityPayloadList stores list of entities
 var entityPayloadList [][]byte //types.EntityPayloadList
 
-//WriteByteArrayToFile accepts []bytes and writes to a file
+// WriteByteArrayToFile accepts []bytes and writes to a file
 func WriteByteArrayToFile(exportFile string, fileAppend bool, payload []byte) error {
 	var fileFlags = os.O_CREATE | os.O_WRONLY
 
@@ -50,7 +50,7 @@ func WriteByteArrayToFile(exportFile string, fileAppend bool, payload []byte) er
 	return nil
 }
 
-//WriteArrayByteArrayToFile accepts [][]bytes and writes to a file
+// WriteArrayByteArrayToFile accepts [][]bytes and writes to a file
 func WriteArrayByteArrayToFile(exportFile string, fileAppend bool, payload [][]byte) error {
 	var fileFlags = os.O_CREATE | os.O_WRONLY
 

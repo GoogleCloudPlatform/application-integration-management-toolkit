@@ -22,10 +22,11 @@ import (
 
 	"internal/apiclient"
 
-	"github.com/GoogleCloudPlatform/application-integration-management-toolkit/client/authconfigs"
-	"github.com/GoogleCloudPlatform/application-integration-management-toolkit/client/connections"
-	"github.com/GoogleCloudPlatform/application-integration-management-toolkit/client/integrations"
-	"github.com/GoogleCloudPlatform/application-integration-management-toolkit/client/sfdc"
+	"internal/client/authconfigs"
+	"internal/client/connections"
+	"internal/client/integrations"
+	"internal/client/sfdc"
+
 	"github.com/GoogleCloudPlatform/application-integration-management-toolkit/cmd/utils"
 
 	"github.com/spf13/cobra"

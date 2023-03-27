@@ -6,18 +6,23 @@ require internal/apiclient v1.0.0
 
 replace internal/apiclient => ./internal/apiclient
 
+require internal/clilog v1.0.0
+
+replace internal/clilog => ./internal/clilog
+
+require internal/client v1.0.0
+
+replace internal/client => ./internal/client
+
 require internal/cloudkms v1.0.0
 
 replace internal/cloudkms => ./internal/cloudkms
 
-require internal/secmgr v1.0.0
+require internal/secmgr v1.0.0 // indirect
 
 replace internal/secmgr => ./internal/secmgr
 
-require (
-	github.com/apigee/apigeecli v1.118.1-beta
-	github.com/spf13/cobra v1.6.1
-)
+require github.com/spf13/cobra v1.6.1
 
 require (
 	cloud.google.com/go/compute v1.18.0 // indirect

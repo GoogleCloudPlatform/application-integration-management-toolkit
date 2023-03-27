@@ -17,7 +17,8 @@ package connectors
 import (
 	"internal/apiclient"
 
-	"github.com/GoogleCloudPlatform/application-integration-management-toolkit/client/connections"
+	"internal/client/connections"
+
 	"github.com/spf13/cobra"
 )
 

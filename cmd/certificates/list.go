@@ -17,7 +17,7 @@ package certificates
 import (
 	"internal/apiclient"
 
-	"github.com/GoogleCloudPlatform/application-integration-management-toolkit/client/certificates"
+	"internal/client/certificates"
 
 	"github.com/spf13/cobra"
 )

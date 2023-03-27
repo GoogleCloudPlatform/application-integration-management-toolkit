@@ -12,8 +12,6 @@ cloud.google.com/go/longrunning v0.4.1 h1:v+yFJOfKC3yZdY6ZUI933pIYdhyhV8S3NpWrXW
 cloud.google.com/go/secretmanager v1.10.0 h1:pu03bha7ukxF8otyPKTFdDz+rr9sE3YauS5PliDXK60=
 cloud.google.com/go/secretmanager v1.10.0/go.mod h1:MfnrdvKMPNra9aZtQFvBcvRU54hbPD8/HayQdlUgJpU=
 github.com/BurntSushi/toml v0.3.1/go.mod h1:xHWCNGjB5oqiDr8zfno3MHue2Ht5sIBksp03qcyfWMU=
-github.com/apigee/apigeecli v1.118.1-beta h1:96LniQsXilo2pCN2hN2qpjRyQvZQw1o/VxHrQ8mEO6k=
-github.com/apigee/apigeecli v1.118.1-beta/go.mod h1:/xjA/cPAlCO7SxddrR11Mcz8O9LQtW7gFBn/7NGl7ZE=
 github.com/census-instrumentation/opencensus-proto v0.2.1/go.mod h1:f6KPmirojxKA12rnyqOA5BBL4O983OfeGPqjHWSTneU=
 github.com/client9/misspell v0.3.4/go.mod h1:qj6jICC3Q7zFZvVWo7KLAzC3yx5G7kyvSDkc90ppPyw=
 github.com/cncf/udpa/go v0.0.0-20191209042840-269d4d468f6f/go.mod h1:M8M6+tZqaGXZJjfX53e64911xZQV5JYwmTeXPW+k8Sc=
