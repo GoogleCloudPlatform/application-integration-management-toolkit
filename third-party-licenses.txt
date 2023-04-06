@@ -3,7 +3,6 @@ cloud.google.com/go/iam,https://github.com/googleapis/google-cloud-go/blob/iam/v
 cloud.google.com/go/kms,https://github.com/googleapis/google-cloud-go/blob/kms/v1.9.0/kms/LICENSE,Apache-2.0
 cloud.google.com/go/secretmanager,https://github.com/googleapis/google-cloud-go/blob/secretmanager/v1.10.0/secretmanager/LICENSE,Apache-2.0
 github.com/GoogleCloudPlatform/application-integration-management-toolkit,https://github.com/GoogleCloudPlatform/application-integration-management-toolkit/blob/HEAD/LICENSE.txt,Apache-2.0
-internal/clilog,https://github.com/apigee/apigeecli/blob/v1.118.1-beta/LICENSE.txt,Apache-2.0
 github.com/golang/groupcache/lru,https://github.com/golang/groupcache/blob/41bb18bfe9da/LICENSE,Apache-2.0
 github.com/golang/protobuf,https://github.com/golang/protobuf/blob/v1.5.2/LICENSE,BSD-3-Clause
 github.com/google/go-cmp/cmp,https://github.com/google/go-cmp/blob/v0.5.9/LICENSE,BSD-3-Clause
@@ -29,5 +28,11 @@ google.golang.org/genproto/googleapis,https://github.com/googleapis/go-genproto/
 google.golang.org/grpc,https://github.com/grpc/grpc-go/blob/v1.53.0/LICENSE,Apache-2.0
 google.golang.org/protobuf,https://github.com/protocolbuffers/protobuf-go/blob/v1.28.1/LICENSE,BSD-3-Clause
 internal/apiclient,Unknown,Unknown
+internal/client/authconfigs,Unknown,Unknown
+internal/client/certificates,Unknown,Unknown
+internal/client/connections,Unknown,Unknown
+internal/client/integrations,Unknown,Unknown
+internal/client/sfdc,Unknown,Unknown
+internal/clilog,Unknown,Unknown
 internal/cloudkms,Unknown,Unknown
 internal/secmgr,Unknown,Unknown
