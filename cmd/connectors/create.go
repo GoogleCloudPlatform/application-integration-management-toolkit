@@ -15,15 +15,11 @@
 package connectors
 
 import (
-	"encoding/json"
 	"fmt"
 	"os"
-	"path/filepath"
 	"regexp"
-	"time"
 
 	"internal/apiclient"
-	"internal/clilog"
 
 	"internal/client/connections"
 
@@ -59,64 +55,14 @@ var CreateCmd = &cobra.Command{
 			}
 		}
 
-		type status struct {
-			Code    int    `json:"code,omitempty"`
-			Message string `json:"message,omitempty"`
-		}
+		_, err = connections.Create(name, content, serviceAccountName, serviceAccountProject, encryptionKey, grantPermission, createSecret, wait)
 
-		type operation struct {
-			Name     string                  `json:"name,omitempty"`
-			Done     bool                    `json:"done,omitempty"`
-			Error    *status                 `json:"error,omitempty"`
-			Response *map[string]interface{} `json:"response,omitempty"`
-		}
-
-		operationsBytes, err := connections.Create(name, content, serviceAccountName, serviceAccountProject, encryptionKey, grantPermission, createSecret)
-		apiclient.DisableCmdPrintHttpResponse()
-
-		if wait {
-			o := operation{}
-			if err = json.Unmarshal(operationsBytes, &o); err != nil {
-				return err
-			}
-
-			operationId := filepath.Base(o.Name)
-			clilog.Info.Printf("Checking connection status for %s in %d seconds\n", operationId, interval)
-
-			stop := apiclient.Every(interval*time.Second, func(time.Time) bool {
-				var respBody []byte
-
-				if respBody, err = connections.GetOperation(operationId); err != nil {
-					return false
-				}
-
-				if err = json.Unmarshal(respBody, &o); err != nil {
-					return false
-				}
-
-				if o.Done {
-					if o.Error != nil {
-						clilog.Error.Printf("Connection completed with error: %v\n", o.Error)
-					} else {
-						clilog.Info.Println("Connection completed successfully!")
-					}
-					return false
-				} else {
-					clilog.Info.Printf("Connection status is: %t. Waiting %d seconds.\n", o.Done, interval)
-					return true
-				}
-			})
-
-			<-stop
-		}
 		return
 	},
 }
 
 var connectionFile, serviceAccountName, serviceAccountProject, encryptionKey string
 var grantPermission, wait, createSecret bool
-
-const interval = 10
 
 func init() {
 	CreateCmd.Flags().StringVarP(&name, "name", "n",

@@ -38,7 +38,7 @@ var ImportCmd = &cobra.Command{
 			return err
 		}
 
-		return connections.Import(folder, createSecret)
+		return connections.Import(folder, createSecret, wait)
 	},
 }
 
@@ -47,6 +47,8 @@ func init() {
 		"", "Folder to import connections")
 	ImportCmd.Flags().BoolVarP(&createSecret, "create-secret", "",
 		true, "Create Secret Manager secrets when creating the connection")
+	ImportCmd.Flags().BoolVarP(&wait, "wait", "",
+		false, "Waits for the connector to finish, with success or error")
 
 	_ = ImportCmd.MarkFlagRequired("folder")
 }
