@@ -61,7 +61,7 @@ steps:
         echo " --g=true" >> /tmp/cmd
       fi
 
-      /tmp/integrationcli integrations apply -f . $(cat /tmp/cmd)
+      /tmp/integrationcli integrations apply -f . -w ${_WAIT} $(cat /tmp/cmd)
 
 #the name of the service account  to use when setting up the connector
 substitutions:
@@ -72,6 +72,7 @@ substitutions:
   _SERVICE_ACCOUNT_NAME: "connectors"
   _KMS_RING_NAME: "app-integration"
   _KMS_KEY_NAME: "integration"
+  _WAIT: "false"
 
 options:
   logging: CLOUD_LOGGING_ONLY
