@@ -338,7 +338,7 @@ func Create(name string, content []byte, serviceAccountName string, serviceAccou
 		return nil, err
 	}
 
-	respBody, err = apiclient.HttpClient(apiclient.GetPrintOutput(), u.String(), string(content))
+	respBody, err = apiclient.HttpClient(u.String(), string(content))
 	return respBody, err
 }
 
@@ -346,7 +346,7 @@ func Create(name string, content []byte, serviceAccountName string, serviceAccou
 func Delete(name string) (respBody []byte, err error) {
 	u, _ := url.Parse(apiclient.GetBaseConnectorURL())
 	u.Path = path.Join(u.Path, name)
-	respBody, err = apiclient.HttpClient(apiclient.GetPrintOutput(), u.String(), "", "DELETE")
+	respBody, err = apiclient.HttpClient(u.String(), "", "DELETE")
 	return respBody, err
 }
 
@@ -359,13 +359,11 @@ func Get(name string, view string, minimal bool, overrides bool) (respBody []byt
 	}
 	u.Path = path.Join(u.Path, name)
 
-	printSetting := apiclient.GetPrintOutput()
-
 	if minimal {
-		apiclient.SetPrintOutput(false)
+		apiclient.SetClientPrintHttpResponse(false)
 	}
 
-	respBody, err = apiclient.HttpClient(apiclient.GetPrintOutput(), u.String())
+	respBody, err = apiclient.HttpClient(u.String())
 
 	if minimal {
 		c := connection{}
@@ -403,10 +401,9 @@ func Get(name string, view string, minimal bool, overrides bool) (respBody []byt
 		if err != nil {
 			return nil, err
 		}
-		apiclient.SetPrintOutput(printSetting) //set original print output
-		if apiclient.GetPrintOutput() {
-			apiclient.PrettyPrint(connectionPayload)
-		}
+		apiclient.SetClientPrintHttpResponse(apiclient.GetCmdPrintHttpResponseSetting()) //set original print output
+		apiclient.PrettyPrint(connectionPayload)
+
 		return connectionPayload, err
 	}
 	return respBody, err
@@ -430,7 +427,7 @@ func List(pageSize int, pageToken string, filter string, orderBy string) (respBo
 	}
 
 	u.RawQuery = q.Encode()
-	respBody, err = apiclient.HttpClient(apiclient.GetPrintOutput(), u.String())
+	respBody, err = apiclient.HttpClient(u.String())
 	return respBody, err
 }
 
@@ -451,7 +448,7 @@ func Patch(name string, content []byte, updateMask []string) (respBody []byte, e
 
 	u.Path = path.Join(u.Path, name)
 
-	return apiclient.HttpClient(apiclient.GetPrintOutput(), u.String(), string(content), "PATCH")
+	return apiclient.HttpClient(u.String(), string(content), "PATCH")
 }
 
 func readSecretFile(name string) (payload []byte, err error) {
@@ -469,7 +466,8 @@ func readSecretFile(name string) (payload []byte, err error) {
 // Import
 func Import(folder string, createSecret bool) (err error) {
 
-	apiclient.SetPrintOutput(false)
+	apiclient.SetClientPrintHttpResponse(false)
+	defer apiclient.SetClientPrintHttpResponse(apiclient.GetCmdPrintHttpResponseSetting())
 	errs := []string{}
 
 	err = filepath.Walk(folder, func(path string, info os.FileInfo, err error) error {
@@ -494,9 +492,9 @@ func Import(folder string, createSecret bool) (err error) {
 			if err != nil {
 				errs = append(errs, err.Error())
 			}
-			fmt.Printf("creating connection %s\n", name)
+			clilog.Info.Printf("creating connection %s\n", name)
 		} else {
-			fmt.Printf("connection %s already exists, skipping creations\n", name)
+			clilog.Info.Printf("connection %s already exists, skipping creations\n", name)
 		}
 
 		return nil
@@ -515,7 +513,8 @@ func Import(folder string, createSecret bool) (err error) {
 // Export
 func Export(folder string) (err error) {
 	apiclient.SetExportToFile(folder)
-	apiclient.SetPrintOutput(false)
+	apiclient.SetClientPrintHttpResponse(false)
+	defer apiclient.SetClientPrintHttpResponse(apiclient.GetCmdPrintHttpResponseSetting())
 
 	respBody, err := List(maxPageSize, "", "", "")
 	if err != nil {
@@ -548,7 +547,7 @@ func Export(folder string) (err error) {
 			clilog.Error.Println(err)
 			return err
 		}
-		fmt.Printf("Downloaded %s\n", fileName)
+		clilog.Info.Printf("Downloaded %s\n", fileName)
 	}
 
 	return nil

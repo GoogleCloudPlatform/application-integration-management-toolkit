@@ -42,12 +42,12 @@ var GetCmd = &cobra.Command{
 	},
 	RunE: func(cmd *cobra.Command, args []string) (err error) {
 		if name != "" {
-			apiclient.SetPrintOutput(false)
+			apiclient.DisableCmdPrintHttpResponse()
 			version, err := certificates.Find(name)
 			if err != nil {
 				return err
 			}
-			apiclient.SetPrintOutput(true)
+			apiclient.EnableCmdPrintHttpResponse()
 			_, err = certificates.Get(version)
 			return err
 		} else {

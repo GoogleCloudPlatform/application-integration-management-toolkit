@@ -239,13 +239,10 @@ func CreateVersion(name string, content []byte, overridesContent []byte, snapsho
 		return nil, err
 	}
 
-	if apiclient.DryRun() {
-		clilog.Info.Println(string(content))
-	}
-
 	u, _ := url.Parse(apiclient.GetBaseIntegrationURL())
 	u.Path = path.Join(u.Path, "integrations", name, "versions")
-	respBody, err = apiclient.HttpClient(apiclient.GetPrintOutput(), u.String(), string(content))
+
+	respBody, err = apiclient.HttpClient(u.String(), string(content))
 	return respBody, err
 }
 
@@ -266,7 +263,7 @@ func Upload(name string, content []byte) (respBody []byte, err error) {
 
 	u, _ := url.Parse(apiclient.GetBaseIntegrationURL())
 	u.Path = path.Join(u.Path, "integrations", name, "versions:upload")
-	respBody, err = apiclient.HttpClient(apiclient.GetPrintOutput(), u.String(), string(content))
+	respBody, err = apiclient.HttpClient(u.String(), string(content))
 	return respBody, err
 }
 
@@ -286,7 +283,7 @@ func Patch(name string, version string, content []byte) (respBody []byte, err er
 
 	u, _ := url.Parse(apiclient.GetBaseIntegrationURL())
 	u.Path = path.Join(u.Path, "integrations", name, "versions", version)
-	respBody, err = apiclient.HttpClient(apiclient.GetPrintOutput(), u.String(), string(content), "PATCH")
+	respBody, err = apiclient.HttpClient(u.String(), string(content), "PATCH")
 	return respBody, err
 }
 
@@ -294,7 +291,7 @@ func Patch(name string, version string, content []byte) (respBody []byte, err er
 func TakeoverEditLock(name string, version string) (respBody []byte, err error) {
 	u, _ := url.Parse(apiclient.GetBaseIntegrationURL())
 	u.Path = path.Join(u.Path, "integrations", name, "versions", version)
-	respBody, err = apiclient.HttpClient(apiclient.GetPrintOutput(), u.String(), "")
+	respBody, err = apiclient.HttpClient(u.String(), "")
 	return respBody, err
 }
 
@@ -320,18 +317,18 @@ func ListVersions(name string, pageSize int, pageToken string, filter string, or
 	u.Path = path.Join(u.Path, "integrations", name, "versions")
 
 	if apiclient.GetExportToFile() != "" {
-		apiclient.SetPrintOutput(false)
+		apiclient.SetClientPrintHttpResponse(false)
+		defer apiclient.SetClientPrintHttpResponse(apiclient.GetCmdPrintHttpResponseSetting())
 	}
 
 	if !allVersions {
 		if basicInfo {
-			printSetting := apiclient.GetPrintOutput()
-			apiclient.SetPrintOutput(false)
-			respBody, err = apiclient.HttpClient(apiclient.GetPrintOutput(), u.String())
+			apiclient.SetClientPrintHttpResponse(false)
+			respBody, err = apiclient.HttpClient(u.String())
 			if err != nil {
 				return nil, err
 			}
-			apiclient.SetPrintOutput(printSetting)
+			apiclient.SetClientPrintHttpResponse(apiclient.GetCmdPrintHttpResponseSetting())
 			listIvers := listIntegrationVersions{}
 			listBIvers := listbasicIntegrationVersions{}
 
@@ -353,13 +350,13 @@ func ListVersions(name string, pageSize int, pageToken string, filter string, or
 			}
 			return newResp, err
 		}
-		respBody, err = apiclient.HttpClient(apiclient.GetPrintOutput(), u.String())
+		respBody, err = apiclient.HttpClient(u.String())
 		if err != nil {
 			return nil, err
 		}
 		return respBody, err
 	} else {
-		respBody, err = apiclient.HttpClient(apiclient.GetPrintOutput(), u.String())
+		respBody, err = apiclient.HttpClient(u.String())
 		if err != nil {
 			return nil, err
 		}
@@ -397,7 +394,7 @@ func ListVersions(name string, pageSize int, pageToken string, filter string, or
 						return nil, err
 					}
 				}
-				fmt.Printf("Downloaded version %s for Integration flow %s\n", version, name)
+				clilog.Info.Printf("Downloaded version %s for Integration flow %s\n", version, name)
 			}
 		}
 
@@ -433,7 +430,7 @@ func List(pageSize int, pageToken string, filter string, orderBy string) (respBo
 
 	u.RawQuery = q.Encode()
 	u.Path = path.Join(u.Path, "integrations")
-	respBody, err = apiclient.HttpClient(apiclient.GetPrintOutput(), u.String())
+	respBody, err = apiclient.HttpClient(u.String())
 	return respBody, err
 }
 
@@ -442,26 +439,22 @@ func Get(name string, version string, basicInfo bool, minimal bool, override boo
 	u, _ := url.Parse(apiclient.GetBaseIntegrationURL())
 	u.Path = path.Join(u.Path, "integrations", name, "versions", version)
 	if basicInfo {
-		//store print setting
-		printSetting := apiclient.GetPrintOutput()
-		apiclient.SetPrintOutput(false)
-		respBody, err := apiclient.HttpClient(apiclient.GetPrintOutput(), u.String())
+		apiclient.SetClientPrintHttpResponse(false)
+		respBody, err := apiclient.HttpClient(u.String())
 
 		if err != nil {
 			return nil, err
 		}
 		//restore print setting
-		apiclient.SetPrintOutput(printSetting)
+		apiclient.SetClientPrintHttpResponse(apiclient.GetCmdPrintHttpResponseSetting())
 		return getBasicInfo(respBody)
 	}
 
-	printSetting := apiclient.GetPrintOutput()
-
 	if override || minimal {
-		apiclient.SetPrintOutput(false)
+		apiclient.SetClientPrintHttpResponse(false)
 	}
 
-	respBody, err := apiclient.HttpClient(apiclient.GetPrintOutput(), u.String())
+	respBody, err := apiclient.HttpClient(u.String())
 
 	if minimal {
 		iversion := integrationVersion{}
@@ -472,7 +465,7 @@ func Get(name string, version string, basicInfo bool, minimal bool, override boo
 
 		eversion := convertInternalToExternal(iversion)
 		respBody, err = json.Marshal(eversion)
-		apiclient.SetPrintOutput(printSetting)
+		apiclient.SetClientPrintHttpResponse(apiclient.GetCmdPrintHttpResponseSetting())
 		if apiclient.GetPrintOutput() {
 			apiclient.PrettyPrint(respBody)
 		}
@@ -493,10 +486,8 @@ func Get(name string, version string, basicInfo bool, minimal bool, override boo
 		if respBody, err = json.Marshal(or); err != nil {
 			return nil, err
 		}
-		apiclient.SetPrintOutput(printSetting)
-		if apiclient.GetPrintOutput() {
-			apiclient.PrettyPrint(respBody)
-		}
+		apiclient.SetClientPrintHttpResponse(apiclient.GetCmdPrintHttpResponseSetting())
+		apiclient.PrettyPrint(respBody)
 	}
 	return respBody, err
 }
@@ -504,14 +495,13 @@ func Get(name string, version string, basicInfo bool, minimal bool, override boo
 // GetBySnapshot
 func GetBySnapshot(name string, snapshot string, minimal bool, override bool) ([]byte, error) {
 
-	printSetting := apiclient.GetPrintOutput()
-	apiclient.SetPrintOutput(false)
+	apiclient.SetClientPrintHttpResponse(false)
 
 	listBody, err := ListVersions(name, -1, "", "snapshotNumber="+snapshot, "", false, false, true)
 	if err != nil {
 		return nil, err
 	}
-	apiclient.SetPrintOutput(printSetting)
+	apiclient.SetClientPrintHttpResponse(apiclient.GetCmdPrintHttpResponseSetting())
 
 	listBasicVersions := listbasicIntegrationVersions{}
 	err = json.Unmarshal(listBody, &listBasicVersions)
@@ -529,15 +519,15 @@ func GetBySnapshot(name string, snapshot string, minimal bool, override bool) ([
 
 // GetByUserlabel
 func GetByUserlabel(name string, userLabel string, minimal bool, override bool) ([]byte, error) {
-	printSetting := apiclient.GetPrintOutput()
-	apiclient.SetPrintOutput(false)
+
+	apiclient.SetClientPrintHttpResponse(false)
 
 	listBody, err := ListVersions(name, -1, "", "userLabel="+userLabel, "", false, false, true)
 	if err != nil {
 		return nil, err
 	}
 
-	apiclient.SetPrintOutput(printSetting)
+	apiclient.SetClientPrintHttpResponse(apiclient.GetCmdPrintHttpResponseSetting())
 
 	listBasicVersions := listbasicIntegrationVersions{}
 	err = json.Unmarshal(listBody, &listBasicVersions)
@@ -557,7 +547,7 @@ func GetByUserlabel(name string, userLabel string, minimal bool, override bool) 
 func Delete(name string) (respBody []byte, err error) {
 	u, _ := url.Parse(apiclient.GetBaseIntegrationURL())
 	u.Path = path.Join(u.Path, "integrations", name)
-	respBody, err = apiclient.HttpClient(apiclient.GetPrintOutput(), u.String(), "", "DELETE")
+	respBody, err = apiclient.HttpClient(u.String(), "", "DELETE")
 	return respBody, err
 }
 
@@ -565,15 +555,14 @@ func Delete(name string) (respBody []byte, err error) {
 func DeleteVersion(name string, version string) (respBody []byte, err error) {
 	u, _ := url.Parse(apiclient.GetBaseIntegrationURL())
 	u.Path = path.Join(u.Path, "integrations", name, "versions", version)
-	respBody, err = apiclient.HttpClient(apiclient.GetPrintOutput(), u.String(), "", "DELETE")
+	respBody, err = apiclient.HttpClient(u.String(), "", "DELETE")
 	return respBody, err
 }
 
 // DeleteByUserlabel
 func DeleteByUserlabel(name string, userLabel string) (respBody []byte, err error) {
 
-	print := apiclient.GetPrintOutput()
-	apiclient.SetPrintOutput(false)
+	apiclient.SetClientPrintHttpResponse(false)
 	iversionBytes, err := GetByUserlabel(name, userLabel, false, false)
 	if err != nil {
 		return nil, err
@@ -586,14 +575,14 @@ func DeleteByUserlabel(name string, userLabel string) (respBody []byte, err erro
 	}
 
 	version := getVersion(iversion.Name)
-	apiclient.SetPrintOutput(print)
+	apiclient.SetClientPrintHttpResponse(apiclient.GetCmdPrintHttpResponseSetting())
 	return DeleteVersion(name, version)
 }
 
 // DeleteBySnapshot
 func DeleteBySnapshot(name string, snapshot string) (respBody []byte, err error) {
-	print := apiclient.GetPrintOutput()
-	apiclient.SetPrintOutput(false)
+
+	apiclient.SetClientPrintHttpResponse(false)
 	iversionBytes, err := GetBySnapshot(name, snapshot, false, false)
 	if err != nil {
 		return nil, err
@@ -606,7 +595,7 @@ func DeleteBySnapshot(name string, snapshot string) (respBody []byte, err error)
 	}
 
 	version := getVersion(iversion.Name)
-	apiclient.SetPrintOutput(print)
+	apiclient.SetClientPrintHttpResponse(apiclient.GetCmdPrintHttpResponseSetting())
 	return DeleteVersion(name, version)
 }
 
@@ -774,9 +763,9 @@ func changeState(name string, version string, filter string, action string) (res
 	u.Path = path.Join(u.Path, "integrations", name, "versions", version+action)
 	//download is a get, the rest are post
 	if action == ":download" {
-		respBody, err = apiclient.HttpClient(apiclient.GetPrintOutput(), u.String())
+		respBody, err = apiclient.HttpClient(u.String())
 	} else {
-		respBody, err = apiclient.HttpClient(apiclient.GetPrintOutput(), u.String(), "")
+		respBody, err = apiclient.HttpClient(u.String(), "")
 	}
 	return respBody, err
 }
@@ -789,13 +778,13 @@ func getVersionId(name string, filter string) (version string, err error) {
 
 	u.RawQuery = q.Encode()
 	u.Path = path.Join(u.Path, "integrations", name, "versions")
-	apiclient.SetPrintOutput(false)
-	respBody, err := apiclient.HttpClient(apiclient.GetPrintOutput(), u.String())
+	apiclient.SetClientPrintHttpResponse(false)
+	respBody, err := apiclient.HttpClient(u.String())
 	if err != nil {
 		clilog.Error.Println(err)
 		return "", err
 	}
-	apiclient.SetPrintOutput(true)
+	apiclient.SetClientPrintHttpResponse(apiclient.GetCmdPrintHttpResponseSetting())
 
 	iversions := listIntegrationVersions{}
 	if err = json.Unmarshal(respBody, &iversions); err != nil {
@@ -814,7 +803,9 @@ func getVersionId(name string, filter string) (version string, err error) {
 func ExportConcurrent(folder string, numConnections int) error {
 	// Set export settings
 	apiclient.SetExportToFile(folder)
-	apiclient.SetPrintOutput(false)
+	apiclient.SetClientPrintHttpResponse(false)
+	defer apiclient.SetClientPrintHttpResponse(apiclient.GetCmdPrintHttpResponseSetting())
+
 	var pwg sync.WaitGroup
 	// Build integration URL with max page size
 	u, _ := url.Parse(apiclient.GetBaseIntegrationURL())
@@ -883,7 +874,7 @@ func exportWorker(workCh <-chan *integrationInfo, resultCh chan<- error, pwg *sy
 	defer pwg.Done()
 	for work := range workCh {
 		integrationName := work.Name[strings.LastIndex(work.Name, "/")+1:]
-		fmt.Printf("Exporting all the revisions for Integration Flow %s\n", integrationName)
+		clilog.Info.Printf("Exporting all the revisions for Integration Flow %s\n", integrationName)
 
 		if _, err := ListVersions(integrationName, -1, "", "", "", true, true, false); err != nil {
 			resultCh <- err
@@ -895,7 +886,7 @@ func exportWorker(workCh <-chan *integrationInfo, resultCh chan<- error, pwg *sy
 
 // fetchIntegrations fetches the first page of integrations from the integration API
 func fetchIntegrations(integrationURL string) (*listintegrations, error) {
-	respBody, err := apiclient.HttpClient(apiclient.GetPrintOutput(), integrationURL)
+	respBody, err := apiclient.HttpClient(integrationURL)
 	if err != nil {
 		return nil, err
 	}
@@ -916,7 +907,7 @@ func fetchIntegrationsWithPageToken(integrationURL string, pageToken string) (*l
 	q.Set("pageToken", pageToken)
 	u.RawQuery = q.Encode()
 
-	respBody, err := apiclient.HttpClient(apiclient.GetPrintOutput(), u.String())
+	respBody, err := apiclient.HttpClient(u.String())
 	if err != nil {
 		return nil, err
 	}
@@ -935,7 +926,8 @@ func fetchIntegrationsWithPageToken(integrationURL string, pageToken string) (*l
 func Export(folder string) (err error) {
 
 	apiclient.SetExportToFile(folder)
-	apiclient.SetPrintOutput(false)
+	apiclient.SetClientPrintHttpResponse(false)
+	defer apiclient.SetClientPrintHttpResponse(apiclient.GetCmdPrintHttpResponseSetting())
 
 	respBody, err := List(maxPageSize, "", "", "")
 	if err != nil {
@@ -955,7 +947,7 @@ func Export(folder string) (err error) {
 
 	for _, lintegration := range lintegrations.Integrations {
 		integrationName := lintegration.Name[strings.LastIndex(lintegration.Name, "/")+1:]
-		fmt.Printf("Exporting all the revisions for Integration Flow %s\n", integrationName)
+		clilog.Info.Printf("Exporting all the revisions for Integration Flow %s\n", integrationName)
 		if _, err = ListVersions(integrationName, -1, "", "", "", true, true, false); err != nil {
 			return err
 		}
@@ -988,7 +980,7 @@ func batchExport(folder string, nextPageToken string) (err error) {
 
 	for _, lintegration := range lintegrations.Integrations {
 		integrationName := lintegration.Name[strings.LastIndex(lintegration.Name, "/")+1:]
-		clilog.Info.Printf("Exporting all the revisions for Integration Flow %s\n", integrationName)
+		clilog.Debug.Printf("Exporting all the revisions for Integration Flow %s\n", integrationName)
 		if _, err = ListVersions(integrationName, -1, "", "", "", true, true, false); err != nil {
 			return err
 		}
@@ -1034,8 +1026,8 @@ func ImportFlow(name string, folder string, conn int) (err error) {
 	}
 
 	numEntities := len(entities)
-	clilog.Info.Printf("Found %d versions in the folder\n", numEntities)
-	clilog.Info.Printf("Importing versions with %d connections\n", conn)
+	clilog.Debug.Printf("Found %d versions in the folder\n", numEntities)
+	clilog.Debug.Printf("Importing versions with %d connections\n", conn)
 
 	numOfLoops, remaining := numEntities/conn, numEntities%conn
 
@@ -1046,12 +1038,13 @@ func ImportFlow(name string, folder string, conn int) (err error) {
 
 	start := 0
 
-	apiclient.SetPrintOutput(false)
+	apiclient.SetClientPrintHttpResponse(false)
+	defer apiclient.SetClientPrintHttpResponse(apiclient.GetCmdPrintHttpResponseSetting())
 
 	for i, end := 0, 0; i < numOfLoops; i++ {
 		pwg.Add(1)
 		end = (i * conn) + conn
-		clilog.Info.Printf("Uploading batch %d of versions\n", (i + 1))
+		clilog.Debug.Printf("Uploading batch %d of versions\n", (i + 1))
 		go batchImport(name, entities[start:end], &pwg)
 		start = end
 		pwg.Wait()
@@ -1059,7 +1052,7 @@ func ImportFlow(name string, folder string, conn int) (err error) {
 
 	if remaining > 0 {
 		pwg.Add(1)
-		clilog.Info.Printf("Uploading remaining %d versions\n", remaining)
+		clilog.Debug.Printf("Uploading remaining %d versions\n", remaining)
 		go batchImport(name, entities[start:numEntities], &pwg)
 		pwg.Wait()
 	}
@@ -1092,7 +1085,7 @@ func uploadAsync(name string, filePath string, wg *sync.WaitGroup) {
 	if _, err := Upload(name, content); err != nil {
 		clilog.Error.Println(err)
 	} else {
-		fmt.Printf("Uploaded file %s for Integration flow %s\n", filePath, name)
+		clilog.Info.Printf("Uploaded file %s for Integration flow %s\n", filePath, name)
 	}
 }
 
@@ -1104,7 +1097,8 @@ func Import(folder string, conn int) (err error) {
 
 	rIntegrationFlowFiles := regexp.MustCompile(`[\w|-]+\+[0-9]+\+[a-zA-Z0-9]{8}-[a-zA-Z0-9]{4}-[a-zA-Z0-9]{4}-[a-zA-Z0-9]{4}-[a-zA-Z0-9]{12}\.json`)
 
-	apiclient.SetPrintOutput(false)
+	apiclient.SetClientPrintHttpResponse(false)
+	defer apiclient.SetClientPrintHttpResponse(apiclient.GetCmdPrintHttpResponseSetting())
 
 	err = filepath.Walk(folder, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
@@ -1123,7 +1117,6 @@ func Import(folder string, conn int) (err error) {
 		//collect all the flow names once
 		if ok {
 			integrationFlowName := extractIntegrationFlowName(fileName)
-			fmt.Println(integrationFlowName)
 			if !integrationFlowExists(integrationFlowName, names) {
 				names = append(names, integrationFlowName)
 			}
@@ -1138,7 +1131,6 @@ func Import(folder string, conn int) (err error) {
 	for _, integrationFlowName := range names {
 		pwg.Add(1)
 		go asyncImportFlow(integrationFlowName, folder, conn, &pwg)
-		//_ = ImportFlow(integrationFlowName, folder, conn)
 		pwg.Wait()
 	}
 

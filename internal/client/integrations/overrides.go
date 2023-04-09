@@ -71,7 +71,7 @@ type connectionparams struct {
 const pubsubTrigger = "cloud_pubsub_external_trigger/projects/cloud-crm-eventbus-cpsexternal/subscriptions/"
 const apiTrigger = "api_trigger/"
 
-//const authConfigValue = "{  \"@type\": \"type.googleapis.com/enterprise.crm.eventbus.authconfig.AuthConfigTaskParam\",\"authConfigId\": \""
+const authConfigValue = "{  \"@type\": \"type.googleapis.com/enterprise.crm.eventbus.authconfig.AuthConfigTaskParam\",\"authConfigId\": \""
 
 // mergeOverrides
 func mergeOverrides(eversion integrationVersionExternal, o overrides, supressWarnings bool) (integrationVersionExternal, error) {
@@ -105,11 +105,7 @@ func mergeOverrides(eversion integrationVersionExternal, o overrides, supressWar
 		foundOverride := false
 		for taskIndex, task := range eversion.TaskConfigs {
 			if taskOverride.TaskId == task.TaskId && taskOverride.Task == task.Task && task.Task != "GenericConnectorTask" {
-				if task.Task == "CloudFunctionTask" {
-					task.Parameters = overrideCfParameters(taskOverride.Parameters, task.Parameters, supressWarnings)
-				} else {
-					task.Parameters = overrideParameters(taskOverride.Parameters, task.Parameters, supressWarnings)
-				}
+				task.Parameters = overrideParameters(taskOverride.Parameters, task.Parameters, supressWarnings)
 				eversion.TaskConfigs[taskIndex] = task
 				foundOverride = true
 			}
@@ -231,6 +227,18 @@ func handleGenericRestV2Task(taskConfig taskconfig, taskOverrides *overrides) er
 	tc.Task = taskConfig.Task
 	tc.Parameters = map[string]eventparameter{}
 	tc.Parameters["url"] = taskConfig.Parameters["url"]
+	if _, ok := taskConfig.Parameters["authConfig"]; ok {
+		displayName, err := authconfigs.GetDisplayName(getAuthConfigUuid(*taskConfig.Parameters["authConfig"].Value.JsonValue))
+		if err != nil {
+			return err
+		}
+
+		eventparam := eventparameter{}
+		eventparam.Key = taskConfig.Parameters["authConfig"].Key
+		eventparam.Value.StringValue = &displayName
+
+		tc.Parameters["authConfig"] = eventparam
+	}
 	taskOverrides.TaskOverrides = append(taskOverrides.TaskOverrides, tc)
 	return nil
 }
@@ -241,6 +249,18 @@ func handleCloudFunctionTask(taskConfig taskconfig, taskOverrides *overrides) er
 	tc.Task = taskConfig.Task
 	tc.Parameters = map[string]eventparameter{}
 	tc.Parameters["TriggerUrl"] = taskConfig.Parameters["TriggerUrl"]
+	if _, ok := taskConfig.Parameters["authConfig"]; ok {
+		displayName, err := authconfigs.GetDisplayName(getAuthConfigUuid(*taskConfig.Parameters["authConfig"].Value.JsonValue))
+		if err != nil {
+			return err
+		}
+
+		eventparam := eventparameter{}
+		eventparam.Key = taskConfig.Parameters["authConfig"].Key
+		eventparam.Value.StringValue = &displayName
+
+		tc.Parameters["authConfig"] = eventparam
+	}
 	taskOverrides.TaskOverrides = append(taskOverrides.TaskOverrides, tc)
 	return nil
 }
@@ -270,36 +290,21 @@ func handleGenericConnectorTask(taskConfig taskconfig, taskOverrides *overrides)
 // overrideParameters
 func overrideParameters(overrideParameters map[string]eventparameter, taskParameters map[string]eventparameter, supressWarnings bool) map[string]eventparameter {
 	for overrideParamName, overrideParam := range overrideParameters {
-		_, found := taskParameters[overrideParamName]
-		if found {
-			taskParameters[overrideParamName] = overrideParam
-		} else {
-			if !supressWarnings {
-				clilog.Warning.Printf("override param %s was not found\n", overrideParamName)
-			}
-		}
-	}
-	return taskParameters
-}
-
-// overrideCfParameters
-func overrideCfParameters(overrideParameters map[string]eventparameter, taskParameters map[string]eventparameter, supessWarnings bool) map[string]eventparameter {
-	for overrideParamName, overrideParam := range overrideParameters {
 		if overrideParam.Key == "authConfig" {
-			apiclient.SetPrintOutput(false)
+			apiclient.SetClientPrintHttpResponse(false)
 			acversion, err := authconfigs.Find(*overrideParam.Value.StringValue, "")
-			apiclient.SetPrintOutput(true)
+			apiclient.SetClientPrintHttpResponse(apiclient.GetCmdPrintHttpResponseSetting())
 			if err != nil {
 				clilog.Warning.Println(err)
 				return taskParameters
 			}
-			*taskParameters[overrideParamName].Value.JsonValue = fmt.Sprintf("%s\"}", acversion)
+			*taskParameters[overrideParamName].Value.JsonValue = fmt.Sprintf("%s%s\"}", authConfigValue, acversion)
 		} else {
 			_, found := taskParameters[overrideParamName]
 			if found {
 				taskParameters[overrideParamName] = overrideParam
 			} else {
-				if !supessWarnings {
+				if !supressWarnings {
 					clilog.Warning.Printf("override param %s was not found\n", overrideParamName)
 				}
 			}
@@ -313,7 +318,9 @@ func getNewConnectionParams(connectionName string, connectionLocation string) (c
 	var connectionVersionResponse map[string]interface{}
 	var integrationRegion string
 
-	apiclient.SetPrintOutput(false)
+	apiclient.SetClientPrintHttpResponse(false)
+	defer apiclient.SetClientPrintHttpResponse(apiclient.GetCmdPrintHttpResponseSetting())
+
 	if connectionLocation != "" {
 		integrationRegion = apiclient.GetRegion()     //store the integration location
 		err = apiclient.SetRegion(connectionLocation) //set the connector region
@@ -322,7 +329,6 @@ func getNewConnectionParams(connectionName string, connectionLocation string) (c
 		}
 	}
 	connResp, err := connections.Get(connectionName, "BASIC", false, false) //get connector details
-	apiclient.SetPrintOutput(true)
 	if connectionLocation != "" {
 		err = apiclient.SetRegion(integrationRegion) //set the integration region back
 		if err != nil {

@@ -51,9 +51,9 @@ var RootCmd = &cobra.Command{
 			if ok, _ := apiclient.TestAndUpdateLastCheck(); !ok {
 				latestVersion, _ := getLatestVersion()
 				if cmd.Version == "" {
-					clilog.Info.Println("integrationcli wasn't built with a valid Version tag.")
+					clilog.Debug.Println("integrationcli wasn't built with a valid Version tag.")
 				} else if latestVersion != "" && cmd.Version != latestVersion {
-					fmt.Printf("You are using %s, the latest version %s is available for download\n", cmd.Version, latestVersion)
+					clilog.Info.Printf("You are using %s, the latest version %s is available for download\n", cmd.Version, latestVersion)
 				}
 			}
 		}
@@ -66,17 +66,18 @@ var RootCmd = &cobra.Command{
 
 		return nil
 	},
+	SilenceUsage:  getUsageFlag(),
+	SilenceErrors: getErrorsFlag(),
 }
 
 func Execute() {
 	if err := RootCmd.Execute(); err != nil {
-		fmt.Println(err)
-		os.Exit(1)
+		clilog.Error.Println(err)
 	}
 }
 
 var accessToken, serviceAccount string
-var disableCheck, useApigee, noOutput, verbose bool
+var disableCheck, useApigee, printOutput, noOutput, verbose bool
 
 func init() {
 	cobra.OnInitialize(initConfig)
@@ -93,8 +94,11 @@ func init() {
 	RootCmd.PersistentFlags().BoolVarP(&useApigee, "apigee-integration", "",
 		false, "Use Apigee Integration; default is false (Application Integration)")
 
+	RootCmd.PersistentFlags().BoolVarP(&printOutput, "print-output", "",
+		true, "Control printing of info log statements")
+
 	RootCmd.PersistentFlags().BoolVarP(&noOutput, "no-output", "",
-		false, "Disable printing API responses from the control plane")
+		false, "Disable printing all statements to stdout")
 
 	RootCmd.PersistentFlags().BoolVarP(&verbose, "verbose", "",
 		false, "Enable verbose output from integrationcli")
@@ -110,19 +114,24 @@ func init() {
 }
 
 func initConfig() {
-	var skipLogInfo = true
+	var debug = false
 	var skipCache bool
 
-	if os.Getenv("INTEGRATIONCLI_SKIPLOG") == "false" || verbose {
-		skipLogInfo = false
+	if os.Getenv("INTEGRATIONECLI_DEBUG") == "true" || verbose {
+		debug = true
 	}
 
 	skipCache, _ = strconv.ParseBool(os.Getenv("INTEGRATIONCLI_SKIPCACHE"))
 
+	if noOutput {
+		printOutput = noOutput
+	}
+
 	apiclient.NewIntegrationClient(apiclient.IntegrationClientOptions{
-		SkipCheck:   true,
-		PrintOutput: true,
-		SkipLogInfo: skipLogInfo,
+		TokenCheck:  true,
+		PrintOutput: printOutput,
+		NoOutput:    noOutput,
+		DebugLog:    debug,
 		SkipCache:   skipCache,
 	})
 }
@@ -161,9 +170,19 @@ func getLatestVersion() (version string, err error) {
 	}
 
 	if result["tag_name"] == "" {
-		clilog.Info.Println("Unable to determine latest tag, skipping this information")
+		clilog.Debug.Println("Unable to determine latest tag, skipping this information")
 		return "", nil
 	} else {
 		return fmt.Sprintf("%s", result["tag_name"]), nil
 	}
+}
+
+// getUsageFlag
+func getUsageFlag() bool {
+	return os.Getenv("INTEGRATIONCLI_NO_USAGE") == "true"
+}
+
+// getErrorsFlag
+func getErrorsFlag() bool {
+	return os.Getenv("INTEGRATIONCLI_NO_ERRORS") == "true"
 }

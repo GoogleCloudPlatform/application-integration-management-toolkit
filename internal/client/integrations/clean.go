@@ -16,7 +16,6 @@ package integrations
 
 import (
 	"encoding/json"
-	"fmt"
 
 	"internal/apiclient"
 
@@ -28,7 +27,8 @@ func Clean(name string, reportOnly bool, keepList []string) (err error) {
 	var listOfVersions []basicIntegrationVersion
 	var nextPage string
 
-	apiclient.SetPrintOutput(false)
+	apiclient.SetClientPrintHttpResponse(false)
+	defer apiclient.SetClientPrintHttpResponse(apiclient.GetCmdPrintHttpResponseSetting())
 	for {
 		respBody, err := ListVersions(name, -1, nextPage, "", "", false, false, true)
 		if err != nil {
@@ -55,7 +55,7 @@ func Clean(name string, reportOnly bool, keepList []string) (err error) {
 	for _, iversion := range listOfVersions {
 		if iversion.State != "ACTIVE" {
 			if reportOnly {
-				fmt.Println("[REPORT]: Integration '" + name + "' Version: " + iversion.Version + " and Snapshot " + iversion.SnapshotNumber + " can be cleaned")
+				clilog.Info.Println("[REPORT]: Integration '" + name + "' Version: " + iversion.Version + " and Snapshot " + iversion.SnapshotNumber + " can be cleaned")
 			} else {
 				_, err = DeleteVersion(name, iversion.Version)
 				if err != nil {
@@ -64,8 +64,6 @@ func Clean(name string, reportOnly bool, keepList []string) (err error) {
 			}
 		}
 	}
-
-	apiclient.SetPrintOutput(true)
 
 	return nil
 }

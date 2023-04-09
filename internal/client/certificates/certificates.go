@@ -64,7 +64,7 @@ func Create(displayName string, description string, sslCertificate string, priva
 	u.Path = path.Join(u.Path, "certificates")
 
 	payload := "{" + strings.Join(certStr, ",") + "}"
-	respBody, err = apiclient.HttpClient(apiclient.GetPrintOutput(), u.String(), payload)
+	respBody, err = apiclient.HttpClient(u.String(), payload)
 	return respBody, err
 }
 
@@ -84,7 +84,7 @@ func List(pageSize int, pageToken string, filter string) (respBody []byte, err e
 
 	u.RawQuery = q.Encode()
 	u.Path = path.Join(u.Path, "certificates")
-	respBody, err = apiclient.HttpClient(apiclient.GetPrintOutput(), u.String())
+	respBody, err = apiclient.HttpClient(u.String())
 	return respBody, err
 }
 
@@ -92,7 +92,7 @@ func List(pageSize int, pageToken string, filter string) (respBody []byte, err e
 func Delete(name string) (respBody []byte, err error) {
 	u, _ := url.Parse(apiclient.GetBaseIntegrationURL())
 	u.Path = path.Join(u.Path, "certificates", name)
-	respBody, err = apiclient.HttpClient(apiclient.GetPrintOutput(), u.String(), "", "DELETE")
+	respBody, err = apiclient.HttpClient(u.String(), "", "DELETE")
 	return respBody, err
 }
 
@@ -100,7 +100,7 @@ func Delete(name string) (respBody []byte, err error) {
 func Get(name string) (respBody []byte, err error) {
 	u, _ := url.Parse(apiclient.GetBaseIntegrationURL())
 	u.Path = path.Join(u.Path, "certificates", name)
-	respBody, err = apiclient.HttpClient(apiclient.GetPrintOutput(), u.String())
+	respBody, err = apiclient.HttpClient(u.String())
 	return respBody, err
 }
 
@@ -112,7 +112,7 @@ func Find(name string) (version string, err error) {
 	u, _ := url.Parse(apiclient.GetBaseIntegrationURL())
 
 	u.Path = path.Join(u.Path, "certificates")
-	if respBody, err = apiclient.HttpClient(apiclient.GetPrintOutput(), u.String()); err != nil {
+	if respBody, err = apiclient.HttpClient(u.String()); err != nil {
 		return "", err
 	}
 

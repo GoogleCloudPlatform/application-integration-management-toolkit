@@ -89,7 +89,7 @@ func iamServiceAccountExists(iamname string) (code int, err error) {
 		return -1, err
 	}
 
-	clilog.Info.Println("Content-Type : ", contentType)
+	clilog.Debug.Println("Content-Type : ", contentType)
 	req.Header.Set("Content-Type", contentType)
 
 	resp, err = client.Do(req)
@@ -123,7 +123,10 @@ func setIAMPermission(endpoint string, name string, memberName string, role stri
 
 	u, _ := url.Parse(endpoint)
 	u.Path = path.Join(u.Path, name+":getIamPolicy")
-	getIamPolicyBody, err := HttpClient(false, u.String())
+
+	SetClientPrintHttpResponse(false)
+	getIamPolicyBody, err := HttpClient(u.String())
+	SetClientPrintHttpResponse(GetCmdPrintHttpResponseSetting())
 	if err != nil {
 		clilog.Error.Println(err)
 		return err
@@ -166,7 +169,9 @@ func setIAMPermission(endpoint string, name string, memberName string, role stri
 		return err
 	}
 
-	_, err = HttpClient(false, u.String(), string(setIamPolicyBody))
+	SetClientPrintHttpResponse(false)
+	_, err = HttpClient(u.String(), string(setIamPolicyBody))
+	SetClientPrintHttpResponse(GetCmdPrintHttpResponseSetting())
 
 	return err
 }
@@ -178,10 +183,12 @@ func setProjectIAMPermission(project string, memberName string, role string) (er
 
 	//this method treats errors as info since this is not a blocking problem
 
+	SetClientPrintHttpResponse(false)
+
 	//Get the current IAM policies for the project
-	respBody, err := HttpClient(false, getendpoint, "")
+	respBody, err := HttpClient(getendpoint, "")
 	if err != nil {
-		clilog.Info.Printf("error getting IAM policies for the project %s: %v", project, err)
+		clilog.Debug.Printf("error getting IAM policies for the project %s: %v", project, err)
 		return err
 	}
 
@@ -208,7 +215,7 @@ func setProjectIAMPermission(project string, memberName string, role string) (er
 
 	err = json.Unmarshal(respBody, &policy)
 	if err != nil {
-		clilog.Info.Println(err)
+		clilog.Debug.Println(err)
 		return err
 	}
 
@@ -222,16 +229,17 @@ func setProjectIAMPermission(project string, memberName string, role string) (er
 	policyRequest.Policy = policy
 	policyRequestBody, err := json.Marshal(policyRequest)
 	if err != nil {
-		clilog.Info.Println(err)
+		clilog.Debug.Println(err)
 		return err
 	}
 
-	_, err = HttpClient(false, setendpoint, string(policyRequestBody))
+	_, err = HttpClient(setendpoint, string(policyRequestBody))
 	if err != nil {
-		clilog.Info.Printf("error setting IAM policies for the project %s: %v", project, err)
+		clilog.Debug.Printf("error setting IAM policies for the project %s: %v", project, err)
 		return err
 	}
 
+	SetClientPrintHttpResponse(GetCmdPrintHttpResponseSetting())
 	return nil
 }
 
@@ -258,8 +266,9 @@ func CreateServiceAccount(iamname string) (err error) {
 		iamPayload = append(iamPayload, "\"accountId\":\""+displayname+"\"")
 		iamPayload = append(iamPayload, "\"serviceAccount\": {\"displayName\": \""+displayname+"\"}")
 		payload := "{" + strings.Join(iamPayload, ",") + "}"
-
-		if _, err = HttpClient(false, createendpoint, payload); err != nil {
+		SetClientPrintHttpResponse(false)
+		defer SetClientPrintHttpResponse(GetCmdPrintHttpResponseSetting())
+		if _, err = HttpClient(createendpoint, payload); err != nil {
 			clilog.Error.Println(err)
 			return err
 		}
@@ -318,8 +327,11 @@ func SetBigQueryIAMPermission(project string, datasetid string, memberName strin
 	const role = "WRITER"
 	var content []byte
 
+	defer SetClientPrintHttpResponse(GetCmdPrintHttpResponseSetting())
+	SetClientPrintHttpResponse(false)
+
 	//first fetch the information
-	respBody, err := HttpClient(false, endpoint)
+	respBody, err := HttpClient(endpoint)
 	if err != nil {
 		return err
 	}
@@ -354,7 +366,7 @@ func SetBigQueryIAMPermission(project string, datasetid string, memberName strin
 	}
 
 	//patch the update
-	if _, err = HttpClient(false, endpoint, string(content), "PATCH"); err != nil {
+	if _, err = HttpClient(endpoint, string(content), "PATCH"); err != nil {
 		return err
 	}
 
@@ -399,9 +411,11 @@ func GetComputeEngineDefaultServiceAccount(projectId string) (serviceAccount str
 	var getendpoint = fmt.Sprintf("https://cloudresourcemanager.googleapis.com/v3/projects/%s", projectId)
 
 	//Get the project number
-	respBody, err := HttpClient(false, getendpoint, "")
+	SetClientPrintHttpResponse(false)
+	defer SetClientPrintHttpResponse(GetCmdPrintHttpResponseSetting())
+	respBody, err := HttpClient(getendpoint, "")
 	if err != nil {
-		clilog.Info.Printf("error getting details for the project %s: %v", projectId, err)
+		clilog.Debug.Printf("error getting details for the project %s: %v", projectId, err)
 		return serviceAccount, err
 	}
 
@@ -422,7 +436,7 @@ func GetComputeEngineDefaultServiceAccount(projectId string) (serviceAccount str
 
 	err = json.Unmarshal(respBody, &p)
 	if err != nil {
-		clilog.Info.Println(err)
+		clilog.Debug.Println(err)
 		return serviceAccount, err
 	}
 

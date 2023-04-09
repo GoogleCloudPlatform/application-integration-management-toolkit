@@ -44,12 +44,12 @@ var GetCmd = &cobra.Command{
 	},
 	RunE: func(cmd *cobra.Command, args []string) (err error) {
 		if name != "" {
-			apiclient.SetPrintOutput(false)
+			apiclient.DisableCmdPrintHttpResponse()
 			version, err := authconfigs.Find(name, "")
 			if err != nil {
 				return err
 			}
-			apiclient.SetPrintOutput(true)
+			apiclient.DisableCmdPrintHttpResponse()
 			_, err = authconfigs.Get(path.Base(version), minimal)
 			return err
 		} else {

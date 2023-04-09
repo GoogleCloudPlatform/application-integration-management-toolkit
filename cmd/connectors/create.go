@@ -23,6 +23,7 @@ import (
 	"time"
 
 	"internal/apiclient"
+	"internal/clilog"
 
 	"internal/client/connections"
 
@@ -71,6 +72,7 @@ var CreateCmd = &cobra.Command{
 		}
 
 		operationsBytes, err := connections.Create(name, content, serviceAccountName, serviceAccountProject, encryptionKey, grantPermission, createSecret)
+		apiclient.DisableCmdPrintHttpResponse()
 
 		if wait {
 			o := operation{}
@@ -79,9 +81,7 @@ var CreateCmd = &cobra.Command{
 			}
 
 			operationId := filepath.Base(o.Name)
-			fmt.Printf("Checking connection status for %s in %d seconds\n", operationId, interval)
-
-			apiclient.SetPrintOutput(false)
+			clilog.Info.Printf("Checking connection status for %s in %d seconds\n", operationId, interval)
 
 			stop := apiclient.Every(interval*time.Second, func(time.Time) bool {
 				var respBody []byte
@@ -96,13 +96,13 @@ var CreateCmd = &cobra.Command{
 
 				if o.Done {
 					if o.Error != nil {
-						fmt.Printf("Connection completed with error: %v\n", o.Error)
+						clilog.Error.Printf("Connection completed with error: %v\n", o.Error)
 					} else {
-						fmt.Println("Connection completed successfully!")
+						clilog.Info.Println("Connection completed successfully!")
 					}
 					return false
 				} else {
-					fmt.Printf("Connection status is: %t. Waiting %d seconds.\n", o.Done, interval)
+					clilog.Info.Printf("Connection status is: %t. Waiting %d seconds.\n", o.Done, interval)
 					return true
 				}
 			})

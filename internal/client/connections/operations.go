@@ -25,6 +25,6 @@ import (
 func GetOperation(name string) (respBody []byte, err error) {
 	u, _ := url.Parse(apiclient.GetBaseConnectorOperationsrURL())
 	u.Path = path.Join(u.Path, name)
-	respBody, err = apiclient.HttpClient(apiclient.GetPrintOutput(), u.String())
+	respBody, err = apiclient.HttpClient(u.String())
 	return respBody, err
 }

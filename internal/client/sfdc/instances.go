@@ -69,7 +69,7 @@ func CreateInstance(name string, description string, sfdcOrgId string, serviceAu
 
 	payload := "{" + strings.Join(instanceStr, ",") + "}"
 	u.Path = path.Join(u.Path, "sfdcInstances")
-	respBody, err = apiclient.HttpClient(apiclient.GetPrintOutput(), u.String(), payload)
+	respBody, err = apiclient.HttpClient(u.String(), payload)
 
 	return respBody, err
 }
@@ -79,11 +79,10 @@ func GetInstance(name string, minimal bool) (respBody []byte, err error) {
 	u, _ := url.Parse(apiclient.GetBaseIntegrationURL())
 	u.Path = path.Join(u.Path, "sfdcInstances", name)
 
-	printSetting := apiclient.GetPrintOutput()
 	if minimal {
-		apiclient.SetPrintOutput(false)
+		apiclient.SetClientPrintHttpResponse(false)
 	}
-	respBody, err = apiclient.HttpClient(apiclient.GetPrintOutput(), u.String())
+	respBody, err = apiclient.HttpClient(u.String())
 	if minimal {
 		iversion := instance{}
 		err := json.Unmarshal(respBody, &iversion)
@@ -95,11 +94,9 @@ func GetInstance(name string, minimal bool) (respBody []byte, err error) {
 		if err != nil {
 			return nil, err
 		}
-		if printSetting {
-			apiclient.PrettyPrint(respBody)
-		}
+		apiclient.SetClientPrintHttpResponse(apiclient.GetCmdPrintHttpResponseSetting())
+		apiclient.PrettyPrint(respBody)
 	}
-	apiclient.SetPrintOutput(printSetting)
 	return respBody, err
 }
 
@@ -107,7 +104,7 @@ func GetInstance(name string, minimal bool) (respBody []byte, err error) {
 func ListInstances() (respBody []byte, err error) {
 	u, _ := url.Parse(apiclient.GetBaseIntegrationURL())
 	u.Path = path.Join(u.Path, "sfdcInstances")
-	respBody, err = apiclient.HttpClient(apiclient.GetPrintOutput(), u.String())
+	respBody, err = apiclient.HttpClient(u.String())
 	return respBody, err
 }
 

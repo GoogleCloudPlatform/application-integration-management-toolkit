@@ -85,7 +85,7 @@ func ListExecutions(name string, pageSize int, pageToken string, filter string, 
 
 	u.RawQuery = q.Encode()
 	u.Path = path.Join(u.Path, "integrations", name, "executions")
-	respBody, err = apiclient.HttpClient(apiclient.GetPrintOutput(), u.String())
+	respBody, err = apiclient.HttpClient(u.String())
 	return respBody, err
 }
 
@@ -101,14 +101,13 @@ func Execute(name string, content []byte) (respBody []byte, err error) {
 		return nil, fmt.Errorf("triggerId must match the format api_trigger/*")
 	}
 
-	apiclient.SetPrintOutput(false)
+	apiclient.SetClientPrintHttpResponse(false)
 	u, _ := url.Parse(apiclient.GetBaseIntegrationURL())
 	u.Path = path.Join(u.Path, "integrations", name+":execute")
-	respBody, err = apiclient.HttpClient(apiclient.GetPrintOutput(), u.String(), string(content))
+	respBody, err = apiclient.HttpClient(u.String(), string(content))
 	if err != nil {
 		return nil, err
 	}
-	apiclient.SetPrintOutput(false)
 
 	eresp := executionResponse{}
 	err = json.Unmarshal(respBody, &eresp)
@@ -124,6 +123,7 @@ func Execute(name string, content []byte) (respBody []byte, err error) {
 		return nil, err
 	}
 
+	apiclient.SetClientPrintHttpResponse(apiclient.GetCmdPrintHttpResponseSetting())
 	apiclient.PrettyPrint(respBody)
 
 	return respBody, err

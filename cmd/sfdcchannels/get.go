@@ -35,11 +35,12 @@ var GetCmd = &cobra.Command{
 	},
 	RunE: func(cmd *cobra.Command, args []string) (err error) {
 		if name != "" {
-			apiclient.SetPrintOutput(false)
+			apiclient.DisableCmdPrintHttpResponse()
 			_, respBody, err := sfdc.FindChannel(name, instance)
 			if err != nil {
 				return err
 			}
+			apiclient.EnableCmdPrintHttpResponse()
 			apiclient.PrettyPrint(respBody)
 		} else {
 			_, err = sfdc.GetChannel(id, instance, minimal)

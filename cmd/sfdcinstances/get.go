@@ -43,11 +43,12 @@ var GetCmd = &cobra.Command{
 	},
 	RunE: func(cmd *cobra.Command, args []string) (err error) {
 		if name != "" {
-			apiclient.SetPrintOutput(false)
+			apiclient.DisableCmdPrintHttpResponse()
 			_, respBody, err := sfdc.FindInstance(name)
 			if err != nil {
 				return err
 			}
+			apiclient.EnableCmdPrintHttpResponse()
 			apiclient.PrettyPrint(respBody)
 		} else {
 			_, err = sfdc.GetInstance(id, minimal)

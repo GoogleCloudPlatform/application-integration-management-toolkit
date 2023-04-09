@@ -59,7 +59,7 @@ func CreateChannel(name string, instance string, description string, channelTopi
 	payload := "{" + strings.Join(channelStr, ",") + "}"
 
 	u.Path = path.Join(u.Path, "sfdcInstances", instance, "sfdcChannels")
-	respBody, err = apiclient.HttpClient(apiclient.GetPrintOutput(), u.String(), payload)
+	respBody, err = apiclient.HttpClient(u.String(), payload)
 	return respBody, err
 }
 
@@ -68,11 +68,10 @@ func GetChannel(name string, instance string, minimal bool) (respBody []byte, er
 	u, _ := url.Parse(apiclient.GetBaseIntegrationURL())
 	u.Path = path.Join(u.Path, "sfdcInstances", instance, "sfdcChannels", name)
 
-	printSetting := apiclient.GetPrintOutput()
 	if minimal {
-		apiclient.SetPrintOutput(false)
+		apiclient.SetClientPrintHttpResponse(false)
 	}
-	respBody, err = apiclient.HttpClient(apiclient.GetPrintOutput(), u.String())
+	respBody, err = apiclient.HttpClient(u.String())
 	if minimal {
 		iversion := channel{}
 		err := json.Unmarshal(respBody, &iversion)
@@ -84,11 +83,10 @@ func GetChannel(name string, instance string, minimal bool) (respBody []byte, er
 		if err != nil {
 			return nil, err
 		}
-		if printSetting {
-			apiclient.PrettyPrint(respBody)
-		}
+		apiclient.SetClientPrintHttpResponse(apiclient.GetCmdPrintHttpResponseSetting())
+		apiclient.PrettyPrint(respBody)
+
 	}
-	apiclient.SetPrintOutput(printSetting)
 	return respBody, err
 }
 
@@ -96,7 +94,7 @@ func GetChannel(name string, instance string, minimal bool) (respBody []byte, er
 func ListChannels(instance string) (respBody []byte, err error) {
 	u, _ := url.Parse(apiclient.GetBaseIntegrationURL())
 	u.Path = path.Join(u.Path, "sfdcInstances", instance, "sfdcChannels")
-	respBody, err = apiclient.HttpClient(apiclient.GetPrintOutput(), u.String())
+	respBody, err = apiclient.HttpClient(u.String())
 	return respBody, err
 }
 
@@ -106,7 +104,7 @@ func FindChannel(name string, instance string) (version string, respBody []byte,
 
 	u, _ := url.Parse(apiclient.GetBaseIntegrationURL())
 	u.Path = path.Join(u.Path, "sfdcInstances", instance, "sfdcChannels")
-	if respBody, err = apiclient.HttpClient(apiclient.GetPrintOutput(), u.String()); err != nil {
+	if respBody, err = apiclient.HttpClient(u.String()); err != nil {
 		return "", nil, err
 	}
 

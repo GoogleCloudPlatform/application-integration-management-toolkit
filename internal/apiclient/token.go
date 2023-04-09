@@ -92,7 +92,7 @@ func generateJWT(privateKey string) (string, error) {
 		clilog.Error.Println("error parsing Private Key: ", err)
 		return "", err
 	}
-	clilog.Info.Println("jwt token : ", string(payload))
+	clilog.Debug.Println("jwt token : ", string(payload))
 	return string(payload), nil
 }
 
@@ -145,7 +145,7 @@ func generateAccessToken(privateKey string) (string, error) {
 	}
 
 	respBody, err = io.ReadAll(resp.Body)
-	clilog.Info.Printf("Response: %s\n", string(respBody))
+	clilog.Debug.Printf("Response: %s\n", string(respBody))
 
 	if err != nil {
 		clilog.Error.Printf("error in response: %v\n", err)
@@ -160,7 +160,7 @@ func generateAccessToken(privateKey string) (string, error) {
 		return "", err
 	}
 
-	clilog.Info.Println("access token : ", accessToken)
+	clilog.Debug.Println("access token : ", accessToken)
 
 	SetIntegrationToken(accessToken.AccessToken)
 	_ = WriteToken(accessToken.AccessToken)
@@ -187,8 +187,8 @@ func getServiceAccountProperty(key string) (value string) {
 }
 
 func checkAccessToken() bool {
-	if IsSkipCheck() {
-		clilog.Info.Println("skipping token validity")
+	if TokenCheckEnabled() {
+		clilog.Debug.Println("skipping token validity")
 		return true
 	}
 
@@ -200,7 +200,7 @@ func checkAccessToken() bool {
 
 	client := &http.Client{}
 
-	clilog.Info.Println("Connecting to : ", u.String())
+	clilog.Debug.Println("Connecting to : ", u.String())
 	req, err := http.NewRequest("GET", u.String(), nil)
 	if err != nil {
 		clilog.Error.Println("error in client:", err)
@@ -221,8 +221,8 @@ func checkAccessToken() bool {
 		clilog.Error.Println("token expired: ", string(body))
 		return false
 	}
-	clilog.Info.Println("Response: ", string(body))
-	clilog.Info.Println("Reusing the cached token: ", GetIntegrationToken())
+	clilog.Debug.Println("Response: ", string(body))
+	clilog.Debug.Println("Reusing the cached token: ", GetIntegrationToken())
 	return true
 }
 
