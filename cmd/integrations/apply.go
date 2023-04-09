@@ -21,6 +21,7 @@ import (
 	"internal/client/authconfigs"
 	"internal/client/connections"
 	"internal/client/integrations"
+	"internal/client/sfdc"
 	"internal/clilog"
 	"io/fs"
 	"os"
@@ -55,6 +56,9 @@ var ApplyCmd = &cobra.Command{
 		var authconfigFolder = path.Join(folder, "authconfigs")
 		var connectorsFolder = path.Join(folder, "connectors")
 		var overridesFile = path.Join(folder, "overrides/overrides.json")
+		var sfdcinstancesFolder = path.Join(folder, "sfdcinstances")
+		var sfdcchannelsFolder = path.Join(folder, "sfdcchannels")
+
 		var stat fs.FileInfo
 		var integrationNames []string
 		var overridesBytes []byte
@@ -120,14 +124,89 @@ var ApplyCmd = &cobra.Command{
 								serviceAccountProject,
 								encryptionKey,
 								grantPermission,
-								createSecret); err != nil {
+								createSecret,
+								wait); err != nil {
 								return err
 							}
 						} else {
 							clilog.Info.Printf("Connector %s already exists\n", connectionFile)
 						}
 					}
+				}
+				return nil
+			})
 
+			if err != nil {
+				return
+			}
+		}
+
+		if stat, err = os.Stat(sfdcinstancesFolder); err == nil && stat.IsDir() {
+			//create any sfdc instances
+			err = filepath.Walk(sfdcinstancesFolder, func(path string, info os.FileInfo, err error) error {
+				if err != nil {
+					return err
+				}
+				if !info.IsDir() {
+					instanceFile := filepath.Base(path)
+					if rJsonFiles.MatchString(instanceFile) {
+						clilog.Info.Printf("Found configuration for sfdc instance: %s\n", instanceFile)
+						_, err = sfdc.GetInstance(getFilenameWithoutExtension(instanceFile), true)
+						//create the instance only if the sfdc instance is not found
+						if err != nil {
+							instanceBytes, err := utils.ReadFile(path)
+							if err != nil {
+								return err
+							}
+							clilog.Info.Printf("Creating sfdc instance: %s\n", instanceFile)
+							_, err = sfdc.CreateInstanceFromContent(instanceBytes)
+							if err != nil {
+								return nil
+							}
+						} else {
+							clilog.Info.Printf("sfdc instance %s already exists\n", instanceFile)
+						}
+					}
+				}
+				return nil
+			})
+
+			if err != nil {
+				return
+			}
+		}
+
+		if stat, err = os.Stat(sfdcchannelsFolder); err == nil && stat.IsDir() {
+			//create any sfdc channels
+			err = filepath.Walk(sfdcchannelsFolder, func(path string, info os.FileInfo, err error) error {
+				if err != nil {
+					return err
+				}
+				if !info.IsDir() {
+					channelFile := filepath.Base(path)
+					if rJsonFiles.MatchString(channelFile) {
+						clilog.Info.Printf("Found configuration for sfdc channel: %s\n", channelFile)
+						sfdcNames := strings.Split(getFilenameWithoutExtension(channelFile), "_")
+						if len(sfdcNames) != 2 {
+							clilog.Warning.Printf("sfdc chanel file %s does not follow the naming convention instanceName_channelName.json\n", channelFile)
+							return nil
+						}
+						version, _, err = sfdc.FindChannel(sfdcNames[1], sfdcNames[0])
+						//create the instance only if the sfdc channel is not found
+						if err != nil {
+							channelBytes, err := utils.ReadFile(path)
+							if err != nil {
+								return err
+							}
+							clilog.Info.Printf("Creating sfdc channel: %s\n", channelFile)
+							_, err = sfdc.CreateChannelFromContent(version, channelBytes)
+							if err != nil {
+								return nil
+							}
+						} else {
+							clilog.Info.Printf("sfdc channel %s already exists\n", channelFile)
+						}
+					}
 				}
 				return nil
 			})
@@ -190,7 +269,7 @@ var ApplyCmd = &cobra.Command{
 	},
 }
 
-var grantPermission, createSecret bool
+var grantPermission, createSecret, wait bool
 var serviceAccountName, serviceAccountProject, encryptionKey string
 
 func init() {
@@ -206,6 +285,8 @@ func init() {
 		"", "Cloud KMS key for decrypting Auth Config; Format = locations/*/keyRings/*/cryptoKeys/*")
 	ApplyCmd.Flags().BoolVarP(&createSecret, "create-secret", "",
 		false, "Create Secret Manager secrets when creating the connection")
+	ApplyCmd.Flags().BoolVarP(&wait, "wait", "",
+		false, "Waits for the connector to finish, with success or error")
 
 	_ = ApplyCmd.MarkFlagRequired("folder")
 }

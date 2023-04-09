@@ -46,6 +46,22 @@ type channelExternal struct {
 	ChannelTopic string `json:"channelTopic,omitempty"`
 }
 
+// CreateChannelFromContent
+func CreateChannelFromContent(instanceVersion string, content []byte) (respBody []byte, err error) {
+	c := channel{}
+
+	if err = json.Unmarshal(content, &c); err != nil {
+		return nil, err
+	}
+
+	u, _ := url.Parse(apiclient.GetBaseIntegrationURL())
+	u.Path = path.Join(u.Path, "sfdcInstances")
+
+	u.Path = path.Join(u.Path, "sfdcInstances", instanceVersion, "sfdcChannels")
+	respBody, err = apiclient.HttpClient(u.String(), string(content))
+	return respBody, err
+}
+
 // CreateChannel
 func CreateChannel(name string, instance string, description string, channelTopic string) (respBody []byte, err error) {
 	u, _ := url.Parse(apiclient.GetBaseIntegrationURL())

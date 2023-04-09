@@ -198,7 +198,7 @@ var ScaffoldCmd = &cobra.Command{
 						return err
 					}
 					clilog.Info.Printf("Storing sfdcchannel %s\n", channelName)
-					if err = apiclient.WriteByteArrayToFile(path.Join(folder, "sfdcchannels", channelName+".json"), false, channelBytes); err != nil {
+					if err = apiclient.WriteByteArrayToFile(path.Join(folder, "sfdcchannels", instanceName+"_"+channelName+".json"), false, channelBytes); err != nil {
 						return err
 					}
 				}

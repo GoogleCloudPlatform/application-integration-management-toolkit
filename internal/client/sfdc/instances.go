@@ -49,6 +49,21 @@ type instanceExternal struct {
 	ServiceAuthority string   `json:"serviceAuthority,omitempty"`
 }
 
+// CreateInstanceFromContent
+func CreateInstanceFromContent(content []byte) (respBody []byte, err error) {
+	i := instance{}
+
+	if err = json.Unmarshal(content, &i); err != nil {
+		return nil, err
+	}
+
+	u, _ := url.Parse(apiclient.GetBaseIntegrationURL())
+	u.Path = path.Join(u.Path, "sfdcInstances")
+
+	respBody, err = apiclient.HttpClient(u.String(), string(content))
+	return respBody, err
+}
+
 // CreateInstance
 func CreateInstance(name string, description string, sfdcOrgId string, serviceAuthority string, authConfig []string) (respBody []byte, err error) {
 	u, _ := url.Parse(apiclient.GetBaseIntegrationURL())
