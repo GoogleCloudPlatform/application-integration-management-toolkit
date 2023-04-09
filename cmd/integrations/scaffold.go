@@ -205,15 +205,19 @@ var ScaffoldCmd = &cobra.Command{
 			}
 		}
 
-		clilog.Info.Printf("Storing cloudbuild.yaml\n")
-		if err = apiclient.WriteByteArrayToFile(path.Join(folder, "cloudbuild.yaml"), false, []byte(utils.GetCloudBuildYaml())); err != nil {
-			return err
+		if cloudBuild {
+			clilog.Info.Printf("Storing cloudbuild.yaml\n")
+			if err = apiclient.WriteByteArrayToFile(path.Join(folder, "cloudbuild.yaml"), false, []byte(utils.GetCloudBuildYaml())); err != nil {
+				return err
+			}
 		}
 
 		return
 
 	},
 }
+
+var cloudBuild bool
 
 func init() {
 	ScaffoldCmd.Flags().StringVarP(&name, "name", "n",
@@ -224,6 +228,8 @@ func init() {
 		"", "Integration flow user label")
 	ScaffoldCmd.Flags().StringVarP(&snapshot, "snapshot", "s",
 		"", "Integration flow snapshot number")
+	ScaffoldCmd.Flags().BoolVarP(&cloudBuild, "cloud-build", "",
+		true, "don't generate cloud build file; default is true")
 	ScaffoldCmd.Flags().StringVarP(&folder, "folder", "f",
 		"", "Folder to generate the scaffolding")
 
