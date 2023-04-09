@@ -24,6 +24,7 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+	"time"
 
 	"internal/apiclient"
 	"internal/cloudkms"
@@ -149,8 +150,71 @@ type nodeConfig struct {
 	MaxNodeCount int `json:"maxNodeCount,omitempty"`
 }
 
+type status struct {
+	Code    int    `json:"code,omitempty"`
+	Message string `json:"message,omitempty"`
+}
+
+type operation struct {
+	Name     string                  `json:"name,omitempty"`
+	Done     bool                    `json:"done,omitempty"`
+	Error    *status                 `json:"error,omitempty"`
+	Response *map[string]interface{} `json:"response,omitempty"`
+}
+
+const interval = 10
+
 // Create
-func Create(name string, content []byte, serviceAccountName string, serviceAccountProject string, encryptionKey string, grantPermission bool, createSecret bool) (respBody []byte, err error) {
+func Create(name string, content []byte, serviceAccountName string, serviceAccountProject string, encryptionKey string, grantPermission bool, createSecret bool, wait bool) (respBody []byte, err error) {
+	operationsBytes, err := create(name, content, serviceAccountName, serviceAccountProject, encryptionKey, grantPermission, createSecret)
+	if err != nil {
+		return nil, err
+	}
+
+	if wait {
+		apiclient.SetClientPrintHttpResponse(false)
+		defer apiclient.SetClientPrintHttpResponse(apiclient.GetCmdPrintHttpResponseSetting())
+
+		o := operation{}
+		if err = json.Unmarshal(operationsBytes, &o); err != nil {
+			return nil, err
+		}
+
+		operationId := filepath.Base(o.Name)
+		clilog.Info.Printf("Checking connection status for %s in %d seconds\n", operationId, interval)
+
+		stop := apiclient.Every(interval*time.Second, func(time.Time) bool {
+			var respBody []byte
+
+			if respBody, err = GetOperation(operationId); err != nil {
+				return false
+			}
+
+			if err = json.Unmarshal(respBody, &o); err != nil {
+				return false
+			}
+
+			if o.Done {
+				if o.Error != nil {
+					clilog.Error.Printf("Connection completed with error: %v\n", o.Error)
+				} else {
+					clilog.Info.Println("Connection completed successfully!")
+				}
+				return false
+			} else {
+				clilog.Info.Printf("Connection status is: %t. Waiting %d seconds.\n", o.Done, interval)
+				return true
+			}
+		})
+
+		<-stop
+	}
+
+	return respBody, err
+}
+
+// create
+func create(name string, content []byte, serviceAccountName string, serviceAccountProject string, encryptionKey string, grantPermission bool, createSecret bool) (respBody []byte, err error) {
 
 	var secretVersion string
 
@@ -464,7 +528,7 @@ func readSecretFile(name string) (payload []byte, err error) {
 }
 
 // Import
-func Import(folder string, createSecret bool) (err error) {
+func Import(folder string, createSecret bool, wait bool) (err error) {
 
 	apiclient.SetClientPrintHttpResponse(false)
 	defer apiclient.SetClientPrintHttpResponse(apiclient.GetCmdPrintHttpResponseSetting())
@@ -488,7 +552,7 @@ func Import(folder string, createSecret bool) (err error) {
 		}
 
 		if _, err := Get(name, "", false, false); err != nil { //create only if connection doesn't exist
-			_, err = Create(name, content, "", "", "", false, createSecret)
+			_, err = Create(name, content, "", "", "", false, createSecret, wait)
 			if err != nil {
 				errs = append(errs, err.Error())
 			}
