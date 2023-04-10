@@ -72,7 +72,7 @@ func init() {
 	CreateCmd.Flags().BoolVarP(&grantPermission, "grant-permission", "g",
 		false, "Grant the service account permission to the GCP resource")
 	CreateCmd.Flags().StringVarP(&serviceAccountName, "sa", "",
-		"", "Service Account name for the connection")
+		"", "Service Account name for the connection; do not include @<project-id>.iam.gserviceaccount.com")
 	CreateCmd.Flags().StringVarP(&serviceAccountProject, "sp", "",
 		"", "Service Account Project for the connection. Default is the connection's project id")
 	CreateCmd.Flags().StringVarP(&encryptionKey, "encryption-keyid", "k",
