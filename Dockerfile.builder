@@ -16,4 +16,3 @@ FROM google/cloud-sdk:alpine
 COPY --from=builder /go/bin/integrationcli /tmp
 COPY LICENSE.txt /
 COPY third-party-licenses.txt /
-RUN apk --update add jq
