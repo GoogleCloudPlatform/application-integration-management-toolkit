@@ -392,13 +392,14 @@ func getNameAndProject(iamFullName string) (projectid string, name string, err e
 	riam := regexp.MustCompile(`^[a-zA-Z0-9-]{6,30}$`)
 
 	parts := strings.Split(iamFullName, "@")
+
 	if len(parts) != 2 {
-		return "", "", fmt.Errorf("invalid iam name")
+		return "", "", fmt.Errorf("invalid iam name, %s", parts)
 	}
 	name = parts[0]
-	projectid = strings.Split(parts[1], ".iam.gserviceaccount.com")[0]
+	projectid = strings.ReplaceAll(parts[1], ".iam.gserviceaccount.com", "") //strings.Split(parts[1], ".iam.gserviceaccount.com")[0]
 	if name == "" || projectid == "" {
-		return "", "", fmt.Errorf("invalid iam name")
+		return "", "", fmt.Errorf("invalid iam name %s, %s", name, projectid)
 	}
 	if ok := riam.Match([]byte(name)); !ok {
 		return "", "", fmt.Errorf("the ID must be between 6 and 30 characters")
