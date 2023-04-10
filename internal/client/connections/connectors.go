@@ -166,6 +166,11 @@ const interval = 10
 
 // Create
 func Create(name string, content []byte, serviceAccountName string, serviceAccountProject string, encryptionKey string, grantPermission bool, createSecret bool, wait bool) (respBody []byte, err error) {
+
+	if serviceAccountName != "" && strings.Contains(serviceAccountName, ".iam.gserviceaccount.com") {
+		serviceAccountName = strings.Split(serviceAccountName, "@")[0]
+	}
+
 	operationsBytes, err := create(name, content, serviceAccountName, serviceAccountProject, encryptionKey, grantPermission, createSecret)
 	if err != nil {
 		return nil, err
@@ -196,7 +201,7 @@ func Create(name string, content []byte, serviceAccountName string, serviceAccou
 
 			if o.Done {
 				if o.Error != nil {
-					clilog.Error.Printf("Connection completed with error: %v\n", o.Error)
+					clilog.Error.Printf("Connection completed with error: %s\n", o.Error.Message)
 				} else {
 					clilog.Info.Println("Connection completed successfully!")
 				}
