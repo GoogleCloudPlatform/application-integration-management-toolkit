@@ -41,14 +41,14 @@ type listconnections struct {
 }
 
 type connection struct {
-	Name              *string           `json:"name,omitempty"`
-	Description       string            `json:"description,omitempty"`
-	ConnectorVersion  *string           `json:"connectorVersion,omitempty"`
-	ConnectorDetails  *connectorDetails `json:"connectorDetails,omitempty"`
-	ConfigVariables   []configVar       `json:"configVariables,omitempty"`
-	AuthConfig        authConfig        `json:"authConfig,omitempty"`
-	DestinationConfig destinationConfig `json:"destinationConfig,omitempty"`
-	Suspended         bool              `json:"suspended,omitempty"`
+	Name              *string             `json:"name,omitempty"`
+	Description       string              `json:"description,omitempty"`
+	ConnectorVersion  *string             `json:"connectorVersion,omitempty"`
+	ConnectorDetails  *connectorDetails   `json:"connectorDetails,omitempty"`
+	ConfigVariables   []configVar         `json:"configVariables,omitempty"`
+	AuthConfig        authConfig          `json:"authConfig,omitempty"`
+	DestinationConfig []destinationConfig `json:"destinationConfig,omitempty"`
+	Suspended         bool                `json:"suspended,omitempty"`
 }
 
 type connectionRequest struct {
@@ -58,7 +58,7 @@ type connectionRequest struct {
 	ConnectorVersion   *string              `json:"connectorVersion,omitempty"`
 	ConfigVariables    *[]configVar         `json:"configVariables,omitempty"`
 	LockConfig         *lockConfig          `json:"lockConfig,omitempty"`
-	DestinationConfigs *[]destinationConfig `json:"deatinationConfigs,omitempty"`
+	DestinationConfigs *[]destinationConfig `json:"destinationConfigs,omitempty"`
 	AuthConfig         *authConfig          `json:"authConfig,omitempty"`
 	ServiceAccount     *string              `json:"serviceAccount,omitempty"`
 	Suspended          *bool                `json:"suspended,omitempty"`
@@ -255,7 +255,7 @@ func create(name string, content []byte, serviceAccountName string, serviceAccou
 	}
 
 	//handle project id & region overrides
-	if *c.ConfigVariables != nil && len(*c.ConfigVariables) > 0 {
+	if c.ConfigVariables != nil && len(*c.ConfigVariables) > 0 {
 		for index := range *c.ConfigVariables {
 			if (*c.ConfigVariables)[index].Key == "project_id" && *(*c.ConfigVariables)[index].StringValue == "$PROJECT_ID$" {
 				*(*c.ConfigVariables)[index].StringValue = apiclient.GetProjectID()
