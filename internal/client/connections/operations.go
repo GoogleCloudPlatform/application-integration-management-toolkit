@@ -17,6 +17,7 @@ package connections
 import (
 	"net/url"
 	"path"
+	"strconv"
 
 	"internal/apiclient"
 )
@@ -26,5 +27,35 @@ func GetOperation(name string) (respBody []byte, err error) {
 	u, _ := url.Parse(apiclient.GetBaseConnectorOperationsrURL())
 	u.Path = path.Join(u.Path, name)
 	respBody, err = apiclient.HttpClient(u.String())
+	return respBody, err
+}
+
+// ListOperations
+func ListOperations(pageSize int, pageToken string, filter string, orderBy string) (respBody []byte, err error) {
+	u, _ := url.Parse(apiclient.GetBaseConnectorOperationsrURL())
+	q := u.Query()
+	if pageSize != -1 {
+		q.Set("pageSize", strconv.Itoa(pageSize))
+	}
+	if pageToken != "" {
+		q.Set("pageToken", pageToken)
+	}
+	if filter != "" {
+		q.Set("filter", filter)
+	}
+	if orderBy != "" {
+		q.Set("orderBy", orderBy)
+	}
+
+	u.RawQuery = q.Encode()
+	respBody, err = apiclient.HttpClient(u.String())
+	return respBody, err
+}
+
+// CancelOperation
+func CancelOperation(name string) (respBody []byte, err error) {
+	u, _ := url.Parse(apiclient.GetBaseConnectorOperationsrURL())
+	u.Path = path.Join(u.Path, name+":cancel")
+	respBody, err = apiclient.HttpClient(u.String(), "")
 	return respBody, err
 }
