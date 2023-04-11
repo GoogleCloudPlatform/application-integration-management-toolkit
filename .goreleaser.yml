@@ -76,6 +76,13 @@ signs:
         "${artifact}",
       ]
 
+changelog:
+  sort: asc
+  use: github
+  groups:
+    - title: 'Change Log'
+      order: 0
+
 release:
   draft: true
   prerelease: true
