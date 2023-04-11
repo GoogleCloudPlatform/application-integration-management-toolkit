@@ -132,11 +132,14 @@ type jwtClaims struct {
 }
 
 type sshPublicKey struct {
-	Username          string `json:"username,omitempty"`
-	Password          secret `json:"password,omitempty"`
-	SshClientCert     secret `json:"sshClientCert,omitempty"`
-	CertType          string `json:"certType,omitempty"`
-	SslClientCertPass secret `json:"sslClientCertPass,omitempty"`
+	Username                 string         `json:"username,omitempty"`
+	Password                 *secret        `json:"password,omitempty"`
+	PasswordDetails          *secretDetails `json:"passwordDetails,omitempty"`
+	SshClientCert            *secret        `json:"sshClientCert,omitempty"`
+	SshClientCertDetails     *secretDetails `json:"sshClientCertDetails,omitempty"`
+	CertType                 string         `json:"certType,omitempty"`
+	SslClientCertPass        *secret        `json:"sslClientCertPass,omitempty"`
+	SslClientCertPassDetails *secretDetails `json:"sslClientCertPassDetails,omitempty"`
 }
 
 type destination struct {
@@ -350,7 +353,7 @@ func create(name string, content []byte, serviceAccountName string, serviceAccou
 	if c.AuthConfig != nil {
 		switch c.AuthConfig.AuthType {
 		case "USER_PASSWORD":
-			if c.AuthConfig.UserPassword.PasswordDetails != nil {
+			if c.AuthConfig.UserPassword != nil && c.AuthConfig.UserPassword.PasswordDetails != nil {
 				if createSecret {
 					payload, err := readSecretFile(c.AuthConfig.UserPassword.PasswordDetails.Reference)
 					if err != nil {
@@ -387,14 +390,54 @@ func create(name string, content []byte, serviceAccountName string, serviceAccou
 				}
 			}
 		case "OAUTH2_JWT_BEARER":
-			if createSecret {
-				clilog.Warning.Println("Creating secrets for OAUTH2_JET_BEARER is not implemented")
-			} else {
-				c.AuthConfig.Oauth2JwtBearer.ClientKey.SecretVersion = fmt.Sprintf("projects/%s/secrets/%s/versions/1", apiclient.GetProjectID(), c.AuthConfig.Oauth2JwtBearer.ClientKeyDetails.SecretName)
+			if c.AuthConfig.Oauth2JwtBearer != nil && c.AuthConfig.Oauth2JwtBearer.ClientKeyDetails != nil {
+				if createSecret {
+					clilog.Warning.Printf("Creating secrets for %s is not implemented\n", c.AuthConfig.AuthType)
+					payload, err := readSecretFile(c.AuthConfig.Oauth2JwtBearer.ClientKeyDetails.Reference)
+					if err != nil {
+						return nil, err
+					}
+					//check if a Cloud KMS key was passsed, assume the file is encrypted
+					if encryptionKey != "" {
+						encryptionKey := path.Join("projects", apiclient.GetProjectID(), encryptionKey)
+						payload, err = cloudkms.DecryptSymmetric(encryptionKey, payload)
+						if err != nil {
+							return nil, err
+						}
+					}
+					if secretVersion, err = secmgr.Create(apiclient.GetProjectID(), c.AuthConfig.Oauth2JwtBearer.ClientKeyDetails.SecretName, payload); err != nil {
+						return nil, err
+					}
+					secretName := c.AuthConfig.Oauth2JwtBearer.ClientKeyDetails.SecretName
+					c.AuthConfig.Oauth2JwtBearer.ClientKey = new(secret)
+					c.AuthConfig.Oauth2JwtBearer.ClientKey.SecretVersion = secretVersion
+					c.AuthConfig.Oauth2JwtBearer.ClientKeyDetails = nil //clean the input
+					if grantPermission && c.ServiceAccount != nil {
+						//grant connector service account access to secret version
+						if err = apiclient.SetSecretManagerIAMPermission(apiclient.GetProjectID(), secretName, *c.ServiceAccount); err != nil {
+							return nil, err
+						}
+					}
+				} else {
+					c.AuthConfig.Oauth2JwtBearer.ClientKey = new(secret)
+					c.AuthConfig.Oauth2JwtBearer.ClientKey.SecretVersion = fmt.Sprintf("projects/%s/secrets/%s/versions/1", apiclient.GetProjectID(), c.AuthConfig.Oauth2JwtBearer.ClientKeyDetails.SecretName)
+					c.AuthConfig.Oauth2JwtBearer.ClientKeyDetails = nil
+				}
 			}
 		case "OAUTH2_CLIENT_CREDENTIALS":
+			if createSecret {
+				clilog.Warning.Printf("Creating secrets for %s is not implemented\n", c.AuthConfig.AuthType)
+			}
+		case "SSH_PUBLIC_KEY":
+			if createSecret {
+				clilog.Warning.Printf("Creating secrets for %s is not implemented\n", c.AuthConfig.AuthType)
+			}
+		case "OAUTH2_AUTH_CODE_FLOW":
+			if createSecret {
+				clilog.Warning.Printf("Creating secrets for %s is not implemented\n", c.AuthConfig.AuthType)
+			}
 		default:
-			clilog.Warning.Printf("Creating secrets for %s is not implemented\n", c.AuthConfig.AuthType)
+			return nil, fmt.Errorf("Invalid auth type")
 		}
 	}
 
