@@ -70,7 +70,7 @@ func init() {
 	CreateCmd.Flags().StringVarP(&connectionFile, "file", "f",
 		"", "Connection details JSON file path")
 	CreateCmd.Flags().BoolVarP(&grantPermission, "grant-permission", "g",
-		false, "Grant the service account permission to the GCP resource")
+		false, "Grant the service account permission to the GCP resource; default is false")
 	CreateCmd.Flags().StringVarP(&serviceAccountName, "sa", "",
 		"", "Service Account name for the connection; do not include @<project-id>.iam.gserviceaccount.com")
 	CreateCmd.Flags().StringVarP(&serviceAccountProject, "sp", "",
@@ -78,9 +78,9 @@ func init() {
 	CreateCmd.Flags().StringVarP(&encryptionKey, "encryption-keyid", "k",
 		"", "Cloud KMS key for decrypting Auth Config; Format = locations/*/keyRings/*/cryptoKeys/*")
 	CreateCmd.Flags().BoolVarP(&wait, "wait", "",
-		false, "Waits for the connector to finish, with success or error")
+		false, "Waits for the connector to finish, with success or error; default is false")
 	CreateCmd.Flags().BoolVarP(&createSecret, "create-secret", "",
-		true, "Create Secret Manager secrets when creating the connection")
+		false, "Create Secret Manager secrets when creating the connection; default is false")
 
 	_ = CreateCmd.MarkFlagRequired("name")
 	_ = CreateCmd.MarkFlagRequired("file")
