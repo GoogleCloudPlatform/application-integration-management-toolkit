@@ -276,7 +276,7 @@ func init() {
 	ApplyCmd.Flags().StringVarP(&folder, "folder", "f",
 		"", "Folder containing scaffolding configuration")
 	ApplyCmd.Flags().BoolVarP(&grantPermission, "grant-permission", "g",
-		false, "Grant the service account permission to the GCP resource")
+		false, "Grant the service account permission to the GCP resource; default is false")
 	ApplyCmd.Flags().StringVarP(&serviceAccountName, "sa", "",
 		"", "Service Account name for the connection")
 	ApplyCmd.Flags().StringVarP(&serviceAccountProject, "sp", "",
@@ -284,9 +284,9 @@ func init() {
 	ApplyCmd.Flags().StringVarP(&encryptionKey, "encryption-keyid", "k",
 		"", "Cloud KMS key for decrypting Auth Config; Format = locations/*/keyRings/*/cryptoKeys/*")
 	ApplyCmd.Flags().BoolVarP(&createSecret, "create-secret", "",
-		false, "Create Secret Manager secrets when creating the connection")
+		false, "Create Secret Manager secrets when creating the connection; default is false")
 	ApplyCmd.Flags().BoolVarP(&wait, "wait", "",
-		false, "Waits for the connector to finish, with success or error")
+		false, "Waits for the connector to finish, with success or error; default is false")
 
 	_ = ApplyCmd.MarkFlagRequired("folder")
 }
