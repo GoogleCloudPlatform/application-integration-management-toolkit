@@ -437,7 +437,7 @@ func create(name string, content []byte, serviceAccountName string, serviceAccou
 				clilog.Warning.Printf("Creating secrets for %s is not implemented\n", c.AuthConfig.AuthType)
 			}
 		default:
-			return nil, fmt.Errorf("Invalid auth type")
+			clilog.Warning.Printf("No auth type found, assuming service account auth\n")
 		}
 	}
 
