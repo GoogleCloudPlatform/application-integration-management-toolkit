@@ -25,8 +25,6 @@ var IamCmd = &cobra.Command{
 	Long:  "Manage IAM permissions for the connection",
 }
 
-var memberName, role, memberType string
-
 func init() {
 	var name string
 
@@ -36,8 +34,5 @@ func init() {
 	_ = IamCmd.MarkPersistentFlagRequired("name")
 
 	IamCmd.AddCommand(GetIamCmd)
-	IamCmd.AddCommand(SetAdminCmd)
-	IamCmd.AddCommand(SetInvokeCmd)
-	IamCmd.AddCommand(SetViewerCmd)
-	IamCmd.AddCommand(SetCustomCmd)
+	IamCmd.AddCommand(SetRoleCmd)
 }
