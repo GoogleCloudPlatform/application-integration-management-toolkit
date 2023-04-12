@@ -126,7 +126,7 @@ The file produced will be like this:
 {
     "description": "This is a sample",
     "connectorDetails": {
-        "provider": "gcp" ## the name of the provider
+        "provider": "gcp", ## the name of the provider
         "name": "pubsub", ## type of the connector
         "version": 1 ## version is always 1
     },
@@ -179,7 +179,7 @@ The file produced will be like this:
 {
     "description": "SFTP Test for demo",
     "connectorDetails": {
-        "provider": "..." ## provider name
+        "provider": "...", ## provider name
         "name": "...", ## type of the connector
         "version": 1 ## version is always 1
     },
