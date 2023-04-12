@@ -414,7 +414,8 @@ func GetComputeEngineDefaultServiceAccount(projectId string) (serviceAccount str
 	//Get the project number
 	SetClientPrintHttpResponse(false)
 	defer SetClientPrintHttpResponse(GetCmdPrintHttpResponseSetting())
-	respBody, err := HttpClient(getendpoint, "")
+
+	respBody, err := HttpClient(getendpoint)
 	if err != nil {
 		clilog.Debug.Printf("error getting details for the project %s: %v", projectId, err)
 		return serviceAccount, err
