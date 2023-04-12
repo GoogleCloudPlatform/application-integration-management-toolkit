@@ -80,8 +80,9 @@ type lockConfig struct {
 }
 
 type connectorDetails struct {
-	Name    string `json:"name,omitempty"`
-	Version int    `json:"version,omitempty"`
+	Name     string `json:"name,omitempty"`
+	Provider string `json:"provider,omitempty"`
+	Version  int    `json:"version,omitempty"`
 }
 
 type configVar struct {
@@ -343,8 +344,8 @@ func create(name string, content []byte, serviceAccountName string, serviceAccou
 	}
 
 	c.ConnectorVersion = new(string)
-	*c.ConnectorVersion = fmt.Sprintf("projects/%s/locations/global/providers/gcp/connectors/%s/versions/%d",
-		apiclient.GetProjectID(), c.ConnectorDetails.Name, c.ConnectorDetails.Version)
+	*c.ConnectorVersion = fmt.Sprintf("projects/%s/locations/global/providers/%s/connectors/%s/versions/%d",
+		apiclient.GetProjectID(), c.ConnectorDetails.Provider, c.ConnectorDetails.Name, c.ConnectorDetails.Version)
 
 	//remove the element
 	c.ConnectorDetails = nil
@@ -488,6 +489,7 @@ func Get(name string, view string, minimal bool, overrides bool) (respBody []byt
 		c.ConnectorDetails = new(connectorDetails)
 		c.ConnectorDetails.Name = getConnectorName(*c.ConnectorVersion)
 		c.ConnectorDetails.Version = getConnectorVersion(*c.ConnectorVersion)
+		c.ConnectorDetails.Provider = getConnectorProvider(*c.ConnectorVersion)
 		c.ConnectorVersion = nil
 		c.Name = nil
 		if overrides {
@@ -678,6 +680,10 @@ func getConnectorVersion(version string) int {
 
 func getConnectionName(name string) string {
 	return name[strings.LastIndex(name, "/")+1:]
+}
+
+func getConnectorProvider(name string) string {
+	return strings.Split(name, "/")[5]
 }
 
 func isGoogleConnection(connectionName string) bool {
