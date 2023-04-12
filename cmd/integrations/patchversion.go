@@ -39,6 +39,8 @@ var PatchVerCmd = &cobra.Command{
 		return apiclient.SetProjectID(cmdProject.Value.String())
 	},
 	RunE: func(cmd *cobra.Command, args []string) (err error) {
+		version := cmd.Flag("ver").Value.String()
+
 		if _, err := os.Stat(integrationFile); os.IsNotExist(err) {
 			return err
 		}
@@ -54,6 +56,8 @@ var PatchVerCmd = &cobra.Command{
 }
 
 func init() {
+	var version string
+
 	PatchVerCmd.Flags().StringVarP(&name, "name", "n",
 		"", "Integration flow name")
 	PatchVerCmd.Flags().StringVarP(&version, "ver", "v",

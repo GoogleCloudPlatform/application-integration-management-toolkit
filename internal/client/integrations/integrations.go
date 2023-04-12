@@ -205,7 +205,8 @@ type cloudSchedulerConfig struct {
 }
 
 // CreateVersion
-func CreateVersion(name string, content []byte, overridesContent []byte, snapshot string, userlabel string, suppressWarnings bool) (respBody []byte, err error) {
+func CreateVersion(name string, content []byte, overridesContent []byte, snapshot string,
+	userlabel string, suppressWarnings bool) (respBody []byte, err error) {
 
 	iversion := integrationVersion{}
 	if err = json.Unmarshal(content, &iversion); err != nil {
@@ -296,7 +297,8 @@ func TakeoverEditLock(name string, version string) (respBody []byte, err error) 
 }
 
 // ListVersions
-func ListVersions(name string, pageSize int, pageToken string, filter string, orderBy string, allVersions bool, download bool, basicInfo bool) (respBody []byte, err error) {
+func ListVersions(name string, pageSize int, pageToken string, filter string, orderBy string,
+	allVersions bool, download bool, basicInfo bool) (respBody []byte, err error) {
 	u, _ := url.Parse(apiclient.GetBaseIntegrationURL())
 	q := u.Query()
 	if pageSize != -1 {
@@ -384,12 +386,18 @@ func ListVersions(name string, pageSize int, pageToken string, filter string, or
 						clilog.Error.Println(err)
 						return nil, err
 					}
-					if err = apiclient.WriteByteArrayToFile(path.Join(apiclient.GetExportToFile(), fileName), false, payload); err != nil {
+					if err = apiclient.WriteByteArrayToFile(
+						path.Join(apiclient.GetExportToFile(), fileName),
+						false,
+						payload); err != nil {
 						clilog.Error.Println(err)
 						return nil, err
 					}
 				} else {
-					if err = apiclient.WriteByteArrayToFile(path.Join(apiclient.GetExportToFile(), fileName), false, iversionBytes); err != nil {
+					if err = apiclient.WriteByteArrayToFile(
+						path.Join(apiclient.GetExportToFile(), fileName),
+						false,
+						iversionBytes); err != nil {
 						clilog.Error.Println(err)
 						return nil, err
 					}

@@ -96,7 +96,8 @@ func mergeOverrides(eversion integrationVersionExternal, o overrides, suppressWa
 			}
 		}
 		if !foundOverride && !suppressWarnings {
-			clilog.Warning.Printf("trigger override id %s was not found in the integration json\n", triggerOverride.TriggerNumber)
+			clilog.Warning.Printf("trigger override id %s was not found in the integration json\n",
+				triggerOverride.TriggerNumber)
 		}
 	}
 
@@ -111,7 +112,8 @@ func mergeOverrides(eversion integrationVersionExternal, o overrides, suppressWa
 			}
 		}
 		if !foundOverride && !suppressWarnings {
-			clilog.Warning.Printf("task override %s with id %s was not found in the integration json\n", taskOverride.DisplayName, taskOverride.TaskId)
+			clilog.Warning.Printf("task override %s with id %s was not found in the integration json\n",
+				taskOverride.DisplayName, taskOverride.TaskId)
 		}
 	}
 
@@ -126,7 +128,8 @@ func mergeOverrides(eversion integrationVersionExternal, o overrides, suppressWa
 
 		}
 		if !foundOverride && !suppressWarnings {
-			clilog.Warning.Printf("param override key %s with dataTpe %s was not found in the integration json\n", paramOverride.Key, paramOverride.DataType)
+			clilog.Warning.Printf("param override key %s with dataTpe %s was not found in the integration json\n",
+				paramOverride.Key, paramOverride.DataType)
 		}
 	}
 
@@ -136,7 +139,8 @@ func mergeOverrides(eversion integrationVersionExternal, o overrides, suppressWa
 			foundOverride := false
 			for taskIndex, task := range eversion.TaskConfigs {
 				if connectionOverride.TaskId == task.TaskId && connectionOverride.Task == task.Task {
-					newcp, err := getNewConnectionParams(connectionOverride.Parameters.ConnectionName, connectionOverride.Parameters.ConnectionLocation)
+					newcp, err := getNewConnectionParams(connectionOverride.Parameters.ConnectionName,
+						connectionOverride.Parameters.ConnectionLocation)
 					if err != nil {
 						return eversion, err
 					}
@@ -165,7 +169,8 @@ func mergeOverrides(eversion integrationVersionExternal, o overrides, suppressWa
 				}
 			}
 			if !foundOverride && !suppressWarnings {
-				clilog.Warning.Printf("task override with id %s was not found in the integration json\n", connectionOverride.TaskId)
+				clilog.Warning.Printf("task override with id %s was not found in the integration json\n",
+					connectionOverride.TaskId)
 			}
 		}
 	}
@@ -288,7 +293,8 @@ func handleGenericConnectorTask(taskConfig taskconfig, taskOverrides *overrides)
 }
 
 // overrideParameters
-func overrideParameters(overrideParameters map[string]eventparameter, taskParameters map[string]eventparameter, suppressWarnings bool) map[string]eventparameter {
+func overrideParameters(overrideParameters map[string]eventparameter, taskParameters map[string]eventparameter,
+	suppressWarnings bool) map[string]eventparameter {
 	for overrideParamName, overrideParam := range overrideParameters {
 		if overrideParam.Key == "authConfig" {
 			apiclient.SetClientPrintHttpResponse(false)

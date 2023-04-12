@@ -169,13 +169,15 @@ type operation struct {
 const interval = 10
 
 // Create
-func Create(name string, content []byte, serviceAccountName string, serviceAccountProject string, encryptionKey string, grantPermission bool, createSecret bool, wait bool) (respBody []byte, err error) {
+func Create(name string, content []byte, serviceAccountName string, serviceAccountProject string,
+	encryptionKey string, grantPermission bool, createSecret bool, wait bool) (respBody []byte, err error) {
 
 	if serviceAccountName != "" && strings.Contains(serviceAccountName, ".iam.gserviceaccount.com") {
 		serviceAccountName = strings.Split(serviceAccountName, "@")[0]
 	}
 
-	operationsBytes, err := create(name, content, serviceAccountName, serviceAccountProject, encryptionKey, grantPermission, createSecret)
+	operationsBytes, err := create(name, content, serviceAccountName,
+		serviceAccountProject, encryptionKey, grantPermission, createSecret)
 	if err != nil {
 		return nil, err
 	}
@@ -223,7 +225,8 @@ func Create(name string, content []byte, serviceAccountName string, serviceAccou
 }
 
 // create
-func create(name string, content []byte, serviceAccountName string, serviceAccountProject string, encryptionKey string, grantPermission bool, createSecret bool) (respBody []byte, err error) {
+func create(name string, content []byte, serviceAccountName string, serviceAccountProject string,
+	encryptionKey string, grantPermission bool, createSecret bool) (respBody []byte, err error) {
 
 	var secretVersion string
 
@@ -270,7 +273,8 @@ func create(name string, content []byte, serviceAccountName string, serviceAccou
 		for index := range *c.ConfigVariables {
 			if (*c.ConfigVariables)[index].Key == "project_id" && *(*c.ConfigVariables)[index].StringValue == "$PROJECT_ID$" {
 				*(*c.ConfigVariables)[index].StringValue = apiclient.GetProjectID()
-			} else if strings.Contains((*c.ConfigVariables)[index].Key, "_region") && *(*c.ConfigVariables)[index].StringValue == "$REGION$" {
+			} else if strings.Contains((*c.ConfigVariables)[index].Key, "_region") &&
+				*(*c.ConfigVariables)[index].StringValue == "$REGION$" {
 				*(*c.ConfigVariables)[index].StringValue = apiclient.GetRegion()
 			}
 		}
@@ -372,7 +376,10 @@ func create(name string, content []byte, serviceAccountName string, serviceAccou
 						}
 					}
 
-					if secretVersion, err = secmgr.Create(apiclient.GetProjectID(), c.AuthConfig.UserPassword.PasswordDetails.SecretName, payload); err != nil {
+					if secretVersion, err = secmgr.Create(
+						apiclient.GetProjectID(),
+						c.AuthConfig.UserPassword.PasswordDetails.SecretName,
+						payload); err != nil {
 						return nil, err
 					}
 
@@ -382,13 +389,17 @@ func create(name string, content []byte, serviceAccountName string, serviceAccou
 					c.AuthConfig.UserPassword.PasswordDetails = nil //clean the input
 					if grantPermission && c.ServiceAccount != nil {
 						//grant connector service account access to secretVersion
-						if err = apiclient.SetSecretManagerIAMPermission(apiclient.GetProjectID(), secretName, *c.ServiceAccount); err != nil {
+						if err = apiclient.SetSecretManagerIAMPermission(
+							apiclient.GetProjectID(),
+							secretName,
+							*c.ServiceAccount); err != nil {
 							return nil, err
 						}
 					}
 				} else {
 					c.AuthConfig.UserPassword.Password = new(secret)
-					c.AuthConfig.UserPassword.Password.SecretVersion = fmt.Sprintf("projects/%s/secrets/%s/versions/1", apiclient.GetProjectID(), c.AuthConfig.UserPassword.PasswordDetails.SecretName)
+					c.AuthConfig.UserPassword.Password.SecretVersion = fmt.Sprintf("projects/%s/secrets/%s/versions/1",
+						apiclient.GetProjectID(), c.AuthConfig.UserPassword.PasswordDetails.SecretName)
 					c.AuthConfig.UserPassword.PasswordDetails = nil //clean the input
 				}
 			}
@@ -408,7 +419,10 @@ func create(name string, content []byte, serviceAccountName string, serviceAccou
 							return nil, err
 						}
 					}
-					if secretVersion, err = secmgr.Create(apiclient.GetProjectID(), c.AuthConfig.Oauth2JwtBearer.ClientKeyDetails.SecretName, payload); err != nil {
+					if secretVersion, err = secmgr.Create(
+						apiclient.GetProjectID(),
+						c.AuthConfig.Oauth2JwtBearer.ClientKeyDetails.SecretName,
+						payload); err != nil {
 						return nil, err
 					}
 					secretName := c.AuthConfig.Oauth2JwtBearer.ClientKeyDetails.SecretName
@@ -417,13 +431,18 @@ func create(name string, content []byte, serviceAccountName string, serviceAccou
 					c.AuthConfig.Oauth2JwtBearer.ClientKeyDetails = nil //clean the input
 					if grantPermission && c.ServiceAccount != nil {
 						//grant connector service account access to secret version
-						if err = apiclient.SetSecretManagerIAMPermission(apiclient.GetProjectID(), secretName, *c.ServiceAccount); err != nil {
+						if err = apiclient.SetSecretManagerIAMPermission(
+							apiclient.GetProjectID(),
+							secretName,
+							*c.ServiceAccount); err != nil {
 							return nil, err
 						}
 					}
 				} else {
 					c.AuthConfig.Oauth2JwtBearer.ClientKey = new(secret)
-					c.AuthConfig.Oauth2JwtBearer.ClientKey.SecretVersion = fmt.Sprintf("projects/%s/secrets/%s/versions/1", apiclient.GetProjectID(), c.AuthConfig.Oauth2JwtBearer.ClientKeyDetails.SecretName)
+					c.AuthConfig.Oauth2JwtBearer.ClientKey.SecretVersion = fmt.Sprintf("projects/%s/secrets/%s/versions/1",
+						apiclient.GetProjectID(),
+						c.AuthConfig.Oauth2JwtBearer.ClientKeyDetails.SecretName)
 					c.AuthConfig.Oauth2JwtBearer.ClientKeyDetails = nil
 				}
 			}
@@ -661,7 +680,10 @@ func Export(folder string) (err error) {
 		if err != nil {
 			return err
 		}
-		if err = apiclient.WriteByteArrayToFile(path.Join(apiclient.GetExportToFile(), fileName), false, connectionPayload); err != nil {
+		if err = apiclient.WriteByteArrayToFile(
+			path.Join(apiclient.GetExportToFile(), fileName),
+			false,
+			connectionPayload); err != nil {
 			clilog.Error.Println(err)
 			return err
 		}
@@ -690,7 +712,8 @@ func getConnectorProvider(name string) string {
 
 func isGoogleConnection(connectionName string) bool {
 	if connectionName == "pubsub" || connectionName == "gcs" || connectionName == "biqguery" ||
-		connectionName == "cloudsql-mysql" || connectionName == "cloudsql-postgresql" || connectionName == "cloudsql-sqlserver" {
+		connectionName == "cloudsql-mysql" || connectionName == "cloudsql-postgresql" ||
+		connectionName == "cloudsql-sqlserver" {
 		return true
 	}
 	return false

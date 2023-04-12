@@ -28,18 +28,18 @@ var ArchiveVerCmd = &cobra.Command{
 	Short: "Archives an integration flow version",
 	Long:  "Archives an integration flow version",
 	Args: func(cmd *cobra.Command, args []string) (err error) {
-		cmdProject := cmd.Flag("proj")
-		cmdRegion := cmd.Flag("reg")
+		version := cmd.Flag("ver").Value.String()
 
-		if err = apiclient.SetRegion(cmdRegion.Value.String()); err != nil {
+		if err = apiclient.SetRegion(cmd.Flag("reg").Value.String()); err != nil {
 			return err
 		}
-		if err = validate(); err != nil {
+		if err = validate(version); err != nil {
 			return err
 		}
-		return apiclient.SetProjectID(cmdProject.Value.String())
+		return apiclient.SetProjectID(cmd.Flag("proj").Value.String())
 	},
 	RunE: func(cmd *cobra.Command, args []string) (err error) {
+		version := cmd.Flag("ver").Value.String()
 		if version != "" {
 			_, err = integrations.Archive(name, version)
 		} else if userLabel != "" {
@@ -53,6 +53,8 @@ var ArchiveVerCmd = &cobra.Command{
 }
 
 func init() {
+	var version string
+
 	ArchiveVerCmd.Flags().StringVarP(&name, "name", "n",
 		"", "Integration flow name")
 	ArchiveVerCmd.Flags().StringVarP(&version, "ver", "v",

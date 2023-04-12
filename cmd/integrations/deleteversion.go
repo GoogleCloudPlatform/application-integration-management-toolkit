@@ -29,10 +29,11 @@ var DelVerCmd = &cobra.Command{
 	Short: "Delete an integration flow version",
 	Long:  "Delete an integration flow version",
 	Args: func(cmd *cobra.Command, args []string) (err error) {
-		cmdProject := cmd.Flag("proj")
-		cmdRegion := cmd.Flag("reg")
+		project := cmd.Flag("proj").Value.String()
+		region := cmd.Flag("reg").Value.String()
+		version := cmd.Flag("ver").Value.String()
 
-		if err = apiclient.SetRegion(cmdRegion.Value.String()); err != nil {
+		if err = apiclient.SetRegion(region); err != nil {
 			return err
 		}
 		if snapshot == "" && userLabel == "" && version == "" {
@@ -47,9 +48,11 @@ var DelVerCmd = &cobra.Command{
 		if version != "" && (snapshot != "" || userLabel != "") {
 			return errors.New("version cannot be combined with snapshot or version")
 		}
-		return apiclient.SetProjectID(cmdProject.Value.String())
+		return apiclient.SetProjectID(project)
 	},
 	RunE: func(cmd *cobra.Command, args []string) (err error) {
+		version := cmd.Flag("ver").Value.String()
+
 		if version != "" {
 			_, err = integrations.DeleteVersion(name, version)
 		} else if snapshot != "" {
@@ -63,6 +66,8 @@ var DelVerCmd = &cobra.Command{
 }
 
 func init() {
+	var version string
+
 	DelVerCmd.Flags().StringVarP(&name, "name", "n",
 		"", "Integration flow name")
 	DelVerCmd.Flags().StringVarP(&version, "ver", "v",

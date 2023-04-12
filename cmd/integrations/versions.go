@@ -25,8 +25,6 @@ var VerCmd = &cobra.Command{
 	Long:  "Manage integrations flow versions",
 }
 
-var version string
-
 func init() {
 
 	VerCmd.AddCommand(ListVerCmd)

@@ -31,6 +31,7 @@ var GetVerCmd = &cobra.Command{
 	Args: func(cmd *cobra.Command, args []string) (err error) {
 		cmdProject := cmd.Flag("proj")
 		cmdRegion := cmd.Flag("reg")
+		version := cmd.Flag("ver").Value.String()
 
 		if err = apiclient.SetRegion(cmdRegion.Value.String()); err != nil {
 			return err
@@ -50,6 +51,7 @@ var GetVerCmd = &cobra.Command{
 		return apiclient.SetProjectID(cmdProject.Value.String())
 	},
 	RunE: func(cmd *cobra.Command, args []string) (err error) {
+		version := cmd.Flag("ver").Value.String()
 		if version != "" {
 			_, err = integrations.Get(name, version, basic, minimal, overrides)
 		} else if snapshot != "" {
@@ -65,6 +67,8 @@ var GetVerCmd = &cobra.Command{
 var minimal bool
 
 func init() {
+	var version string
+
 	GetVerCmd.Flags().StringVarP(&name, "name", "n",
 		"", "Integration flow name")
 	GetVerCmd.Flags().StringVarP(&version, "ver", "v",

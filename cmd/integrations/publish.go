@@ -31,16 +31,18 @@ var PublishVerCmd = &cobra.Command{
 	Args: func(cmd *cobra.Command, args []string) (err error) {
 		cmdProject := cmd.Flag("proj")
 		cmdRegion := cmd.Flag("reg")
+		version := cmd.Flag("ver").Value.String()
 
 		if err = apiclient.SetRegion(cmdRegion.Value.String()); err != nil {
 			return err
 		}
-		if err = validate(); err != nil {
+		if err = validate(version); err != nil {
 			return err
 		}
 		return apiclient.SetProjectID(cmdProject.Value.String())
 	},
 	RunE: func(cmd *cobra.Command, args []string) (err error) {
+		version := cmd.Flag("ver").Value.String()
 		if version != "" {
 			_, err = integrations.Publish(name, version)
 		} else if userLabel != "" {
@@ -54,6 +56,8 @@ var PublishVerCmd = &cobra.Command{
 }
 
 func init() {
+	var version string
+
 	PublishVerCmd.Flags().StringVarP(&name, "name", "n",
 		"", "Integration flow name")
 	PublishVerCmd.Flags().StringVarP(&version, "ver", "v",
@@ -66,7 +70,7 @@ func init() {
 	_ = PublishVerCmd.MarkFlagRequired("name")
 }
 
-func validate() (err error) {
+func validate(version string) (err error) {
 	if version == "" && userLabel == "" && snapshot == "" {
 		return errors.New("must pass oneOf version, snapshot or user-label")
 	} else if version != "" && (userLabel != "" || snapshot != "") {
