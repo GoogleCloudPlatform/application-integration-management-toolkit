@@ -256,11 +256,13 @@ func create(name string, content []byte, serviceAccountName string, serviceAccou
 	}
 
 	if c.ConnectorDetails == nil {
-		return nil, fmt.Errorf("connectorDetails must be set. See https://github.com/GoogleCloudPlatform/application-integration-management-toolkit#connectors-for-third-party-applications for more details")
+		return nil, fmt.Errorf("connectorDetails must be set." +
+			" See https://github.com/GoogleCloudPlatform/application-integration-management-toolkit#connectors-for-third-party-applications for more details")
 	}
 
-	if c.ConnectorDetails.Name == "" || c.ConnectorDetails.Version < 0 {
-		return nil, fmt.Errorf("connectorDetails Name and Version must be set. See https://github.com/GoogleCloudPlatform/application-integration-management-toolkit#connectors-for-third-party-applications for more details")
+	if c.ConnectorDetails.Name == "" || c.ConnectorDetails.Version < 0 || c.ConnectorDetails.Provider == "" {
+		return nil, fmt.Errorf("connectorDetails Name, Provider and Version must be set." +
+			" See https://github.com/GoogleCloudPlatform/application-integration-management-toolkit#connectors-for-third-party-applications for more details")
 	}
 
 	//handle project id & region overrides

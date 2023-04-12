@@ -113,12 +113,20 @@ docker pull us-docker.pkg.dev/appintegration-toolkit/images/integrationcli-build
 
 ### Connectors for Google Managed Applications
 
-Google managed applications include systems like BigQuery, PubSub, Cloud SQL etc. To create a connection for such systems, author a json file like this:
+Google managed applications include systems like BigQuery, PubSub, Cloud SQL etc. It is best to generate configuration like below by running the command:
+
+```sh
+
+integrationcli connectors get -n name -p project -r region --minimal=true --overrides=true -t $token
+```
+
+The file produced will be like this:
 
 ```json
 {
     "description": "This is a sample",
     "connectorDetails": {
+        "provider": "gcp" ## the name of the provider
         "name": "pubsub", ## type of the connector
         "version": 1 ## version is always 1
     },
@@ -158,13 +166,21 @@ integrationcli connectors create -n name-of-the-connector -f ./test/pub_sub_conn
 
 ### Connectors for Third Party Applications
 
-Third party application include connectors like Salesforce, Service Now, etc. To create a connection for such systems, author a json file like this:
+Third party application include connectors like Salesforce, Service Now, etc. It is best to generate configuration like below by running the command:
 
-```yaml
+```sh
+
+integrationcli connectors get -n name -p project -r region --minimal=true --overrides=true -t $token
+```
+
+The file produced will be like this:
+
+```json
 {
     "description": "SFTP Test for demo",
     "connectorDetails": {
-        "name": "sftp", ## type of the connector
+        "provider": "..." ## provider name
+        "name": "...", ## type of the connector
         "version": 1 ## version is always 1
     },
     "configVariables": [ ## these values are specific to each connector type. this example is for sftp
