@@ -197,7 +197,7 @@ var ApplyCmd = &cobra.Command{
 								"convention instanceName_channelName.json\n", channelFile)
 							return nil
 						}
-						version, _, err = sfdc.FindChannel(sfdcNames[1], sfdcNames[0])
+						version, _, err := sfdc.FindChannel(sfdcNames[1], sfdcNames[0])
 						// create the instance only if the sfdc channel is not found
 						if err != nil {
 							channelBytes, err := utils.ReadFile(path)
@@ -256,7 +256,7 @@ var ApplyCmd = &cobra.Command{
 			}
 			clilog.Info.Printf("Create integration %s\n", getFilenameWithoutExtension(integrationNames[0]))
 			respBody, err := integrations.CreateVersion(getFilenameWithoutExtension(integrationNames[0]),
-				integrationBytes, overridesBytes, "", "", false)
+				integrationBytes, overridesBytes, "", userLabel, false)
 			if err != nil {
 				return err
 			}
@@ -285,6 +285,8 @@ func init() {
 		"", "Folder containing scaffolding configuration")
 	ApplyCmd.Flags().BoolVarP(&grantPermission, "grant-permission", "g",
 		false, "Grant the service account permission to the GCP resource; default is false")
+	ApplyCmd.Flags().StringVarP(&userLabel, "userlabel", "u",
+		"", "Integration version userlabel")
 	ApplyCmd.Flags().StringVarP(&serviceAccountName, "sa", "",
 		"", "Service Account name for the connection")
 	ApplyCmd.Flags().StringVarP(&serviceAccountProject, "sp", "",
