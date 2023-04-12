@@ -15,6 +15,7 @@
 package cmd
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -44,8 +45,11 @@ var RootCmd = &cobra.Command{
 	Short: "Utility to work with Integration & Connectors",
 	Long:  "This command lets you interact with Integration and Connector APIs.",
 	PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
-		apiclient.SetServiceAccount(serviceAccount)
-		apiclient.SetIntegrationToken(accessToken)
+		cmdServiceAccount := cmd.Flag("account")
+		cmdToken := cmd.Flag("token")
+
+		apiclient.SetServiceAccount(cmdServiceAccount.Value.String())
+		apiclient.SetIntegrationToken(cmdToken.Value.String())
 
 		if !disableCheck {
 			if ok, _ := apiclient.TestAndUpdateLastCheck(); !ok {
@@ -76,10 +80,11 @@ func Execute() {
 	}
 }
 
-var accessToken, serviceAccount string
 var disableCheck, useApigee, printOutput, noOutput, verbose bool
 
 func init() {
+	var accessToken, serviceAccount string
+
 	cobra.OnInitialize(initConfig)
 
 	RootCmd.PersistentFlags().StringVarP(&accessToken, "token", "t",
@@ -148,7 +153,9 @@ func getLatestVersion() (version string, err error) {
 	client := &http.Client{}
 	contentType := "application/json"
 
-	req, err = http.NewRequest("GET", endpoint, nil)
+	ctx := context.Background()
+
+	req, err = http.NewRequestWithContext(ctx, "GET", endpoint, nil)
 	if err != nil {
 		return "", err
 	}

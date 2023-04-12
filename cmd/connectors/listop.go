@@ -28,10 +28,13 @@ var ListOperationsCmd = &cobra.Command{
 	Short: "List all operations in the region",
 	Long:  "List all operations in the region",
 	Args: func(cmd *cobra.Command, args []string) (err error) {
-		if err = apiclient.SetRegion(region); err != nil {
+		cmdProject := cmd.Flag("proj")
+		cmdRegion := cmd.Flag("reg")
+
+		if err = apiclient.SetRegion(cmdRegion.Value.String()); err != nil {
 			return err
 		}
-		return apiclient.SetProjectID(project)
+		return apiclient.SetProjectID(cmdProject.Value.String())
 	},
 	RunE: func(cmd *cobra.Command, args []string) (err error) {
 		_, err = connections.ListOperations(pageSize, pageToken, filter, orderBy)

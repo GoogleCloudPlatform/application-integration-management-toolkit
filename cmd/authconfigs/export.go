@@ -28,12 +28,16 @@ var ExportCmd = &cobra.Command{
 	Short: "Export authconfigs in a region to a folder",
 	Long:  "Export authconfigs in a region to a folder",
 	Args: func(cmd *cobra.Command, args []string) (err error) {
+		project := cmd.Flag("proj").Value.String()
+		region := cmd.Flag("reg").Value.String()
+
 		if err = apiclient.SetRegion(region); err != nil {
 			return err
 		}
 		return apiclient.SetProjectID(project)
 	},
 	RunE: func(cmd *cobra.Command, args []string) (err error) {
+		folder := cmd.Flag("folder").Value.String()
 		if err = apiclient.FolderExists(folder); err != nil {
 			return err
 		}
@@ -42,9 +46,9 @@ var ExportCmd = &cobra.Command{
 	},
 }
 
-var folder string
-
 func init() {
+	var folder string
+
 	ExportCmd.Flags().StringVarP(&folder, "folder", "f",
 		"", "Folder to export authconfig")
 

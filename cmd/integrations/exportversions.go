@@ -28,10 +28,13 @@ var ExportVerCmd = &cobra.Command{
 	Short: "Export Integrations flow versions to a folder",
 	Long:  "Export Integrations flow versions to a folder",
 	Args: func(cmd *cobra.Command, args []string) (err error) {
-		if err = apiclient.SetRegion(region); err != nil {
+		cmdProject := cmd.Flag("proj")
+		cmdRegion := cmd.Flag("reg")
+
+		if err = apiclient.SetRegion(cmdRegion.Value.String()); err != nil {
 			return err
 		}
-		return apiclient.SetProjectID(project)
+		return apiclient.SetProjectID(cmdProject.Value.String())
 	},
 	RunE: func(cmd *cobra.Command, args []string) (err error) {
 		if err = apiclient.FolderExists(folder); err != nil {

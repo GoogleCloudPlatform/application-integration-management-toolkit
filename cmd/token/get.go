@@ -28,7 +28,8 @@ var GetCmd = &cobra.Command{
 	Short: "Generate a new access token",
 	Long:  "Generate a new access token",
 	Args: func(cmd *cobra.Command, args []string) error {
-		apiclient.SetServiceAccount(serviceAccount)
+		cmdAccount := cmd.Flag("account")
+		apiclient.SetServiceAccount(cmdAccount.Value.String())
 		return nil
 	},
 	RunE: func(cmd *cobra.Command, args []string) error {

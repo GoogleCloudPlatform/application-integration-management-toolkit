@@ -28,6 +28,9 @@ var ListCmd = &cobra.Command{
 	Short: "List all sfdcinstances in Application Integration",
 	Long:  "List all sfdcinstances in Application Integration",
 	Args: func(cmd *cobra.Command, args []string) (err error) {
+		project := cmd.Flag("proj").Value.String()
+		region := cmd.Flag("reg").Value.String()
+
 		if err = apiclient.SetRegion(region); err != nil {
 			return err
 		}

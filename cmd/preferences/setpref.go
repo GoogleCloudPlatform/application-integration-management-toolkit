@@ -26,6 +26,10 @@ var SetCmd = &cobra.Command{
 	Short: "Set default preferences for integrationcli",
 	Long:  "Set default preferences for integrationcli",
 	RunE: func(cmd *cobra.Command, args []string) (err error) {
+		project := cmd.Flag("proj").Value.String()
+		region := cmd.Flag("reg").Value.String()
+		proxyUrl := cmd.Flag("proxy").Value.String()
+
 		if err = apiclient.WriteDefaultProject(project); err != nil {
 			return err
 		}
@@ -54,10 +58,10 @@ var SetCmd = &cobra.Command{
 	},
 }
 
-var project, region, proxyUrl string
 var nocheck, useapigee bool
 
 func init() {
+	var project, region, proxyUrl string
 
 	SetCmd.Flags().StringVarP(&project, "proj", "p",
 		"", "Integration GCP Project name")

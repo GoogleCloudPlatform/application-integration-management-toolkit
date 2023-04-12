@@ -16,6 +16,7 @@ package apiclient
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -48,7 +49,8 @@ func PostHttpZip(auth bool, method string, url string, headers map[string]string
 	}
 
 	clilog.Debug.Println("Connecting to : ", url)
-	req, err = http.NewRequest(method, url, bytes.NewBuffer(payload))
+	ctx := context.Background()
+	req, err = http.NewRequestWithContext(ctx, method, url, bytes.NewBuffer(payload))
 	if err != nil {
 		clilog.Error.Println("error in client: ", err)
 		return err

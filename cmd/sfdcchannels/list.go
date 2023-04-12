@@ -28,12 +28,16 @@ var ListCmd = &cobra.Command{
 	Short: "List sfdcchannels in Application Integration",
 	Long:  "List sfdcchannels in Application Integration",
 	Args: func(cmd *cobra.Command, args []string) (err error) {
+		project := cmd.Flag("proj").Value.String()
+		region := cmd.Flag("reg").Value.String()
+
 		if err = apiclient.SetRegion(region); err != nil {
 			return err
 		}
 		return apiclient.SetProjectID(project)
 	},
 	RunE: func(cmd *cobra.Command, args []string) (err error) {
+		instance := cmd.Flag("instance").Value.String()
 		_, err = sfdc.ListChannels(instance)
 		return
 
@@ -41,6 +45,8 @@ var ListCmd = &cobra.Command{
 }
 
 func init() {
+	var instance string
+
 	ListCmd.Flags().StringVarP(&instance, "instance", "i",
 		"", "sfdc instance name")
 	ListCmd.Flags().BoolVarP(&minimal, "minimal", "",

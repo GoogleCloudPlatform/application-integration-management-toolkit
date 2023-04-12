@@ -28,13 +28,16 @@ var DownloadVerCmd = &cobra.Command{
 	Short: "Download an integration flow version",
 	Long:  "Download an integration flow version",
 	Args: func(cmd *cobra.Command, args []string) (err error) {
-		if err = apiclient.SetRegion(region); err != nil {
+		cmdProject := cmd.Flag("proj")
+		cmdRegion := cmd.Flag("reg")
+
+		if err = apiclient.SetRegion(cmdRegion.Value.String()); err != nil {
 			return err
 		}
 		if err = validate(); err != nil {
 			return err
 		}
-		return apiclient.SetProjectID(project)
+		return apiclient.SetProjectID(cmdProject.Value.String())
 	},
 	RunE: func(cmd *cobra.Command, args []string) (err error) {
 		if version != "" {

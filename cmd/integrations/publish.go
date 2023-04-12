@@ -15,8 +15,7 @@
 package integrations
 
 import (
-	"fmt"
-
+	"errors"
 	"internal/apiclient"
 
 	"internal/client/integrations"
@@ -30,13 +29,16 @@ var PublishVerCmd = &cobra.Command{
 	Short: "Publish an integration flow version",
 	Long:  "Publish an integration flow version",
 	Args: func(cmd *cobra.Command, args []string) (err error) {
-		if err = apiclient.SetRegion(region); err != nil {
+		cmdProject := cmd.Flag("proj")
+		cmdRegion := cmd.Flag("reg")
+
+		if err = apiclient.SetRegion(cmdRegion.Value.String()); err != nil {
 			return err
 		}
 		if err = validate(); err != nil {
 			return err
 		}
-		return apiclient.SetProjectID(project)
+		return apiclient.SetProjectID(cmdProject.Value.String())
 	},
 	RunE: func(cmd *cobra.Command, args []string) (err error) {
 		if version != "" {
@@ -66,13 +68,13 @@ func init() {
 
 func validate() (err error) {
 	if version == "" && userLabel == "" && snapshot == "" {
-		return fmt.Errorf("must pass oneOf version, snapshot or user-label")
+		return errors.New("must pass oneOf version, snapshot or user-label")
 	} else if version != "" && (userLabel != "" || snapshot != "") {
-		return fmt.Errorf("must pass oneOf version, snapshot or user-label")
+		return errors.New("must pass oneOf version, snapshot or user-label")
 	} else if userLabel != "" && (version != "" || snapshot != "") {
-		return fmt.Errorf("must pass oneOf version, snapshot or user-label")
+		return errors.New("must pass oneOf version, snapshot or user-label")
 	} else if snapshot != "" && (userLabel != "" || version != "") {
-		return fmt.Errorf("must pass oneOf version, snapshot or user-label")
+		return errors.New("must pass oneOf version, snapshot or user-label")
 	}
 	return nil
 }

@@ -74,7 +74,7 @@ const apiTrigger = "api_trigger/"
 const authConfigValue = "{  \"@type\": \"type.googleapis.com/enterprise.crm.eventbus.authconfig.AuthConfigTaskParam\",\"authConfigId\": \""
 
 // mergeOverrides
-func mergeOverrides(eversion integrationVersionExternal, o overrides, supressWarnings bool) (integrationVersionExternal, error) {
+func mergeOverrides(eversion integrationVersionExternal, o overrides, suppressWarnings bool) (integrationVersionExternal, error) {
 	//apply trigger overrides
 	for _, triggerOverride := range o.TriggerOverrides {
 		foundOverride := false
@@ -87,7 +87,7 @@ func mergeOverrides(eversion integrationVersionExternal, o overrides, supressWar
 				case "API":
 					trigger.TriggerId = apiTrigger + *triggerOverride.APIPath
 				default:
-					if !supressWarnings {
+					if !suppressWarnings {
 						clilog.Warning.Printf("unsupported trigger type %s\n", trigger.TriggerType)
 					}
 				}
@@ -95,7 +95,7 @@ func mergeOverrides(eversion integrationVersionExternal, o overrides, supressWar
 				foundOverride = true
 			}
 		}
-		if !foundOverride && !supressWarnings {
+		if !foundOverride && !suppressWarnings {
 			clilog.Warning.Printf("trigger override id %s was not found in the integration json\n", triggerOverride.TriggerNumber)
 		}
 	}
@@ -105,12 +105,12 @@ func mergeOverrides(eversion integrationVersionExternal, o overrides, supressWar
 		foundOverride := false
 		for taskIndex, task := range eversion.TaskConfigs {
 			if taskOverride.TaskId == task.TaskId && taskOverride.Task == task.Task && task.Task != "GenericConnectorTask" {
-				task.Parameters = overrideParameters(taskOverride.Parameters, task.Parameters, supressWarnings)
+				task.Parameters = overrideParameters(taskOverride.Parameters, task.Parameters, suppressWarnings)
 				eversion.TaskConfigs[taskIndex] = task
 				foundOverride = true
 			}
 		}
-		if !foundOverride && !supressWarnings {
+		if !foundOverride && !suppressWarnings {
 			clilog.Warning.Printf("task override %s with id %s was not found in the integration json\n", taskOverride.DisplayName, taskOverride.TaskId)
 		}
 	}
@@ -125,7 +125,7 @@ func mergeOverrides(eversion integrationVersionExternal, o overrides, supressWar
 			foundOverride = true
 
 		}
-		if !foundOverride && !supressWarnings {
+		if !foundOverride && !suppressWarnings {
 			clilog.Warning.Printf("param override key %s with dataTpe %s was not found in the integration json\n", paramOverride.Key, paramOverride.DataType)
 		}
 	}
@@ -164,7 +164,7 @@ func mergeOverrides(eversion integrationVersionExternal, o overrides, supressWar
 					foundOverride = true
 				}
 			}
-			if !foundOverride && !supressWarnings {
+			if !foundOverride && !suppressWarnings {
 				clilog.Warning.Printf("task override with id %s was not found in the integration json\n", connectionOverride.TaskId)
 			}
 		}
@@ -288,7 +288,7 @@ func handleGenericConnectorTask(taskConfig taskconfig, taskOverrides *overrides)
 }
 
 // overrideParameters
-func overrideParameters(overrideParameters map[string]eventparameter, taskParameters map[string]eventparameter, supressWarnings bool) map[string]eventparameter {
+func overrideParameters(overrideParameters map[string]eventparameter, taskParameters map[string]eventparameter, suppressWarnings bool) map[string]eventparameter {
 	for overrideParamName, overrideParam := range overrideParameters {
 		if overrideParam.Key == "authConfig" {
 			apiclient.SetClientPrintHttpResponse(false)
@@ -304,7 +304,7 @@ func overrideParameters(overrideParameters map[string]eventparameter, taskParame
 			if found {
 				taskParameters[overrideParamName] = overrideParam
 			} else {
-				if !supressWarnings {
+				if !suppressWarnings {
 					clilog.Warning.Printf("override param %s was not found\n", overrideParamName)
 				}
 			}

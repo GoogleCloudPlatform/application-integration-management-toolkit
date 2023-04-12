@@ -28,18 +28,23 @@ var CancelOperationCmd = &cobra.Command{
 	Short: "Starts asynchronous cancellation on a long-running operation",
 	Long:  "Starts asynchronous cancellation on a long-running operation",
 	Args: func(cmd *cobra.Command, args []string) (err error) {
+		project := cmd.Flag("proj").Value.String()
+		region := cmd.Flag("reg").Value.String()
+
 		if err = apiclient.SetRegion(region); err != nil {
 			return err
 		}
 		return apiclient.SetProjectID(project)
 	},
 	RunE: func(cmd *cobra.Command, args []string) (err error) {
+		name := cmd.Flag("name").Value.String()
 		_, err = connections.CancelOperation(name)
 		return
 	},
 }
 
 func init() {
+	var name string
 	CancelOperationCmd.Flags().StringVarP(&name, "name", "n",
 		"", "The name of the operation")
 

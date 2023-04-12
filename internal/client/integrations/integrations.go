@@ -205,7 +205,7 @@ type cloudSchedulerConfig struct {
 }
 
 // CreateVersion
-func CreateVersion(name string, content []byte, overridesContent []byte, snapshot string, userlabel string, supressWarnings bool) (respBody []byte, err error) {
+func CreateVersion(name string, content []byte, overridesContent []byte, snapshot string, userlabel string, suppressWarnings bool) (respBody []byte, err error) {
 
 	iversion := integrationVersion{}
 	if err = json.Unmarshal(content, &iversion); err != nil {
@@ -221,7 +221,7 @@ func CreateVersion(name string, content []byte, overridesContent []byte, snapsho
 		if err = json.Unmarshal(overridesContent, &o); err != nil {
 			return nil, err
 		}
-		if eversion, err = mergeOverrides(eversion, o, supressWarnings); err != nil {
+		if eversion, err = mergeOverrides(eversion, o, suppressWarnings); err != nil {
 			return nil, err
 		}
 	}

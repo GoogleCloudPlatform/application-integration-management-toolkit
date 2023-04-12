@@ -28,18 +28,25 @@ var SetCustomCmd = &cobra.Command{
 	Short: "Set a custom IAM role on a Connection",
 	Long:  "Set a custom IAM role on a Connection",
 	Args: func(cmd *cobra.Command, args []string) (err error) {
-		if err = apiclient.SetRegion(region); err != nil {
+		cmdProject := cmd.Flag("proj")
+		cmdRegion := cmd.Flag("reg")
+
+		if err = apiclient.SetRegion(cmdRegion.Value.String()); err != nil {
 			return err
 		}
-		return apiclient.SetProjectID(project)
+		return apiclient.SetProjectID(cmdProject.Value.String())
 	},
 	RunE: func(cmd *cobra.Command, args []string) (err error) {
+		name := cmd.Flag("name").Value.String()
 		return connections.SetIAM(name, memberName, role, memberType)
 	},
 }
 
 func init() {
+	var name string
 
+	SetCustomCmd.Flags().StringVarP(&name, "name", "n",
+		"", "The name of the connection")
 	SetCustomCmd.Flags().StringVarP(&memberName, "member", "m",
 		"", "Member Name, example Service Account Name")
 	SetCustomCmd.Flags().StringVarP(&role, "role", "",

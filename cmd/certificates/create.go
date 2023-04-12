@@ -15,7 +15,7 @@
 package certificates
 
 import (
-	"fmt"
+	"errors"
 	"os"
 
 	"internal/apiclient"
@@ -31,12 +31,17 @@ var CreateCmd = &cobra.Command{
 	Short: "Create a certificate entity in Application integration",
 	Long:  "Create a certificate entity in Application integration",
 	Args: func(cmd *cobra.Command, args []string) (err error) {
+		project := cmd.Flag("proj").Value.String()
+		region := cmd.Flag("reg").Value.String()
+		privateKeyFile := cmd.Flag("private-key").Value.String()
+		passphrase := cmd.Flag("passphrase").Value.String()
+
 		if err = apiclient.SetRegion(region); err != nil {
 			return err
 		}
 
 		if passphrase != "" && privateKeyFile == "" {
-			return fmt.Errorf("private key must be used with passphrase")
+			return errors.New("private key must be used with passphrase")
 		}
 
 		return apiclient.SetProjectID(project)
@@ -44,6 +49,11 @@ var CreateCmd = &cobra.Command{
 	RunE: func(cmd *cobra.Command, args []string) (err error) {
 
 		var sslCertContent, privateKeyCertContent []byte
+		name := cmd.Flag("name").Value.String()
+		description := cmd.Flag("description").Value.String()
+		sslCertificateFile := cmd.Flag("cert-file").Value.String()
+		privateKeyFile := cmd.Flag("private-key").Value.String()
+		passphrase := cmd.Flag("passphrase").Value.String()
 
 		if sslCertificateFile != "" {
 			if _, err := os.Stat(sslCertificateFile); err != nil {
@@ -72,9 +82,9 @@ var CreateCmd = &cobra.Command{
 	},
 }
 
-var description, sslCertificateFile, privateKeyFile, passphrase string
-
 func init() {
+	var name, description, sslCertificateFile, privateKeyFile, passphrase string
+
 	CreateCmd.Flags().StringVarP(&name, "name", "n",
 		"", "Display name for the certificate")
 	CreateCmd.Flags().StringVarP(&description, "description", "d",

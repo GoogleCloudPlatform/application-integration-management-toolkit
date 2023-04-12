@@ -28,18 +28,25 @@ var SetInvokeCmd = &cobra.Command{
 	Short: "Set Connection Invoke IAM policy on a Connection",
 	Long:  "Set Connection Invoke IAM policy on a Connection",
 	Args: func(cmd *cobra.Command, args []string) (err error) {
-		if err = apiclient.SetRegion(region); err != nil {
+		cmdProject := cmd.Flag("proj")
+		cmdRegion := cmd.Flag("reg")
+
+		if err = apiclient.SetRegion(cmdRegion.Value.String()); err != nil {
 			return err
 		}
-		return apiclient.SetProjectID(project)
+		return apiclient.SetProjectID(cmdProject.Value.String())
 	},
 	RunE: func(cmd *cobra.Command, args []string) (err error) {
+		name := cmd.Flag("name").Value.String()
 		return connections.SetIAM(name, memberName, "invoker", memberType)
 	},
 }
 
 func init() {
+	var name string
 
+	SetInvokeCmd.Flags().StringVarP(&name, "name", "n",
+		"", "The name of the connection")
 	SetInvokeCmd.Flags().StringVarP(&memberName, "member", "m",
 		"", "Member Name, example Service Account Name")
 	SetInvokeCmd.Flags().StringVarP(&memberType, "member-type", "",

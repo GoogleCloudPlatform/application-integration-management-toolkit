@@ -28,18 +28,25 @@ var SetAdminCmd = &cobra.Command{
 	Short: "Set Connection Admin IAM policy on a Connection",
 	Long:  "Set Connection Admin IAM policy on a Connection",
 	Args: func(cmd *cobra.Command, args []string) (err error) {
-		if err = apiclient.SetRegion(region); err != nil {
+		cmdProject := cmd.Flag("proj")
+		cmdRegion := cmd.Flag("reg")
+
+		if err = apiclient.SetRegion(cmdRegion.Value.String()); err != nil {
 			return err
 		}
-		return apiclient.SetProjectID(project)
+		return apiclient.SetProjectID(cmdProject.Value.String())
 	},
 	RunE: func(cmd *cobra.Command, args []string) (err error) {
+		name := cmd.Flag("name").Value.String()
 		return connections.SetIAM(name, memberName, "admin", memberType)
 	},
 }
 
 func init() {
+	var name string
 
+	SetAdminCmd.Flags().StringVarP(&name, "name", "n",
+		"", "The name of the connection")
 	SetAdminCmd.Flags().StringVarP(&memberName, "member", "m",
 		"", "Member Name, example Service Account Name")
 	SetAdminCmd.Flags().StringVarP(&memberType, "member-type", "",

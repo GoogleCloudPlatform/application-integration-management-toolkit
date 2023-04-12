@@ -90,8 +90,7 @@ func ReadFile(filePath string) (byteValue []byte, err error) {
 
 	defer userFile.Close()
 
-	byteValue, err = io.ReadAll(userFile)
-	if err != nil {
+	if byteValue, err = io.ReadAll(userFile); err != nil {
 		return nil, err
 	}
 	return byteValue, err

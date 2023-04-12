@@ -15,6 +15,7 @@
 package connectors
 
 import (
+	"errors"
 	"fmt"
 
 	"internal/apiclient"
@@ -30,23 +31,27 @@ var UpdateNodeCountCmd = &cobra.Command{
 	Short: "Update connection max or min node count",
 	Long:  "Update connection max or min node count",
 	Args: func(cmd *cobra.Command, args []string) (err error) {
-		if err = apiclient.SetRegion(region); err != nil {
+		cmdProject := cmd.Flag("proj")
+		cmdRegion := cmd.Flag("reg")
+
+		if err = apiclient.SetRegion(cmdRegion.Value.String()); err != nil {
 			return err
 		}
 		if min == -1 && max == -1 {
-			return fmt.Errorf("min or max must be set")
+			return errors.New("min or max must be set")
 		}
 		if min == 0 || max == 0 {
-			return fmt.Errorf("min or max cannot be set to 0")
+			return errors.New("min or max cannot be set to 0")
 		}
 		if min > max && max != -1 {
-			return fmt.Errorf("min cannot be set higher than max")
+			return errors.New("min cannot be set higher than max")
 		}
-		return apiclient.SetProjectID(project)
+		return apiclient.SetProjectID(cmdProject.Value.String())
 	},
 	RunE: func(cmd *cobra.Command, args []string) (err error) {
 		nodeConfig := []string{}
 		var nodeCount string
+		name := cmd.Flag("name").Value.String()
 
 		content := "{\"nodeConfig\": {"
 
@@ -71,6 +76,8 @@ var UpdateNodeCountCmd = &cobra.Command{
 var min, max int
 
 func init() {
+	var name string
+
 	UpdateNodeCountCmd.Flags().StringVarP(&name, "name", "n",
 		"", "The name of the connection")
 	UpdateNodeCountCmd.Flags().IntVarP(&min, "min", "",

@@ -28,18 +28,24 @@ var GetOperationCmd = &cobra.Command{
 	Short: "Get operation details",
 	Long:  "Get operation details from a connection created in a region",
 	Args: func(cmd *cobra.Command, args []string) (err error) {
-		if err = apiclient.SetRegion(region); err != nil {
+		cmdProject := cmd.Flag("proj")
+		cmdRegion := cmd.Flag("reg")
+
+		if err = apiclient.SetRegion(cmdRegion.Value.String()); err != nil {
 			return err
 		}
-		return apiclient.SetProjectID(project)
+		return apiclient.SetProjectID(cmdProject.Value.String())
 	},
 	RunE: func(cmd *cobra.Command, args []string) (err error) {
+		name := cmd.Flag("name").Value.String()
 		_, err = connections.GetOperation(name)
 		return
 	},
 }
 
 func init() {
+	var name string
+
 	GetOperationCmd.Flags().StringVarP(&name, "name", "n",
 		"", "The name of the operation")
 

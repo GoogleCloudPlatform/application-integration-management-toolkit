@@ -28,18 +28,25 @@ var SetViewerCmd = &cobra.Command{
 	Short: "Set Connection Viewer IAM policy on a Connection",
 	Long:  "Set Connection Viewer IAM policy on a Connection",
 	Args: func(cmd *cobra.Command, args []string) (err error) {
-		if err = apiclient.SetRegion(region); err != nil {
+		cmdProject := cmd.Flag("proj")
+		cmdRegion := cmd.Flag("reg")
+
+		if err = apiclient.SetRegion(cmdRegion.Value.String()); err != nil {
 			return err
 		}
-		return apiclient.SetProjectID(project)
+		return apiclient.SetProjectID(cmdProject.Value.String())
 	},
 	RunE: func(cmd *cobra.Command, args []string) (err error) {
+		name := cmd.Flag("name").Value.String()
 		return connections.SetIAM(name, memberName, "viewer", memberType)
 	},
 }
 
 func init() {
+	var name string
 
+	SetViewerCmd.Flags().StringVarP(&name, "name", "n",
+		"", "The name of the connection")
 	SetViewerCmd.Flags().StringVarP(&memberName, "member", "m",
 		"", "Member Name, example Service Account Name")
 	SetViewerCmd.Flags().StringVarP(&memberType, "member-type", "",

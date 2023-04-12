@@ -21,7 +21,10 @@ import (
 )
 
 // Version
-var Version, Git string
+var Version string
+
+// Git
+var Git string
 
 func main() {
 

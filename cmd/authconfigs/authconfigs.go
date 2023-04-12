@@ -25,9 +25,9 @@ var Cmd = &cobra.Command{
 	Long:  "Manage integration auth configurations",
 }
 
-var project, region, name string
-
 func init() {
+
+	var project, region string
 
 	Cmd.PersistentFlags().StringVarP(&project, "proj", "p",
 		"", "Integration GCP Project name")

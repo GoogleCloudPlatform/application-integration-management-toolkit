@@ -25,9 +25,9 @@ var Cmd = &cobra.Command{
 	Long:  "Manage SFDC channels in Application Integration",
 }
 
-var project, region, name, instance string
-
 func init() {
+
+	var project, region string
 
 	Cmd.PersistentFlags().StringVarP(&project, "proj", "p",
 		"", "Integration GCP Project name")

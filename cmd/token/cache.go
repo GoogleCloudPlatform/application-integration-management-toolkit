@@ -28,7 +28,8 @@ var CacheCmd = &cobra.Command{
 	Short: "Generate and cache a new access token",
 	Long:  "Generate and cache a new access token",
 	Args: func(cmd *cobra.Command, args []string) error {
-		apiclient.SetServiceAccount(serviceAccount)
+		cmdAccount := cmd.Flag("account")
+		apiclient.SetServiceAccount(cmdAccount.Value.String())
 		return nil
 	},
 	RunE: func(cmd *cobra.Command, args []string) error {

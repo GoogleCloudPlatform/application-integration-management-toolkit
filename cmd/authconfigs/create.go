@@ -15,6 +15,7 @@
 package authconfigs
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"path"
@@ -34,16 +35,19 @@ var CreateCmd = &cobra.Command{
 	Short: "Create an authconfig",
 	Long:  "Create an authconfig",
 	Args: func(cmd *cobra.Command, args []string) (err error) {
+		project := cmd.Flag("proj").Value.String()
+		region := cmd.Flag("reg").Value.String()
+
 		if err = apiclient.SetRegion(region); err != nil {
 			return err
 		}
 
 		if authConfigFile != "" && (encryptedFile != "" || encryptionKey != "") {
-			return fmt.Errorf("file cannot be combined with encrypted-file or encryption-keyid")
+			return errors.New("file cannot be combined with encrypted-file or encryption-keyid")
 		}
 
 		if (encryptedFile != "" && encryptionKey == "") || (encryptedFile == "" && encryptionKey != "") {
-			return fmt.Errorf("encrypted-file and encryption-keyid must both be set")
+			return errors.New("encrypted-file and encryption-keyid must both be set")
 		}
 
 		return apiclient.SetProjectID(project)
@@ -67,7 +71,8 @@ var CreateCmd = &cobra.Command{
 				re := regexp.MustCompile(`locations\/([a-zA-Z0-9_-]+)\/keyRings\/([a-zA-Z0-9_-]+)\/cryptoKeys\/([a-zA-Z0-9_-]+)`)
 				ok := re.Match([]byte(encryptionKey))
 				if !ok {
-					return fmt.Errorf("encryption key must be of the format locations/{location}/keyRings/{test}/cryptoKeys/{cryptoKey}")
+					return fmt.Errorf("encryption key must be of the format " +
+						"locations/{location}/keyRings/{test}/cryptoKeys/{cryptoKey}")
 				}
 			}
 

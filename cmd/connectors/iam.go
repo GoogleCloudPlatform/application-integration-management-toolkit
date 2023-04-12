@@ -28,6 +28,7 @@ var IamCmd = &cobra.Command{
 var memberName, role, memberType string
 
 func init() {
+	var name string
 
 	IamCmd.PersistentFlags().StringVarP(&name, "name", "n",
 		"", "Connection name")

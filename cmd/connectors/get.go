@@ -30,15 +30,19 @@ var GetCmd = &cobra.Command{
 	Short: "Get connection details",
 	Long:  "Get connection details from a connection created in a region",
 	Args: func(cmd *cobra.Command, args []string) (err error) {
-		if err = apiclient.SetRegion(region); err != nil {
+		cmdProject := cmd.Flag("proj")
+		cmdRegion := cmd.Flag("reg")
+
+		if err = apiclient.SetRegion(cmdRegion.Value.String()); err != nil {
 			return err
 		}
 		if view != "BASIC" && view != "FULL" {
 			return fmt.Errorf("view must be BASIC or FULL")
 		}
-		return apiclient.SetProjectID(project)
+		return apiclient.SetProjectID(cmdProject.Value.String())
 	},
 	RunE: func(cmd *cobra.Command, args []string) (err error) {
+		name := cmd.Flag("name").Value.String()
 		_, err = connections.Get(name, view, minimal, overrides)
 		return
 	},
@@ -48,6 +52,8 @@ var view string
 var minimal, overrides bool
 
 func init() {
+	var name string
+
 	GetCmd.Flags().StringVarP(&name, "name", "n",
 		"", "The name of the connection")
 	GetCmd.Flags().StringVarP(&view, "view", "",

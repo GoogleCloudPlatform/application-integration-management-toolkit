@@ -32,12 +32,16 @@ var CreateCmd = &cobra.Command{
 	Short: "Create a new connection",
 	Long:  "Create a new connection in a region",
 	Args: func(cmd *cobra.Command, args []string) (err error) {
-		if err = apiclient.SetRegion(region); err != nil {
+		cmdProject := cmd.Flag("proj")
+		cmdRegion := cmd.Flag("reg")
+
+		if err = apiclient.SetRegion(cmdRegion.Value.String()); err != nil {
 			return err
 		}
-		return apiclient.SetProjectID(project)
+		return apiclient.SetProjectID(cmdProject.Value.String())
 	},
 	RunE: func(cmd *cobra.Command, args []string) (err error) {
+		name := cmd.Flag("name").Value.String()
 		if _, err := os.Stat(connectionFile); os.IsNotExist(err) {
 			return err
 		}
@@ -51,11 +55,13 @@ var CreateCmd = &cobra.Command{
 			re := regexp.MustCompile(`locations\/([a-zA-Z0-9_-]+)\/keyRings\/([a-zA-Z0-9_-]+)\/cryptoKeys\/([a-zA-Z0-9_-]+)`)
 			ok := re.Match([]byte(encryptionKey))
 			if !ok {
-				return fmt.Errorf("encryption key must be of the format locations/{location}/keyRings/{test}/cryptoKeys/{cryptoKey}")
+				return fmt.Errorf("encryption key must be of the format " +
+					"locations/{location}/keyRings/{test}/cryptoKeys/{cryptoKey}")
 			}
 		}
 
-		_, err = connections.Create(name, content, serviceAccountName, serviceAccountProject, encryptionKey, grantPermission, createSecret, wait)
+		_, err = connections.Create(name, content, serviceAccountName,
+			serviceAccountProject, encryptionKey, grantPermission, createSecret, wait)
 
 		return
 	},
@@ -65,6 +71,7 @@ var connectionFile, serviceAccountName, serviceAccountProject, encryptionKey str
 var grantPermission, wait, createSecret bool
 
 func init() {
+	var name string
 	CreateCmd.Flags().StringVarP(&name, "name", "n",
 		"", "Connection name")
 	CreateCmd.Flags().StringVarP(&connectionFile, "file", "f",

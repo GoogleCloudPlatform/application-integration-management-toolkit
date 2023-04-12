@@ -47,7 +47,7 @@ type connection struct {
 	ConnectorDetails  *connectorDetails   `json:"connectorDetails,omitempty"`
 	ConfigVariables   []configVar         `json:"configVariables,omitempty"`
 	AuthConfig        authConfig          `json:"authConfig,omitempty"`
-	DestinationConfig []destinationConfig `json:"destinationConfig,omitempty"`
+	DestinationConfig []destinationConfig `json:"destinationConfigs,omitempty"`
 	Suspended         bool                `json:"suspended,omitempty"`
 }
 
@@ -464,6 +464,7 @@ func Delete(name string) (respBody []byte, err error) {
 
 // Get
 func Get(name string, view string, minimal bool, overrides bool) (respBody []byte, err error) {
+	var connectionPayload []byte
 	u, _ := url.Parse(apiclient.GetBaseConnectorURL())
 	q := u.Query()
 	if view != "" {
@@ -483,6 +484,7 @@ func Get(name string, view string, minimal bool, overrides bool) (respBody []byt
 		if err != nil {
 			return nil, err
 		}
+
 		c.ConnectorDetails = new(connectorDetails)
 		c.ConnectorDetails.Name = getConnectorName(*c.ConnectorVersion)
 		c.ConnectorDetails.Version = getConnectorVersion(*c.ConnectorVersion)
@@ -509,7 +511,7 @@ func Get(name string, view string, minimal bool, overrides bool) (respBody []byt
 				}
 			}
 		}
-		connectionPayload, err := json.Marshal(c)
+		connectionPayload, err = json.Marshal(c)
 		if err != nil {
 			return nil, err
 		}
