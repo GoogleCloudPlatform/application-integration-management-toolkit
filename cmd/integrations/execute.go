@@ -36,7 +36,7 @@ var ExecuteCmd = &cobra.Command{
 		cmdRegion := cmd.Flag("reg")
 
 		if err = apiclient.SetRegion(cmdRegion.Value.String()); err != nil {
-			return errors.Unwrap(err)
+			return err
 		}
 		if executionFile != "" && triggerID != "" {
 			return errors.New("cannot pass trigger id and execution file")

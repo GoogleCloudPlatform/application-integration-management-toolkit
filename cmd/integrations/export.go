@@ -15,7 +15,6 @@
 package integrations
 
 import (
-	"errors"
 	"internal/apiclient"
 
 	"internal/client/integrations"
@@ -33,7 +32,7 @@ var ExportCmd = &cobra.Command{
 		cmdRegion := cmd.Flag("reg")
 
 		if err = apiclient.SetRegion(cmdRegion.Value.String()); err != nil {
-			return errors.Unwrap(err)
+			return err
 		}
 		return apiclient.SetProjectID(cmdProject.Value.String())
 	},

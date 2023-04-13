@@ -33,7 +33,7 @@ var DelCmd = &cobra.Command{
 		cmdRegion := cmd.Flag("reg")
 
 		if err = apiclient.SetRegion(cmdRegion.Value.String()); err != nil {
-			return errors.Unwrap(err)
+			return err
 		}
 		if view != "BASIC" && view != "FULL" {
 			return errors.New("view must be BASIC or FULL")

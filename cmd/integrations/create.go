@@ -35,7 +35,7 @@ var CreateCmd = &cobra.Command{
 		cmdRegion := cmd.Flag("reg")
 
 		if err = apiclient.SetRegion(cmdRegion.Value.String()); err != nil {
-			return errors.Unwrap(err)
+			return err
 		}
 		if overridesFile == "" && suppressWarnings {
 			return errors.New("suppressWarnings must be used with overrides")

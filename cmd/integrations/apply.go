@@ -45,7 +45,7 @@ var ApplyCmd = &cobra.Command{
 		cmdRegion := cmd.Flag("reg")
 
 		if err = apiclient.SetRegion(cmdRegion.Value.String()); err != nil {
-			return errors.Unwrap(err)
+			return err
 		}
 		return apiclient.SetProjectID(cmdProject.Value.String())
 	},
@@ -85,11 +85,11 @@ var ApplyCmd = &cobra.Command{
 						if version == "" {
 							authConfigBytes, err := utils.ReadFile(path)
 							if err != nil {
-								return errors.Unwrap(err)
+								return err
 							}
 							clilog.Info.Printf("Creating authconfig: %s\n", authConfigFile)
 							if _, err = authconfigs.Create(authConfigBytes); err != nil {
-								return errors.Unwrap(err)
+								return err
 							}
 						} else {
 							clilog.Info.Printf("Authconfig %s already exists\n", authConfigFile)
@@ -119,7 +119,7 @@ var ApplyCmd = &cobra.Command{
 						if err != nil {
 							connectionBytes, err := utils.ReadFile(path)
 							if err != nil {
-								return errors.Unwrap(err)
+								return err
 							}
 							clilog.Info.Printf("Creating connector: %s\n", connectionFile)
 
@@ -131,7 +131,7 @@ var ApplyCmd = &cobra.Command{
 								grantPermission,
 								createSecret,
 								wait); err != nil {
-								return errors.Unwrap(err)
+								return err
 							}
 						} else {
 							clilog.Info.Printf("Connector %s already exists\n", connectionFile)
@@ -258,7 +258,7 @@ var ApplyCmd = &cobra.Command{
 			respBody, err := integrations.CreateVersion(getFilenameWithoutExtension(integrationNames[0]),
 				integrationBytes, overridesBytes, "", userLabel, false)
 			if err != nil {
-				return errors.Unwrap(err)
+				return err
 			}
 			version, err := getVersion(respBody)
 			if err != nil {
@@ -309,7 +309,7 @@ func getVersion(respBody []byte) (version string, err error) {
 	var jsonMap map[string]interface{}
 
 	if err = json.Unmarshal(respBody, &jsonMap); err != nil {
-		return "", errors.Unwrap(err)
+		return "", err
 	}
 
 	if jsonMap["name"] == "" {

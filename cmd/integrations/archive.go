@@ -15,7 +15,6 @@
 package integrations
 
 import (
-	"errors"
 	"internal/apiclient"
 
 	"internal/client/integrations"
@@ -32,7 +31,7 @@ var ArchiveVerCmd = &cobra.Command{
 		version := cmd.Flag("ver").Value.String()
 
 		if err = apiclient.SetRegion(cmd.Flag("reg").Value.String()); err != nil {
-			return errors.Unwrap(err)
+			return err
 		}
 		if err = validate(version); err != nil {
 			return err

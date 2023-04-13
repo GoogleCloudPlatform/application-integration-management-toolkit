@@ -15,7 +15,6 @@
 package integrations
 
 import (
-	"errors"
 	"internal/apiclient"
 
 	"internal/client/integrations"
@@ -31,9 +30,8 @@ var ListCmd = &cobra.Command{
 	Args: func(cmd *cobra.Command, args []string) (err error) {
 		cmdProject := cmd.Flag("proj")
 		cmdRegion := cmd.Flag("reg")
-
 		if err = apiclient.SetRegion(cmdRegion.Value.String()); err != nil {
-			return errors.Unwrap(err)
+			return err
 		}
 		return apiclient.SetProjectID(cmdProject.Value.String())
 	},

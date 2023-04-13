@@ -33,7 +33,7 @@ var ListVerCmd = &cobra.Command{
 		cmdRegion := cmd.Flag("reg")
 
 		if err = apiclient.SetRegion(cmdRegion.Value.String()); err != nil {
-			return errors.Unwrap(err)
+			return err
 		}
 		if allVersions && pageSize != -1 {
 			return errors.New("allVersions and pageSize cannot be combined")

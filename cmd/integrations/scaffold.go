@@ -45,7 +45,7 @@ var ScaffoldCmd = &cobra.Command{
 		version := cmd.Flag("ver").Value.String()
 
 		if err = apiclient.SetRegion(cmdRegion.Value.String()); err != nil {
-			return errors.Unwrap(err)
+			return err
 		}
 		if userLabel == "" && version == "" && snapshot == "" {
 			return errors.New("at least one of userLabel, version or snapshot must be passed")

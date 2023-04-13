@@ -34,7 +34,7 @@ var PublishVerCmd = &cobra.Command{
 		version := cmd.Flag("ver").Value.String()
 
 		if err = apiclient.SetRegion(cmdRegion.Value.String()); err != nil {
-			return errors.Unwrap(err)
+			return err
 		}
 		if err = validate(version); err != nil {
 			return err

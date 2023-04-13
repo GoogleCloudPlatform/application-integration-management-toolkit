@@ -34,7 +34,7 @@ var GetVerCmd = &cobra.Command{
 		version := cmd.Flag("ver").Value.String()
 
 		if err = apiclient.SetRegion(cmdRegion.Value.String()); err != nil {
-			return errors.Unwrap(err)
+			return err
 		}
 		if snapshot == "" && userLabel == "" && version == "" {
 			return errors.New("at least one of snapshot, userLabel and version must be supplied")

@@ -15,7 +15,6 @@
 package connectors
 
 import (
-	"errors"
 	"os"
 
 	"internal/apiclient"
@@ -35,7 +34,7 @@ var PatchCmd = &cobra.Command{
 		cmdRegion := cmd.Flag("reg")
 
 		if err = apiclient.SetRegion(cmdRegion.Value.String()); err != nil {
-			return errors.Unwrap(err)
+			return err
 		}
 		return apiclient.SetProjectID(cmdProject.Value.String())
 	},

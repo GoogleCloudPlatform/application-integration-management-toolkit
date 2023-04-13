@@ -15,7 +15,6 @@
 package integrations
 
 import (
-	"errors"
 	"internal/apiclient"
 
 	"internal/client/integrations"
@@ -34,7 +33,7 @@ var DownloadVerCmd = &cobra.Command{
 		version := cmd.Flag("ver").Value.String()
 
 		if err = apiclient.SetRegion(cmdRegion.Value.String()); err != nil {
-			return errors.Unwrap(err)
+			return err
 		}
 		if err = validate(version); err != nil {
 			return err

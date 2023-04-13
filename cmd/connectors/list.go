@@ -15,7 +15,6 @@
 package connectors
 
 import (
-	"errors"
 	"internal/apiclient"
 
 	"internal/client/connections"
@@ -33,7 +32,7 @@ var ListCmd = &cobra.Command{
 		cmdRegion := cmd.Flag("reg")
 
 		if err = apiclient.SetRegion(cmdRegion.Value.String()); err != nil {
-			return errors.Unwrap(err)
+			return err
 		}
 		return apiclient.SetProjectID(cmdProject.Value.String())
 	},

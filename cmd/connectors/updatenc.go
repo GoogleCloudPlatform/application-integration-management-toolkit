@@ -35,7 +35,7 @@ var UpdateNodeCountCmd = &cobra.Command{
 		cmdRegion := cmd.Flag("reg")
 
 		if err = apiclient.SetRegion(cmdRegion.Value.String()); err != nil {
-			return errors.Unwrap(err)
+			return err
 		}
 		if min == -1 && max == -1 {
 			return errors.New("min or max must be set")
