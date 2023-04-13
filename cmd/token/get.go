@@ -33,7 +33,7 @@ var GetCmd = &cobra.Command{
 		return nil
 	},
 	RunE: func(cmd *cobra.Command, args []string) error {
-		clilog.Init(apiclient.DebugEnabled(), apiclient.GetPrintOutput(), apiclient.GetNoCheck())
+		clilog.Init(apiclient.DebugEnabled(), apiclient.GetPrintOutput(), apiclient.GetNoCheck(), apiclient.GetSuppressWarning())
 		err := apiclient.SetAccessToken()
 		if err != nil {
 			return err

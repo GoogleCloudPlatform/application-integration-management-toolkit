@@ -15,7 +15,6 @@
 package integrations
 
 import (
-	"errors"
 	"os"
 
 	"internal/apiclient"
@@ -36,9 +35,6 @@ var CreateCmd = &cobra.Command{
 
 		if err = apiclient.SetRegion(cmdRegion.Value.String()); err != nil {
 			return err
-		}
-		if overridesFile == "" && suppressWarnings {
-			return errors.New("suppressWarnings must be used with overrides")
 		}
 		return apiclient.SetProjectID(cmdProject.Value.String())
 	},
@@ -66,14 +62,13 @@ var CreateCmd = &cobra.Command{
 			}
 		}
 
-		_, err = integrations.CreateVersion(name, content, overridesContent, snapshot, userLabel, suppressWarnings)
+		_, err = integrations.CreateVersion(name, content, overridesContent, snapshot, userLabel)
 		return
 
 	},
 }
 
 var integrationFile, overridesFile string
-var suppressWarnings bool
 
 func init() {
 	var name string
@@ -88,8 +83,6 @@ func init() {
 		"", "Integration version snapshot number")
 	CreateCmd.Flags().StringVarP(&userLabel, "userlabel", "u",
 		"", "Integration version userlabel")
-	CreateCmd.Flags().BoolVarP(&suppressWarnings, "suppress-warnings", "",
-		false, "suppress override warnings, must be used with overrides flag")
 
 	_ = CreateCmd.MarkFlagRequired("name")
 	_ = CreateCmd.MarkFlagRequired("file")

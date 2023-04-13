@@ -17,7 +17,7 @@ var (
 )
 
 // Init function initializes the logger objects
-func Init(debug bool, print bool, NoOutput bool) {
+func Init(debug bool, print bool, noOutput bool, suppressWarnings bool) {
 	var debugHandle = io.Discard
 	var infoHandle = io.Discard
 	var warningHandle, errorHandle, responseHandle io.Writer
@@ -30,7 +30,7 @@ func Init(debug bool, print bool, NoOutput bool) {
 		infoHandle = os.Stdout
 	}
 
-	if NoOutput {
+	if noOutput {
 		responseHandle = io.Discard
 		infoHandle = io.Discard
 		errorHandle = io.Discard
@@ -39,6 +39,10 @@ func Init(debug bool, print bool, NoOutput bool) {
 		responseHandle = os.Stdout
 		warningHandle = os.Stdout
 		errorHandle = os.Stderr
+	}
+
+	if suppressWarnings {
+		warningHandle = io.Discard
 	}
 
 	Debug = log.New(debugHandle,

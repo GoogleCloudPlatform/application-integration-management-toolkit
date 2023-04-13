@@ -256,7 +256,7 @@ var ApplyCmd = &cobra.Command{
 			}
 			clilog.Info.Printf("Create integration %s\n", getFilenameWithoutExtension(integrationNames[0]))
 			respBody, err := integrations.CreateVersion(getFilenameWithoutExtension(integrationNames[0]),
-				integrationBytes, overridesBytes, "", userLabel, false)
+				integrationBytes, overridesBytes, "", userLabel)
 			if err != nil {
 				return err
 			}

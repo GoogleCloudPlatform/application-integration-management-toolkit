@@ -27,8 +27,6 @@ const appIntegrationBaseURL = "https://%s-integrations.googleapis.com/v1/project
 const connectorBaseURL = "https://connectors.googleapis.com/v1/projects/%s/locations/%s/connections"
 const connectorOperationsBaseURL = "https://connectors.googleapis.com/v1/projects/%s/locations/%s/operations"
 
-var integrationRegions = []string{"us", "us-west1"}
-
 // IntegrationClientOptions is the base struct to hold all command arguments
 type IntegrationClientOptions struct {
 	Region               string //Integration region
@@ -40,6 +38,7 @@ type IntegrationClientOptions struct {
 	SkipCache            bool   //skip writing access token to file
 	PrintOutput          bool   //prints output from http calls
 	NoOutput             bool   //Disable all statements to stdout
+	SuppressWarnings     bool   //Disable printing of warnings to stdout
 	ProxyUrl             string //use a proxy url
 	ExportToFile         string //determine of the contents should be written to file
 	UseApigeeIntegration bool   //use Apigee Integration; defaults to Application Integration
@@ -52,8 +51,33 @@ var clientPrintHttpResponses = true
 
 // NewIntegrationClient sets up options to invoke Integration APIs
 func NewIntegrationClient(o IntegrationClientOptions) {
+
 	if options == nil {
 		options = new(IntegrationClientOptions)
+	}
+
+	options.TokenCheck = o.TokenCheck
+	options.SkipCache = o.SkipCache
+	options.DebugLog = o.DebugLog
+	options.PrintOutput = o.PrintOutput
+	options.NoOutput = o.NoOutput
+	options.SuppressWarnings = o.SuppressWarnings
+
+	//initialize logs
+	clilog.Init(options.DebugLog, options.PrintOutput, options.NoOutput, options.SuppressWarnings)
+
+	cliPref, err := readPreferencesFile()
+	if err != nil {
+		clilog.Debug.Println(err)
+	}
+
+	if cliPref != nil {
+		options.ProjectID = cliPref.Project
+		options.Region = cliPref.Region
+		options.ProxyUrl = cliPref.ProxyUrl
+		options.Token = cliPref.Token
+		options.UseApigeeIntegration = cliPref.UseApigee
+		options.TokenCheck = cliPref.Nocheck
 	}
 
 	if o.Region != "" {
@@ -71,19 +95,6 @@ func NewIntegrationClient(o IntegrationClientOptions) {
 	if o.ExportToFile != "" {
 		options.ExportToFile = o.ExportToFile
 	}
-
-	options.TokenCheck = o.TokenCheck
-	options.SkipCache = o.SkipCache
-	options.DebugLog = o.DebugLog
-	options.PrintOutput = o.PrintOutput
-	options.NoOutput = o.NoOutput
-
-	//initialize logs
-	clilog.Init(options.DebugLog, options.PrintOutput, options.NoOutput)
-
-	//read preference file
-	_ = ReadPreferencesFile()
-
 }
 
 // SetRegion sets the org variable
@@ -233,11 +244,6 @@ func GetBaseConnectorOperationsrURL() (connectorUrl string) {
 	return fmt.Sprintf(connectorOperationsBaseURL, GetProjectID(), GetRegion())
 }
 
-// GetIntegrationRegions
-func GetIntegrationRegions() []string {
-	return integrationRegions
-}
-
 // SetExportToFile
 func SetExportToFile(exportToFile string) {
 	options.ExportToFile = exportToFile
@@ -269,4 +275,9 @@ func SetNoOutput(b bool) {
 // GetNoOutput
 func GetNoOutput() bool {
 	return options.NoOutput
+}
+
+// GetSuppressWarning
+func GetSuppressWarning() bool {
+	return options.SuppressWarnings
 }

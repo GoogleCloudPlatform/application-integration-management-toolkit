@@ -80,7 +80,7 @@ func Execute() {
 	}
 }
 
-var disableCheck, useApigee, printOutput, noOutput, verbose bool
+var disableCheck, useApigee, printOutput, noOutput, suppressWarnings, verbose bool
 
 func init() {
 	var accessToken, serviceAccount string
@@ -104,6 +104,9 @@ func init() {
 
 	RootCmd.PersistentFlags().BoolVarP(&noOutput, "no-output", "",
 		false, "Disable printing all statements to stdout")
+
+	RootCmd.Flags().BoolVarP(&suppressWarnings, "suppress-warnings", "",
+		false, "Disable printing warning statements to stdout")
 
 	RootCmd.PersistentFlags().BoolVarP(&verbose, "verbose", "",
 		false, "Enable verbose output from integrationcli")

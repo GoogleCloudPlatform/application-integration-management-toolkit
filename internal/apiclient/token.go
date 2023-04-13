@@ -163,7 +163,7 @@ func generateAccessToken(privateKey string) (string, error) {
 	clilog.Debug.Println("access token : ", accessToken)
 
 	SetIntegrationToken(accessToken.AccessToken)
-	_ = WriteToken(accessToken.AccessToken)
+	_ = writeToken(accessToken.AccessToken)
 	return accessToken.AccessToken, nil
 }
 
@@ -229,7 +229,7 @@ func checkAccessToken() bool {
 // SetAccessToken read from cache or if not found or expired will generate a new one
 func SetAccessToken() error {
 	if GetIntegrationToken() == "" && GetServiceAccount() == "" {
-		SetIntegrationToken(GetToken()) //read from configuration
+		SetIntegrationToken(getToken()) //read from configuration
 		if GetIntegrationToken() == "" {
 			return fmt.Errorf("either token or service account must be provided")
 		}
@@ -241,7 +241,7 @@ func SetAccessToken() error {
 	if GetIntegrationToken() != "" {
 		//a token was passed, cache it
 		if checkAccessToken() {
-			_ = WriteToken(GetIntegrationToken())
+			_ = writeToken(GetIntegrationToken())
 			return nil
 		}
 	} else {

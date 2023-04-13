@@ -206,7 +206,7 @@ type cloudSchedulerConfig struct {
 
 // CreateVersion
 func CreateVersion(name string, content []byte, overridesContent []byte, snapshot string,
-	userlabel string, suppressWarnings bool) (respBody []byte, err error) {
+	userlabel string) (respBody []byte, err error) {
 
 	iversion := integrationVersion{}
 	if err = json.Unmarshal(content, &iversion); err != nil {
@@ -222,7 +222,7 @@ func CreateVersion(name string, content []byte, overridesContent []byte, snapsho
 		if err = json.Unmarshal(overridesContent, &o); err != nil {
 			return nil, err
 		}
-		if eversion, err = mergeOverrides(eversion, o, suppressWarnings); err != nil {
+		if eversion, err = mergeOverrides(eversion, o); err != nil {
 			return nil, err
 		}
 	}
@@ -299,6 +299,9 @@ func TakeoverEditLock(name string, version string) (respBody []byte, err error) 
 // ListVersions
 func ListVersions(name string, pageSize int, pageToken string, filter string, orderBy string,
 	allVersions bool, download bool, basicInfo bool) (respBody []byte, err error) {
+
+	clientPrintSetting := apiclient.GetClientPrintHttpResponseSetting()
+
 	u, _ := url.Parse(apiclient.GetBaseIntegrationURL())
 	q := u.Query()
 	if pageSize != -1 {
@@ -347,7 +350,7 @@ func ListVersions(name string, pageSize int, pageToken string, filter string, or
 				listBIvers.BasicIntegrationVersions = append(listBIvers.BasicIntegrationVersions, basicIVer)
 			}
 			newResp, err := json.Marshal(listBIvers)
-			if apiclient.GetPrintOutput() {
+			if clientPrintSetting {
 				apiclient.PrettyPrint(newResp)
 			}
 			return newResp, err
@@ -474,9 +477,7 @@ func Get(name string, version string, basicInfo bool, minimal bool, override boo
 		eversion := convertInternalToExternal(iversion)
 		respBody, err = json.Marshal(eversion)
 		apiclient.SetClientPrintHttpResponse(apiclient.GetCmdPrintHttpResponseSetting())
-		if apiclient.GetPrintOutput() {
-			apiclient.PrettyPrint(respBody)
-		}
+		apiclient.PrettyPrint(respBody)
 	}
 
 	if override {
@@ -509,7 +510,6 @@ func GetBySnapshot(name string, snapshot string, minimal bool, override bool) ([
 	if err != nil {
 		return nil, err
 	}
-	apiclient.SetClientPrintHttpResponse(apiclient.GetCmdPrintHttpResponseSetting())
 
 	listBasicVersions := listbasicIntegrationVersions{}
 	err = json.Unmarshal(listBody, &listBasicVersions)
@@ -522,7 +522,9 @@ func GetBySnapshot(name string, snapshot string, minimal bool, override bool) ([
 	}
 
 	version := getVersion(listBasicVersions.BasicIntegrationVersions[0].Version)
-	return Get(name, version, false, minimal, override)
+	respBody, err := Get(name, version, false, minimal, override)
+	apiclient.SetClientPrintHttpResponse(apiclient.GetCmdPrintHttpResponseSetting())
+	return respBody, err
 }
 
 // GetByUserlabel
@@ -1200,7 +1202,7 @@ func getBasicInfo(respBody []byte) (newResp []byte, err error) {
 	bIVer.SnapshotNumber = iVer.SnapshotNumber
 	bIVer.Version = getVersion(iVer.Name)
 
-	if newResp, err = json.Marshal(bIVer); err != nil && apiclient.GetPrintOutput() {
+	if newResp, err = json.Marshal(bIVer); err != nil {
 		apiclient.PrettyPrint(newResp)
 	}
 

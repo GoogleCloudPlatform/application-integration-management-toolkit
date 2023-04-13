@@ -27,8 +27,6 @@ import (
 const integrationcliFile = "config.json"
 const integrationcliPath = ".integrationcli"
 
-var usr *user.User
-
 type integrationCLI struct {
 	Token     string `json:"token,omitempty"`
 	LastCheck string `json:"lastCheck,omitempty"`
@@ -39,22 +37,20 @@ type integrationCLI struct {
 	UseApigee bool   `json:"useapigee,omitempty" default:"false"`
 }
 
-var cliPref *integrationCLI
-
-func ReadPreferencesFile() (err error) {
+func readPreferencesFile() (cliPref *integrationCLI, err error) {
 
 	cliPref = new(integrationCLI)
 
-	usr, err = user.Current()
+	usr, err := user.Current()
 	if err != nil {
 		clilog.Debug.Println(err)
-		return err
+		return cliPref, err
 	}
 
 	prefFile, err := os.ReadFile(path.Join(usr.HomeDir, integrationcliPath, integrationcliFile))
 	if err != nil {
 		clilog.Debug.Println("Cached preferences was not found")
-		return err
+		return cliPref, err
 	}
 
 	err = json.Unmarshal(prefFile, &cliPref)
@@ -64,28 +60,14 @@ func ReadPreferencesFile() (err error) {
 
 	if err != nil {
 		clilog.Debug.Printf("Error marshalling: %v\n", err)
-		return DeletePreferencesFile()
+		return cliPref, DeletePreferencesFile()
 	}
 
-	if cliPref.ProxyUrl != "" {
-		SetProxyURL(cliPref.ProxyUrl)
-	}
-
-	if cliPref.Project != "" {
-		if err = SetProjectID(cliPref.Project); err != nil {
-			return err
-		}
-	}
-
-	if cliPref.Region != "" {
-		return SetRegion(cliPref.Region)
-	}
-
-	return nil
+	return cliPref, nil
 }
 
 func DeletePreferencesFile() (err error) {
-	usr, err = user.Current()
+	usr, err := user.Current()
 	if err != nil {
 		clilog.Debug.Println(err)
 		return err
@@ -97,17 +79,17 @@ func DeletePreferencesFile() (err error) {
 	return os.Remove(path.Join(usr.HomeDir, integrationcliPath, integrationcliFile))
 }
 
-func WriteToken(token string) (err error) {
+func writeToken(token string) (err error) {
 	if IsSkipCache() {
 		return nil
 	}
 
-	clilog.Debug.Println("Cache access token: ", token)
-	if cliPref == nil {
-		clilog.Debug.Printf("preferences are not set")
-		return nil
+	cliPref, err := readPreferencesFile()
+	if err != nil {
+		return err
 	}
 
+	clilog.Debug.Println("Cache access token: ", token)
 	cliPref.Token = token
 
 	data, err := json.Marshal(&cliPref)
@@ -116,25 +98,20 @@ func WriteToken(token string) (err error) {
 		return err
 	}
 	clilog.Debug.Println("Writing ", string(data))
-	return WritePerferencesFile(data)
+	return writePerferencesFile(data)
 }
 
-func GetToken() (token string) {
-	if cliPref == nil {
+func getToken() (token string) {
+	cliPref, err := readPreferencesFile()
+	if err != nil {
 		return ""
 	}
 	return cliPref.Token
 }
 
-func GetLastCheck() (lastCheck string) {
-	if cliPref == nil {
-		return ""
-	}
-	return cliPref.LastCheck
-}
-
 func GetNoCheck() bool {
-	if cliPref == nil {
+	cliPref, err := readPreferencesFile()
+	if err != nil {
 		return false
 	}
 	return cliPref.Nocheck
@@ -143,10 +120,7 @@ func GetNoCheck() bool {
 func SetNoCheck(nocheck bool) (err error) {
 	clilog.Debug.Println("Nocheck set to: ", nocheck)
 
-	if cliPref == nil {
-		cliPref = &integrationCLI{}
-	}
-
+	cliPref, err := readPreferencesFile()
 	cliPref.Nocheck = nocheck
 
 	data, err := json.Marshal(&cliPref)
@@ -155,15 +129,13 @@ func SetNoCheck(nocheck bool) (err error) {
 		return err
 	}
 	clilog.Debug.Println("Writing ", string(data))
-	return WritePerferencesFile(data)
+	return writePerferencesFile(data)
 }
 
 func SetUseApigee(useapigee bool) (err error) {
 	clilog.Debug.Println("UseApigee set to: ", useapigee)
 
-	if cliPref == nil {
-		cliPref = &integrationCLI{}
-	}
+	cliPref, err := readPreferencesFile()
 
 	cliPref.UseApigee = false
 	data, err := json.Marshal(&cliPref)
@@ -172,16 +144,15 @@ func SetUseApigee(useapigee bool) (err error) {
 		return err
 	}
 	clilog.Debug.Println("Writing ", string(data))
-	return WritePerferencesFile(data)
+	return writePerferencesFile(data)
 }
 
 func TestAndUpdateLastCheck() (updated bool, err error) {
 	currentTime := time.Now()
 	currentDate := currentTime.Format("01-02-2006")
 
-	if cliPref == nil {
-		cliPref = &integrationCLI{}
-	}
+	cliPref, err := readPreferencesFile()
+	clilog.Debug.Println(err)
 
 	if currentDate == cliPref.LastCheck {
 		return true, nil
@@ -195,22 +166,20 @@ func TestAndUpdateLastCheck() (updated bool, err error) {
 		return false, err
 	}
 	clilog.Debug.Println("Writing ", string(data))
-	if err = WritePerferencesFile(data); err != nil {
+	if err = writePerferencesFile(data); err != nil {
 		return false, err
 	}
-
 	return false, nil
 }
 
-func GetDefaultProject() (org string) {
+func GetDefaultProject() string {
+	cliPref, _ := readPreferencesFile()
 	return cliPref.Project
 }
 
 func WriteDefaultProject(project string) (err error) {
 	clilog.Debug.Println("Default project: ", project)
-	if cliPref == nil {
-		cliPref = &integrationCLI{}
-	}
+	cliPref, err := readPreferencesFile()
 	cliPref.Project = project
 	data, err := json.Marshal(&cliPref)
 	if err != nil {
@@ -218,16 +187,14 @@ func WriteDefaultProject(project string) (err error) {
 		return err
 	}
 	clilog.Debug.Println("Writing ", string(data))
-	return WritePerferencesFile(data)
+	return writePerferencesFile(data)
 }
 
 func SetProxy(url string) (err error) {
 	if url == "" {
 		return nil
 	}
-	if cliPref == nil {
-		cliPref = &integrationCLI{}
-	}
+	cliPref, err := readPreferencesFile()
 	cliPref.ProxyUrl = url
 	data, err := json.Marshal(&cliPref)
 	if err != nil {
@@ -235,16 +202,14 @@ func SetProxy(url string) (err error) {
 		return err
 	}
 	clilog.Debug.Println("Writing ", string(data))
-	return WritePerferencesFile(data)
+	return writePerferencesFile(data)
 }
 
 func SetDefaultRegion(region string) (err error) {
 	if region == "" {
 		return nil
 	}
-	if cliPref == nil {
-		cliPref = &integrationCLI{}
-	}
+	cliPref, err := readPreferencesFile()
 	cliPref.Region = region
 	data, err := json.Marshal(&cliPref)
 	if err != nil {
@@ -252,10 +217,11 @@ func SetDefaultRegion(region string) (err error) {
 		return err
 	}
 	clilog.Debug.Println("Writing ", string(data))
-	return WritePerferencesFile(data)
+	return writePerferencesFile(data)
 }
 
 func GetPreferences() (err error) {
+	cliPref, err := readPreferencesFile()
 	output, err := json.Marshal(&cliPref)
 	if err != nil {
 		clilog.Error.Println(err)
@@ -267,8 +233,8 @@ func GetPreferences() (err error) {
 }
 
 // WritePreferencesFile
-func WritePerferencesFile(payload []byte) (err error) {
-	usr, err = user.Current()
+func writePerferencesFile(payload []byte) (err error) {
+	usr, err := user.Current()
 	if err != nil {
 		clilog.Warning.Println(err)
 		return err
