@@ -74,7 +74,7 @@ const apiTrigger = "api_trigger/"
 const authConfigValue = "{  \"@type\": \"type.googleapis.com/enterprise.crm.eventbus.authconfig.AuthConfigTaskParam\",\"authConfigId\": \""
 
 // mergeOverrides
-func mergeOverrides(eversion integrationVersionExternal, o overrides, suppressWarnings bool) (integrationVersionExternal, error) {
+func mergeOverrides(eversion integrationVersionExternal, o overrides) (integrationVersionExternal, error) {
 	//apply trigger overrides
 	for _, triggerOverride := range o.TriggerOverrides {
 		foundOverride := false
@@ -86,16 +86,18 @@ func mergeOverrides(eversion integrationVersionExternal, o overrides, suppressWa
 					trigger.Properties["Subscription name"] = *triggerOverride.ProjectId + "_" + *triggerOverride.TopicName
 				case "API":
 					trigger.TriggerId = apiTrigger + *triggerOverride.APIPath
+				case "CLOUD_SCHEDULER":
+					trigger.CloudSchedulerConfig.ServiceAccountEmail = *triggerOverride.CloudSchedulerServiceAccount
+					trigger.CloudSchedulerConfig.CronTab = *triggerOverride.CloudSchedulerCronTab
+					trigger.CloudSchedulerConfig.Location = *triggerOverride.CloudSchedulerLocation
 				default:
-					if !suppressWarnings {
-						clilog.Warning.Printf("unsupported trigger type %s\n", trigger.TriggerType)
-					}
+					clilog.Warning.Printf("unsupported trigger type %s\n", trigger.TriggerType)
 				}
 				eversion.TriggerConfigs[triggerIndex] = trigger
 				foundOverride = true
 			}
 		}
-		if !foundOverride && !suppressWarnings {
+		if !foundOverride {
 			clilog.Warning.Printf("trigger override id %s was not found in the integration json\n",
 				triggerOverride.TriggerNumber)
 		}
@@ -106,12 +108,12 @@ func mergeOverrides(eversion integrationVersionExternal, o overrides, suppressWa
 		foundOverride := false
 		for taskIndex, task := range eversion.TaskConfigs {
 			if taskOverride.TaskId == task.TaskId && taskOverride.Task == task.Task && task.Task != "GenericConnectorTask" {
-				task.Parameters = overrideParameters(taskOverride.Parameters, task.Parameters, suppressWarnings)
+				task.Parameters = overrideParameters(taskOverride.Parameters, task.Parameters)
 				eversion.TaskConfigs[taskIndex] = task
 				foundOverride = true
 			}
 		}
-		if !foundOverride && !suppressWarnings {
+		if !foundOverride {
 			clilog.Warning.Printf("task override %s with id %s was not found in the integration json\n",
 				taskOverride.DisplayName, taskOverride.TaskId)
 		}
@@ -127,7 +129,7 @@ func mergeOverrides(eversion integrationVersionExternal, o overrides, suppressWa
 			foundOverride = true
 
 		}
-		if !foundOverride && !suppressWarnings {
+		if !foundOverride {
 			clilog.Warning.Printf("param override key %s with dataTpe %s was not found in the integration json\n",
 				paramOverride.Key, paramOverride.DataType)
 		}
@@ -168,7 +170,7 @@ func mergeOverrides(eversion integrationVersionExternal, o overrides, suppressWa
 					foundOverride = true
 				}
 			}
-			if !foundOverride && !suppressWarnings {
+			if !foundOverride {
 				clilog.Warning.Printf("task override with id %s was not found in the integration json\n",
 					connectionOverride.TaskId)
 			}
@@ -212,6 +214,15 @@ func extractOverrides(iversion integrationVersion) (overrides, error) {
 			*triggerOverride.ProjectId = strings.Split(subscription, "_")[0]
 			*triggerOverride.TopicName = strings.Split(subscription, "_")[1]
 			triggerOverride.TriggerNumber = triggerConfig.TriggerNumber
+			taskOverrides.TriggerOverrides = append(taskOverrides.TriggerOverrides, triggerOverride)
+		} else if triggerConfig.TriggerType == "CLOUD_SCHEDULER" {
+			triggerOverride := triggeroverrides{}
+			triggerOverride.CloudSchedulerServiceAccount = new(string)
+			triggerOverride.CloudSchedulerLocation = new(string)
+			triggerOverride.CloudSchedulerCronTab = new(string)
+			*triggerOverride.CloudSchedulerServiceAccount = triggerConfig.CloudSchedulerConfig.ServiceAccountEmail
+			*triggerOverride.CloudSchedulerLocation = triggerConfig.CloudSchedulerConfig.Location
+			*triggerOverride.CloudSchedulerCronTab = triggerConfig.CloudSchedulerConfig.CronTab
 			taskOverrides.TriggerOverrides = append(taskOverrides.TriggerOverrides, triggerOverride)
 		}
 	}
@@ -293,8 +304,8 @@ func handleGenericConnectorTask(taskConfig taskconfig, taskOverrides *overrides)
 }
 
 // overrideParameters
-func overrideParameters(overrideParameters map[string]eventparameter, taskParameters map[string]eventparameter,
-	suppressWarnings bool) map[string]eventparameter {
+func overrideParameters(overrideParameters map[string]eventparameter,
+	taskParameters map[string]eventparameter) map[string]eventparameter {
 	for overrideParamName, overrideParam := range overrideParameters {
 		if overrideParam.Key == "authConfig" {
 			apiclient.SetClientPrintHttpResponse(false)
@@ -310,9 +321,7 @@ func overrideParameters(overrideParameters map[string]eventparameter, taskParame
 			if found {
 				taskParameters[overrideParamName] = overrideParam
 			} else {
-				if !suppressWarnings {
-					clilog.Warning.Printf("override param %s was not found\n", overrideParamName)
-				}
+				clilog.Warning.Printf("override param %s was not found\n", overrideParamName)
 			}
 		}
 	}
