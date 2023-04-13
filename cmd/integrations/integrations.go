@@ -25,7 +25,6 @@ var Cmd = &cobra.Command{
 	Long:  "Manage integrations in a GCP project",
 }
 
-var name string
 var userLabel, snapshot string
 var overrides bool
 

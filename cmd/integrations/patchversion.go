@@ -15,6 +15,7 @@
 package integrations
 
 import (
+	"errors"
 	"os"
 
 	"internal/apiclient"
@@ -34,12 +35,13 @@ var PatchVerCmd = &cobra.Command{
 		cmdRegion := cmd.Flag("reg")
 
 		if err = apiclient.SetRegion(cmdRegion.Value.String()); err != nil {
-			return err
+			return errors.Unwrap(err)
 		}
 		return apiclient.SetProjectID(cmdProject.Value.String())
 	},
 	RunE: func(cmd *cobra.Command, args []string) (err error) {
 		version := cmd.Flag("ver").Value.String()
+		name := cmd.Flag("name").Value.String()
 
 		if _, err := os.Stat(integrationFile); os.IsNotExist(err) {
 			return err
@@ -56,7 +58,7 @@ var PatchVerCmd = &cobra.Command{
 }
 
 func init() {
-	var version string
+	var name, version string
 
 	PatchVerCmd.Flags().StringVarP(&name, "name", "n",
 		"", "Integration flow name")

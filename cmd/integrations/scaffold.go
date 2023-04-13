@@ -45,7 +45,7 @@ var ScaffoldCmd = &cobra.Command{
 		version := cmd.Flag("ver").Value.String()
 
 		if err = apiclient.SetRegion(cmdRegion.Value.String()); err != nil {
-			return err
+			return errors.Unwrap(err)
 		}
 		if userLabel == "" && version == "" && snapshot == "" {
 			return errors.New("at least one of userLabel, version or snapshot must be passed")
@@ -59,6 +59,7 @@ var ScaffoldCmd = &cobra.Command{
 
 		var integrationBody, overridesBody []byte
 		version := cmd.Flag("ver").Value.String()
+		name := cmd.Flag("name").Value.String()
 
 		apiclient.DisableCmdPrintHttpResponse()
 
@@ -247,7 +248,7 @@ var ScaffoldCmd = &cobra.Command{
 var cloudBuild bool
 
 func init() {
-	var version string
+	var name, version string
 
 	ScaffoldCmd.Flags().StringVarP(&name, "name", "n",
 		"", "Integration flow name")

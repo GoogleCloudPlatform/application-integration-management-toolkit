@@ -13,7 +13,7 @@
 # limitations under the License.
 
 # goreleaser version 1.16.0
-#commit: 945b5453d953e36c7fcad8ff64206c021413271b
+# commit: 945b5453d953e36c7fcad8ff64206c021413271b
 # built by: homebrew
 # goos: darwin
 # goarch: arm64
@@ -37,7 +37,7 @@ builds:
     flags:
     - -trimpath
     ldflags:
-    - -s -w -a -extldflags "-static" -X main.Version={{.Tag}} -X main.Git={{.Commit}}
+    - -s -w -a -extldflags "-static"
     gcflags:
     - all="-l"
     env:

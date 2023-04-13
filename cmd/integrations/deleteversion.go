@@ -52,6 +52,7 @@ var DelVerCmd = &cobra.Command{
 	},
 	RunE: func(cmd *cobra.Command, args []string) (err error) {
 		version := cmd.Flag("ver").Value.String()
+		name := cmd.Flag("name").Value.String()
 
 		if version != "" {
 			_, err = integrations.DeleteVersion(name, version)
@@ -66,7 +67,7 @@ var DelVerCmd = &cobra.Command{
 }
 
 func init() {
-	var version string
+	var name, version string
 
 	DelVerCmd.Flags().StringVarP(&name, "name", "n",
 		"", "Integration flow name")

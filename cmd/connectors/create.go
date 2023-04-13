@@ -15,6 +15,7 @@
 package connectors
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"regexp"
@@ -36,7 +37,7 @@ var CreateCmd = &cobra.Command{
 		cmdRegion := cmd.Flag("reg")
 
 		if err = apiclient.SetRegion(cmdRegion.Value.String()); err != nil {
-			return err
+			return errors.Unwrap(err)
 		}
 		return apiclient.SetProjectID(cmdProject.Value.String())
 	},

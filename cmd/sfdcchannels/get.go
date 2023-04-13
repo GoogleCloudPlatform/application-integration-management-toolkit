@@ -15,6 +15,7 @@
 package sfdcchannels
 
 import (
+	"errors"
 	"internal/apiclient"
 
 	"internal/client/sfdc"
@@ -32,7 +33,7 @@ var GetCmd = &cobra.Command{
 		cmdRegion := cmd.Flag("reg")
 
 		if err = apiclient.SetRegion(cmdRegion.Value.String()); err != nil {
-			return err
+			return errors.Unwrap(err)
 		}
 		return apiclient.SetProjectID(cmdProject.Value.String())
 	},

@@ -15,6 +15,7 @@
 package integrations
 
 import (
+	"errors"
 	"internal/apiclient"
 
 	"internal/client/integrations"
@@ -32,11 +33,12 @@ var ExportVerCmd = &cobra.Command{
 		cmdRegion := cmd.Flag("reg")
 
 		if err = apiclient.SetRegion(cmdRegion.Value.String()); err != nil {
-			return err
+			return errors.Unwrap(err)
 		}
 		return apiclient.SetProjectID(cmdProject.Value.String())
 	},
 	RunE: func(cmd *cobra.Command, args []string) (err error) {
+		name := cmd.Flag("name").Value.String()
 		if err = apiclient.FolderExists(folder); err != nil {
 			return err
 		}
@@ -52,6 +54,8 @@ var allVersions bool
 var numConnections int
 
 func init() {
+	var name string
+
 	ExportVerCmd.Flags().StringVarP(&folder, "folder", "f",
 		"", "Folder to export Integration flows")
 	ExportVerCmd.Flags().StringVarP(&name, "name", "n",

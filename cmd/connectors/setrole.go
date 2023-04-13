@@ -15,7 +15,7 @@
 package connectors
 
 import (
-	"errors"
+	"fmt"
 	"internal/apiclient"
 
 	"internal/client/connections"
@@ -52,8 +52,8 @@ const (
 	viewer  connectorRole = "viewer"
 )
 
-func (r *connectorRole) String() string {
-	return string(*r)
+func (c *connectorRole) String() string {
+	return string(*c)
 }
 
 func (c *connectorRole) Set(r string) error {
@@ -62,11 +62,11 @@ func (c *connectorRole) Set(r string) error {
 		*c = connectorRole(r)
 		return nil
 	default:
-		return errors.New(`must be one of "admin", "custom", "viewer" or "invoker"`)
+		return fmt.Errorf("must be one of %s,%s, %s or %s", admin, custom, invoker, viewer)
 	}
 }
 
-func (e *connectorRole) Type() string {
+func (c *connectorRole) Type() string {
 	return "connectorRole"
 }
 
@@ -76,7 +76,7 @@ func init() {
 
 	SetRoleCmd.Flags().StringVarP(&name, "name", "n",
 		"", "The name of the connection")
-	SetRoleCmd.Flags().Var(&role, "role", "The name of the role, must be admin, invoker, custom or viewer")
+	SetRoleCmd.Flags().Var(&role, "role", fmt.Sprintf("The role must be one of %s,%s, %s or %s", admin, custom, invoker, viewer))
 	SetRoleCmd.Flags().StringVarP(&memberName, "member", "m",
 		"", "Member Name, example Service Account Name")
 	SetRoleCmd.Flags().StringVarP(&memberType, "member-type", "",

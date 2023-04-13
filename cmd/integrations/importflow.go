@@ -15,6 +15,7 @@
 package integrations
 
 import (
+	"errors"
 	"internal/apiclient"
 
 	"internal/client/integrations"
@@ -32,12 +33,14 @@ var ImportflowCmd = &cobra.Command{
 		cmdRegion := cmd.Flag("reg")
 
 		if err = apiclient.SetRegion(cmdRegion.Value.String()); err != nil {
-			return err
+			return errors.Unwrap(err)
 		}
 		return apiclient.SetProjectID(cmdProject.Value.String())
 	},
 	RunE: func(cmd *cobra.Command, args []string) (err error) {
 		const maxConnections = 4
+		name := cmd.Flag("name").Value.String()
+
 		if err = apiclient.FolderExists(folder); err != nil {
 			return err
 		}
@@ -47,6 +50,8 @@ var ImportflowCmd = &cobra.Command{
 }
 
 func init() {
+	var name string
+
 	ImportflowCmd.Flags().StringVarP(&name, "name", "n",
 		"", "Name of the Integration flow")
 

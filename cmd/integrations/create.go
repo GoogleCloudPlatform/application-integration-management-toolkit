@@ -35,7 +35,7 @@ var CreateCmd = &cobra.Command{
 		cmdRegion := cmd.Flag("reg")
 
 		if err = apiclient.SetRegion(cmdRegion.Value.String()); err != nil {
-			return err
+			return errors.Unwrap(err)
 		}
 		if overridesFile == "" && suppressWarnings {
 			return errors.New("suppressWarnings must be used with overrides")
@@ -44,6 +44,7 @@ var CreateCmd = &cobra.Command{
 	},
 	RunE: func(cmd *cobra.Command, args []string) (err error) {
 		var overridesContent []byte
+		name := cmd.Flag("name").Value.String()
 
 		if _, err := os.Stat(integrationFile); os.IsNotExist(err) {
 			return err
@@ -75,6 +76,8 @@ var integrationFile, overridesFile string
 var suppressWarnings bool
 
 func init() {
+	var name string
+
 	CreateCmd.Flags().StringVarP(&name, "name", "n",
 		"", "Integration flow name")
 	CreateCmd.Flags().StringVarP(&integrationFile, "file", "f",

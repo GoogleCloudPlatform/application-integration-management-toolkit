@@ -36,7 +36,7 @@ var ExecuteCmd = &cobra.Command{
 		cmdRegion := cmd.Flag("reg")
 
 		if err = apiclient.SetRegion(cmdRegion.Value.String()); err != nil {
-			return err
+			return errors.Unwrap(err)
 		}
 		if executionFile != "" && triggerID != "" {
 			return errors.New("cannot pass trigger id and execution file")
@@ -46,6 +46,7 @@ var ExecuteCmd = &cobra.Command{
 	RunE: func(cmd *cobra.Command, args []string) (err error) {
 
 		var content []byte
+		name := cmd.Flag("name").Value.String()
 
 		if executionFile != "" {
 			if _, err := os.Stat(executionFile); os.IsNotExist(err) {
@@ -69,6 +70,8 @@ var ExecuteCmd = &cobra.Command{
 var executionFile, triggerID string
 
 func init() {
+	var name string
+
 	ExecuteCmd.Flags().StringVarP(&name, "name", "n",
 		"", "Integration flow name")
 	ExecuteCmd.Flags().StringVarP(&executionFile, "file", "f",

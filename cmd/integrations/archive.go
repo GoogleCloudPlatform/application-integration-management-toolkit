@@ -15,6 +15,7 @@
 package integrations
 
 import (
+	"errors"
 	"internal/apiclient"
 
 	"internal/client/integrations"
@@ -31,7 +32,7 @@ var ArchiveVerCmd = &cobra.Command{
 		version := cmd.Flag("ver").Value.String()
 
 		if err = apiclient.SetRegion(cmd.Flag("reg").Value.String()); err != nil {
-			return err
+			return errors.Unwrap(err)
 		}
 		if err = validate(version); err != nil {
 			return err
@@ -40,6 +41,7 @@ var ArchiveVerCmd = &cobra.Command{
 	},
 	RunE: func(cmd *cobra.Command, args []string) (err error) {
 		version := cmd.Flag("ver").Value.String()
+		name := cmd.Flag("name").Value.String()
 		if version != "" {
 			_, err = integrations.Archive(name, version)
 		} else if userLabel != "" {
@@ -53,7 +55,7 @@ var ArchiveVerCmd = &cobra.Command{
 }
 
 func init() {
-	var version string
+	var name, version string
 
 	ArchiveVerCmd.Flags().StringVarP(&name, "name", "n",
 		"", "Integration flow name")

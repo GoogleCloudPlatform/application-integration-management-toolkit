@@ -39,7 +39,7 @@ var CreateCmd = &cobra.Command{
 		region := cmd.Flag("reg").Value.String()
 
 		if err = apiclient.SetRegion(region); err != nil {
-			return err
+			return errors.Unwrap(err)
 		}
 
 		if authConfigFile != "" && (encryptedFile != "" || encryptionKey != "") {

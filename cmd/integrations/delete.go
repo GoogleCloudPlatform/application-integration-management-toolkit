@@ -15,6 +15,7 @@
 package integrations
 
 import (
+	"errors"
 	"internal/apiclient"
 
 	"internal/client/integrations"
@@ -32,17 +33,20 @@ var DelCmd = &cobra.Command{
 		cmdRegion := cmd.Flag("reg")
 
 		if err = apiclient.SetRegion(cmdRegion.Value.String()); err != nil {
-			return err
+			return errors.Unwrap(err)
 		}
 		return apiclient.SetProjectID(cmdProject.Value.String())
 	},
 	RunE: func(cmd *cobra.Command, args []string) (err error) {
+		name := cmd.Flag("name").Value.String()
 		_, err = integrations.Delete(name)
 		return err
 	},
 }
 
 func init() {
+	var name string
+
 	DelCmd.Flags().StringVarP(&name, "name", "n",
 		"", "Integration name")
 

@@ -15,6 +15,7 @@
 package connectors
 
 import (
+	"errors"
 	"internal/apiclient"
 
 	"internal/client/connections"
@@ -32,18 +33,23 @@ var ListOperationsCmd = &cobra.Command{
 		cmdRegion := cmd.Flag("reg")
 
 		if err = apiclient.SetRegion(cmdRegion.Value.String()); err != nil {
-			return err
+			return errors.Unwrap(err)
 		}
 		return apiclient.SetProjectID(cmdProject.Value.String())
 	},
 	RunE: func(cmd *cobra.Command, args []string) (err error) {
-		_, err = connections.ListOperations(pageSize, pageToken, filter, orderBy)
+		_, err = connections.ListOperations(pageSize,
+			cmd.Flag("pageToken").Value.String(),
+			cmd.Flag("filter").Value.String(),
+			cmd.Flag("orderBy").Value.String())
 		return
 
 	},
 }
 
 func init() {
+	var pageToken, filter, orderBy string
+
 	ListOperationsCmd.Flags().IntVarP(&pageSize, "pageSize", "",
 		-1, "The maximum number of versions to return")
 	ListOperationsCmd.Flags().StringVarP(&pageToken, "pageToken", "",

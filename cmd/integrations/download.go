@@ -15,6 +15,7 @@
 package integrations
 
 import (
+	"errors"
 	"internal/apiclient"
 
 	"internal/client/integrations"
@@ -33,7 +34,7 @@ var DownloadVerCmd = &cobra.Command{
 		version := cmd.Flag("ver").Value.String()
 
 		if err = apiclient.SetRegion(cmdRegion.Value.String()); err != nil {
-			return err
+			return errors.Unwrap(err)
 		}
 		if err = validate(version); err != nil {
 			return err
@@ -42,6 +43,7 @@ var DownloadVerCmd = &cobra.Command{
 	},
 	RunE: func(cmd *cobra.Command, args []string) (err error) {
 		version := cmd.Flag("ver").Value.String()
+		name := cmd.Flag("name").Value.String()
 
 		if version != "" {
 			_, err = integrations.Download(name, version)
@@ -56,7 +58,7 @@ var DownloadVerCmd = &cobra.Command{
 }
 
 func init() {
-	var version string
+	var name, version string
 
 	DownloadVerCmd.Flags().StringVarP(&name, "name", "n",
 		"", "Integration flow name")

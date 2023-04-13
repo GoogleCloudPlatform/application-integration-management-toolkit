@@ -34,7 +34,7 @@ var PublishVerCmd = &cobra.Command{
 		version := cmd.Flag("ver").Value.String()
 
 		if err = apiclient.SetRegion(cmdRegion.Value.String()); err != nil {
-			return err
+			return errors.Unwrap(err)
 		}
 		if err = validate(version); err != nil {
 			return err
@@ -43,6 +43,8 @@ var PublishVerCmd = &cobra.Command{
 	},
 	RunE: func(cmd *cobra.Command, args []string) (err error) {
 		version := cmd.Flag("ver").Value.String()
+		name := cmd.Flag("name").Value.String()
+
 		if version != "" {
 			_, err = integrations.Publish(name, version)
 		} else if userLabel != "" {
@@ -56,7 +58,7 @@ var PublishVerCmd = &cobra.Command{
 }
 
 func init() {
-	var version string
+	var name, version string
 
 	PublishVerCmd.Flags().StringVarP(&name, "name", "n",
 		"", "Integration flow name")

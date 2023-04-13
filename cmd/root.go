@@ -155,7 +155,7 @@ func getLatestVersion() (version string, err error) {
 
 	ctx := context.Background()
 
-	req, err = http.NewRequestWithContext(ctx, "GET", endpoint, nil)
+	req, err = http.NewRequestWithContext(ctx, http.MethodGet, endpoint, nil)
 	if err != nil {
 		return "", err
 	}
@@ -164,6 +164,10 @@ func getLatestVersion() (version string, err error) {
 	resp, err := client.Do(req)
 	if err != nil {
 		return "", err
+	}
+
+	if resp != nil {
+		defer resp.Body.Close()
 	}
 
 	respBody, err := io.ReadAll(resp.Body)
@@ -179,9 +183,9 @@ func getLatestVersion() (version string, err error) {
 	if result["tag_name"] == "" {
 		clilog.Debug.Println("Unable to determine latest tag, skipping this information")
 		return "", nil
-	} else {
-		return fmt.Sprintf("%s", result["tag_name"]), nil
 	}
+	return fmt.Sprintf("%s", result["tag_name"]), nil
+
 }
 
 // getUsageFlag

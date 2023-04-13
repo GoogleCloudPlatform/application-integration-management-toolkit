@@ -33,24 +33,30 @@ var ListExecCmd = &cobra.Command{
 		cmdRegion := cmd.Flag("reg")
 
 		if err = apiclient.SetRegion(cmdRegion.Value.String()); err != nil {
-			return err
+			return errors.Unwrap(err)
 		}
 		if allVersions && pageSize != -1 {
 			return errors.New("allVersions and pageSize cannot be combined")
 		}
-		if allVersions && pageToken != "" {
+		if allVersions && cmd.Flag("pageToken").Value.String() != "" {
 			return errors.New("allVersions and pageToken cannot be combined")
 		}
 		return apiclient.SetProjectID(cmdProject.Value.String())
 	},
 	RunE: func(cmd *cobra.Command, args []string) (err error) {
-		_, err = integrations.ListExecutions(name, pageSize, pageToken, filter, orderBy)
+		name := cmd.Flag("name").Value.String()
+		_, err = integrations.ListExecutions(name, pageSize,
+			cmd.Flag("pageToken").Value.String(),
+			cmd.Flag("filter").Value.String(),
+			cmd.Flag("orderBy").Value.String())
 		return
 
 	},
 }
 
 func init() {
+	var name, pageToken, filter, orderBy string
+
 	ListExecCmd.Flags().StringVarP(&name, "name", "n",
 		"", "Integration flow name")
 	ListExecCmd.Flags().IntVarP(&pageSize, "pageSize", "",

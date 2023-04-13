@@ -15,6 +15,7 @@
 package connectors
 
 import (
+	"errors"
 	"fmt"
 
 	"internal/apiclient"
@@ -34,7 +35,7 @@ var GetCmd = &cobra.Command{
 		cmdRegion := cmd.Flag("reg")
 
 		if err = apiclient.SetRegion(cmdRegion.Value.String()); err != nil {
-			return err
+			return errors.Unwrap(err)
 		}
 		if view != "BASIC" && view != "FULL" {
 			return fmt.Errorf("view must be BASIC or FULL")

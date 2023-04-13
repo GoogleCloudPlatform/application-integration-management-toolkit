@@ -15,6 +15,7 @@
 package integrations
 
 import (
+	"errors"
 	"os"
 
 	"internal/apiclient"
@@ -34,11 +35,13 @@ var UploadCmd = &cobra.Command{
 		cmdRegion := cmd.Flag("reg")
 
 		if err = apiclient.SetRegion(cmdRegion.Value.String()); err != nil {
-			return err
+			return errors.Unwrap(err)
 		}
 		return apiclient.SetProjectID(cmdProject.Value.String())
 	},
 	RunE: func(cmd *cobra.Command, args []string) (err error) {
+		name := cmd.Flag("name").Value.String()
+
 		if _, err := os.Stat(filePath); err != nil {
 			return err
 		}
@@ -57,6 +60,8 @@ var UploadCmd = &cobra.Command{
 var filePath string
 
 func init() {
+	var name string
+
 	UploadCmd.Flags().StringVarP(&name, "name", "n",
 		"", "File containing Integration flow name")
 	UploadCmd.Flags().StringVarP(&filePath, "file", "f",

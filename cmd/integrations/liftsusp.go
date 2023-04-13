@@ -15,6 +15,7 @@
 package integrations
 
 import (
+	"errors"
 	"internal/apiclient"
 
 	"internal/client/integrations"
@@ -32,11 +33,12 @@ var LiftSuspCmd = &cobra.Command{
 		cmdRegion := cmd.Flag("reg")
 
 		if err = apiclient.SetRegion(cmdRegion.Value.String()); err != nil {
-			return err
+			return errors.Unwrap(err)
 		}
 		return apiclient.SetProjectID(cmdProject.Value.String())
 	},
 	RunE: func(cmd *cobra.Command, args []string) (err error) {
+		name := cmd.Flag("name").Value.String()
 		_, err = integrations.Lift(name, execution, suspension, result)
 		return
 
@@ -46,6 +48,8 @@ var LiftSuspCmd = &cobra.Command{
 var execution, suspension, result string
 
 func init() {
+	var name string
+
 	LiftSuspCmd.Flags().StringVarP(&name, "name", "n",
 		"", "Integration name")
 	LiftSuspCmd.Flags().StringVarP(&execution, "execution", "e",
