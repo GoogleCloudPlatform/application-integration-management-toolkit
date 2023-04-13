@@ -16,20 +16,30 @@ package main
 
 import (
 	"os"
+	"runtime/debug"
 
 	"github.com/GoogleCloudPlatform/application-integration-management-toolkit/cmd"
 )
 
-// Version
-var Version string
-
-// Git
-var Git string
-
 func main() {
 
 	rootCmd := cmd.GetRootCmd()
-	rootCmd.Version = Version + ", Git: " + Git
+	info, _ := debug.ReadBuildInfo()
+	vcs := "git"
+	version := "not found"
+	time := "not known"
+
+	for _, setting := range info.Settings {
+		if setting.Key == "vcs" {
+			vcs = setting.Value
+		} else if setting.Key == "vcs.revision" {
+			version = setting.Value
+		} else if setting.Key == "vcs.time" {
+			time = setting.Value
+		}
+	}
+
+	rootCmd.Version = version + ", vcs: " + vcs + ", revision: " + version + ", time: " + time
 
 	if err := rootCmd.Execute(); err != nil {
 		os.Exit(1)
