@@ -15,36 +15,40 @@
 package main
 
 import (
-	"fmt"
 	"os"
 	"runtime/debug"
 
 	"github.com/GoogleCloudPlatform/application-integration-management-toolkit/cmd"
 )
 
+// Version
+var Version string
+
 func main() {
 
 	rootCmd := cmd.GetRootCmd()
-	version := "(not set)"
-	time := "(not set)"
+	versionDetails := ""
 
 	if info, ok := debug.ReadBuildInfo(); ok {
-		fmt.Println(info.Settings)
 		for _, setting := range info.Settings {
 			switch setting.Key {
 			case "vcs.revision":
 				if setting.Value != "" {
-					version = setting.Value
+					versionDetails = versionDetails + ", git: " + setting.Value
 				}
 			case "vcs.time":
 				if setting.Value != "" {
-					time = setting.Value
+					versionDetails = versionDetails + ", time: " + setting.Value
 				}
 			}
 		}
 	}
 
-	rootCmd.Version = version + ", revision: " + version + ", time: " + time
+	if Version == "" {
+		Version = "(not set)"
+	}
+
+	rootCmd.Version = Version + versionDetails
 
 	if err := rootCmd.Execute(); err != nil {
 		os.Exit(1)
