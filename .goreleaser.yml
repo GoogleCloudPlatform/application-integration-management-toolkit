@@ -37,9 +37,9 @@ builds:
     flags:
     - -trimpath
     ldflags:
-    - -s -w -a -extldflags "-static"
+    - -s -w -a -extldflags "-static" -X main.Version={{.Tag}}
     gcflags:
-    - all="-l"
+    - all="-l -B"
     env:
       - CGO_ENABLED=0
 
