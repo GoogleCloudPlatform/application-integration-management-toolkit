@@ -15,6 +15,7 @@
 package main
 
 import (
+	"fmt"
 	"os"
 	"runtime/debug"
 
@@ -28,6 +29,7 @@ func main() {
 	time := "(not set)"
 
 	if info, ok := debug.ReadBuildInfo(); ok {
+		fmt.Println(info.Settings)
 		for _, setting := range info.Settings {
 			switch setting.Key {
 			case "vcs.revision":
