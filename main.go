@@ -24,22 +24,25 @@ import (
 func main() {
 
 	rootCmd := cmd.GetRootCmd()
-	info, _ := debug.ReadBuildInfo()
-	vcs := "git"
-	version := "not found"
-	time := "not known"
+	version := "(not set)"
+	time := "(not set)"
 
-	for _, setting := range info.Settings {
-		if setting.Key == "vcs" {
-			vcs = setting.Value
-		} else if setting.Key == "vcs.revision" {
-			version = setting.Value
-		} else if setting.Key == "vcs.time" {
-			time = setting.Value
+	if info, ok := debug.ReadBuildInfo(); ok {
+		for _, setting := range info.Settings {
+			switch setting.Key {
+			case "vcs.revision":
+				if setting.Value != "" {
+					version = setting.Value
+				}
+			case "vcs.time":
+				if setting.Value != "" {
+					time = setting.Value
+				}
+			}
 		}
 	}
 
-	rootCmd.Version = version + ", vcs: " + vcs + ", revision: " + version + ", time: " + time
+	rootCmd.Version = version + ", revision: " + version + ", time: " + time
 
 	if err := rootCmd.Execute(); err != nil {
 		os.Exit(1)
