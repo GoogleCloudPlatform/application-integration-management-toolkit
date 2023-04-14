@@ -31,7 +31,6 @@ import (
 
 // PostHttpZip method is used to send resources, proxy bundles, shared flows etc.
 func PostHttpZip(auth bool, method string, url string, headers map[string]string, zipfile string) (err error) {
-
 	var req *http.Request
 
 	payload, err := os.ReadFile(zipfile)
@@ -61,7 +60,7 @@ func PostHttpZip(auth bool, method string, url string, headers map[string]string
 		req.Header.Set(headerName, headerValue)
 	}
 
-	if auth { //do not pass auth header when using with archives
+	if auth { // do not pass auth header when using with archives
 		req, err = setAuthHeader(req)
 		if err != nil {
 			return err
@@ -139,7 +138,6 @@ func PostHttpOctet(update bool, url string, proxyName string) (respBody []byte, 
 
 	req.Header.Set("Content-Type", writer.FormDataContentType())
 	resp, err := client.Do(req)
-
 	if err != nil {
 		clilog.Error.Println("error connecting: ", err)
 		return nil, err
@@ -235,7 +233,7 @@ func HttpClient(params ...string) (respBody []byte, err error) {
 	// The second parameter is url. If only one parameter is sent, assume GET
 	// The third parameter is the payload. The two parameters are sent, assume POST
 	// THe fourth parameter is the method. If three parameters are sent, assume method in param
-	//The fifth parameter is content type
+	// The fifth parameter is content type
 	var req *http.Request
 	contentType := "application/json"
 
@@ -283,7 +281,6 @@ func HttpClient(params ...string) (respBody []byte, err error) {
 	req.Header.Set("Content-Type", contentType)
 
 	resp, err := client.Do(req)
-
 	if err != nil {
 		clilog.Error.Println("error connecting: ", err)
 		return nil, err
@@ -347,7 +344,6 @@ func setAuthHeader(req *http.Request) (*http.Request, error) {
 }
 
 func getHttpClient() (client *http.Client, err error) {
-
 	if GetProxyURL() != "" {
 		if pUrl, err := url.Parse(GetProxyURL()); err != nil {
 			client = &http.Client{
@@ -365,7 +361,6 @@ func getHttpClient() (client *http.Client, err error) {
 }
 
 func handleResponse(resp *http.Response) (respBody []byte, err error) {
-
 	if resp != nil {
 		defer resp.Body.Close()
 	}

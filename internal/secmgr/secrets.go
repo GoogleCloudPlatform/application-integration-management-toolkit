@@ -26,7 +26,6 @@ import (
 
 // secretExists the latest secret version
 func secretExists(project string, name string) (version string, err error) {
-
 	// Create the client.
 	ctx := context.Background()
 	client, err := secretmanager.NewClient(ctx)
@@ -51,9 +50,8 @@ func secretExists(project string, name string) (version string, err error) {
 
 // Create a new secret in secret manager
 func Create(project string, secretId string, payload []byte) (version string, err error) {
-
 	if version, err = secretExists(project, secretId); err == nil {
-		return version, nil //secret exists, return
+		return version, nil // secret exists, return
 	}
 
 	ctx := context.Background()
@@ -64,7 +62,7 @@ func Create(project string, secretId string, payload []byte) (version string, er
 	}
 	defer c.Close()
 
-	//secret manager location
+	// secret manager location
 	replica := &secretmanagerpb.Replication_UserManaged_Replica{}
 	replica.Location = apiclient.GetRegion()
 

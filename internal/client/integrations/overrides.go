@@ -68,14 +68,16 @@ type connectionparams struct {
 	ConnectorVersion string `json:"connectorVersion,omitempty"`
 }
 
-const pubsubTrigger = "cloud_pubsub_external_trigger/projects/cloud-crm-eventbus-cpsexternal/subscriptions/"
-const apiTrigger = "api_trigger/"
+const (
+	pubsubTrigger = "cloud_pubsub_external_trigger/projects/cloud-crm-eventbus-cpsexternal/subscriptions/"
+	apiTrigger    = "api_trigger/"
+)
 
 const authConfigValue = "{  \"@type\": \"type.googleapis.com/enterprise.crm.eventbus.authconfig.AuthConfigTaskParam\",\"authConfigId\": \""
 
 // mergeOverrides
 func mergeOverrides(eversion integrationVersionExternal, o overrides) (integrationVersionExternal, error) {
-	//apply trigger overrides
+	// apply trigger overrides
 	for _, triggerOverride := range o.TriggerOverrides {
 		foundOverride := false
 		for triggerIndex, trigger := range eversion.TriggerConfigs {
@@ -103,7 +105,7 @@ func mergeOverrides(eversion integrationVersionExternal, o overrides) (integrati
 		}
 	}
 
-	//apply task overrides
+	// apply task overrides
 	for _, taskOverride := range o.TaskOverrides {
 		foundOverride := false
 		for taskIndex, task := range eversion.TaskConfigs {
@@ -135,7 +137,7 @@ func mergeOverrides(eversion integrationVersionExternal, o overrides) (integrati
 		}
 	}
 
-	//apply connection overrides
+	// apply connection overrides
 	if !apiclient.DryRun() {
 		for _, connectionOverride := range o.ConnectionOverrides {
 			foundOverride := false
@@ -305,7 +307,8 @@ func handleGenericConnectorTask(taskConfig taskconfig, taskOverrides *overrides)
 
 // overrideParameters
 func overrideParameters(overrideParameters map[string]eventparameter,
-	taskParameters map[string]eventparameter) map[string]eventparameter {
+	taskParameters map[string]eventparameter,
+) map[string]eventparameter {
 	for overrideParamName, overrideParam := range overrideParameters {
 		if overrideParam.Key == "authConfig" {
 			apiclient.SetClientPrintHttpResponse(false)
@@ -337,15 +340,15 @@ func getNewConnectionParams(connectionName string, connectionLocation string) (c
 	defer apiclient.SetClientPrintHttpResponse(apiclient.GetCmdPrintHttpResponseSetting())
 
 	if connectionLocation != "" {
-		integrationRegion = apiclient.GetRegion()     //store the integration location
-		err = apiclient.SetRegion(connectionLocation) //set the connector region
+		integrationRegion = apiclient.GetRegion()     // store the integration location
+		err = apiclient.SetRegion(connectionLocation) // set the connector region
 		if err != nil {
 			return cp, err
 		}
 	}
-	connResp, err := connections.Get(connectionName, "BASIC", false, false) //get connector details
+	connResp, err := connections.Get(connectionName, "BASIC", false, false) // get connector details
 	if connectionLocation != "" {
-		err = apiclient.SetRegion(integrationRegion) //set the integration region back
+		err = apiclient.SetRegion(integrationRegion) // set the integration region back
 		if err != nil {
 			return cp, err
 		}

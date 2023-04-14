@@ -23,11 +23,11 @@ import (
 )
 
 // entityPayloadList stores list of entities
-var entityPayloadList [][]byte //types.EntityPayloadList
+var entityPayloadList [][]byte // types.EntityPayloadList
 
 // WriteByteArrayToFile accepts []bytes and writes to a file
 func WriteByteArrayToFile(exportFile string, fileAppend bool, payload []byte) error {
-	var fileFlags = os.O_CREATE | os.O_WRONLY
+	fileFlags := os.O_CREATE | os.O_WRONLY
 
 	if fileAppend {
 		fileFlags |= os.O_APPEND
@@ -35,7 +35,7 @@ func WriteByteArrayToFile(exportFile string, fileAppend bool, payload []byte) er
 		fileFlags |= os.O_TRUNC
 	}
 
-	f, err := os.OpenFile(exportFile, fileFlags, 0644)
+	f, err := os.OpenFile(exportFile, fileFlags, 0o644)
 	if err != nil {
 		return err
 	}
@@ -52,20 +52,20 @@ func WriteByteArrayToFile(exportFile string, fileAppend bool, payload []byte) er
 
 // WriteArrayByteArrayToFile accepts [][]bytes and writes to a file
 func WriteArrayByteArrayToFile(exportFile string, fileAppend bool, payload [][]byte) error {
-	var fileFlags = os.O_CREATE | os.O_WRONLY
+	fileFlags := os.O_CREATE | os.O_WRONLY
 
 	if fileAppend {
 		fileFlags |= os.O_APPEND
 	}
 
-	f, err := os.OpenFile(exportFile, fileFlags, 0644)
+	f, err := os.OpenFile(exportFile, fileFlags, 0o644)
 	if err != nil {
 		return err
 	}
 
 	defer f.Close()
 
-	//begin json array
+	// begin json array
 	_, err = f.Write([]byte("["))
 	if err != nil {
 		clilog.Error.Println("error writing to file ", err)
@@ -73,7 +73,7 @@ func WriteArrayByteArrayToFile(exportFile string, fileAppend bool, payload [][]b
 	}
 
 	payloadFromArray := bytes.Join(payload, []byte(","))
-	//add json array terminate
+	// add json array terminate
 	payloadFromArray = append(payloadFromArray, byte(']'))
 
 	_, err = f.Write(payloadFromArray)

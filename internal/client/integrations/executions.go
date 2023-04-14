@@ -115,7 +115,7 @@ func Execute(name string, content []byte) (respBody []byte, err error) {
 		return nil, err
 	}
 
-	//remove from response
+	// remove from response
 	eresp.EventParameters = nil
 
 	respBody, err = json.Marshal(eresp)

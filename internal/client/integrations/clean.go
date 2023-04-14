@@ -23,7 +23,6 @@ import (
 )
 
 func Clean(name string, reportOnly bool, keepList []string) (err error) {
-
 	var listOfVersions []basicIntegrationVersion
 	var nextPage string
 

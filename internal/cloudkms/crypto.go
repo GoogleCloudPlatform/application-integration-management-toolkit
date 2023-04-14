@@ -26,7 +26,6 @@ import (
 
 // EncryptSymmetric will encrypt the input plaintext with the specified symmetric key.
 func EncryptSymmetric(name string, plaintext []byte) (b64CipherText string, err error) {
-
 	// kmsClient contains a client connection to cloud KMS
 	var kmsClient *kms.KeyManagementClient
 
@@ -50,7 +49,7 @@ func EncryptSymmetric(name string, plaintext []byte) (b64CipherText string, err 
 		return "", fmt.Errorf("encrypt error: %v", err)
 	}
 
-	//base64 encode the cipher
+	// base64 encode the cipher
 	b64CipherText = base64.StdEncoding.EncodeToString(resp.Ciphertext)
 
 	return b64CipherText, nil
@@ -58,7 +57,6 @@ func EncryptSymmetric(name string, plaintext []byte) (b64CipherText string, err 
 
 // DecryptSymmetric will decrypt the input ciphertext bytes using the specified symmetric key.
 func DecryptSymmetric(name string, b64CipherText []byte) ([]byte, error) {
-
 	// kmsClient contains a client connection to cloud KMS
 	var kmsClient *kms.KeyManagementClient
 	var err error
@@ -71,7 +69,7 @@ func DecryptSymmetric(name string, b64CipherText []byte) ([]byte, error) {
 
 	defer kmsClient.Close()
 
-	//base64 encode the cipher
+	// base64 encode the cipher
 	cipherText, err := base64.StdEncoding.DecodeString(string(b64CipherText))
 	if err != nil {
 		return nil, fmt.Errorf("decode: %v", err)

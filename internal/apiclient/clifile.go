@@ -24,8 +24,10 @@ import (
 	"internal/clilog"
 )
 
-const integrationcliFile = "config.json"
-const integrationcliPath = ".integrationcli"
+const (
+	integrationcliFile = "config.json"
+	integrationcliPath = ".integrationcli"
+)
 
 type integrationCLI struct {
 	Token     string `json:"token,omitempty"`
@@ -38,7 +40,6 @@ type integrationCLI struct {
 }
 
 func readPreferencesFile() (cliPref *integrationCLI, err error) {
-
 	cliPref = new(integrationCLI)
 
 	usr, err := user.Current()
@@ -243,7 +244,7 @@ func writePerferencesFile(payload []byte) (err error) {
 	if err == nil {
 		return WriteByteArrayToFile(path.Join(usr.HomeDir, integrationcliPath, integrationcliFile), false, payload)
 	} else if os.IsNotExist(err) {
-		if err = os.MkdirAll(path.Join(usr.HomeDir, integrationcliPath), 0755); err != nil {
+		if err = os.MkdirAll(path.Join(usr.HomeDir, integrationcliPath), 0o755); err != nil {
 			return err
 		}
 		return WriteByteArrayToFile(path.Join(usr.HomeDir, integrationcliPath, integrationcliFile), false, payload)

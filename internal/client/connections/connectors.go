@@ -170,8 +170,8 @@ const interval = 10
 
 // Create
 func Create(name string, content []byte, serviceAccountName string, serviceAccountProject string,
-	encryptionKey string, grantPermission bool, createSecret bool, wait bool) (respBody []byte, err error) {
-
+	encryptionKey string, grantPermission bool, createSecret bool, wait bool,
+) (respBody []byte, err error) {
 	if serviceAccountName != "" && strings.Contains(serviceAccountName, ".iam.gserviceaccount.com") {
 		serviceAccountName = strings.Split(serviceAccountName, "@")[0]
 	}
@@ -226,8 +226,8 @@ func Create(name string, content []byte, serviceAccountName string, serviceAccou
 
 // create
 func create(name string, content []byte, serviceAccountName string, serviceAccountProject string,
-	encryptionKey string, grantPermission bool, createSecret bool) (respBody []byte, err error) {
-
+	encryptionKey string, grantPermission bool, createSecret bool,
+) (respBody []byte, err error) {
 	var secretVersion string
 
 	c := connectionRequest{}
@@ -235,18 +235,18 @@ func create(name string, content []byte, serviceAccountName string, serviceAccou
 		return nil, err
 	}
 
-	//service account overrides have been provided, use them
+	// service account overrides have been provided, use them
 	if serviceAccountName != "" {
-		//set the project id if one was not presented
+		// set the project id if one was not presented
 		if serviceAccountProject == "" {
 			serviceAccountProject = apiclient.GetProjectID()
 		}
 		serviceAccountName = fmt.Sprintf("%s@%s.iam.gserviceaccount.com", serviceAccountName, serviceAccountProject)
-		//create the SA if it doesn't exist
+		// create the SA if it doesn't exist
 		if err = apiclient.CreateServiceAccount(serviceAccountName); err != nil {
 			return nil, err
 		}
-	} else if grantPermission { //use the default compute engine SA to grant permissions
+	} else if grantPermission { // use the default compute engine SA to grant permissions
 		serviceAccountName, err = apiclient.GetComputeEngineDefaultServiceAccount(apiclient.GetProjectID())
 		if err != nil {
 			return nil, err
@@ -268,7 +268,7 @@ func create(name string, content []byte, serviceAccountName string, serviceAccou
 			" See https://github.com/GoogleCloudPlatform/application-integration-management-toolkit#connectors-for-third-party-applications for more details")
 	}
 
-	//handle project id & region overrides
+	// handle project id & region overrides
 	if c.ConfigVariables != nil && len(*c.ConfigVariables) > 0 {
 		for index := range *c.ConfigVariables {
 			if (*c.ConfigVariables)[index].Key == "project_id" && *(*c.ConfigVariables)[index].StringValue == "$PROJECT_ID$" {
@@ -353,10 +353,10 @@ func create(name string, content []byte, serviceAccountName string, serviceAccou
 	*c.ConnectorVersion = fmt.Sprintf("projects/%s/locations/global/providers/%s/connectors/%s/versions/%d",
 		apiclient.GetProjectID(), c.ConnectorDetails.Provider, c.ConnectorDetails.Name, c.ConnectorDetails.Version)
 
-	//remove the element
+	// remove the element
 	c.ConnectorDetails = nil
 
-	//handle secrets for username
+	// handle secrets for username
 	if c.AuthConfig != nil {
 		switch c.AuthConfig.AuthType {
 		case "USER_PASSWORD":
@@ -367,7 +367,7 @@ func create(name string, content []byte, serviceAccountName string, serviceAccou
 						return nil, err
 					}
 
-					//check if a Cloud KMS key was passsed, assume the file is encrypted
+					// check if a Cloud KMS key was passsed, assume the file is encrypted
 					if encryptionKey != "" {
 						encryptionKey := path.Join("projects", apiclient.GetProjectID(), encryptionKey)
 						payload, err = cloudkms.DecryptSymmetric(encryptionKey, payload)
@@ -386,9 +386,9 @@ func create(name string, content []byte, serviceAccountName string, serviceAccou
 					secretName := c.AuthConfig.UserPassword.PasswordDetails.SecretName
 					c.AuthConfig.UserPassword.Password = new(secret)
 					c.AuthConfig.UserPassword.Password.SecretVersion = secretVersion
-					c.AuthConfig.UserPassword.PasswordDetails = nil //clean the input
+					c.AuthConfig.UserPassword.PasswordDetails = nil // clean the input
 					if grantPermission && c.ServiceAccount != nil {
-						//grant connector service account access to secretVersion
+						// grant connector service account access to secretVersion
 						if err = apiclient.SetSecretManagerIAMPermission(
 							apiclient.GetProjectID(),
 							secretName,
@@ -400,7 +400,7 @@ func create(name string, content []byte, serviceAccountName string, serviceAccou
 					c.AuthConfig.UserPassword.Password = new(secret)
 					c.AuthConfig.UserPassword.Password.SecretVersion = fmt.Sprintf("projects/%s/secrets/%s/versions/1",
 						apiclient.GetProjectID(), c.AuthConfig.UserPassword.PasswordDetails.SecretName)
-					c.AuthConfig.UserPassword.PasswordDetails = nil //clean the input
+					c.AuthConfig.UserPassword.PasswordDetails = nil // clean the input
 				}
 			}
 		case "OAUTH2_JWT_BEARER":
@@ -411,7 +411,7 @@ func create(name string, content []byte, serviceAccountName string, serviceAccou
 					if err != nil {
 						return nil, err
 					}
-					//check if a Cloud KMS key was passsed, assume the file is encrypted
+					// check if a Cloud KMS key was passsed, assume the file is encrypted
 					if encryptionKey != "" {
 						encryptionKey := path.Join("projects", apiclient.GetProjectID(), encryptionKey)
 						payload, err = cloudkms.DecryptSymmetric(encryptionKey, payload)
@@ -428,9 +428,9 @@ func create(name string, content []byte, serviceAccountName string, serviceAccou
 					secretName := c.AuthConfig.Oauth2JwtBearer.ClientKeyDetails.SecretName
 					c.AuthConfig.Oauth2JwtBearer.ClientKey = new(secret)
 					c.AuthConfig.Oauth2JwtBearer.ClientKey.SecretVersion = secretVersion
-					c.AuthConfig.Oauth2JwtBearer.ClientKeyDetails = nil //clean the input
+					c.AuthConfig.Oauth2JwtBearer.ClientKeyDetails = nil // clean the input
 					if grantPermission && c.ServiceAccount != nil {
-						//grant connector service account access to secret version
+						// grant connector service account access to secret version
 						if err = apiclient.SetSecretManagerIAMPermission(
 							apiclient.GetProjectID(),
 							secretName,
@@ -538,7 +538,7 @@ func Get(name string, view string, minimal bool, overrides bool) (respBody []byt
 		if err != nil {
 			return nil, err
 		}
-		apiclient.SetClientPrintHttpResponse(apiclient.GetCmdPrintHttpResponseSetting()) //set original print output
+		apiclient.SetClientPrintHttpResponse(apiclient.GetCmdPrintHttpResponseSetting()) // set original print output
 		apiclient.PrettyPrint(connectionPayload)
 
 		return connectionPayload, err
@@ -602,7 +602,6 @@ func readSecretFile(name string) (payload []byte, err error) {
 
 // Import
 func Import(folder string, createSecret bool, wait bool) (err error) {
-
 	apiclient.SetClientPrintHttpResponse(false)
 	defer apiclient.SetClientPrintHttpResponse(apiclient.GetCmdPrintHttpResponseSetting())
 	errs := []string{}
@@ -624,7 +623,7 @@ func Import(folder string, createSecret bool, wait bool) (err error) {
 			return err
 		}
 
-		if _, err := Get(name, "", false, false); err != nil { //create only if connection doesn't exist
+		if _, err := Get(name, "", false, false); err != nil { // create only if connection doesn't exist
 			_, err = Create(name, content, "", "", "", false, createSecret, wait)
 			if err != nil {
 				errs = append(errs, err.Error())
@@ -664,7 +663,7 @@ func Export(folder string) (err error) {
 		return err
 	}
 
-	//no connections where found
+	// no connections where found
 	if len(lconnections.Connections) == 0 {
 		return nil
 	}

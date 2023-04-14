@@ -22,36 +22,39 @@ import (
 )
 
 // BaseURL is the Integration control plane endpoint
-const integrationBaseURL = "https://%s-integrations.googleapis.com/v1/projects/%s/locations/%s/products/apigee/"
-const appIntegrationBaseURL = "https://%s-integrations.googleapis.com/v1/projects/%s/locations/%s/"
-const connectorBaseURL = "https://connectors.googleapis.com/v1/projects/%s/locations/%s/connections"
-const connectorOperationsBaseURL = "https://connectors.googleapis.com/v1/projects/%s/locations/%s/operations"
+const (
+	integrationBaseURL         = "https://%s-integrations.googleapis.com/v1/projects/%s/locations/%s/products/apigee/"
+	appIntegrationBaseURL      = "https://%s-integrations.googleapis.com/v1/projects/%s/locations/%s/"
+	connectorBaseURL           = "https://connectors.googleapis.com/v1/projects/%s/locations/%s/connections"
+	connectorOperationsBaseURL = "https://connectors.googleapis.com/v1/projects/%s/locations/%s/operations"
+)
 
 // IntegrationClientOptions is the base struct to hold all command arguments
 type IntegrationClientOptions struct {
-	Region               string //Integration region
-	Token                string //Google OAuth access token
-	ServiceAccount       string //Google service account json
-	ProjectID            string //GCP Project ID
-	DebugLog             bool   //Enable debug logs
-	TokenCheck           bool   //skip checking access token expiry
-	SkipCache            bool   //skip writing access token to file
-	PrintOutput          bool   //prints output from http calls
-	NoOutput             bool   //Disable all statements to stdout
-	SuppressWarnings     bool   //Disable printing of warnings to stdout
-	ProxyUrl             string //use a proxy url
-	ExportToFile         string //determine of the contents should be written to file
-	UseApigeeIntegration bool   //use Apigee Integration; defaults to Application Integration
+	Region               string // Integration region
+	Token                string // Google OAuth access token
+	ServiceAccount       string // Google service account json
+	ProjectID            string // GCP Project ID
+	DebugLog             bool   // Enable debug logs
+	TokenCheck           bool   // skip checking access token expiry
+	SkipCache            bool   // skip writing access token to file
+	PrintOutput          bool   // prints output from http calls
+	NoOutput             bool   // Disable all statements to stdout
+	SuppressWarnings     bool   // Disable printing of warnings to stdout
+	ProxyUrl             string // use a proxy url
+	ExportToFile         string // determine of the contents should be written to file
+	UseApigeeIntegration bool   // use Apigee Integration; defaults to Application Integration
 }
 
 var options *IntegrationClientOptions
 
-var cmdPrintHttpResponses = true
-var clientPrintHttpResponses = true
+var (
+	cmdPrintHttpResponses    = true
+	clientPrintHttpResponses = true
+)
 
 // NewIntegrationClient sets up options to invoke Integration APIs
 func NewIntegrationClient(o IntegrationClientOptions) {
-
 	if options == nil {
 		options = new(IntegrationClientOptions)
 	}
@@ -63,7 +66,7 @@ func NewIntegrationClient(o IntegrationClientOptions) {
 	options.NoOutput = o.NoOutput
 	options.SuppressWarnings = o.SuppressWarnings
 
-	//initialize logs
+	// initialize logs
 	clilog.Init(options.DebugLog, options.PrintOutput, options.NoOutput, options.SuppressWarnings)
 
 	cliPref, err := readPreferencesFile()

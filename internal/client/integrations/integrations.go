@@ -206,17 +206,17 @@ type cloudSchedulerConfig struct {
 
 // CreateVersion
 func CreateVersion(name string, content []byte, overridesContent []byte, snapshot string,
-	userlabel string) (respBody []byte, err error) {
-
+	userlabel string,
+) (respBody []byte, err error) {
 	iversion := integrationVersion{}
 	if err = json.Unmarshal(content, &iversion); err != nil {
 		return nil, err
 	}
 
-	//remove any internal elements if exists
+	// remove any internal elements if exists
 	eversion := convertInternalToExternal(iversion)
 
-	//merge overrides if overrides were provided
+	// merge overrides if overrides were provided
 	if len(overridesContent) > 0 {
 		o := overrides{}
 		if err = json.Unmarshal(overridesContent, &o); err != nil {
@@ -249,7 +249,6 @@ func CreateVersion(name string, content []byte, overridesContent []byte, snapsho
 
 // Upload
 func Upload(name string, content []byte) (respBody []byte, err error) {
-
 	uploadVersion := uploadIntegrationFormat{}
 	if err = json.Unmarshal(content, &uploadVersion); err != nil {
 		clilog.Error.Println("invalid format for upload. Upload must have the json field content which contains " +
@@ -275,7 +274,7 @@ func Patch(name string, version string, content []byte) (respBody []byte, err er
 		return nil, err
 	}
 
-	//remove any internal elements if exists
+	// remove any internal elements if exists
 	eversion := convertInternalToExternal(iversion)
 
 	if content, err = json.Marshal(eversion); err != nil {
@@ -298,8 +297,8 @@ func TakeoverEditLock(name string, version string) (respBody []byte, err error) 
 
 // ListVersions
 func ListVersions(name string, pageSize int, pageToken string, filter string, orderBy string,
-	allVersions bool, download bool, basicInfo bool) (respBody []byte, err error) {
-
+	allVersions bool, download bool, basicInfo bool,
+) (respBody []byte, err error) {
 	clientPrintSetting := apiclient.GetClientPrintHttpResponseSetting()
 
 	u, _ := url.Parse(apiclient.GetBaseIntegrationURL())
@@ -337,11 +336,10 @@ func ListVersions(name string, pageSize int, pageToken string, filter string, or
 			listIvers := listIntegrationVersions{}
 			listBIvers := listbasicIntegrationVersions{}
 
-			listBIvers.NextPageToken = listIvers.NextPageToken
-
 			if err = json.Unmarshal(respBody, &listIvers); err != nil {
 				return nil, err
 			}
+
 			for _, iVer := range listIvers.IntegrationVersions {
 				basicIVer := basicIntegrationVersion{}
 				basicIVer.SnapshotNumber = iVer.SnapshotNumber
@@ -368,16 +366,14 @@ func ListVersions(name string, pageSize int, pageToken string, filter string, or
 
 		iversions := listIntegrationVersions{}
 		if err = json.Unmarshal(respBody, &iversions); err != nil {
-			clilog.Error.Println(err)
 			return nil, err
 		}
 
 		if apiclient.GetExportToFile() != "" {
-			//Write each version to a file
+			// Write each version to a file
 			for _, iversion := range iversions.IntegrationVersions {
 				var iversionBytes []byte
 				if iversionBytes, err = json.Marshal(iversion); err != nil {
-					clilog.Error.Println(err)
 					return nil, err
 				}
 				version := iversion.Name[strings.LastIndex(iversion.Name, "/")+1:]
@@ -386,14 +382,12 @@ func ListVersions(name string, pageSize int, pageToken string, filter string, or
 					version := iversion.Name[strings.LastIndex(iversion.Name, "/")+1:]
 					payload, err := Download(name, version)
 					if err != nil {
-						clilog.Error.Println(err)
 						return nil, err
 					}
 					if err = apiclient.WriteByteArrayToFile(
 						path.Join(apiclient.GetExportToFile(), fileName),
 						false,
 						payload); err != nil {
-						clilog.Error.Println(err)
 						return nil, err
 					}
 				} else {
@@ -401,7 +395,6 @@ func ListVersions(name string, pageSize int, pageToken string, filter string, or
 						path.Join(apiclient.GetExportToFile(), fileName),
 						false,
 						iversionBytes); err != nil {
-						clilog.Error.Println(err)
 						return nil, err
 					}
 				}
@@ -409,10 +402,9 @@ func ListVersions(name string, pageSize int, pageToken string, filter string, or
 			}
 		}
 
-		//if more versions exist, repeat the process
+		// if more versions exist, repeat the process
 		if iversions.NextPageToken != "" {
 			if _, err = ListVersions(name, -1, iversions.NextPageToken, filter, orderBy, true, download, false); err != nil {
-				clilog.Error.Println(err)
 				return nil, err
 			}
 		} else {
@@ -452,11 +444,10 @@ func Get(name string, version string, basicInfo bool, minimal bool, override boo
 	if basicInfo {
 		apiclient.SetClientPrintHttpResponse(false)
 		respBody, err := apiclient.HttpClient(u.String())
-
 		if err != nil {
 			return nil, err
 		}
-		//restore print setting
+		// restore print setting
 		apiclient.SetClientPrintHttpResponse(apiclient.GetCmdPrintHttpResponseSetting())
 		return getBasicInfo(respBody)
 	}
@@ -503,7 +494,6 @@ func Get(name string, version string, basicInfo bool, minimal bool, override boo
 
 // GetBySnapshot
 func GetBySnapshot(name string, snapshot string, minimal bool, override bool) ([]byte, error) {
-
 	apiclient.SetClientPrintHttpResponse(false)
 
 	listBody, err := ListVersions(name, -1, "", "snapshotNumber="+snapshot, "", false, false, true)
@@ -529,7 +519,6 @@ func GetBySnapshot(name string, snapshot string, minimal bool, override bool) ([
 
 // GetByUserlabel
 func GetByUserlabel(name string, userLabel string, minimal bool, override bool) ([]byte, error) {
-
 	apiclient.SetClientPrintHttpResponse(false)
 
 	listBody, err := ListVersions(name, -1, "", "userLabel="+userLabel, "", false, false, true)
@@ -571,7 +560,6 @@ func DeleteVersion(name string, version string) (respBody []byte, err error) {
 
 // DeleteByUserlabel
 func DeleteByUserlabel(name string, userLabel string) (respBody []byte, err error) {
-
 	apiclient.SetClientPrintHttpResponse(false)
 	iversionBytes, err := GetByUserlabel(name, userLabel, false, false)
 	if err != nil {
@@ -591,7 +579,6 @@ func DeleteByUserlabel(name string, userLabel string) (respBody []byte, err erro
 
 // DeleteBySnapshot
 func DeleteBySnapshot(name string, snapshot string) (respBody []byte, err error) {
-
 	apiclient.SetClientPrintHttpResponse(false)
 	iversionBytes, err := GetBySnapshot(name, snapshot, false, false)
 	if err != nil {
@@ -763,7 +750,7 @@ func GetConnections(integration []byte) (connections []string, err error) {
 
 // changeState
 func changeState(name string, version string, filter string, action string) (respBody []byte, err error) {
-	//if a version is sent, use it, else try the filter
+	// if a version is sent, use it, else try the filter
 	if version == "" {
 		if version, err = getVersionId(name, filter); err != nil {
 			return nil, err
@@ -771,7 +758,7 @@ func changeState(name string, version string, filter string, action string) (res
 	}
 	u, _ := url.Parse(apiclient.GetBaseIntegrationURL())
 	u.Path = path.Join(u.Path, "integrations", name, "versions", version+action)
-	//download is a get, the rest are post
+	// download is a get, the rest are post
 	if action == ":download" {
 		respBody, err = apiclient.HttpClient(u.String())
 	} else {
@@ -791,14 +778,12 @@ func getVersionId(name string, filter string) (version string, err error) {
 	apiclient.SetClientPrintHttpResponse(false)
 	respBody, err := apiclient.HttpClient(u.String())
 	if err != nil {
-		clilog.Error.Println(err)
 		return "", err
 	}
 	apiclient.SetClientPrintHttpResponse(apiclient.GetCmdPrintHttpResponseSetting())
 
 	iversions := listIntegrationVersions{}
 	if err = json.Unmarshal(respBody, &iversions); err != nil {
-		clilog.Error.Println(err)
 		return "", err
 	}
 
@@ -891,7 +876,6 @@ func exportWorker(workCh <-chan *integrationInfo, resultCh chan<- error, pwg *sy
 		}
 		resultCh <- nil
 	}
-
 }
 
 // fetchIntegrations fetches the first page of integrations from the integration API
@@ -934,7 +918,6 @@ func fetchIntegrationsWithPageToken(integrationURL string, pageToken string) (*l
 
 // Export
 func Export(folder string) (err error) {
-
 	apiclient.SetExportToFile(folder)
 	apiclient.SetClientPrintHttpResponse(false)
 	defer apiclient.SetClientPrintHttpResponse(apiclient.GetCmdPrintHttpResponseSetting())
@@ -950,7 +933,7 @@ func Export(folder string) (err error) {
 		return err
 	}
 
-	//no integrations where found
+	// no integrations where found
 	if len(lintegrations.Integrations) == 0 {
 		return nil
 	}
@@ -983,7 +966,7 @@ func batchExport(folder string, nextPageToken string) (err error) {
 		return err
 	}
 
-	//no integrations where found
+	// no integrations where found
 	if len(lintegrations.Integrations) == 0 {
 		return nil
 	}
@@ -1006,7 +989,6 @@ func batchExport(folder string, nextPageToken string) (err error) {
 
 // ImportFlow
 func ImportFlow(name string, folder string, conn int) (err error) {
-
 	var pwg sync.WaitGroup
 	var entities []string
 
@@ -1041,7 +1023,7 @@ func ImportFlow(name string, folder string, conn int) (err error) {
 
 	numOfLoops, remaining := numEntities/conn, numEntities%conn
 
-	//ensure connections aren't greater than entities
+	// ensure connections aren't greater than entities
 	if conn > numEntities {
 		conn = numEntities
 	}
@@ -1072,9 +1054,8 @@ func ImportFlow(name string, folder string, conn int) (err error) {
 
 // batchImport creates a batch of integration flows to import
 func batchImport(name string, entities []string, pwg *sync.WaitGroup) {
-
 	defer pwg.Done()
-	//batch workgroup
+	// batch workgroup
 	var bwg sync.WaitGroup
 
 	bwg.Add(len(entities))
@@ -1101,7 +1082,6 @@ func uploadAsync(name string, filePath string, wg *sync.WaitGroup) {
 
 // Import
 func Import(folder string, conn int) (err error) {
-
 	var pwg sync.WaitGroup
 	var names []string
 
@@ -1124,7 +1104,7 @@ func Import(folder string, conn int) (err error) {
 		fileName := filepath.Base(path)
 		ok := rIntegrationFlowFiles.Match([]byte(fileName))
 
-		//collect all the flow names once
+		// collect all the flow names once
 		if ok {
 			integrationFlowName := extractIntegrationFlowName(fileName)
 			if !integrationFlowExists(integrationFlowName, names) {
@@ -1191,7 +1171,6 @@ func convertInternalToExternal(internalVersion integrationVersion) (externalVers
 }
 
 func getBasicInfo(respBody []byte) (newResp []byte, err error) {
-
 	iVer := integrationVersion{}
 	bIVer := basicIntegrationVersion{}
 
