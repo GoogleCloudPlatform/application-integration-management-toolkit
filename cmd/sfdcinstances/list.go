@@ -39,10 +39,8 @@ var ListCmd = &cobra.Command{
 	RunE: func(cmd *cobra.Command, args []string) (err error) {
 		_, err = sfdc.ListInstances()
 		return
-
 	},
 }
 
 func init() {
-
 }

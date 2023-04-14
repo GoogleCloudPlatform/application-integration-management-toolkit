@@ -29,5 +29,4 @@ var SuspendCmd = &cobra.Command{
 func init() {
 	SuspendCmd.AddCommand(ListSuspCmd)
 	SuspendCmd.AddCommand(LiftSuspCmd)
-	//SuspendCmd.AddCommand(ResolveSuspendCmd)
 }

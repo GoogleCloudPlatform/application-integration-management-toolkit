@@ -52,7 +52,6 @@ var DownloadVerCmd = &cobra.Command{
 			_, err = integrations.DownloadSnapshot(name, snapshot)
 		}
 		return
-
 	},
 }
 

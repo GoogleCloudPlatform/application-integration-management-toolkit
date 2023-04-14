@@ -65,7 +65,6 @@ var GetCmd = &cobra.Command{
 		_, err = authconfigs.Get(id, minimal)
 
 		return
-
 	},
 }
 

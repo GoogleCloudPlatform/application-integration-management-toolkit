@@ -18,18 +18,19 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"internal/apiclient"
-	"internal/client/authconfigs"
-	"internal/client/connections"
-	"internal/client/integrations"
-	"internal/client/sfdc"
-	"internal/clilog"
 	"io/fs"
 	"os"
 	"path"
 	"path/filepath"
 	"regexp"
 	"strings"
+
+	"internal/apiclient"
+	"internal/client/authconfigs"
+	"internal/client/connections"
+	"internal/client/integrations"
+	"internal/client/sfdc"
+	"internal/clilog"
 
 	"github.com/GoogleCloudPlatform/application-integration-management-toolkit/cmd/utils"
 	"github.com/spf13/cobra"
@@ -50,18 +51,17 @@ var ApplyCmd = &cobra.Command{
 		return apiclient.SetProjectID(cmdProject.Value.String())
 	},
 	RunE: func(cmd *cobra.Command, args []string) (err error) {
-
 		if stat, err := os.Stat(folder); err != nil || !stat.IsDir() {
 			return fmt.Errorf("problem with supplied path, %w", err)
 		}
 
 		rJSONFiles := regexp.MustCompile(`(\S*)\.json`)
-		var integrationFolder = path.Join(folder, "src")
-		var authconfigFolder = path.Join(folder, "authconfigs")
-		var connectorsFolder = path.Join(folder, "connectors")
-		var overridesFile = path.Join(folder, "overrides/overrides.json")
-		var sfdcinstancesFolder = path.Join(folder, "sfdcinstances")
-		var sfdcchannelsFolder = path.Join(folder, "sfdcchannels")
+		integrationFolder := path.Join(folder, "src")
+		authconfigFolder := path.Join(folder, "authconfigs")
+		connectorsFolder := path.Join(folder, "connectors")
+		overridesFile := path.Join(folder, "overrides/overrides.json")
+		sfdcinstancesFolder := path.Join(folder, "sfdcinstances")
+		sfdcchannelsFolder := path.Join(folder, "sfdcchannels")
 
 		var stat fs.FileInfo
 		var integrationNames []string
@@ -273,12 +273,13 @@ var ApplyCmd = &cobra.Command{
 		clilog.Warning.Printf("No integration files were found\n")
 
 		return
-
 	},
 }
 
-var grantPermission, createSecret, wait bool
-var serviceAccountName, serviceAccountProject, encryptionKey string
+var (
+	grantPermission, createSecret, wait                      bool
+	serviceAccountName, serviceAccountProject, encryptionKey string
+)
 
 func init() {
 	ApplyCmd.Flags().StringVarP(&folder, "folder", "f",

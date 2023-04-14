@@ -52,7 +52,6 @@ var PatchVerCmd = &cobra.Command{
 		}
 		_, err = integrations.Patch(name, version, content)
 		return
-
 	},
 }
 

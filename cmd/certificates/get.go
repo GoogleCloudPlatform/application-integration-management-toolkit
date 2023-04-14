@@ -16,6 +16,7 @@ package certificates
 
 import (
 	"errors"
+
 	"internal/apiclient"
 
 	"internal/client/certificates"
@@ -62,7 +63,6 @@ var GetCmd = &cobra.Command{
 
 		_, err = certificates.Get(id)
 		return
-
 	},
 }
 

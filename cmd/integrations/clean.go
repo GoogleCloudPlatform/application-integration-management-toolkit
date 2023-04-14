@@ -42,8 +42,10 @@ var CleanCmd = &cobra.Command{
 	},
 }
 
-var reportOnly bool
-var keepList []string
+var (
+	reportOnly bool
+	keepList   []string
+)
 
 func init() {
 	var name string

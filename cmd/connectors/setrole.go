@@ -16,6 +16,7 @@ package connectors
 
 import (
 	"fmt"
+
 	"internal/apiclient"
 
 	"internal/client/connections"
@@ -76,7 +77,8 @@ func init() {
 
 	SetRoleCmd.Flags().StringVarP(&name, "name", "n",
 		"", "The name of the connection")
-	SetRoleCmd.Flags().Var(&role, "role", fmt.Sprintf("The role must be one of %s,%s, %s or %s", admin, custom, invoker, viewer))
+	SetRoleCmd.Flags().Var(&role, "role",
+		fmt.Sprintf("The role must be one of %s,%s, %s or %s", admin, custom, invoker, viewer))
 	SetRoleCmd.Flags().StringVarP(&memberName, "member", "m",
 		"", "Member Name, example Service Account Name")
 	SetRoleCmd.Flags().StringVarP(&memberType, "member-type", "",

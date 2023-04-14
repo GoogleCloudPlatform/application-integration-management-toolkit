@@ -16,6 +16,7 @@ package integrations
 
 import (
 	"errors"
+
 	"internal/apiclient"
 
 	"internal/client/integrations"
@@ -62,7 +63,6 @@ var GetVerCmd = &cobra.Command{
 			_, err = integrations.GetByUserlabel(name, userLabel, minimal, overrides)
 		}
 		return
-
 	},
 }
 

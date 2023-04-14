@@ -40,7 +40,6 @@ var DelCmd = &cobra.Command{
 		name := cmd.Flag("name").Value.String()
 		_, err = certificates.Delete(name)
 		return
-
 	},
 }
 

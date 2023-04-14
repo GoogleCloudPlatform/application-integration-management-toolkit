@@ -43,7 +43,6 @@ var ListSuspCmd = &cobra.Command{
 			cmd.Flag("filter").Value.String(),
 			cmd.Flag("orderBy").Value.String())
 		return
-
 	},
 }
 

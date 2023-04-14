@@ -39,10 +39,8 @@ var ListCmd = &cobra.Command{
 	RunE: func(cmd *cobra.Command, args []string) (err error) {
 		pageToken := cmd.Flag("pageToken").Value.String()
 		filter := cmd.Flag("filter").Value.String()
-		//orderBy := cmd.Flag("orderBy").Value.String()
 		_, err = certificates.List(pageSize, pageToken, filter)
 		return
-
 	},
 }
 
@@ -57,6 +55,4 @@ func init() {
 		"", "A page token, received from a previous call")
 	ListCmd.Flags().StringVarP(&filter, "filter", "",
 		"", "Filter results")
-	/*ListCmd.Flags().StringVarP(&orderBy, "orderBy", "",
-	"", "The results would be returned in order")*/
 }

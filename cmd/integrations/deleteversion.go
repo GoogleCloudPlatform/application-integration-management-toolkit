@@ -16,6 +16,7 @@ package integrations
 
 import (
 	"errors"
+
 	"internal/apiclient"
 
 	"internal/client/integrations"
@@ -62,7 +63,6 @@ var DelVerCmd = &cobra.Command{
 			_, err = integrations.DeleteByUserlabel(name, userLabel)
 		}
 		return
-
 	},
 }
 

@@ -25,11 +25,12 @@ var Cmd = &cobra.Command{
 	Long:  "Manage integrations in a GCP project",
 }
 
-var userLabel, snapshot string
-var overrides bool
+var (
+	userLabel, snapshot string
+	overrides           bool
+)
 
 func init() {
-
 	var project, region string
 
 	Cmd.PersistentFlags().StringVarP(&project, "proj", "p",

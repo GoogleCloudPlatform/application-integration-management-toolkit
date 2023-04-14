@@ -40,7 +40,6 @@ var LiftSuspCmd = &cobra.Command{
 		name := cmd.Flag("name").Value.String()
 		_, err = integrations.Lift(name, execution, suspension, result)
 		return
-
 	},
 }
 

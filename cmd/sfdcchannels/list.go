@@ -40,7 +40,6 @@ var ListCmd = &cobra.Command{
 		instance := cmd.Flag("instance").Value.String()
 		_, err = sfdc.ListChannels(instance)
 		return
-
 	},
 }
 

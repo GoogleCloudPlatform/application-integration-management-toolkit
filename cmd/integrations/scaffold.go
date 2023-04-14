@@ -56,7 +56,6 @@ var ScaffoldCmd = &cobra.Command{
 		return apiclient.SetProjectID(cmdProject.Value.String())
 	},
 	RunE: func(cmd *cobra.Command, args []string) (err error) {
-
 		var integrationBody, overridesBody []byte
 		version := cmd.Flag("ver").Value.String()
 		name := cmd.Flag("name").Value.String()
@@ -241,7 +240,6 @@ var ScaffoldCmd = &cobra.Command{
 		}
 
 		return
-
 	},
 }
 
@@ -267,10 +265,8 @@ func init() {
 }
 
 func generateFolder(name string) (err error) {
-	if err = os.Mkdir(path.Join(folder, name), os.ModePerm); err != nil {
-		return err
-	}
-	return nil
+	err = os.Mkdir(path.Join(folder, name), os.ModePerm)
+	return err
 }
 
 func getName(authConfigResp []byte) string {

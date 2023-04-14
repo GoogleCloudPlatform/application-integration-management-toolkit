@@ -48,9 +48,11 @@ var ExportVerCmd = &cobra.Command{
 	},
 }
 
-var folder string
-var allVersions bool
-var numConnections int
+var (
+	folder         string
+	allVersions    bool
+	numConnections int
+)
 
 func init() {
 	var name string

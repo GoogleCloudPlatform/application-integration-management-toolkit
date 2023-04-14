@@ -16,6 +16,7 @@ package connectors
 
 import (
 	"errors"
+
 	"internal/apiclient"
 
 	"internal/client/connections"

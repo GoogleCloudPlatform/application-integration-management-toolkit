@@ -20,7 +20,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// Cmd to get org details
+// SetCmd to set preferences
 var SetCmd = &cobra.Command{
 	Use:   "set",
 	Short: "Set default preferences for integrationcli",

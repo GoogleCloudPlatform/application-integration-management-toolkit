@@ -16,6 +16,7 @@ package integrations
 
 import (
 	"errors"
+
 	"internal/apiclient"
 
 	"internal/client/integrations"
@@ -53,7 +54,6 @@ var PublishVerCmd = &cobra.Command{
 			_, err = integrations.PublishSnapshot(name, snapshot)
 		}
 		return
-
 	},
 }
 
@@ -73,13 +73,14 @@ func init() {
 }
 
 func validate(version string) (err error) {
-	if version == "" && userLabel == "" && snapshot == "" {
+	switch {
+	case version == "" && userLabel == "" && snapshot == "":
 		return errors.New("must pass oneOf version, snapshot or user-label")
-	} else if version != "" && (userLabel != "" || snapshot != "") {
+	case version != "" && (userLabel != "" || snapshot != ""):
 		return errors.New("must pass oneOf version, snapshot or user-label")
-	} else if userLabel != "" && (version != "" || snapshot != "") {
+	case userLabel != "" && (version != "" || snapshot != ""):
 		return errors.New("must pass oneOf version, snapshot or user-label")
-	} else if snapshot != "" && (userLabel != "" || version != "") {
+	case snapshot != "" && (userLabel != "" || version != ""):
 		return errors.New("must pass oneOf version, snapshot or user-label")
 	}
 	return nil

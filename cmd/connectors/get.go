@@ -48,8 +48,10 @@ var GetCmd = &cobra.Command{
 	},
 }
 
-var view string
-var minimal, overrides bool
+var (
+	view               string
+	minimal, overrides bool
+)
 
 func init() {
 	var name string

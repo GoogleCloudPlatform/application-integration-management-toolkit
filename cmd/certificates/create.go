@@ -47,7 +47,6 @@ var CreateCmd = &cobra.Command{
 		return apiclient.SetProjectID(project)
 	},
 	RunE: func(cmd *cobra.Command, args []string) (err error) {
-
 		var sslCertContent, privateKeyCertContent []byte
 		name := cmd.Flag("name").Value.String()
 		description := cmd.Flag("description").Value.String()

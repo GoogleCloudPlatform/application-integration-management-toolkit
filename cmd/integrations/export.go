@@ -47,7 +47,6 @@ var ExportCmd = &cobra.Command{
 			return integrations.ExportConcurrent(folder, numConnections)
 		}
 		return integrations.Export(folder)
-
 	},
 }
 

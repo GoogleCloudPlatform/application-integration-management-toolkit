@@ -57,7 +57,8 @@ var RootCmd = &cobra.Command{
 				if cmd.Version == "" {
 					clilog.Debug.Println("integrationcli wasn't built with a valid Version tag.")
 				} else if latestVersion != "" && cmd.Version != latestVersion {
-					clilog.Info.Printf("You are using %s, the latest version %s is available for download\n", cmd.Version, latestVersion)
+					clilog.Info.Printf("You are using %s, the latest version %s is available for download\n",
+						cmd.Version, latestVersion)
 				}
 			}
 		}
@@ -81,6 +82,8 @@ func Execute() {
 }
 
 var disableCheck, useApigee, printOutput, noOutput, suppressWarnings, verbose bool
+
+const ENABLED = "true"
 
 func init() {
 	var accessToken, serviceAccount string
@@ -122,10 +125,10 @@ func init() {
 }
 
 func initConfig() {
-	var debug = false
+	debug := false
 	var skipCache bool
 
-	if os.Getenv("INTEGRATIONECLI_DEBUG") == "true" || verbose {
+	if os.Getenv("INTEGRATIONECLI_DEBUG") == ENABLED || verbose {
 		debug = true
 	}
 
@@ -151,7 +154,8 @@ func GetRootCmd() *cobra.Command {
 
 func getLatestVersion() (version string, err error) {
 	var req *http.Request
-	const endpoint = "https://api.github.com/repos/GoogleCloudPlatform/application-integration-management-toolkit/releases/latest"
+	const endpoint = "https://api.github.com/repos/GoogleCloudPlatform/" +
+		"application-integration-management-toolkit/releases/latest"
 
 	client := &http.Client{}
 	contentType := "application/json"
@@ -188,15 +192,14 @@ func getLatestVersion() (version string, err error) {
 		return "", nil
 	}
 	return fmt.Sprintf("%s", result["tag_name"]), nil
-
 }
 
 // getUsageFlag
 func getUsageFlag() bool {
-	return os.Getenv("INTEGRATIONCLI_NO_USAGE") == "true"
+	return os.Getenv("INTEGRATIONCLI_NO_USAGE") == ENABLED
 }
 
 // getErrorsFlag
 func getErrorsFlag() bool {
-	return os.Getenv("INTEGRATIONCLI_NO_ERRORS") == "true"
+	return os.Getenv("INTEGRATIONCLI_NO_ERRORS") == ENABLED
 }

@@ -40,7 +40,6 @@ var DelCmd = &cobra.Command{
 		name := cmd.Flag("name").Value.String()
 		_, err = authconfigs.Delete(name)
 		return
-
 	},
 }
 

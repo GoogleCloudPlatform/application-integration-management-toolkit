@@ -26,7 +26,6 @@ var VerCmd = &cobra.Command{
 }
 
 func init() {
-
 	VerCmd.AddCommand(ListVerCmd)
 	VerCmd.AddCommand(PatchVerCmd)
 	VerCmd.AddCommand(GetVerCmd)

@@ -26,7 +26,6 @@ var Cmd = &cobra.Command{
 }
 
 func init() {
-
 	var project, region string
 
 	Cmd.PersistentFlags().StringVarP(&project, "proj", "p",

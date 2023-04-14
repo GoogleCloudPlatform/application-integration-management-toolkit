@@ -46,7 +46,7 @@ steps:
       gcloud auth print-access-token > /tmp/token
 
       #setup preferences
-      /tmp/integrationcli prefs set integrationcli prefs set --nocheck=true --apigee-integration=false --reg=$LOCATION --proj=$PROJECT_ID
+      /tmp/integrationcli prefs set integrationcli prefs set --nocheck=true --reg=$LOCATION --proj=$PROJECT_ID
       /tmp/integrationcli token cache -t $(cat /tmp/token)
 
       if [ ${_DEFAULT_SA} = "false" ]; then

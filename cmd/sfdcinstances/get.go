@@ -16,6 +16,7 @@ package sfdcinstances
 
 import (
 	"errors"
+
 	"internal/apiclient"
 
 	"internal/client/sfdc"
@@ -61,7 +62,6 @@ var GetCmd = &cobra.Command{
 			_, err = sfdc.GetInstance(id, minimal)
 		}
 		return
-
 	},
 }
 

@@ -16,6 +16,7 @@ package integrations
 
 import (
 	"errors"
+
 	"internal/apiclient"
 
 	"internal/client/integrations"
@@ -50,7 +51,6 @@ var ListExecCmd = &cobra.Command{
 			cmd.Flag("filter").Value.String(),
 			cmd.Flag("orderBy").Value.String())
 		return
-
 	},
 }
 

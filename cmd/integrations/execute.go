@@ -44,7 +44,6 @@ var ExecuteCmd = &cobra.Command{
 		return apiclient.SetProjectID(cmdProject.Value.String())
 	},
 	RunE: func(cmd *cobra.Command, args []string) (err error) {
-
 		var content []byte
 		name := cmd.Flag("name").Value.String()
 
@@ -63,7 +62,6 @@ var ExecuteCmd = &cobra.Command{
 
 		_, err = integrations.Execute(name, content)
 		return
-
 	},
 }
 
@@ -76,7 +74,8 @@ func init() {
 		"", "Integration flow name")
 	ExecuteCmd.Flags().StringVarP(&executionFile, "file", "f",
 		"", "Integration payload JSON file path. For the payload structure, visit docs at"+
-			" https://cloud.google.com/application-integration/docs/reference/rest/v1/projects.locations.integrations/execute#request-body")
+			" https://cloud.google.com/application-integration/docs/reference/"+
+			"rest/v1/projects.locations.integrations/execute#request-body")
 	ExecuteCmd.Flags().StringVarP(&executionFile, "trigger-id", "",
 		"", "Specify only the trigger id of the integration if there "+
 			"are no input parameters to be sent. Cannot be combined with -f")
