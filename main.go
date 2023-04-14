@@ -21,11 +21,10 @@ import (
 	"github.com/GoogleCloudPlatform/application-integration-management-toolkit/cmd"
 )
 
-// Version
+// Version of integrationcli
 var Version string
 
 func main() {
-
 	rootCmd := cmd.GetRootCmd()
 	versionDetails := ""
 
