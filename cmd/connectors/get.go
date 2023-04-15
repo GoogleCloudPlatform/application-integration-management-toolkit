@@ -43,6 +43,9 @@ var GetCmd = &cobra.Command{
 	},
 	RunE: func(cmd *cobra.Command, args []string) (err error) {
 		name := cmd.Flag("name").Value.String()
+		if overrides {
+			minimal = true
+		}
 		_, err = connections.Get(name, view, minimal, overrides)
 		return
 	},

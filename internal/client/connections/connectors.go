@@ -712,7 +712,7 @@ func getConnectorProvider(name string) string {
 func isGoogleConnection(connectionName string) bool {
 	if connectionName == "pubsub" || connectionName == "gcs" || connectionName == "biqguery" ||
 		connectionName == "cloudsql-mysql" || connectionName == "cloudsql-postgresql" ||
-		connectionName == "cloudsql-sqlserver" {
+		connectionName == "cloudsql-sqlserver" || connectionName == "cloudspanner" {
 		return true
 	}
 	return false
