@@ -15,39 +15,22 @@
 package main
 
 import (
+	"fmt"
 	"os"
-	"runtime/debug"
 
 	"github.com/GoogleCloudPlatform/application-integration-management-toolkit/cmd"
 )
 
-// Version of integrationcli
-var Version string
+// https://goreleaser.com/cookbooks/using-main.version/?h=ldflags
+var (
+	version = "dev"
+	commit  = "none"
+	date    = "unknown"
+)
 
 func main() {
 	rootCmd := cmd.GetRootCmd()
-	versionDetails := ""
-
-	if info, ok := debug.ReadBuildInfo(); ok {
-		for _, setting := range info.Settings {
-			switch setting.Key {
-			case "vcs.revision":
-				if setting.Value != "" {
-					versionDetails = versionDetails + ", git: " + setting.Value
-				}
-			case "vcs.time":
-				if setting.Value != "" {
-					versionDetails = versionDetails + ", time: " + setting.Value
-				}
-			}
-		}
-	}
-
-	if Version == "" {
-		Version = "(not set)"
-	}
-
-	rootCmd.Version = Version + versionDetails
+	rootCmd.Version = fmt.Sprintf("%s date: %s [commit: %.7s]", version, date, commit)
 
 	if err := rootCmd.Execute(); err != nil {
 		os.Exit(1)

@@ -36,10 +36,9 @@ builds:
       - windows
     flags:
     - -trimpath
-    ldflags:
-    - -s -w -a -extldflags "-static" -X main.Version={{.Tag}}
+    - -buildvcs=true
     gcflags:
-    - all="-l -B"
+    - all="-l"
     env:
       - CGO_ENABLED=0
 
@@ -55,6 +54,7 @@ archives:
       {{- else if eq .Arch "darwin" }}Darwin
       {{- else }}{{ .Arch }}{{ end }}
     wrap_in_directory: true
+    rlcp: true
     files:
       - LICENSE.txt
     builds:
