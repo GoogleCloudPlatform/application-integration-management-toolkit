@@ -16,6 +16,7 @@ package integrations
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/url"
 	"os"
@@ -801,117 +802,80 @@ func ExportConcurrent(folder string, numConnections int) error {
 	apiclient.SetClientPrintHttpResponse(false)
 	defer apiclient.SetClientPrintHttpResponse(apiclient.GetCmdPrintHttpResponseSetting())
 
-	var pwg sync.WaitGroup
-	// Build integration URL with max page size
-	u, _ := url.Parse(apiclient.GetBaseIntegrationURL())
-	q := u.Query()
-	q.Set("pageSize", strconv.Itoa(maxPageSize))
-	u.RawQuery = q.Encode()
-	u.Path = path.Join(u.Path, "integrations")
+	pageToken := ""
+	lintegrations := listintegrations{}
 
-	// Fetch first page of integrations
-	lintegrations, err := fetchIntegrations(u.String())
-	if err != nil {
-		return err
-	}
-
-	// Create channels for work and results
-	workCh := make(chan *integrationInfo, len(lintegrations.Integrations))
-	resultCh := make(chan error, len(lintegrations.Integrations))
-
-	// Start worker goroutines
-	for i := 0; i < numConnections; i++ {
-		pwg.Add(1)
-
-		go exportWorker(workCh, resultCh, &pwg)
-	}
-
-	// Add integrations to work channel
-	for _, lintegration := range lintegrations.Integrations {
-		workCh <- &integrationInfo{
-			Name: lintegration.Name,
-			Path: folder,
-		}
-	}
-
-	// Fetch remaining pages of integrations and add to work channel
-	for lintegrations.NextPageToken != "" {
-		lintegrations, err = fetchIntegrationsWithPageToken(u.String(), lintegrations.NextPageToken)
+	for {
+		l := listintegrations{}
+		listRespBytes, err := List(maxPageSize, pageToken, "", "")
 		if err != nil {
-			return err
+			return fmt.Errorf("failed to fetch Integrations: %w", err)
 		}
-		for _, lintegration := range lintegrations.Integrations {
-			workCh <- &integrationInfo{
-				Name: lintegration.Name,
-				Path: folder,
+		err = json.Unmarshal(listRespBytes, &l)
+		if err != nil {
+			return fmt.Errorf("failed to unmarshall: %w", err)
+		}
+		lintegrations.Integrations = append(lintegrations.Integrations, l.Integrations...)
+		if l.NextPageToken == "" {
+			break
+		}
+	}
+
+	errChan := make(chan error)
+	workChan := make(chan integration, len(lintegrations.Integrations))
+
+	fanOutWg := sync.WaitGroup{}
+	fanInWg := sync.WaitGroup{}
+
+	errs := []string{}
+	fanInWg.Add(1)
+
+	go func() {
+		defer fanInWg.Done()
+		for {
+			newErr, ok := <-errChan
+			if !ok {
+				return
 			}
+			errs = append(errs, newErr.Error())
 		}
+	}()
+
+	for i := 0; i < numConnections; i++ {
+		fanOutWg.Add(1)
+		go exportWorker(&fanOutWg, workChan, errChan)
 	}
 
-	// Close the work channel to signal workers to exit when all work is done
-	close(workCh)
-
-	// Collect results from result channel
-	for i := 0; i < len(lintegrations.Integrations); i++ {
-		if err := <-resultCh; err != nil {
-			return err
-		}
+	for _, i := range lintegrations.Integrations {
+		workChan <- i
 	}
 
-	close(resultCh)
+	close(workChan)
+	fanOutWg.Wait()
+	close(errChan)
+	fanInWg.Wait()
 
-	pwg.Wait()
+	if len(errs) > 0 {
+		return errors.New(strings.Join(errs, "\n"))
+	}
 
 	return nil
 }
 
-func exportWorker(workCh <-chan *integrationInfo, resultCh chan<- error, pwg *sync.WaitGroup) {
-	defer pwg.Done()
-	for work := range workCh {
+func exportWorker(wg *sync.WaitGroup, workCh <-chan integration, errs chan<- error) {
+	defer wg.Done()
+	for {
+		work, ok := <-workCh
+		if !ok {
+			return
+		}
 		integrationName := work.Name[strings.LastIndex(work.Name, "/")+1:]
 		clilog.Info.Printf("Exporting all the revisions for Integration Flow %s\n", integrationName)
 
-		if _, err := ListVersions(integrationName, -1, "", "", "", true, true, false); err != nil {
-			resultCh <- err
+		if _, err := ListVersions(integrationName, maxPageSize, "", "", "", true, false, false); err != nil {
+			errs <- err
 		}
-		resultCh <- nil
 	}
-}
-
-// fetchIntegrations fetches the first page of integrations from the integration API
-func fetchIntegrations(integrationURL string) (*listintegrations, error) {
-	respBody, err := apiclient.HttpClient(integrationURL)
-	if err != nil {
-		return nil, err
-	}
-
-	var lintegrations listintegrations
-	if err := json.Unmarshal(respBody, &lintegrations); err != nil {
-		return nil, err
-	}
-
-	return &lintegrations, nil
-}
-
-// fetchIntegrationsWithPageToken fetches a page of integrations from the integration API using a page token
-func fetchIntegrationsWithPageToken(integrationURL string, pageToken string) (*listintegrations, error) {
-	u, _ := url.Parse(integrationURL)
-	q := u.Query()
-	q.Set("pageSize", strconv.Itoa(maxPageSize))
-	q.Set("pageToken", pageToken)
-	u.RawQuery = q.Encode()
-
-	respBody, err := apiclient.HttpClient(u.String())
-	if err != nil {
-		return nil, err
-	}
-
-	var lintegrations listintegrations
-	if err := json.Unmarshal(respBody, &lintegrations); err != nil {
-		return nil, err
-	}
-
-	return &lintegrations, nil
 }
 
 // Export
@@ -920,15 +884,23 @@ func Export(folder string) (err error) {
 	apiclient.SetClientPrintHttpResponse(false)
 	defer apiclient.SetClientPrintHttpResponse(apiclient.GetCmdPrintHttpResponseSetting())
 
-	respBody, err := List(maxPageSize, "", "", "")
-	if err != nil {
-		return err
-	}
-
+	pageToken := ""
 	lintegrations := listintegrations{}
 
-	if err = json.Unmarshal(respBody, &lintegrations); err != nil {
-		return err
+	for {
+		l := listintegrations{}
+		listRespBytes, err := List(maxPageSize, pageToken, "", "")
+		if err != nil {
+			return fmt.Errorf("failed to fetch Integrations: %w", err)
+		}
+		err = json.Unmarshal(listRespBytes, &l)
+		if err != nil {
+			return fmt.Errorf("failed to unmarshall: %w", err)
+		}
+		lintegrations.Integrations = append(lintegrations.Integrations, l.Integrations...)
+		if l.NextPageToken == "" {
+			break
+		}
 	}
 
 	// no integrations where found
@@ -939,54 +911,17 @@ func Export(folder string) (err error) {
 	for _, lintegration := range lintegrations.Integrations {
 		integrationName := lintegration.Name[strings.LastIndex(lintegration.Name, "/")+1:]
 		clilog.Info.Printf("Exporting all the revisions for Integration Flow %s\n", integrationName)
-		if _, err = ListVersions(integrationName, -1, "", "", "", true, true, false); err != nil {
+		if _, err = ListVersions(integrationName, maxPageSize, "", "", "", true, false, false); err != nil {
 			return err
 		}
 	}
 
-	if lintegrations.NextPageToken != "" {
-		if err = batchExport(folder, lintegrations.NextPageToken); err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-// batchExport
-func batchExport(folder string, nextPageToken string) (err error) {
-	respBody, err := List(maxPageSize, nextPageToken, "", "")
-	if err != nil {
-		return err
-	}
-
-	lintegrations := listintegrations{}
-	if err = json.Unmarshal(respBody, &lintegrations); err != nil {
-		return err
-	}
-
-	// no integrations where found
-	if len(lintegrations.Integrations) == 0 {
-		return nil
-	}
-
-	for _, lintegration := range lintegrations.Integrations {
-		integrationName := lintegration.Name[strings.LastIndex(lintegration.Name, "/")+1:]
-		clilog.Debug.Printf("Exporting all the revisions for Integration Flow %s\n", integrationName)
-		if _, err = ListVersions(integrationName, -1, "", "", "", true, true, false); err != nil {
-			return err
-		}
-	}
-
-	if lintegrations.NextPageToken != "" {
-		if err = batchExport(folder, lintegrations.NextPageToken); err != nil {
-			return err
-		}
-	}
 	return nil
 }
 
 // ImportFlow
 func ImportFlow(name string, folder string, conn int) (err error) {
+
 	var pwg sync.WaitGroup
 	var entities []string
 
