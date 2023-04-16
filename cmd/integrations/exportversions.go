@@ -43,6 +43,7 @@ var ExportVerCmd = &cobra.Command{
 		}
 
 		apiclient.SetExportToFile(folder)
+		apiclient.DisableCmdPrintHttpResponse()
 		_, err = integrations.ListVersions(name, -1, "", "", "", true, true, false)
 		return err
 	},

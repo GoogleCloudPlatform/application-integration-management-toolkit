@@ -375,6 +375,10 @@ func handleResponse(resp *http.Response) (respBody []byte, err error) {
 		clilog.Error.Printf("error in response: %v\n", err)
 		return nil, err
 	} else if resp.StatusCode > 399 {
+		if GetConflictsAsErrors() && resp.StatusCode == http.StatusConflict {
+			clilog.Warning.Printf("entity already exists, ignoring conflict")
+			return respBody, nil
+		}
 		clilog.Debug.Printf("status code %d, error in response: %s\n", resp.StatusCode, string(respBody))
 		clilog.HttpError.Println(string(respBody))
 		return nil, errors.New(getErrorMessage(resp.StatusCode))

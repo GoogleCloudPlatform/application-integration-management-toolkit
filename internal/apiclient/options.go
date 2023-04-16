@@ -44,6 +44,7 @@ type IntegrationClientOptions struct {
 	ProxyUrl             string // use a proxy url
 	ExportToFile         string // determine of the contents should be written to file
 	UseApigeeIntegration bool   // use Apigee Integration; defaults to Application Integration
+	ConflictsAreErrors   bool   //treat statusconflict as an error
 }
 
 var options *IntegrationClientOptions
@@ -98,6 +99,8 @@ func NewIntegrationClient(o IntegrationClientOptions) {
 	if o.ExportToFile != "" {
 		options.ExportToFile = o.ExportToFile
 	}
+
+	options.ConflictsAreErrors = true
 }
 
 // SetRegion sets the org variable
@@ -283,4 +286,14 @@ func GetNoOutput() bool {
 // GetSuppressWarning
 func GetSuppressWarning() bool {
 	return options.SuppressWarnings
+}
+
+// SetConflictsAsErrors
+func SetConflictsAsErrors(b bool) {
+	options.ConflictsAreErrors = b
+}
+
+// GetConflictsAsErrors
+func GetConflictsAsErrors() bool {
+	return options.ConflictsAreErrors
 }

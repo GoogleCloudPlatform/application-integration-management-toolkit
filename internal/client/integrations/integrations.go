@@ -920,10 +920,9 @@ func Export(folder string) (err error) {
 }
 
 // ImportFlow
-func ImportFlow(name string, folder string, conn int) (err error) {
+func ImportFlow(name string, folder string, numConnections int) (err error) {
 
-	var pwg sync.WaitGroup
-	var entities []string
+	var versions []string
 
 	rIntegrationFlowFiles := regexp.MustCompile(name + `\+[0-9]+\+[a-zA-Z0-9]{8}-[a-zA-Z0-9]{4}-[a-zA-Z0-9]{4}-[a-zA-Z0-9]{4}-[a-zA-Z0-9]{12}\.json`)
 
@@ -941,7 +940,7 @@ func ImportFlow(name string, folder string, conn int) (err error) {
 		fileName := filepath.Base(path)
 		ok := rIntegrationFlowFiles.Match([]byte(fileName))
 		if ok {
-			entities = append(entities, path)
+			versions = append(versions, path)
 		}
 		return nil
 	})
@@ -950,72 +949,91 @@ func ImportFlow(name string, folder string, conn int) (err error) {
 		return err
 	}
 
-	numEntities := len(entities)
-	clilog.Debug.Printf("Found %d versions in the folder\n", numEntities)
-	clilog.Debug.Printf("Importing versions with %d connections\n", conn)
-
-	numOfLoops, remaining := numEntities/conn, numEntities%conn
-
-	// ensure connections aren't greater than entities
-	if conn > numEntities {
-		conn = numEntities
-	}
-
-	start := 0
+	numEntities := len(versions)
+	clilog.Info.Printf("Found %d versions in the folder\n", numEntities)
+	clilog.Info.Printf("Importing versions with %d connections\n", numConnections)
 
 	apiclient.SetClientPrintHttpResponse(false)
 	defer apiclient.SetClientPrintHttpResponse(apiclient.GetCmdPrintHttpResponseSetting())
 
-	for i, end := 0, 0; i < numOfLoops; i++ {
-		pwg.Add(1)
-		end = (i * conn) + conn
-		clilog.Debug.Printf("Uploading batch %d of versions\n", (i + 1))
-		go batchImport(name, entities[start:end], &pwg)
-		start = end
-		pwg.Wait()
+	errChan := make(chan error)
+	workChan := make(chan []string, numEntities)
+
+	fanOutWg := sync.WaitGroup{}
+	fanInWg := sync.WaitGroup{}
+
+	errs := []string{}
+	fanInWg.Add(1)
+
+	go func() {
+		defer fanInWg.Done()
+		for {
+			newErr, ok := <-errChan
+			if !ok {
+				return
+			}
+			errs = append(errs, newErr.Error())
+		}
+	}()
+
+	for i := 0; i < numConnections; i++ {
+		fanOutWg.Add(1)
+		go batchImport(&fanOutWg, name, workChan, errChan)
 	}
 
-	if remaining > 0 {
-		pwg.Add(1)
-		clilog.Debug.Printf("Uploading remaining %d versions\n", remaining)
-		go batchImport(name, entities[start:numEntities], &pwg)
-		pwg.Wait()
+	workChan <- versions
+
+	close(workChan)
+	fanOutWg.Wait()
+	close(errChan)
+	fanInWg.Wait()
+
+	if len(errs) > 0 {
+		return errors.New(strings.Join(errs, "\n"))
 	}
 
 	return nil
 }
 
-// batchImport creates a batch of integration flows to import
-func batchImport(name string, entities []string, pwg *sync.WaitGroup) {
-	defer pwg.Done()
-	// batch workgroup
-	var bwg sync.WaitGroup
-
-	bwg.Add(len(entities))
-
-	for _, entity := range entities {
-		go uploadAsync(name, entity, &bwg)
+// importFlow
+func importFlow(wg *sync.WaitGroup, workCh <-chan string, folder string, numConnections int, errs chan<- error) {
+	defer wg.Done()
+	err := ImportFlow(<-workCh, folder, numConnections)
+	if err != nil {
+		errs <- err
 	}
-	bwg.Wait()
 }
 
-func uploadAsync(name string, filePath string, wg *sync.WaitGroup) {
+// batchImport creates a batch of integration flows to import
+func batchImport(wg *sync.WaitGroup, name string, workCh <-chan []string, errs chan<- error) {
 	defer wg.Done()
+
+	for _, work := range <-workCh {
+		err := uploadAsync(name, work)
+		if err != nil {
+			errs <- err
+			continue
+		}
+	}
+}
+
+func uploadAsync(name string, filePath string) error {
 	content, err := os.ReadFile(filePath)
 	if err != nil {
-		return
+		return err
 	}
 
-	if _, err := Upload(name, content); err != nil {
-		clilog.Error.Println(err)
-	} else {
-		clilog.Info.Printf("Uploaded file %s for Integration flow %s\n", filePath, name)
+	if _, err := CreateVersion(name, content, nil, "", ""); err != nil {
+		return err
 	}
+
+	clilog.Info.Printf("Uploaded file %s for Integration flow %s\n", filePath, name)
+	return nil
 }
 
 // Import
-func Import(folder string, conn int) (err error) {
-	var pwg sync.WaitGroup
+func Import(folder string, numConnections int) (err error) {
+
 	var names []string
 
 	rIntegrationFlowFiles := regexp.MustCompile(`[\w|-]+\+[0-9]+\+[a-zA-Z0-9]{8}-[a-zA-Z0-9]{4}-[a-zA-Z0-9]{4}-[a-zA-Z0-9]{4}-[a-zA-Z0-9]{12}\.json`)
@@ -1051,10 +1069,46 @@ func Import(folder string, conn int) (err error) {
 		return err
 	}
 
-	for _, integrationFlowName := range names {
-		pwg.Add(1)
-		go asyncImportFlow(integrationFlowName, folder, conn, &pwg)
-		pwg.Wait()
+	numEntities := len(names)
+	clilog.Info.Printf("Found %d Integrations in the folder\n", numEntities)
+	clilog.Info.Printf("Importing versions with %d connections\n", numConnections)
+
+	errChan := make(chan error)
+	workChan := make(chan string, numEntities)
+
+	fanOutWg := sync.WaitGroup{}
+	fanInWg := sync.WaitGroup{}
+
+	errs := []string{}
+	fanInWg.Add(1)
+
+	go func() {
+		defer fanInWg.Done()
+		for {
+			newErr, ok := <-errChan
+			if !ok {
+				return
+			}
+			errs = append(errs, newErr.Error())
+		}
+	}()
+
+	for i := 0; i < numConnections; i++ {
+		fanOutWg.Add(1)
+		go importFlow(&fanOutWg, workChan, folder, numConnections, errChan)
+	}
+
+	for _, name := range names {
+		workChan <- name
+	}
+
+	close(workChan)
+	fanOutWg.Wait()
+	close(errChan)
+	fanInWg.Wait()
+
+	if len(errs) > 0 {
+		return errors.New(strings.Join(errs, "\n"))
 	}
 
 	return nil
