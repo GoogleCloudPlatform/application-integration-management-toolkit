@@ -914,8 +914,6 @@ func fetchIntegrationsWithPageToken(integrationURL string, pageToken string) (*l
 	return &lintegrations, nil
 }
 
-// exportWorker exports all revisions
-
 // Export
 func Export(folder string) (err error) {
 	apiclient.SetExportToFile(folder)

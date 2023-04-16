@@ -384,6 +384,12 @@ func SetCloudSQLIAMPermission(project string, memberName string) (err error) {
 	return setProjectIAMPermission(project, memberName, role)
 }
 
+// SetCloudSpannerIAMPermission
+func SetCloudSpannerIAMPermission(project string, memberName string) (err error) {
+	const role = "roles/spanner.databaseUser"
+	return setProjectIAMPermission(project, memberName, role)
+}
+
 func getNameAndProject(iamFullName string) (projectid string, name string, err error) {
 	riam := regexp.MustCompile(`^[a-zA-Z0-9-]{6,30}$`)
 

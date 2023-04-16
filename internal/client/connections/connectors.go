@@ -260,12 +260,14 @@ func create(name string, content []byte, serviceAccountName string, serviceAccou
 
 	if c.ConnectorDetails == nil {
 		return nil, fmt.Errorf("connectorDetails must be set." +
-			" See https://github.com/GoogleCloudPlatform/application-integration-management-toolkit#connectors-for-third-party-applications for more details")
+			" See https://github.com/GoogleCloudPlatform/application-integration-management-toolkit" +
+			"#connectors-for-third-party-applications for more details")
 	}
 
 	if c.ConnectorDetails.Name == "" || c.ConnectorDetails.Version < 0 || c.ConnectorDetails.Provider == "" {
 		return nil, fmt.Errorf("connectorDetails Name, Provider and Version must be set." +
-			" See https://github.com/GoogleCloudPlatform/application-integration-management-toolkit#connectors-for-third-party-applications for more details")
+			" See https://github.com/GoogleCloudPlatform/application-integration-management-toolkit" +
+			"#connectors-for-third-party-applications for more details")
 	}
 
 	// handle project id & region overrides
@@ -282,7 +284,7 @@ func create(name string, content []byte, serviceAccountName string, serviceAccou
 
 	// check if permissions need to be set
 	if grantPermission && c.ServiceAccount != nil {
-		var projectId string
+		var projectID string
 
 		switch c.ConnectorDetails.Name {
 		case "pubsub":
@@ -290,60 +292,72 @@ func create(name string, content []byte, serviceAccountName string, serviceAccou
 
 			for _, configVar := range *c.ConfigVariables {
 				if configVar.Key == "project_id" {
-					projectId = *configVar.StringValue
+					projectID = *configVar.StringValue
 				}
 				if configVar.Key == "topic_id" {
 					topicName = *configVar.StringValue
 				}
 			}
 
-			if projectId == "" || topicName == "" {
+			if projectID == "" || topicName == "" {
 				return nil, fmt.Errorf("projectId or topicName was not set")
 			}
 
-			if err = apiclient.SetPubSubIAMPermission(projectId, topicName, *c.ServiceAccount); err != nil {
+			if err = apiclient.SetPubSubIAMPermission(projectID, topicName, *c.ServiceAccount); err != nil {
 				clilog.Warning.Printf("Unable to update permissions for the service account: %v\n", err)
 			}
 		case "bigquery":
-			var datasetId string
+			var datasetID string
 
 			for _, configVar := range *c.ConfigVariables {
 				if configVar.Key == "project_id" {
-					projectId = *configVar.StringValue
+					projectID = *configVar.StringValue
 				}
 				if configVar.Key == "dataset_id" {
-					datasetId = *configVar.StringValue
+					datasetID = *configVar.StringValue
 				}
 			}
-			if projectId == "" || datasetId == "" {
-				return nil, fmt.Errorf("projectId or datasetId was not set")
+			if projectID == "" || datasetID == "" {
+				return nil, fmt.Errorf("project_id or dataset_id was not set")
 			}
 
-			if err = apiclient.SetBigQueryIAMPermission(projectId, datasetId, *c.ServiceAccount); err != nil {
+			if err = apiclient.SetBigQueryIAMPermission(projectID, datasetID, *c.ServiceAccount); err != nil {
 				clilog.Warning.Printf("Unable to update permissions for the service account: %v\n", err)
 			}
 		case "gcs":
 			for _, configVar := range *c.ConfigVariables {
 				if configVar.Key == "project_id" {
-					projectId = *configVar.StringValue
+					projectID = *configVar.StringValue
 				}
 			}
-			if projectId == "" {
-				return nil, fmt.Errorf("projectId was not set")
+			if projectID == "" {
+				return nil, fmt.Errorf("project_id was not set")
 			}
-			if err = apiclient.SetCloudStorageIAMPermission(projectId, *c.ServiceAccount); err != nil {
+			if err = apiclient.SetCloudStorageIAMPermission(projectID, *c.ServiceAccount); err != nil {
 				clilog.Warning.Printf("Unable to update permissions for the service account: %v\n", err)
 			}
 		case "cloudsql-mysql", "cloudsql-postgresql", "cloudsql-sqlserver":
 			for _, configVar := range *c.ConfigVariables {
 				if configVar.Key == "project_id" {
-					projectId = *configVar.StringValue
+					projectID = *configVar.StringValue
 				}
 			}
-			if projectId == "" {
+			if projectID == "" {
 				return nil, fmt.Errorf("projectId was not set")
 			}
-			if err = apiclient.SetCloudSQLIAMPermission(projectId, *c.ServiceAccount); err != nil {
+			if err = apiclient.SetCloudSQLIAMPermission(projectID, *c.ServiceAccount); err != nil {
+				clilog.Warning.Printf("Unable to update permissions for the service account: %v\n", err)
+			}
+		case "cloudspanner":
+			for _, configVar := range *c.ConfigVariables {
+				if configVar.Key == "project_id" {
+					projectID = *configVar.StringValue
+				}
+			}
+			if projectID == "" {
+				return nil, fmt.Errorf("project_id was not set")
+			}
+			if err = apiclient.SetCloudSpannerIAMPermission(projectID, *c.ServiceAccount); err != nil {
 				clilog.Warning.Printf("Unable to update permissions for the service account: %v\n", err)
 			}
 		}
