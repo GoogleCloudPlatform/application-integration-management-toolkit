@@ -40,7 +40,7 @@ const (
 
 // IntegrationClientOptions is the base struct to hold all command arguments
 type IntegrationClientOptions struct {
-	Api                API    //integrationcli can switch between prod, autopush and staging
+	Api                API    // integrationcli can switch between prod, autopush and staging
 	Region             string // Integration region
 	Token              string // Google OAuth access token
 	ServiceAccount     string // Google service account json
@@ -392,7 +392,7 @@ func GetRate() Rate {
 
 // SetAPI
 func SetAPI(a API) {
-	//prod is the default
+	// prod is the default
 	if a == "" {
 		options.Api = PROD
 	} else {

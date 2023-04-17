@@ -79,8 +79,10 @@ func Execute() {
 	}
 }
 
-var disableCheck, printOutput, noOutput, suppressWarnings, verbose bool
-var api apiclient.API
+var (
+	disableCheck, printOutput, noOutput, suppressWarnings, verbose bool
+	api                                                            apiclient.API
+)
 
 const ENABLED = "true"
 

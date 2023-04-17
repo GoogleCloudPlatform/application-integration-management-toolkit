@@ -50,7 +50,9 @@ var SetCmd = &cobra.Command{
 		}
 
 		if api != "" {
-			apiclient.SetAPIPref(apiclient.API(api))
+			if err = apiclient.SetAPIPref(apiclient.API(api)); err != nil {
+				return err
+			}
 		}
 
 		return nil
