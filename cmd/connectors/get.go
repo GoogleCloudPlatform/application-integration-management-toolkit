@@ -16,6 +16,7 @@ package connectors
 
 import (
 	"fmt"
+	"strconv"
 
 	"internal/apiclient"
 
@@ -43,6 +44,8 @@ var GetCmd = &cobra.Command{
 	},
 	RunE: func(cmd *cobra.Command, args []string) (err error) {
 		name := cmd.Flag("name").Value.String()
+		minimal, _ := strconv.ParseBool(cmd.Flag("minimal").Value.String())
+		overrides, _ := strconv.ParseBool(cmd.Flag("override").Value.String())
 		if overrides {
 			minimal = true
 		}
@@ -51,13 +54,11 @@ var GetCmd = &cobra.Command{
 	},
 }
 
-var (
-	view               string
-	minimal, overrides bool
-)
+var view string
 
 func init() {
 	var name string
+	var minimal, overrides = false, false
 
 	GetCmd.Flags().StringVarP(&name, "name", "n",
 		"", "The name of the connection")

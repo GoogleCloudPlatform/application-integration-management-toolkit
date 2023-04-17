@@ -23,6 +23,7 @@ import (
 	"path"
 	"path/filepath"
 	"regexp"
+	"strconv"
 	"strings"
 
 	"internal/apiclient"
@@ -54,6 +55,10 @@ var ApplyCmd = &cobra.Command{
 		if stat, err := os.Stat(folder); err != nil || !stat.IsDir() {
 			return fmt.Errorf("problem with supplied path, %w", err)
 		}
+
+		createSecret, _ := strconv.ParseBool(cmd.Flag("create-secret").Value.String())
+		grantPermission, _ := strconv.ParseBool(cmd.Flag("grant-permission").Value.String())
+		wait, _ := strconv.ParseBool(cmd.Flag("wait").Value.String())
 
 		rJSONFiles := regexp.MustCompile(`(\S*)\.json`)
 		integrationFolder := path.Join(folder, "src")
@@ -277,11 +282,12 @@ var ApplyCmd = &cobra.Command{
 }
 
 var (
-	grantPermission, createSecret, wait                      bool
 	serviceAccountName, serviceAccountProject, encryptionKey string
 )
 
 func init() {
+	var grantPermission, createSecret, wait = false, false, false
+
 	ApplyCmd.Flags().StringVarP(&folder, "folder", "f",
 		"", "Folder containing scaffolding configuration")
 	ApplyCmd.Flags().BoolVarP(&grantPermission, "grant-permission", "g",

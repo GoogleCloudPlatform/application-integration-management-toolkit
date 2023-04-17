@@ -48,8 +48,6 @@ func init() {
 
 	ListCmd.Flags().StringVarP(&instance, "instance", "i",
 		"", "sfdc instance name")
-	ListCmd.Flags().BoolVarP(&minimal, "minimal", "",
-		false, "Minimal number of fields returned; default is false")
 
 	_ = ListCmd.MarkFlagRequired("instance")
 }

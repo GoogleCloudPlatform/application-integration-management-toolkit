@@ -376,6 +376,9 @@ func create(name string, content []byte, serviceAccountName string, serviceAccou
 		case "USER_PASSWORD":
 			if c.AuthConfig.UserPassword != nil && c.AuthConfig.UserPassword.PasswordDetails != nil {
 				if createSecret {
+					if c.AuthConfig.UserPassword.PasswordDetails.Reference == "" {
+						return nil, fmt.Errorf("create-secret is enabled, but reference is not passed")
+					}
 					payload, err := readSecretFile(c.AuthConfig.UserPassword.PasswordDetails.Reference)
 					if err != nil {
 						return nil, err
@@ -604,7 +607,7 @@ func Patch(name string, content []byte, updateMask []string) (respBody []byte, e
 
 func readSecretFile(name string) (payload []byte, err error) {
 	if _, err := os.Stat(name); os.IsNotExist(err) {
-		return nil, err
+		return nil, fmt.Errorf("unable to open secret file %s, err: %w", name, err)
 	}
 
 	content, err := os.ReadFile(name)

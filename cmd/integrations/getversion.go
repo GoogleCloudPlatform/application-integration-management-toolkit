@@ -16,6 +16,7 @@ package integrations
 
 import (
 	"errors"
+	"strconv"
 
 	"internal/apiclient"
 
@@ -54,6 +55,9 @@ var GetVerCmd = &cobra.Command{
 	RunE: func(cmd *cobra.Command, args []string) (err error) {
 		version := cmd.Flag("ver").Value.String()
 		name := cmd.Flag("name").Value.String()
+		minimal, _ := strconv.ParseBool(cmd.Flag("minimal").Value.String())
+		overrides, _ := strconv.ParseBool(cmd.Flag("overrides").Value.String())
+		basic, _ := strconv.ParseBool(cmd.Flag("basic").Value.String())
 
 		if version != "" {
 			_, err = integrations.Get(name, version, basic, minimal, overrides)
@@ -66,10 +70,9 @@ var GetVerCmd = &cobra.Command{
 	},
 }
 
-var minimal bool
-
 func init() {
 	var name, version string
+	var minimal, overrides, basic = false, false, false
 
 	GetVerCmd.Flags().StringVarP(&name, "name", "n",
 		"", "Integration flow name")

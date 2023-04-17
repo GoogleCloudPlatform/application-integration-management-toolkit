@@ -17,6 +17,7 @@ package authconfigs
 import (
 	"errors"
 	"path"
+	"strconv"
 
 	"internal/apiclient"
 
@@ -50,6 +51,7 @@ var GetCmd = &cobra.Command{
 	RunE: func(cmd *cobra.Command, args []string) (err error) {
 		name := cmd.Flag("name").Value.String()
 		id := cmd.Flag("id").Value.String()
+		minimal, _ := strconv.ParseBool(cmd.Flag("minimal").Value.String())
 
 		if name != "" {
 			apiclient.DisableCmdPrintHttpResponse()
@@ -68,10 +70,9 @@ var GetCmd = &cobra.Command{
 	},
 }
 
-var minimal bool
-
 func init() {
 	var name, id string
+	var minimal = false
 
 	GetCmd.Flags().StringVarP(&id, "id", "i",
 		"", "Authconfig name (uuid)")

@@ -16,6 +16,7 @@ package preferences
 
 import (
 	"internal/apiclient"
+	"strconv"
 
 	"github.com/spf13/cobra"
 )
@@ -29,6 +30,7 @@ var SetCmd = &cobra.Command{
 		project := cmd.Flag("proj").Value.String()
 		region := cmd.Flag("reg").Value.String()
 		proxyURL := cmd.Flag("proxy").Value.String()
+		nocheck, _ := strconv.ParseBool(cmd.Flag("nocheck").Value.String())
 
 		if err = apiclient.WriteDefaultProject(project); err != nil {
 			return err
@@ -48,20 +50,13 @@ var SetCmd = &cobra.Command{
 			}
 		}
 
-		if useapigee {
-			if err = apiclient.SetUseApigee(useapigee); err != nil {
-				return err
-			}
-		}
-
 		return nil
 	},
 }
 
-var nocheck, useapigee bool
-
 func init() {
 	var project, region, proxyURL string
+	var nocheck = false
 
 	SetCmd.Flags().StringVarP(&project, "proj", "p",
 		"", "Integration GCP Project name")
@@ -74,7 +69,4 @@ func init() {
 
 	SetCmd.Flags().BoolVarP(&nocheck, "nocheck", "",
 		false, "Don't check for newer versions of cmd")
-
-	SetCmd.Flags().BoolVarP(&useapigee, "apigee-integration", "",
-		false, "Use Apigee Integration; default is false (Application Integration)")
 }

@@ -16,6 +16,7 @@ package integrations
 
 import (
 	"internal/apiclient"
+	"strconv"
 
 	"internal/client/integrations"
 
@@ -38,17 +39,16 @@ var CleanCmd = &cobra.Command{
 	},
 	RunE: func(cmd *cobra.Command, args []string) (err error) {
 		name := cmd.Flag("name").Value.String()
+		reportOnly, _ := strconv.ParseBool(cmd.Flag("report").Value.String())
 		return integrations.Clean(name, reportOnly, keepList)
 	},
 }
 
-var (
-	reportOnly bool
-	keepList   []string
-)
+var keepList []string
 
 func init() {
 	var name string
+	var reportOnly = true
 
 	CleanCmd.Flags().StringVarP(&name, "name", "n",
 		"", "Integration name")
