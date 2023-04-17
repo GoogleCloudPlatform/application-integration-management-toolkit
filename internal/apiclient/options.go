@@ -17,6 +17,7 @@ package apiclient
 import (
 	"fmt"
 	"os"
+	"strings"
 	"sync"
 
 	"internal/clilog"
@@ -24,28 +25,35 @@ import (
 
 // BaseURL is the Integration control plane endpoint
 const (
-	integrationBaseURL         = "https://%s-integrations.googleapis.com/v1/projects/%s/locations/%s/products/apigee/"
-	appIntegrationBaseURL      = "https://%s-integrations.googleapis.com/v1/projects/%s/locations/%s/"
-	connectorBaseURL           = "https://connectors.googleapis.com/v1/projects/%s/locations/%s/connections"
-	connectorOperationsBaseURL = "https://connectors.googleapis.com/v1/projects/%s/locations/%s/operations"
+	appIntegrationAutoPushBaseURL = "https://autopushqual%s-integrations.sandbox.googleapis.com/v1/projects/%s/locations/%s/"
+	appIntegrationStagingBaseURL  = "https://stagingqual%s-integrations.sandbox.googleapis.com/v1/projects/%s/locations/%s/"
+	appIntegrationBaseURL         = "https://%s-integrations.googleapis.com/v1/projects/%s/locations/%s/"
+
+	connectorBaseURL         = "https://connectors.googleapis.com/v1/projects/%s/locations/%s/connections"
+	connectorAutoPushBaseURL = "https://autopush-connectors.sandbox.googleapis.com/v1/projects/%s/locations/%s/connections"
+	connectorStagingBaseURL  = "https://staging-connectors.sandbox.googleapis.com/v1/projects/%s/locations/%s/connections"
+
+	connectorOperationsBaseURL         = "https://connectors.googleapis.com/v1/projects/%s/locations/%s/operations"
+	connectorOperationsAutoPushBaseURL = "https://staging-connectors.sandbox.googleapis.com/v1/projects/%s/locations/%s/operations"
+	connectorOperationsStagingBaseURL  = "https://staging-connectors.sandbox.googleapis.com/v1/projects/%s/locations/%s/operations"
 )
 
 // IntegrationClientOptions is the base struct to hold all command arguments
 type IntegrationClientOptions struct {
-	Region               string // Integration region
-	Token                string // Google OAuth access token
-	ServiceAccount       string // Google service account json
-	ProjectID            string // GCP Project ID
-	DebugLog             bool   // Enable debug logs
-	TokenCheck           bool   // skip checking access token expiry
-	SkipCache            bool   // skip writing access token to file
-	PrintOutput          bool   // prints output from http calls
-	NoOutput             bool   // Disable all statements to stdout
-	SuppressWarnings     bool   // Disable printing of warnings to stdout
-	ProxyUrl             string // use a proxy url
-	ExportToFile         string // determine of the contents should be written to file
-	UseApigeeIntegration bool   // use Apigee Integration; defaults to Application Integration
-	ConflictsAreErrors   bool   // treat statusconflict as an error
+	Api                API    //integrationcli can switch between prod, autopush and staging
+	Region             string // Integration region
+	Token              string // Google OAuth access token
+	ServiceAccount     string // Google service account json
+	ProjectID          string // GCP Project ID
+	DebugLog           bool   // Enable debug logs
+	TokenCheck         bool   // skip checking access token expiry
+	SkipCache          bool   // skip writing access token to file
+	PrintOutput        bool   // prints output from http calls
+	NoOutput           bool   // Disable all statements to stdout
+	SuppressWarnings   bool   // Disable printing of warnings to stdout
+	ProxyUrl           string // use a proxy url
+	ExportToFile       string // determine of the contents should be written to file
+	ConflictsAreErrors bool   // treat statusconflict as an error
 }
 
 var options *IntegrationClientOptions
@@ -56,6 +64,14 @@ const (
 	None Rate = iota
 	IntegrationAPI
 	ConnectorsAPI
+)
+
+type API string
+
+const (
+	PROD     API = "prod"
+	STAGING  API = "staging"
+	AUTOPUSH API = "autopush"
 )
 
 var apiRate Rate
@@ -95,8 +111,10 @@ func NewIntegrationClient(o IntegrationClientOptions) {
 		options.Region = cliPref.Region
 		options.ProxyUrl = cliPref.ProxyUrl
 		options.Token = cliPref.Token
-		options.UseApigeeIntegration = cliPref.UseApigee
 		options.TokenCheck = cliPref.Nocheck
+		if cliPref.Api != "" {
+			options.Api = cliPref.Api
+		}
 	}
 
 	if o.Region != "" {
@@ -114,8 +132,29 @@ func NewIntegrationClient(o IntegrationClientOptions) {
 	if o.ExportToFile != "" {
 		options.ExportToFile = o.ExportToFile
 	}
+	if o.Api == "" {
+		options.Api = o.Api
+	}
 
 	options.ConflictsAreErrors = true
+}
+
+func (a *API) String() string {
+	return string(*a)
+}
+
+func (a *API) Set(r string) error {
+	switch r {
+	case "prod", "staging", "autopush":
+		*a = API(r)
+	default:
+		return fmt.Errorf("must be one of %s,%s or %s", PROD, STAGING, AUTOPUSH)
+	}
+	return nil
+}
+
+func (a *API) Type() string {
+	return "api"
 }
 
 // SetRegion sets the org variable
@@ -247,10 +286,20 @@ func GetBaseIntegrationURL() (integrationUrl string) {
 	if options.ProjectID == "" || options.Region == "" {
 		return ""
 	}
-	if options.UseApigeeIntegration {
-		return fmt.Sprintf(integrationBaseURL, GetRegion(), GetProjectID(), GetRegion())
+	switch options.Api {
+	case PROD:
+		return fmt.Sprintf(appIntegrationBaseURL, GetRegion(), GetProjectID(), GetRegion())
+	case STAGING:
+		// the url for staging is like:
+		// https://stagingqualuswest1-integrations.sandbox.googleapis.com/v1/projects/-/locations/us-west1/integrations
+		return fmt.Sprintf(appIntegrationStagingBaseURL, strings.Replace(GetRegion(), "-", "", -1), GetProjectID(), GetRegion())
+	case AUTOPUSH:
+		// the url for autopush is like:
+		// https://autopushqualuswest1-integrations.sandbox.googleapis.com/v1/projects/-/locations/us-west1/integrations
+		return fmt.Sprintf(appIntegrationAutoPushBaseURL, strings.Replace(GetRegion(), "-", "", -1), GetProjectID(), GetRegion())
+	default:
+		return fmt.Sprintf(appIntegrationBaseURL, GetRegion(), GetProjectID(), GetRegion())
 	}
-	return fmt.Sprintf(appIntegrationBaseURL, GetRegion(), GetProjectID(), GetRegion())
 }
 
 // GetBaseConnectorURL
@@ -258,7 +307,16 @@ func GetBaseConnectorURL() (connectorUrl string) {
 	if options.ProjectID == "" || options.Region == "" {
 		return ""
 	}
-	return fmt.Sprintf(connectorBaseURL, GetProjectID(), GetRegion())
+	switch options.Api {
+	case PROD:
+		return fmt.Sprintf(connectorBaseURL, GetProjectID(), GetRegion())
+	case STAGING:
+		return fmt.Sprintf(connectorStagingBaseURL, GetProjectID(), GetRegion())
+	case AUTOPUSH:
+		return fmt.Sprintf(connectorAutoPushBaseURL, GetProjectID(), GetRegion())
+	default:
+		return fmt.Sprintf(connectorBaseURL, GetProjectID(), GetRegion())
+	}
 }
 
 // GetBaseConnectorOperationsURL
@@ -266,7 +324,16 @@ func GetBaseConnectorOperationsrURL() (connectorUrl string) {
 	if options.ProjectID == "" || options.Region == "" {
 		return ""
 	}
-	return fmt.Sprintf(connectorOperationsBaseURL, GetProjectID(), GetRegion())
+	switch options.Api {
+	case PROD:
+		return fmt.Sprintf(connectorOperationsBaseURL, GetProjectID(), GetRegion())
+	case STAGING:
+		return fmt.Sprintf(connectorOperationsStagingBaseURL, GetProjectID(), GetRegion())
+	case AUTOPUSH:
+		return fmt.Sprintf(connectorOperationsAutoPushBaseURL, GetProjectID(), GetRegion())
+	default:
+		return fmt.Sprintf(connectorOperationsBaseURL, GetProjectID(), GetRegion())
+	}
 }
 
 // SetExportToFile
@@ -286,10 +353,6 @@ func DryRun() bool {
 		return true
 	}
 	return false
-}
-
-func UseApigeeIntegration() {
-	options.UseApigeeIntegration = true
 }
 
 // SetNoOutput
@@ -325,4 +388,19 @@ func SetRate(r Rate) {
 // GetRate
 func GetRate() Rate {
 	return apiRate
+}
+
+// SetAPI
+func SetAPI(a API) {
+	//prod is the default
+	if a == "" {
+		options.Api = PROD
+	} else {
+		options.Api = a
+	}
+}
+
+// GetAPI
+func GetAPI() API {
+	return options.Api
 }

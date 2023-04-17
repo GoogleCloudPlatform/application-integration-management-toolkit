@@ -63,9 +63,7 @@ var RootCmd = &cobra.Command{
 			}
 		}
 
-		if useApigee {
-			apiclient.UseApigeeIntegration()
-		}
+		apiclient.SetAPI(api)
 
 		_ = apiclient.SetAccessToken()
 
@@ -81,7 +79,8 @@ func Execute() {
 	}
 }
 
-var disableCheck, useApigee, printOutput, noOutput, suppressWarnings, verbose bool
+var disableCheck, printOutput, noOutput, suppressWarnings, verbose bool
+var api apiclient.API
 
 const ENABLED = "true"
 
@@ -99,9 +98,6 @@ func init() {
 	RootCmd.PersistentFlags().BoolVarP(&disableCheck, "disable-check", "",
 		false, "Disable check for newer versions")
 
-	RootCmd.PersistentFlags().BoolVarP(&useApigee, "apigee-integration", "",
-		false, "Use Apigee Integration; default is false (Application Integration)")
-
 	RootCmd.PersistentFlags().BoolVarP(&printOutput, "print-output", "",
 		true, "Control printing of info log statements")
 
@@ -113,6 +109,9 @@ func init() {
 
 	RootCmd.PersistentFlags().BoolVarP(&verbose, "verbose", "",
 		false, "Enable verbose output from integrationcli")
+
+	RootCmd.PersistentFlags().Var(&api, "api", "Sets the control plane API. Must be one of prod, "+
+		"staging or autopush; default is prod")
 
 	RootCmd.AddCommand(integrations.Cmd)
 	RootCmd.AddCommand(preferences.Cmd)

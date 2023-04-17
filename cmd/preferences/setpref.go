@@ -29,6 +29,7 @@ var SetCmd = &cobra.Command{
 		project := cmd.Flag("proj").Value.String()
 		region := cmd.Flag("reg").Value.String()
 		proxyURL := cmd.Flag("proxy").Value.String()
+		api := cmd.Flag("api").Value.String()
 
 		if err = apiclient.WriteDefaultProject(project); err != nil {
 			return err
@@ -48,20 +49,19 @@ var SetCmd = &cobra.Command{
 			}
 		}
 
-		if useapigee {
-			if err = apiclient.SetUseApigee(useapigee); err != nil {
-				return err
-			}
+		if api != "" {
+			apiclient.SetAPIPref(apiclient.API(api))
 		}
 
 		return nil
 	},
 }
 
-var nocheck, useapigee bool
+var nocheck bool
 
 func init() {
 	var project, region, proxyURL string
+	var api apiclient.API
 
 	SetCmd.Flags().StringVarP(&project, "proj", "p",
 		"", "Integration GCP Project name")
@@ -75,6 +75,6 @@ func init() {
 	SetCmd.Flags().BoolVarP(&nocheck, "nocheck", "",
 		false, "Don't check for newer versions of cmd")
 
-	SetCmd.Flags().BoolVarP(&useapigee, "apigee-integration", "",
-		false, "Use Apigee Integration; default is false (Application Integration)")
+	SetCmd.Flags().Var(&api, "api", "Sets the control plane API. Must be one of prod, "+
+		"staging or autopush; default is prod")
 }
