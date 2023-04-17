@@ -49,6 +49,21 @@ type instanceExternal struct {
 	ServiceAuthority string   `json:"serviceAuthority,omitempty"`
 }
 
+// CreateInstanceFromContent
+func CreateInstanceFromContent(content []byte) (respBody []byte, err error) {
+	i := instance{}
+
+	if err = json.Unmarshal(content, &i); err != nil {
+		return nil, err
+	}
+
+	u, _ := url.Parse(apiclient.GetBaseIntegrationURL())
+	u.Path = path.Join(u.Path, "sfdcInstances")
+
+	respBody, err = apiclient.HttpClient(u.String(), string(content))
+	return respBody, err
+}
+
 // CreateInstance
 func CreateInstance(name string, description string, sfdcOrgId string, serviceAuthority string, authConfig []string) (respBody []byte, err error) {
 	u, _ := url.Parse(apiclient.GetBaseIntegrationURL())
@@ -69,7 +84,7 @@ func CreateInstance(name string, description string, sfdcOrgId string, serviceAu
 
 	payload := "{" + strings.Join(instanceStr, ",") + "}"
 	u.Path = path.Join(u.Path, "sfdcInstances")
-	respBody, err = apiclient.HttpClient(apiclient.GetPrintOutput(), u.String(), payload)
+	respBody, err = apiclient.HttpClient(u.String(), payload)
 
 	return respBody, err
 }
@@ -79,11 +94,10 @@ func GetInstance(name string, minimal bool) (respBody []byte, err error) {
 	u, _ := url.Parse(apiclient.GetBaseIntegrationURL())
 	u.Path = path.Join(u.Path, "sfdcInstances", name)
 
-	printSetting := apiclient.GetPrintOutput()
 	if minimal {
-		apiclient.SetPrintOutput(false)
+		apiclient.ClientPrintHttpResponse.Set(false)
 	}
-	respBody, err = apiclient.HttpClient(apiclient.GetPrintOutput(), u.String())
+	respBody, err = apiclient.HttpClient(u.String())
 	if minimal {
 		iversion := instance{}
 		err := json.Unmarshal(respBody, &iversion)
@@ -95,11 +109,9 @@ func GetInstance(name string, minimal bool) (respBody []byte, err error) {
 		if err != nil {
 			return nil, err
 		}
-		if printSetting {
-			apiclient.PrettyPrint(respBody)
-		}
+		apiclient.ClientPrintHttpResponse.Set(apiclient.GetCmdPrintHttpResponseSetting())
+		apiclient.PrettyPrint(respBody)
 	}
-	apiclient.SetPrintOutput(printSetting)
 	return respBody, err
 }
 
@@ -107,7 +119,7 @@ func GetInstance(name string, minimal bool) (respBody []byte, err error) {
 func ListInstances() (respBody []byte, err error) {
 	u, _ := url.Parse(apiclient.GetBaseIntegrationURL())
 	u.Path = path.Join(u.Path, "sfdcInstances")
-	respBody, err = apiclient.HttpClient(apiclient.GetPrintOutput(), u.String())
+	respBody, err = apiclient.HttpClient(u.String())
 	return respBody, err
 }
 

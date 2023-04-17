@@ -1,4 +1,4 @@
-// Copyright 2020 Google LLC
+// Copyright 2021 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,21 +12,21 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package preferences
+package connectors
 
 import (
-	"internal/apiclient"
-
 	"github.com/spf13/cobra"
 )
 
-// GetCmd to get preferences
-var GetCmd = &cobra.Command{
-	Use:   "get",
-	Short: "Get preferences for integrationcli",
-	Long:  "Get preferences for integrationcli",
-	RunE: func(cmd *cobra.Command, args []string) (err error) {
-		err = apiclient.GetPreferences()
-		return err
-	},
+// OperationsCmd to manage preferences
+var OperationsCmd = &cobra.Command{
+	Use:   "operations",
+	Short: "View connection operations",
+	Long:  "View connection operations",
+}
+
+func init() {
+	OperationsCmd.AddCommand(ListOperationsCmd)
+	OperationsCmd.AddCommand(GetOperationCmd)
+	OperationsCmd.AddCommand(CancelOperationCmd)
 }

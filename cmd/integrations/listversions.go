@@ -15,7 +15,7 @@
 package integrations
 
 import (
-	"fmt"
+	"errors"
 
 	"internal/apiclient"
 
@@ -30,28 +30,36 @@ var ListVerCmd = &cobra.Command{
 	Short: "List all versions of an integration flow",
 	Long:  "List all versions of an integration flow",
 	Args: func(cmd *cobra.Command, args []string) (err error) {
-		if err = apiclient.SetRegion(region); err != nil {
+		cmdProject := cmd.Flag("proj")
+		cmdRegion := cmd.Flag("reg")
+
+		if err = apiclient.SetRegion(cmdRegion.Value.String()); err != nil {
 			return err
 		}
 		if allVersions && pageSize != -1 {
-			return fmt.Errorf("allVersions and pageSize cannot be combined")
+			return errors.New("allVersions and pageSize cannot be combined")
 		}
-		if allVersions && pageToken != "" {
-			return fmt.Errorf("allVersions and pageToken cannot be combined")
+		if allVersions && cmd.Flag("pageToken").Value.String() != "" {
+			return errors.New("allVersions and pageToken cannot be combined")
 		}
-		return apiclient.SetProjectID(project)
+		return apiclient.SetProjectID(cmdProject.Value.String())
 	},
 	RunE: func(cmd *cobra.Command, args []string) (err error) {
-		_, err = integrations.ListVersions(name, pageSize, pageToken, filter, orderBy, false, false, basic)
+		name := cmd.Flag("name").Value.String()
+		_, err = integrations.ListVersions(name, pageSize,
+			cmd.Flag("pageToken").Value.String(),
+			cmd.Flag("filter").Value.String(),
+			cmd.Flag("orderBy").Value.String(),
+			false, false, basic)
 		return
-
 	},
 }
 
-var orderBy string
 var basic bool
 
 func init() {
+	var pageToken, filter, orderBy, name string
+
 	ListVerCmd.Flags().StringVarP(&name, "name", "n",
 		"", "Integration flow name")
 	ListVerCmd.Flags().IntVarP(&pageSize, "pageSize", "",

@@ -15,12 +15,9 @@
 package connectors
 
 import (
-	"encoding/json"
 	"fmt"
 	"os"
-	"path/filepath"
 	"regexp"
-	"time"
 
 	"internal/apiclient"
 
@@ -35,12 +32,16 @@ var CreateCmd = &cobra.Command{
 	Short: "Create a new connection",
 	Long:  "Create a new connection in a region",
 	Args: func(cmd *cobra.Command, args []string) (err error) {
-		if err = apiclient.SetRegion(region); err != nil {
+		cmdProject := cmd.Flag("proj")
+		cmdRegion := cmd.Flag("reg")
+
+		if err = apiclient.SetRegion(cmdRegion.Value.String()); err != nil {
 			return err
 		}
-		return apiclient.SetProjectID(project)
+		return apiclient.SetProjectID(cmdProject.Value.String())
 	},
 	RunE: func(cmd *cobra.Command, args []string) (err error) {
+		name := cmd.Flag("name").Value.String()
 		if _, err := os.Stat(connectionFile); os.IsNotExist(err) {
 			return err
 		}
@@ -54,87 +55,41 @@ var CreateCmd = &cobra.Command{
 			re := regexp.MustCompile(`locations\/([a-zA-Z0-9_-]+)\/keyRings\/([a-zA-Z0-9_-]+)\/cryptoKeys\/([a-zA-Z0-9_-]+)`)
 			ok := re.Match([]byte(encryptionKey))
 			if !ok {
-				return fmt.Errorf("encryption key must be of the format locations/{location}/keyRings/{test}/cryptoKeys/{cryptoKey}")
+				return fmt.Errorf("encryption key must be of the format " +
+					"locations/{location}/keyRings/{test}/cryptoKeys/{cryptoKey}")
 			}
 		}
 
-		type status struct {
-			Code    int    `json:"code,omitempty"`
-			Message string `json:"message,omitempty"`
-		}
+		_, err = connections.Create(name, content, serviceAccountName,
+			serviceAccountProject, encryptionKey, grantPermission, createSecret, wait)
 
-		type operation struct {
-			Name     string                  `json:"name,omitempty"`
-			Done     bool                    `json:"done,omitempty"`
-			Error    *status                 `json:"error,omitempty"`
-			Response *map[string]interface{} `json:"response,omitempty"`
-		}
-
-		operationsBytes, err := connections.Create(name, content, serviceAccountName, serviceAccountProject, encryptionKey, grantPermission, createSecret)
-
-		if wait {
-			o := operation{}
-			if err = json.Unmarshal(operationsBytes, &o); err != nil {
-				return err
-			}
-
-			operationId := filepath.Base(o.Name)
-			fmt.Printf("Checking connection status for %s in %d seconds\n", operationId, interval)
-
-			apiclient.SetPrintOutput(false)
-
-			stop := apiclient.Every(interval*time.Second, func(time.Time) bool {
-				var respBody []byte
-
-				if respBody, err = connections.GetOperation(operationId); err != nil {
-					return false
-				}
-
-				if err = json.Unmarshal(respBody, &o); err != nil {
-					return false
-				}
-
-				if o.Done {
-					if o.Error != nil {
-						fmt.Printf("Connection completed with error: %v\n", o.Error)
-					} else {
-						fmt.Println("Connection completed successfully!")
-					}
-					return false
-				} else {
-					fmt.Printf("Connection status is: %t. Waiting %d seconds.\n", o.Done, interval)
-					return true
-				}
-			})
-
-			<-stop
-		}
 		return
 	},
 }
 
-var connectionFile, serviceAccountName, serviceAccountProject, encryptionKey string
-var grantPermission, wait, createSecret bool
-
-const interval = 10
+var (
+	connectionFile, serviceAccountName, serviceAccountProject, encryptionKey string
+	grantPermission, wait, createSecret                                      bool
+)
 
 func init() {
+	var name string
 	CreateCmd.Flags().StringVarP(&name, "name", "n",
 		"", "Connection name")
 	CreateCmd.Flags().StringVarP(&connectionFile, "file", "f",
 		"", "Connection details JSON file path")
 	CreateCmd.Flags().BoolVarP(&grantPermission, "grant-permission", "g",
-		false, "Grant the service account permission to the GCP resource")
+		false, "Grant the service account permission to the GCP resource; default is false")
 	CreateCmd.Flags().StringVarP(&serviceAccountName, "sa", "",
-		"", "Service Account name for the connection")
+		"", "Service Account name for the connection; do not include @<project-id>.iam.gserviceaccount.com")
 	CreateCmd.Flags().StringVarP(&serviceAccountProject, "sp", "",
 		"", "Service Account Project for the connection. Default is the connection's project id")
 	CreateCmd.Flags().StringVarP(&encryptionKey, "encryption-keyid", "k",
 		"", "Cloud KMS key for decrypting Auth Config; Format = locations/*/keyRings/*/cryptoKeys/*")
 	CreateCmd.Flags().BoolVarP(&wait, "wait", "",
-		false, "Waits for the connector to finish, with success or error")
+		false, "Waits for the connector to finish, with success or error; default is false")
 	CreateCmd.Flags().BoolVarP(&createSecret, "create-secret", "",
-		true, "Create Secret Manager secrets when creating the connection")
+		false, "Create Secret Manager secrets when creating the connection; default is false")
 
 	_ = CreateCmd.MarkFlagRequired("name")
 	_ = CreateCmd.MarkFlagRequired("file")

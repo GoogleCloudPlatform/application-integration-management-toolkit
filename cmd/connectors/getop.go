@@ -1,4 +1,4 @@
-// Copyright 2022 Google LLC
+// Copyright 2021 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -22,28 +22,32 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// SetAdminCmd to set admin role
-var SetAdminCmd = &cobra.Command{
-	Use:   "setadmin",
-	Short: "Set Connection Admin IAM policy on a Connection",
-	Long:  "Set Connection Admin IAM policy on a Connection",
+// GetOperationCmd to get connection
+var GetOperationCmd = &cobra.Command{
+	Use:   "get",
+	Short: "Get operation details",
+	Long:  "Get operation details from a connection created in a region",
 	Args: func(cmd *cobra.Command, args []string) (err error) {
-		if err = apiclient.SetRegion(region); err != nil {
+		cmdProject := cmd.Flag("proj")
+		cmdRegion := cmd.Flag("reg")
+
+		if err = apiclient.SetRegion(cmdRegion.Value.String()); err != nil {
 			return err
 		}
-		return apiclient.SetProjectID(project)
+		return apiclient.SetProjectID(cmdProject.Value.String())
 	},
 	RunE: func(cmd *cobra.Command, args []string) (err error) {
-		return connections.SetIAM(name, memberName, "admin", memberType)
+		name := cmd.Flag("name").Value.String()
+		_, err = connections.GetOperation(name)
+		return
 	},
 }
 
 func init() {
+	var name string
 
-	SetAdminCmd.Flags().StringVarP(&memberName, "member", "m",
-		"", "Member Name, example Service Account Name")
-	SetAdminCmd.Flags().StringVarP(&memberType, "member-type", "",
-		"serviceAccount", "memberType must be serviceAccount, user, or group (default serviceAccount)")
+	GetOperationCmd.Flags().StringVarP(&name, "name", "n",
+		"", "The name of the operation")
 
-	_ = SetAdminCmd.MarkFlagRequired("name")
+	_ = GetOperationCmd.MarkFlagRequired("name")
 }

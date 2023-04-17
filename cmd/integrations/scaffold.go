@@ -16,11 +16,13 @@ package integrations
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"os"
 	"path"
 
 	"internal/apiclient"
+	"internal/clilog"
 
 	"internal/client/authconfigs"
 	"internal/client/connections"
@@ -38,27 +40,34 @@ var ScaffoldCmd = &cobra.Command{
 	Short: "Create a scaffolding for the integration flow",
 	Long:  "Create a scaffolding for the integration flow and dependencies",
 	Args: func(cmd *cobra.Command, args []string) (err error) {
-		if err = apiclient.SetRegion(region); err != nil {
+		cmdProject := cmd.Flag("proj")
+		cmdRegion := cmd.Flag("reg")
+		version := cmd.Flag("ver").Value.String()
+
+		if err = apiclient.SetRegion(cmdRegion.Value.String()); err != nil {
 			return err
 		}
-		if err = validate(); err != nil {
+		if userLabel == "" && version == "" && snapshot == "" {
+			return errors.New("at least one of userLabel, version or snapshot must be passed")
+		}
+		if err = validate(version); err != nil {
 			return err
 		}
-		return apiclient.SetProjectID(project)
+		return apiclient.SetProjectID(cmdProject.Value.String())
 	},
 	RunE: func(cmd *cobra.Command, args []string) (err error) {
-
 		var integrationBody, overridesBody []byte
+		version := cmd.Flag("ver").Value.String()
+		name := cmd.Flag("name").Value.String()
 
-		apiclient.SetPrintOutput(false)
+		apiclient.DisableCmdPrintHttpResponse()
 
 		if folder != "" {
 			if stat, err := os.Stat(folder); err != nil || !stat.IsDir() {
-				return fmt.Errorf("problem with supplied path, %v", err)
+				return fmt.Errorf("problem with supplied path, %w", err)
 			}
 		} else {
-			folder, err = os.Getwd()
-			if err != nil {
+			if folder, err = os.Getwd(); err != nil {
 				return err
 			}
 		}
@@ -86,11 +95,7 @@ var ScaffoldCmd = &cobra.Command{
 			}
 		}
 
-		if err != nil {
-			return err
-		}
-
-		fmt.Printf("Storing the Integration: %s\n", name)
+		clilog.Info.Printf("Storing the Integration: %s\n", name)
 		if err = generateFolder("src"); err != nil {
 			return err
 		}
@@ -100,12 +105,15 @@ var ScaffoldCmd = &cobra.Command{
 			return err
 		}
 
-		if err = apiclient.WriteByteArrayToFile(path.Join(folder, "src", name+".json"), false, integrationBody); err != nil {
+		if err = apiclient.WriteByteArrayToFile(
+			path.Join(folder, "src", name+".json"),
+			false,
+			integrationBody); err != nil {
 			return err
 		}
 
 		if len(overridesBody) > 0 && string(overridesBody) != "{}" {
-			fmt.Printf("Found overrides in the integration, storing the overrides file\n")
+			clilog.Info.Printf("Found overrides in the integration, storing the overrides file\n")
 			if err = generateFolder("overrides"); err != nil {
 				return err
 			}
@@ -113,7 +121,10 @@ var ScaffoldCmd = &cobra.Command{
 			if err != nil {
 				return err
 			}
-			if err = apiclient.WriteByteArrayToFile(path.Join(folder, "overrides", "overrides.json"), false, overridesBody); err != nil {
+			if err = apiclient.WriteByteArrayToFile(
+				path.Join(folder, "overrides", "overrides.json"),
+				false,
+				overridesBody); err != nil {
 				return err
 			}
 		}
@@ -124,22 +135,25 @@ var ScaffoldCmd = &cobra.Command{
 		}
 
 		if len(authConfigUuids) > 0 {
-			fmt.Printf("Found authconfigs in the integration\n")
+			clilog.Info.Printf("Found authconfigs in the integration\n")
 			if err = generateFolder("authconfigs"); err != nil {
 				return err
 			}
-			for _, authConfigUuid := range authConfigUuids {
-				authConfigResp, err := authconfigs.Get(authConfigUuid, true)
+			for _, authConfigUUIDs := range authConfigUuids {
+				authConfigResp, err := authconfigs.Get(authConfigUUIDs, true)
 				if err != nil {
 					return err
 				}
 				authConfigName := getName(authConfigResp)
-				fmt.Printf("Storing authconfig %s\n", authConfigName)
+				clilog.Info.Printf("Storing authconfig %s\n", authConfigName)
 				authConfigResp, err = apiclient.PrettifyJson(authConfigResp)
 				if err != nil {
 					return err
 				}
-				if err = apiclient.WriteByteArrayToFile(path.Join(folder, "authconfigs", authConfigName+".json"), false, authConfigResp); err != nil {
+				if err = apiclient.WriteByteArrayToFile(
+					path.Join(folder, "authconfigs", authConfigName+".json"),
+					false,
+					authConfigResp); err != nil {
 					return err
 				}
 			}
@@ -151,7 +165,7 @@ var ScaffoldCmd = &cobra.Command{
 		}
 
 		if len(connectors) > 0 {
-			fmt.Printf("Found connectors in the integration\n")
+			clilog.Info.Printf("Found connectors in the integration\n")
 			if err = generateFolder("connectors"); err != nil {
 				return err
 			}
@@ -160,12 +174,15 @@ var ScaffoldCmd = &cobra.Command{
 				if err != nil {
 					return err
 				}
-				fmt.Printf("Storing connector %s\n", connector)
+				clilog.Info.Printf("Storing connector %s\n", connector)
 				connectionResp, err = apiclient.PrettifyJson(connectionResp)
 				if err != nil {
 					return err
 				}
-				if err = apiclient.WriteByteArrayToFile(path.Join(folder, "connectors", connector+".json"), false, connectionResp); err != nil {
+				if err = apiclient.WriteByteArrayToFile(
+					path.Join(folder, "connectors", connector+".json"),
+					false,
+					connectionResp); err != nil {
 					return err
 				}
 			}
@@ -177,7 +194,7 @@ var ScaffoldCmd = &cobra.Command{
 		}
 
 		if len(instances) > 0 {
-			fmt.Printf("Found sfdc instances in the integration\n")
+			clilog.Info.Printf("Found sfdc instances in the integration\n")
 			instancesContent, err := sfdc.GetInstancesAndChannels(instances)
 			if err != nil {
 				return err
@@ -194,29 +211,43 @@ var ScaffoldCmd = &cobra.Command{
 					channelBytes, _ := apiclient.PrettifyJson([]byte(channel))
 					instanceName := getName([]byte(instance))
 					channelName := getName([]byte(channel))
-					fmt.Printf("Storing sfdcinstance %s\n", instanceName)
-					if err = apiclient.WriteByteArrayToFile(path.Join(folder, "sfdcinstances", instanceName+".json"), false, instanceBytes); err != nil {
+					clilog.Info.Printf("Storing sfdcinstance %s\n", instanceName)
+					if err = apiclient.WriteByteArrayToFile(
+						path.Join(folder, "sfdcinstances", instanceName+".json"),
+						false,
+						instanceBytes); err != nil {
 						return err
 					}
-					fmt.Printf("Storing sfdcchannel %s\n", channelName)
-					if err = apiclient.WriteByteArrayToFile(path.Join(folder, "sfdcchannels", channelName+".json"), false, channelBytes); err != nil {
+					clilog.Info.Printf("Storing sfdcchannel %s\n", channelName)
+					if err = apiclient.WriteByteArrayToFile(
+						path.Join(folder, "sfdcchannels", instanceName+"_"+channelName+".json"),
+						false,
+						channelBytes); err != nil {
 						return err
 					}
 				}
 			}
 		}
 
-		fmt.Printf("Storing cloudbuild.yaml\n")
-		if err = apiclient.WriteByteArrayToFile(path.Join(folder, "cloudbuild.yaml"), false, []byte(utils.GetCloudBuildYaml())); err != nil {
-			return err
+		if cloudBuild {
+			clilog.Info.Printf("Storing cloudbuild.yaml\n")
+			if err = apiclient.WriteByteArrayToFile(
+				path.Join(folder, "cloudbuild.yaml"),
+				false,
+				[]byte(utils.GetCloudBuildYaml())); err != nil {
+				return err
+			}
 		}
 
 		return
-
 	},
 }
 
+var cloudBuild bool
+
 func init() {
+	var name, version string
+
 	ScaffoldCmd.Flags().StringVarP(&name, "name", "n",
 		"", "Integration flow name")
 	ScaffoldCmd.Flags().StringVarP(&version, "ver", "v",
@@ -225,17 +256,17 @@ func init() {
 		"", "Integration flow user label")
 	ScaffoldCmd.Flags().StringVarP(&snapshot, "snapshot", "s",
 		"", "Integration flow snapshot number")
+	ScaffoldCmd.Flags().BoolVarP(&cloudBuild, "cloud-build", "",
+		true, "don't generate cloud build file; default is true")
 	ScaffoldCmd.Flags().StringVarP(&folder, "folder", "f",
-		"", "Folder to generate the skaffolding")
+		"", "Folder to generate the scaffolding")
 
 	_ = ScaffoldCmd.MarkFlagRequired("name")
 }
 
 func generateFolder(name string) (err error) {
-	if err = os.Mkdir(path.Join(folder, name), os.ModePerm); err != nil {
-		return err
-	}
-	return nil
+	err = os.Mkdir(path.Join(folder, name), os.ModePerm)
+	return err
 }
 
 func getName(authConfigResp []byte) string {

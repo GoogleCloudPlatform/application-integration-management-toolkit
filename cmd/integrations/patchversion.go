@@ -30,12 +30,18 @@ var PatchVerCmd = &cobra.Command{
 	Short: "Patch an integration flow version",
 	Long:  "Patch an integration flow version",
 	Args: func(cmd *cobra.Command, args []string) (err error) {
-		if err = apiclient.SetRegion(region); err != nil {
+		cmdProject := cmd.Flag("proj")
+		cmdRegion := cmd.Flag("reg")
+
+		if err = apiclient.SetRegion(cmdRegion.Value.String()); err != nil {
 			return err
 		}
-		return apiclient.SetProjectID(project)
+		return apiclient.SetProjectID(cmdProject.Value.String())
 	},
 	RunE: func(cmd *cobra.Command, args []string) (err error) {
+		version := cmd.Flag("ver").Value.String()
+		name := cmd.Flag("name").Value.String()
+
 		if _, err := os.Stat(integrationFile); os.IsNotExist(err) {
 			return err
 		}
@@ -46,11 +52,12 @@ var PatchVerCmd = &cobra.Command{
 		}
 		_, err = integrations.Patch(name, version, content)
 		return
-
 	},
 }
 
 func init() {
+	var name, version string
+
 	PatchVerCmd.Flags().StringVarP(&name, "name", "n",
 		"", "Integration flow name")
 	PatchVerCmd.Flags().StringVarP(&version, "ver", "v",

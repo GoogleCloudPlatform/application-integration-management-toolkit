@@ -19,8 +19,8 @@ import (
 	"fmt"
 	"net/url"
 	"path"
+	"path/filepath"
 	"strconv"
-	"strings"
 
 	"internal/apiclient"
 
@@ -100,7 +100,7 @@ func Create(content []byte) (respBody []byte, err error) {
 	u, _ := url.Parse(apiclient.GetBaseIntegrationURL())
 
 	u.Path = path.Join(u.Path, "authConfigs")
-	respBody, err = apiclient.HttpClient(apiclient.GetPrintOutput(), u.String(), string(content))
+	respBody, err = apiclient.HttpClient(u.String(), string(content))
 	return respBody, err
 }
 
@@ -108,7 +108,7 @@ func Create(content []byte) (respBody []byte, err error) {
 func Delete(name string) (respBody []byte, err error) {
 	u, _ := url.Parse(apiclient.GetBaseIntegrationURL())
 	u.Path = path.Join(u.Path, "authConfigs", name)
-	respBody, err = apiclient.HttpClient(apiclient.GetPrintOutput(), u.String(), "", "DELETE")
+	respBody, err = apiclient.HttpClient(u.String(), "", "DELETE")
 	return respBody, err
 }
 
@@ -117,11 +117,10 @@ func Get(name string, minimal bool) (respBody []byte, err error) {
 	u, _ := url.Parse(apiclient.GetBaseIntegrationURL())
 	u.Path = path.Join(u.Path, "authConfigs", name)
 
-	printSetting := apiclient.GetPrintOutput()
 	if minimal {
-		apiclient.SetPrintOutput(false)
+		apiclient.ClientPrintHttpResponse.Set(false)
 	}
-	respBody, err = apiclient.HttpClient(apiclient.GetPrintOutput(), u.String())
+	respBody, err = apiclient.HttpClient(u.String())
 	if minimal {
 		iversion := authConfig{}
 		err := json.Unmarshal(respBody, &iversion)
@@ -133,12 +132,32 @@ func Get(name string, minimal bool) (respBody []byte, err error) {
 		if err != nil {
 			return nil, err
 		}
-		if printSetting {
-			apiclient.PrettyPrint(respBody)
-		}
+		apiclient.PrettyPrint(respBody)
 	}
-	apiclient.SetPrintOutput(printSetting)
+	apiclient.ClientPrintHttpResponse.Set(apiclient.GetCmdPrintHttpResponseSetting())
 	return respBody, err
+}
+
+// GetDisplayName
+func GetDisplayName(name string) (displayName string, err error) {
+	u, _ := url.Parse(apiclient.GetBaseIntegrationURL())
+	u.Path = path.Join(u.Path, "authConfigs", name)
+
+	apiclient.ClientPrintHttpResponse.Set(false)
+	defer apiclient.ClientPrintHttpResponse.Set(apiclient.GetCmdPrintHttpResponseSetting())
+
+	respBody, err := apiclient.HttpClient(u.String())
+	if err != nil {
+		return "", err
+	}
+
+	iversion := authConfig{}
+	err = json.Unmarshal(respBody, &iversion)
+	if err != nil {
+		return "", err
+	}
+
+	return iversion.DisplayName, nil
 }
 
 // List
@@ -157,7 +176,7 @@ func List(pageSize int, pageToken string, filter string) (respBody []byte, err e
 
 	u.RawQuery = q.Encode()
 	u.Path = path.Join(u.Path, "authConfigs")
-	respBody, err = apiclient.HttpClient(apiclient.GetPrintOutput(), u.String())
+	respBody, err = apiclient.HttpClient(u.String())
 	return respBody, err
 }
 
@@ -174,7 +193,7 @@ func Find(name string, pageToken string) (version string, err error) {
 	}
 
 	u.Path = path.Join(u.Path, "authConfigs")
-	if respBody, err = apiclient.HttpClient(apiclient.GetPrintOutput(), u.String()); err != nil {
+	if respBody, err = apiclient.HttpClient(u.String()); err != nil {
 		return "", err
 	}
 
@@ -184,7 +203,7 @@ func Find(name string, pageToken string) (version string, err error) {
 
 	for _, config := range ac.AuthConfig {
 		if config.DisplayName == name {
-			version = config.Name[strings.LastIndex(config.Name, ",")+1:]
+			version = filepath.Base(config.Name)
 			return version, nil
 		}
 	}
@@ -196,11 +215,12 @@ func Find(name string, pageToken string) (version string, err error) {
 
 // Export
 func Export(folder string) (err error) {
-
 	var respBody []byte
 	count := 1
 
-	apiclient.SetPrintOutput(false)
+	apiclient.ClientPrintHttpResponse.Set(false)
+	defer apiclient.ClientPrintHttpResponse.Set(apiclient.GetCmdPrintHttpResponseSetting())
+
 	apiclient.SetExportToFile(folder)
 
 	if respBody, err = List(100, "", ""); err != nil {
@@ -212,7 +232,7 @@ func Export(folder string) (err error) {
 		clilog.Error.Println(err)
 		return err
 	}
-	fmt.Printf("Downloaded %s\n", fileName)
+	clilog.Info.Printf("Downloaded %s\n", fileName)
 
 	aconfigs := authConfigs{}
 	if err = json.Unmarshal(respBody, &aconfigs); err != nil {
@@ -235,7 +255,7 @@ func Export(folder string) (err error) {
 			clilog.Error.Println(err)
 			return err
 		}
-		fmt.Printf("Downloaded %s\n", fileName)
+		clilog.Info.Printf("Downloaded %s\n", fileName)
 	}
 
 	return nil

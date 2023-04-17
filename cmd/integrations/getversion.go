@@ -15,7 +15,7 @@
 package integrations
 
 import (
-	"fmt"
+	"errors"
 
 	"internal/apiclient"
 
@@ -30,24 +30,31 @@ var GetVerCmd = &cobra.Command{
 	Short: "Get an integration flow version",
 	Long:  "Get an integration flow version",
 	Args: func(cmd *cobra.Command, args []string) (err error) {
-		if err = apiclient.SetRegion(region); err != nil {
+		cmdProject := cmd.Flag("proj")
+		cmdRegion := cmd.Flag("reg")
+		version := cmd.Flag("ver").Value.String()
+
+		if err = apiclient.SetRegion(cmdRegion.Value.String()); err != nil {
 			return err
 		}
 		if snapshot == "" && userLabel == "" && version == "" {
-			return fmt.Errorf("at least one of snapshot, userLabel and version must be supplied")
+			return errors.New("at least one of snapshot, userLabel and version must be supplied")
 		}
 		if snapshot != "" && (userLabel != "" || version != "") {
-			return fmt.Errorf("snapshot cannot be combined with userLabel or version")
+			return errors.New("snapshot cannot be combined with userLabel or version")
 		}
 		if userLabel != "" && (snapshot != "" || version != "") {
-			return fmt.Errorf("userLabel cannot be combined with snapshot or version")
+			return errors.New("userLabel cannot be combined with snapshot or version")
 		}
 		if version != "" && (snapshot != "" || userLabel != "") {
-			return fmt.Errorf("version cannot be combined with snapshot or version")
+			return errors.New("version cannot be combined with snapshot or version")
 		}
-		return apiclient.SetProjectID(project)
+		return apiclient.SetProjectID(cmdProject.Value.String())
 	},
 	RunE: func(cmd *cobra.Command, args []string) (err error) {
+		version := cmd.Flag("ver").Value.String()
+		name := cmd.Flag("name").Value.String()
+
 		if version != "" {
 			_, err = integrations.Get(name, version, basic, minimal, overrides)
 		} else if snapshot != "" {
@@ -56,13 +63,14 @@ var GetVerCmd = &cobra.Command{
 			_, err = integrations.GetByUserlabel(name, userLabel, minimal, overrides)
 		}
 		return
-
 	},
 }
 
 var minimal bool
 
 func init() {
+	var name, version string
+
 	GetVerCmd.Flags().StringVarP(&name, "name", "n",
 		"", "Integration flow name")
 	GetVerCmd.Flags().StringVarP(&version, "ver", "v",

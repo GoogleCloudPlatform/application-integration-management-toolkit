@@ -15,8 +15,6 @@
 package token
 
 import (
-	"fmt"
-
 	"internal/apiclient"
 
 	"internal/clilog"
@@ -30,16 +28,20 @@ var GetCmd = &cobra.Command{
 	Short: "Generate a new access token",
 	Long:  "Generate a new access token",
 	Args: func(cmd *cobra.Command, args []string) error {
-		apiclient.SetServiceAccount(serviceAccount)
+		cmdAccount := cmd.Flag("account")
+		apiclient.SetServiceAccount(cmdAccount.Value.String())
 		return nil
 	},
 	RunE: func(cmd *cobra.Command, args []string) error {
-		clilog.Init(apiclient.IsSkipLogInfo())
+		clilog.Init(apiclient.DebugEnabled(),
+			apiclient.GetPrintOutput(),
+			apiclient.GetNoCheck(),
+			apiclient.GetSuppressWarning())
 		err := apiclient.SetAccessToken()
 		if err != nil {
 			return err
 		}
-		fmt.Println(apiclient.GetIntegrationToken())
+		clilog.Info.Println(apiclient.GetIntegrationToken())
 		return nil
 	},
 }

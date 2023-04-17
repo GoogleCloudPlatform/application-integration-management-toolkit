@@ -28,21 +28,26 @@ var LiftSuspCmd = &cobra.Command{
 	Short: "Lift a suspension of an integration execution",
 	Long:  "Lift a suspension of an integration execution",
 	Args: func(cmd *cobra.Command, args []string) (err error) {
-		if err = apiclient.SetRegion(region); err != nil {
+		cmdProject := cmd.Flag("proj")
+		cmdRegion := cmd.Flag("reg")
+
+		if err = apiclient.SetRegion(cmdRegion.Value.String()); err != nil {
 			return err
 		}
-		return apiclient.SetProjectID(project)
+		return apiclient.SetProjectID(cmdProject.Value.String())
 	},
 	RunE: func(cmd *cobra.Command, args []string) (err error) {
+		name := cmd.Flag("name").Value.String()
 		_, err = integrations.Lift(name, execution, suspension, result)
 		return
-
 	},
 }
 
 var execution, suspension, result string
 
 func init() {
+	var name string
+
 	LiftSuspCmd.Flags().StringVarP(&name, "name", "n",
 		"", "Integration name")
 	LiftSuspCmd.Flags().StringVarP(&execution, "execution", "e",

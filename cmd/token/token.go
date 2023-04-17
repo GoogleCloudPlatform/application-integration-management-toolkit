@@ -18,17 +18,14 @@ import (
 	"github.com/spf13/cobra"
 )
 
-//Cmd to manage token to interact with integration.googleapis.com
+// Cmd to manage token to interact with integration.googleapis.com
 var Cmd = &cobra.Command{
 	Use:   "token",
 	Short: "Manage OAuth 2.0 access tokens",
 	Long:  "Manage OAuth 2.0 access tokens",
 }
 
-var serviceAccount string
-
 func init() {
-
 	Cmd.AddCommand(GetCmd)
 	Cmd.AddCommand(CacheCmd)
 }

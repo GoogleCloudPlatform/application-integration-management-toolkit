@@ -28,21 +28,28 @@ var CleanCmd = &cobra.Command{
 	Short: "Deletes undeployed/unused versions of an Integration",
 	Long:  "Deletes undeployed/unused versions of an Integration",
 	Args: func(cmd *cobra.Command, args []string) (err error) {
-		if err = apiclient.SetRegion(region); err != nil {
+		cmdProject := cmd.Flag("proj")
+		cmdRegion := cmd.Flag("reg")
+
+		if err = apiclient.SetRegion(cmdRegion.Value.String()); err != nil {
 			return err
 		}
-
-		return apiclient.SetProjectID(project)
+		return apiclient.SetProjectID(cmdProject.Value.String())
 	},
 	RunE: func(cmd *cobra.Command, args []string) (err error) {
+		name := cmd.Flag("name").Value.String()
 		return integrations.Clean(name, reportOnly, keepList)
 	},
 }
 
-var reportOnly bool
-var keepList []string
+var (
+	reportOnly bool
+	keepList   []string
+)
 
 func init() {
+	var name string
+
 	CleanCmd.Flags().StringVarP(&name, "name", "n",
 		"", "Integration name")
 	CleanCmd.Flags().BoolVarP(&reportOnly, "report", "",

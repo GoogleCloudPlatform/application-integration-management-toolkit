@@ -18,7 +18,7 @@ integrationcli integrations create [flags]
   -n, --name string        Integration flow name
   -o, --overrides string   Integration flow overrides file path
   -s, --snapshot string    Integration version snapshot number
-      --supress-warnings   Supress override warnings, must be used with overrides flag
+      --suppress-warnings   suppress override warnings, must be used with overrides flag
   -u, --userlabel string   Integration version userlabel
 ```
 

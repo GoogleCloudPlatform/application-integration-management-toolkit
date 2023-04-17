@@ -15,7 +15,7 @@
 package integrations
 
 import (
-	"fmt"
+	"errors"
 
 	"internal/apiclient"
 
@@ -30,24 +30,31 @@ var DelVerCmd = &cobra.Command{
 	Short: "Delete an integration flow version",
 	Long:  "Delete an integration flow version",
 	Args: func(cmd *cobra.Command, args []string) (err error) {
+		project := cmd.Flag("proj").Value.String()
+		region := cmd.Flag("reg").Value.String()
+		version := cmd.Flag("ver").Value.String()
+
 		if err = apiclient.SetRegion(region); err != nil {
 			return err
 		}
 		if snapshot == "" && userLabel == "" && version == "" {
-			return fmt.Errorf("at least one of snapshot, userLabel and version must be supplied")
+			return errors.New("at least one of snapshot, userLabel and version must be supplied")
 		}
 		if snapshot != "" && (userLabel != "" || version != "") {
-			return fmt.Errorf("snapshot cannot be combined with userLabel or version")
+			return errors.New("snapshot cannot be combined with userLabel or version")
 		}
 		if userLabel != "" && (snapshot != "" || version != "") {
-			return fmt.Errorf("userLabel cannot be combined with snapshot or version")
+			return errors.New("userLabel cannot be combined with snapshot or version")
 		}
 		if version != "" && (snapshot != "" || userLabel != "") {
-			return fmt.Errorf("version cannot be combined with snapshot or version")
+			return errors.New("version cannot be combined with snapshot or version")
 		}
 		return apiclient.SetProjectID(project)
 	},
 	RunE: func(cmd *cobra.Command, args []string) (err error) {
+		version := cmd.Flag("ver").Value.String()
+		name := cmd.Flag("name").Value.String()
+
 		if version != "" {
 			_, err = integrations.DeleteVersion(name, version)
 		} else if snapshot != "" {
@@ -56,11 +63,12 @@ var DelVerCmd = &cobra.Command{
 			_, err = integrations.DeleteByUserlabel(name, userLabel)
 		}
 		return
-
 	},
 }
 
 func init() {
+	var name, version string
+
 	DelVerCmd.Flags().StringVarP(&name, "name", "n",
 		"", "Integration flow name")
 	DelVerCmd.Flags().StringVarP(&version, "ver", "v",

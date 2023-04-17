@@ -15,8 +15,6 @@
 package token
 
 import (
-	"fmt"
-
 	"internal/apiclient"
 
 	"internal/clilog"
@@ -30,13 +28,17 @@ var CacheCmd = &cobra.Command{
 	Short: "Generate and cache a new access token",
 	Long:  "Generate and cache a new access token",
 	Args: func(cmd *cobra.Command, args []string) error {
-		apiclient.SetServiceAccount(serviceAccount)
+		cmdAccount := cmd.Flag("account")
+		apiclient.SetServiceAccount(cmdAccount.Value.String())
 		return nil
 	},
 	RunE: func(cmd *cobra.Command, args []string) error {
-		clilog.Init(apiclient.IsSkipLogInfo())
+		clilog.Init(apiclient.DebugEnabled(),
+			apiclient.GetPrintOutput(),
+			apiclient.GetNoCheck(),
+			apiclient.GetSuppressWarning())
 		err := apiclient.SetAccessToken()
-		fmt.Printf("Token %s cached\n", apiclient.GetIntegrationToken())
+		clilog.Info.Printf("Token %s cached\n", apiclient.GetIntegrationToken())
 		return err
 	},
 }

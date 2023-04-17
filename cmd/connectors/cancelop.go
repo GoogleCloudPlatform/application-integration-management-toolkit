@@ -1,4 +1,4 @@
-// Copyright 2022 Google LLC
+// Copyright 2021 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -22,28 +22,31 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// SetInvokeCmd to set admin role
-var SetInvokeCmd = &cobra.Command{
-	Use:   "setinvoke",
-	Short: "Set Connection Invoke IAM policy on a Connection",
-	Long:  "Set Connection Invoke IAM policy on a Connection",
+// CancelOperationCmd to get connection
+var CancelOperationCmd = &cobra.Command{
+	Use:   "cancel",
+	Short: "Starts asynchronous cancellation on a long-running operation",
+	Long:  "Starts asynchronous cancellation on a long-running operation",
 	Args: func(cmd *cobra.Command, args []string) (err error) {
+		project := cmd.Flag("proj").Value.String()
+		region := cmd.Flag("reg").Value.String()
+
 		if err = apiclient.SetRegion(region); err != nil {
 			return err
 		}
 		return apiclient.SetProjectID(project)
 	},
 	RunE: func(cmd *cobra.Command, args []string) (err error) {
-		return connections.SetIAM(name, memberName, "invoker", memberType)
+		name := cmd.Flag("name").Value.String()
+		_, err = connections.CancelOperation(name)
+		return
 	},
 }
 
 func init() {
+	var name string
+	CancelOperationCmd.Flags().StringVarP(&name, "name", "n",
+		"", "The name of the operation")
 
-	SetInvokeCmd.Flags().StringVarP(&memberName, "member", "m",
-		"", "Member Name, example Service Account Name")
-	SetInvokeCmd.Flags().StringVarP(&memberType, "member-type", "",
-		"serviceAccount", "memberType must be serviceAccount, user, or group (default serviceAccount)")
-
-	_ = SetInvokeCmd.MarkFlagRequired("name")
+	_ = CancelOperationCmd.MarkFlagRequired("name")
 }

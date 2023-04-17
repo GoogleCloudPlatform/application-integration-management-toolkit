@@ -16,6 +16,7 @@ package integrations
 
 import (
 	"internal/apiclient"
+	"internal/clilog"
 
 	"internal/client/integrations"
 
@@ -28,15 +29,22 @@ var ExportCmd = &cobra.Command{
 	Short: "Export all Integrations flows in a region to a folder",
 	Long:  "Export all Integrations flows in a region to a folder",
 	Args: func(cmd *cobra.Command, args []string) (err error) {
-		if err = apiclient.SetRegion(region); err != nil {
+		cmdProject := cmd.Flag("proj")
+		cmdRegion := cmd.Flag("reg")
+
+		if err = apiclient.SetRegion(cmdRegion.Value.String()); err != nil {
 			return err
 		}
-		return apiclient.SetProjectID(project)
+		return apiclient.SetProjectID(cmdProject.Value.String())
 	},
 	RunE: func(cmd *cobra.Command, args []string) (err error) {
 		if err = apiclient.FolderExists(folder); err != nil {
 			return err
 		}
+
+		apiclient.DisableCmdPrintHttpResponse()
+		clilog.Warning.Println("API calls to integration.googleapis.com have a quota of 480 per min. " +
+			"Running this tool against large list of entities can exhaust the quota. Throttling to 360 per min.")
 
 		// check if connections argument was passed, use default value if not
 		numConnections, _ := cmd.Flags().GetInt("connections")
@@ -44,7 +52,6 @@ var ExportCmd = &cobra.Command{
 			return integrations.ExportConcurrent(folder, numConnections)
 		}
 		return integrations.Export(folder)
-
 	},
 }
 

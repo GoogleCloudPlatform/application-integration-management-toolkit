@@ -15,7 +15,6 @@
 package integrations
 
 import (
-	"fmt"
 	"os"
 
 	"internal/apiclient"
@@ -31,16 +30,17 @@ var CreateCmd = &cobra.Command{
 	Short: "Create an integration flow with a draft version",
 	Long:  "Create an integration flow with a draft version",
 	Args: func(cmd *cobra.Command, args []string) (err error) {
-		if err = apiclient.SetRegion(region); err != nil {
+		cmdProject := cmd.Flag("proj")
+		cmdRegion := cmd.Flag("reg")
+
+		if err = apiclient.SetRegion(cmdRegion.Value.String()); err != nil {
 			return err
 		}
-		if overridesFile == "" && supressWarnings {
-			return fmt.Errorf("supressWarnings must be used with overrides")
-		}
-		return apiclient.SetProjectID(project)
+		return apiclient.SetProjectID(cmdProject.Value.String())
 	},
 	RunE: func(cmd *cobra.Command, args []string) (err error) {
 		var overridesContent []byte
+		name := cmd.Flag("name").Value.String()
 
 		if _, err := os.Stat(integrationFile); os.IsNotExist(err) {
 			return err
@@ -62,16 +62,16 @@ var CreateCmd = &cobra.Command{
 			}
 		}
 
-		_, err = integrations.CreateVersion(name, content, overridesContent, snapshot, userLabel, supressWarnings)
+		_, err = integrations.CreateVersion(name, content, overridesContent, snapshot, userLabel)
 		return
-
 	},
 }
 
 var integrationFile, overridesFile string
-var supressWarnings bool
 
 func init() {
+	var name string
+
 	CreateCmd.Flags().StringVarP(&name, "name", "n",
 		"", "Integration flow name")
 	CreateCmd.Flags().StringVarP(&integrationFile, "file", "f",
@@ -82,8 +82,6 @@ func init() {
 		"", "Integration version snapshot number")
 	CreateCmd.Flags().StringVarP(&userLabel, "userlabel", "u",
 		"", "Integration version userlabel")
-	CreateCmd.Flags().BoolVarP(&supressWarnings, "supress-warnings", "",
-		false, "Supress override warnings, must be used with overrides flag")
 
 	_ = CreateCmd.MarkFlagRequired("name")
 	_ = CreateCmd.MarkFlagRequired("file")

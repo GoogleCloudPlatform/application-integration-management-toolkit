@@ -24,10 +24,10 @@ import (
 	"internal/clilog"
 )
 
-const integrationcliFile = "config.json"
-const integrationcliPath = ".integrationcli"
-
-var usr *user.User
+const (
+	integrationcliFile = "config.json"
+	integrationcliPath = ".integrationcli"
+)
 
 type integrationCLI struct {
 	Token     string `json:"token,omitempty"`
@@ -39,149 +39,121 @@ type integrationCLI struct {
 	UseApigee bool   `json:"useapigee,omitempty" default:"false"`
 }
 
-var cliPref *integrationCLI
-
-func ReadPreferencesFile() (err error) {
-
+func readPreferencesFile() (cliPref *integrationCLI, err error) {
 	cliPref = new(integrationCLI)
 
-	usr, err = user.Current()
+	usr, err := user.Current()
 	if err != nil {
-		clilog.Info.Println(err)
-		return err
+		clilog.Debug.Println(err)
+		return cliPref, err
 	}
 
 	prefFile, err := os.ReadFile(path.Join(usr.HomeDir, integrationcliPath, integrationcliFile))
 	if err != nil {
-		clilog.Info.Println("Cached preferences was not found")
-		return err
+		clilog.Debug.Println("Cached preferences was not found")
+		return cliPref, err
 	}
 
 	err = json.Unmarshal(prefFile, &cliPref)
-	clilog.Info.Printf("Token %s, lastCheck: %s", cliPref.Token, cliPref.LastCheck)
-	clilog.Info.Printf("DefaultProject %s", cliPref.Project)
-	clilog.Info.Printf("Region %s", cliPref.Region)
+	clilog.Debug.Printf("Token %s, lastCheck: %s", cliPref.Token, cliPref.LastCheck)
+	clilog.Debug.Printf("DefaultProject %s", cliPref.Project)
+	clilog.Debug.Printf("Region %s", cliPref.Region)
 
 	if err != nil {
-		clilog.Info.Printf("Error marshalling: %v\n", err)
-		return DeletePreferencesFile()
+		clilog.Debug.Printf("Error marshalling: %v\n", err)
+		return cliPref, DeletePreferencesFile()
 	}
 
-	if cliPref.ProxyUrl != "" {
-		SetProxyURL(cliPref.ProxyUrl)
-	}
-
-	if cliPref.Project != "" {
-		if err = SetProjectID(cliPref.Project); err != nil {
-			return err
-		}
-	}
-
-	if cliPref.Region != "" {
-		return SetRegion(cliPref.Region)
-	}
-
-	return nil
+	return cliPref, nil
 }
 
 func DeletePreferencesFile() (err error) {
-	usr, err = user.Current()
+	usr, err := user.Current()
 	if err != nil {
-		clilog.Info.Println(err)
+		clilog.Debug.Println(err)
 		return err
 	}
 	if _, err := os.Stat(path.Join(usr.HomeDir, integrationcliPath, integrationcliFile)); os.IsNotExist(err) {
-		clilog.Info.Println(err)
+		clilog.Debug.Println(err)
 		return err
 	}
 	return os.Remove(path.Join(usr.HomeDir, integrationcliPath, integrationcliFile))
 }
 
-func WriteToken(token string) (err error) {
+func writeToken(token string) (err error) {
 	if IsSkipCache() {
 		return nil
 	}
 
-	clilog.Info.Println("Cache access token: ", token)
-	if cliPref == nil {
-		clilog.Info.Printf("preferences are not set")
-		return nil
+	cliPref, err := readPreferencesFile()
+	if err != nil {
+		return err
 	}
 
+	clilog.Debug.Println("Cache access token: ", token)
 	cliPref.Token = token
 
 	data, err := json.Marshal(&cliPref)
 	if err != nil {
-		clilog.Info.Printf("Error marshalling: %v\n", err)
+		clilog.Debug.Printf("Error marshalling: %v\n", err)
 		return err
 	}
-	clilog.Info.Println("Writing ", string(data))
-	return WritePerferencesFile(data)
+	clilog.Debug.Println("Writing ", string(data))
+	return writePerferencesFile(data)
 }
 
-func GetToken() (token string) {
-	if cliPref == nil {
+func getToken() (token string) {
+	cliPref, err := readPreferencesFile()
+	if err != nil {
 		return ""
 	}
 	return cliPref.Token
 }
 
-func GetLastCheck() (lastCheck string) {
-	if cliPref == nil {
-		return ""
-	}
-	return cliPref.LastCheck
-}
-
 func GetNoCheck() bool {
-	if cliPref == nil {
+	cliPref, err := readPreferencesFile()
+	if err != nil {
 		return false
 	}
 	return cliPref.Nocheck
 }
 
 func SetNoCheck(nocheck bool) (err error) {
-	clilog.Info.Println("Nocheck set to: ", nocheck)
+	clilog.Debug.Println("Nocheck set to: ", nocheck)
 
-	if cliPref == nil {
-		cliPref = &integrationCLI{}
-	}
-
+	cliPref, err := readPreferencesFile()
 	cliPref.Nocheck = nocheck
 
 	data, err := json.Marshal(&cliPref)
 	if err != nil {
-		clilog.Info.Printf("Error marshalling: %v\n", err)
+		clilog.Debug.Printf("Error marshalling: %v\n", err)
 		return err
 	}
-	clilog.Info.Println("Writing ", string(data))
-	return WritePerferencesFile(data)
+	clilog.Debug.Println("Writing ", string(data))
+	return writePerferencesFile(data)
 }
 
 func SetUseApigee(useapigee bool) (err error) {
-	clilog.Info.Println("UseApigee set to: ", useapigee)
+	clilog.Debug.Println("UseApigee set to: ", useapigee)
 
-	if cliPref == nil {
-		cliPref = &integrationCLI{}
-	}
+	cliPref, err := readPreferencesFile()
 
 	cliPref.UseApigee = false
 	data, err := json.Marshal(&cliPref)
 	if err != nil {
-		clilog.Info.Printf("Error marshalling: %v\n", err)
+		clilog.Debug.Printf("Error marshalling: %v\n", err)
 		return err
 	}
-	clilog.Info.Println("Writing ", string(data))
-	return WritePerferencesFile(data)
+	clilog.Debug.Println("Writing ", string(data))
+	return writePerferencesFile(data)
 }
 
 func TestAndUpdateLastCheck() (updated bool, err error) {
 	currentTime := time.Now()
 	currentDate := currentTime.Format("01-02-2006")
 
-	if cliPref == nil {
-		cliPref = &integrationCLI{}
-	}
+	cliPref, err := readPreferencesFile()
+	clilog.Debug.Println(err)
 
 	if currentDate == cliPref.LastCheck {
 		return true, nil
@@ -194,68 +166,63 @@ func TestAndUpdateLastCheck() (updated bool, err error) {
 		clilog.Warning.Printf("Error marshalling: %v\n", err)
 		return false, err
 	}
-	clilog.Info.Println("Writing ", string(data))
-	if err = WritePerferencesFile(data); err != nil {
+	clilog.Debug.Println("Writing ", string(data))
+	if err = writePerferencesFile(data); err != nil {
 		return false, err
 	}
-
 	return false, nil
 }
 
-func GetDefaultProject() (org string) {
+func GetDefaultProject() string {
+	cliPref, _ := readPreferencesFile()
 	return cliPref.Project
 }
 
 func WriteDefaultProject(project string) (err error) {
-	clilog.Info.Println("Default project: ", project)
-	if cliPref == nil {
-		cliPref = &integrationCLI{}
-	}
+	clilog.Debug.Println("Default project: ", project)
+	cliPref, err := readPreferencesFile()
 	cliPref.Project = project
 	data, err := json.Marshal(&cliPref)
 	if err != nil {
-		clilog.Info.Printf("Error marshalling: %v\n", err)
+		clilog.Debug.Printf("Error marshalling: %v\n", err)
 		return err
 	}
-	clilog.Info.Println("Writing ", string(data))
-	return WritePerferencesFile(data)
+	clilog.Debug.Println("Writing ", string(data))
+	return writePerferencesFile(data)
 }
 
 func SetProxy(url string) (err error) {
 	if url == "" {
 		return nil
 	}
-	if cliPref == nil {
-		cliPref = &integrationCLI{}
-	}
+	cliPref, err := readPreferencesFile()
 	cliPref.ProxyUrl = url
 	data, err := json.Marshal(&cliPref)
 	if err != nil {
-		clilog.Info.Printf("Error marshalling: %v\n", err)
+		clilog.Debug.Printf("Error marshalling: %v\n", err)
 		return err
 	}
-	clilog.Info.Println("Writing ", string(data))
-	return WritePerferencesFile(data)
+	clilog.Debug.Println("Writing ", string(data))
+	return writePerferencesFile(data)
 }
 
 func SetDefaultRegion(region string) (err error) {
 	if region == "" {
 		return nil
 	}
-	if cliPref == nil {
-		cliPref = &integrationCLI{}
-	}
+	cliPref, err := readPreferencesFile()
 	cliPref.Region = region
 	data, err := json.Marshal(&cliPref)
 	if err != nil {
-		clilog.Info.Printf("Error marshalling: %v\n", err)
+		clilog.Debug.Printf("Error marshalling: %v\n", err)
 		return err
 	}
-	clilog.Info.Println("Writing ", string(data))
-	return WritePerferencesFile(data)
+	clilog.Debug.Println("Writing ", string(data))
+	return writePerferencesFile(data)
 }
 
 func GetPreferences() (err error) {
+	cliPref, err := readPreferencesFile()
 	output, err := json.Marshal(&cliPref)
 	if err != nil {
 		clilog.Error.Println(err)
@@ -267,8 +234,8 @@ func GetPreferences() (err error) {
 }
 
 // WritePreferencesFile
-func WritePerferencesFile(payload []byte) (err error) {
-	usr, err = user.Current()
+func writePerferencesFile(payload []byte) (err error) {
+	usr, err := user.Current()
 	if err != nil {
 		clilog.Warning.Println(err)
 		return err
@@ -277,7 +244,7 @@ func WritePerferencesFile(payload []byte) (err error) {
 	if err == nil {
 		return WriteByteArrayToFile(path.Join(usr.HomeDir, integrationcliPath, integrationcliFile), false, payload)
 	} else if os.IsNotExist(err) {
-		if err = os.MkdirAll(path.Join(usr.HomeDir, integrationcliPath), 0755); err != nil {
+		if err = os.MkdirAll(path.Join(usr.HomeDir, integrationcliPath), 0o755); err != nil {
 			return err
 		}
 		return WriteByteArrayToFile(path.Join(usr.HomeDir, integrationcliPath, integrationcliFile), false, payload)

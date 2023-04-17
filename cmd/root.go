@@ -15,6 +15,7 @@
 package cmd
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -44,16 +45,20 @@ var RootCmd = &cobra.Command{
 	Short: "Utility to work with Integration & Connectors",
 	Long:  "This command lets you interact with Integration and Connector APIs.",
 	PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
-		apiclient.SetServiceAccount(serviceAccount)
-		apiclient.SetIntegrationToken(accessToken)
+		cmdServiceAccount := cmd.Flag("account")
+		cmdToken := cmd.Flag("token")
+
+		apiclient.SetServiceAccount(cmdServiceAccount.Value.String())
+		apiclient.SetIntegrationToken(cmdToken.Value.String())
 
 		if !disableCheck {
 			if ok, _ := apiclient.TestAndUpdateLastCheck(); !ok {
 				latestVersion, _ := getLatestVersion()
 				if cmd.Version == "" {
-					clilog.Info.Println("integrationcli wasn't built with a valid Version tag.")
+					clilog.Debug.Println("integrationcli wasn't built with a valid Version tag.")
 				} else if latestVersion != "" && cmd.Version != latestVersion {
-					fmt.Printf("You are using %s, the latest version %s is available for download\n", cmd.Version, latestVersion)
+					clilog.Info.Printf("You are using %s, the latest version %s is available for download\n",
+						cmd.Version, latestVersion)
 				}
 			}
 		}
@@ -66,19 +71,23 @@ var RootCmd = &cobra.Command{
 
 		return nil
 	},
+	SilenceUsage:  getUsageFlag(),
+	SilenceErrors: getErrorsFlag(),
 }
 
 func Execute() {
 	if err := RootCmd.Execute(); err != nil {
-		fmt.Println(err)
-		os.Exit(1)
+		clilog.Error.Println(err)
 	}
 }
 
-var accessToken, serviceAccount string
-var disableCheck, useApigee, noOutput, verbose bool
+var disableCheck, useApigee, printOutput, noOutput, suppressWarnings, verbose bool
+
+const ENABLED = "true"
 
 func init() {
+	var accessToken, serviceAccount string
+
 	cobra.OnInitialize(initConfig)
 
 	RootCmd.PersistentFlags().StringVarP(&accessToken, "token", "t",
@@ -93,8 +102,14 @@ func init() {
 	RootCmd.PersistentFlags().BoolVarP(&useApigee, "apigee-integration", "",
 		false, "Use Apigee Integration; default is false (Application Integration)")
 
+	RootCmd.PersistentFlags().BoolVarP(&printOutput, "print-output", "",
+		true, "Control printing of info log statements")
+
 	RootCmd.PersistentFlags().BoolVarP(&noOutput, "no-output", "",
-		false, "Disable printing API responses from the control plane")
+		false, "Disable printing all statements to stdout")
+
+	RootCmd.Flags().BoolVarP(&suppressWarnings, "suppress-warnings", "",
+		false, "Disable printing warning statements to stdout")
 
 	RootCmd.PersistentFlags().BoolVarP(&verbose, "verbose", "",
 		false, "Enable verbose output from integrationcli")
@@ -110,19 +125,31 @@ func init() {
 }
 
 func initConfig() {
-	var skipLogInfo = true
+	debug := false
 	var skipCache bool
 
-	if os.Getenv("INTEGRATIONCLI_SKIPLOG") == "false" || verbose {
-		skipLogInfo = false
+	if os.Getenv("INTEGRATIONECLI_DEBUG") == ENABLED || verbose {
+		debug = true
 	}
 
 	skipCache, _ = strconv.ParseBool(os.Getenv("INTEGRATIONCLI_SKIPCACHE"))
 
+	if noOutput {
+		printOutput = noOutput
+	}
+
+	if os.Getenv("INTEGRATIONCLI_DISABLE_RATELIMIT") == ENABLED {
+		clilog.Debug.Println("integrationcli ratelimit is disabled")
+		apiclient.SetRate(apiclient.None)
+	} else {
+		apiclient.SetRate(apiclient.IntegrationAPI)
+	}
+
 	apiclient.NewIntegrationClient(apiclient.IntegrationClientOptions{
-		SkipCheck:   true,
-		PrintOutput: true,
-		SkipLogInfo: skipLogInfo,
+		TokenCheck:  true,
+		PrintOutput: printOutput,
+		NoOutput:    noOutput,
+		DebugLog:    debug,
 		SkipCache:   skipCache,
 	})
 }
@@ -134,12 +161,15 @@ func GetRootCmd() *cobra.Command {
 
 func getLatestVersion() (version string, err error) {
 	var req *http.Request
-	const endpoint = "https://api.github.com/repos/GoogleCloudPlatform/application-integration-management-toolkit/releases/latest"
+	const endpoint = "https://api.github.com/repos/GoogleCloudPlatform/" +
+		"application-integration-management-toolkit/releases/latest"
 
 	client := &http.Client{}
 	contentType := "application/json"
 
-	req, err = http.NewRequest("GET", endpoint, nil)
+	ctx := context.Background()
+
+	req, err = http.NewRequestWithContext(ctx, http.MethodGet, endpoint, nil)
 	if err != nil {
 		return "", err
 	}
@@ -148,6 +178,10 @@ func getLatestVersion() (version string, err error) {
 	resp, err := client.Do(req)
 	if err != nil {
 		return "", err
+	}
+
+	if resp != nil {
+		defer resp.Body.Close()
 	}
 
 	respBody, err := io.ReadAll(resp.Body)
@@ -161,9 +195,18 @@ func getLatestVersion() (version string, err error) {
 	}
 
 	if result["tag_name"] == "" {
-		clilog.Info.Println("Unable to determine latest tag, skipping this information")
+		clilog.Debug.Println("Unable to determine latest tag, skipping this information")
 		return "", nil
-	} else {
-		return fmt.Sprintf("%s", result["tag_name"]), nil
 	}
+	return fmt.Sprintf("%s", result["tag_name"]), nil
+}
+
+// getUsageFlag
+func getUsageFlag() bool {
+	return os.Getenv("INTEGRATIONCLI_NO_USAGE") == ENABLED
+}
+
+// getErrorsFlag
+func getErrorsFlag() bool {
+	return os.Getenv("INTEGRATIONCLI_NO_ERRORS") == ENABLED
 }

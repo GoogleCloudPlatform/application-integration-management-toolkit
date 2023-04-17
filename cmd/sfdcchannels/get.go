@@ -28,31 +28,39 @@ var GetCmd = &cobra.Command{
 	Short: "Get an sfdcchannel in Application Integration",
 	Long:  "Get an sfdcchannel in Application Integration",
 	Args: func(cmd *cobra.Command, args []string) (err error) {
-		if err = apiclient.SetRegion(region); err != nil {
+		cmdProject := cmd.Flag("proj")
+		cmdRegion := cmd.Flag("reg")
+
+		if err = apiclient.SetRegion(cmdRegion.Value.String()); err != nil {
 			return err
 		}
-		return apiclient.SetProjectID(project)
+		return apiclient.SetProjectID(cmdProject.Value.String())
 	},
 	RunE: func(cmd *cobra.Command, args []string) (err error) {
+		instance := cmd.Flag("instance").Value.String()
+		name := cmd.Flag("name").Value.String()
+		id := cmd.Flag("id").Value.String()
+
 		if name != "" {
-			apiclient.SetPrintOutput(false)
+			apiclient.DisableCmdPrintHttpResponse()
 			_, respBody, err := sfdc.FindChannel(name, instance)
 			if err != nil {
 				return err
 			}
+			apiclient.EnableCmdPrintHttpResponse()
 			apiclient.PrettyPrint(respBody)
 		} else {
 			_, err = sfdc.GetChannel(id, instance, minimal)
 		}
 		return
-
 	},
 }
 
 var minimal bool
-var id string
 
 func init() {
+	var instance, name, id string
+
 	GetCmd.Flags().StringVarP(&name, "name", "n",
 		"", "sfdc channel name")
 	GetCmd.Flags().StringVarP(&id, "id", "i",

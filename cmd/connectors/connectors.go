@@ -25,9 +25,8 @@ var Cmd = &cobra.Command{
 	Long:  "Manage connections for Integration Connectors",
 }
 
-var region, project, name string
-
 func init() {
+	var region, project string
 
 	Cmd.PersistentFlags().StringVarP(&project, "proj", "p",
 		"", "Integration GCP Project name")
@@ -44,4 +43,5 @@ func init() {
 	Cmd.AddCommand(ExportCmd)
 	Cmd.AddCommand(ImportCmd)
 	Cmd.AddCommand(PatchCmd)
+	Cmd.AddCommand(OperationsCmd)
 }

@@ -15,7 +15,8 @@
 package certificates
 
 import (
-	"fmt"
+	"errors"
+
 	"internal/apiclient"
 
 	"internal/client/certificates"
@@ -29,38 +30,44 @@ var GetCmd = &cobra.Command{
 	Short: "Get certificate details from a region",
 	Long:  "Get certificate details from a region",
 	Args: func(cmd *cobra.Command, args []string) (err error) {
+		project := cmd.Flag("proj").Value.String()
+		region := cmd.Flag("reg").Value.String()
+		name := cmd.Flag("name").Value.String()
+		id := cmd.Flag("id").Value.String()
+
 		if err = apiclient.SetRegion(region); err != nil {
 			return err
 		}
 		if id == "" && name == "" {
-			return fmt.Errorf("id and name cannot be empty")
+			return errors.New("id and name cannot be empty")
 		}
 		if id != "" && name != "" {
-			return fmt.Errorf("id and name both cannot be set")
+			return errors.New("id and name both cannot be set")
 		}
 		return apiclient.SetProjectID(project)
 	},
 	RunE: func(cmd *cobra.Command, args []string) (err error) {
+		name := cmd.Flag("name").Value.String()
+		id := cmd.Flag("id").Value.String()
+
 		if name != "" {
-			apiclient.SetPrintOutput(false)
+			apiclient.DisableCmdPrintHttpResponse()
 			version, err := certificates.Find(name)
 			if err != nil {
 				return err
 			}
-			apiclient.SetPrintOutput(true)
+			apiclient.EnableCmdPrintHttpResponse()
 			_, err = certificates.Get(version)
 			return err
-		} else {
-			_, err = certificates.Get(id)
 		}
-		return
 
+		_, err = certificates.Get(id)
+		return
 	},
 }
 
-var id string
-
 func init() {
+	var name, id string
 	GetCmd.Flags().StringVarP(&id, "id", "i",
 		"", "Certificate name (uuid)")
 	GetCmd.Flags().StringVarP(&name, "name", "n",

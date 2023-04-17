@@ -28,15 +28,22 @@ var UnPublishVerCmd = &cobra.Command{
 	Short: "Unpublish an integration flow version",
 	Long:  "Unpublish an integration flow version",
 	Args: func(cmd *cobra.Command, args []string) (err error) {
-		if err = apiclient.SetRegion(region); err != nil {
+		cmdProject := cmd.Flag("proj")
+		cmdRegion := cmd.Flag("reg")
+		version := cmd.Flag("ver").Value.String()
+
+		if err = apiclient.SetRegion(cmdRegion.Value.String()); err != nil {
 			return err
 		}
-		if err = validate(); err != nil {
+		if err = validate(version); err != nil {
 			return err
 		}
-		return apiclient.SetProjectID(project)
+		return apiclient.SetProjectID(cmdProject.Value.String())
 	},
 	RunE: func(cmd *cobra.Command, args []string) (err error) {
+		version := cmd.Flag("ver").Value.String()
+		name := cmd.Flag("name").Value.String()
+
 		if version != "" {
 			_, err = integrations.Unpublish(name, version)
 		} else if userLabel != "" {
@@ -45,11 +52,12 @@ var UnPublishVerCmd = &cobra.Command{
 			_, err = integrations.UnpublishSnapshot(name, snapshot)
 		}
 		return
-
 	},
 }
 
 func init() {
+	var name, version string
+
 	UnPublishVerCmd.Flags().StringVarP(&name, "name", "n",
 		"", "Integration flow name")
 	UnPublishVerCmd.Flags().StringVarP(&version, "ver", "v",

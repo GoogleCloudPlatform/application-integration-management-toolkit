@@ -15,8 +15,6 @@
 package connectors
 
 import (
-	"fmt"
-
 	"internal/apiclient"
 
 	"internal/client/connections"
@@ -24,11 +22,11 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// GetCmd to get connection
-var GetCmd = &cobra.Command{
-	Use:   "get",
-	Short: "Get connection details",
-	Long:  "Get connection details from a connection created in a region",
+// ListOperationsCmd to list Connections
+var ListOperationsCmd = &cobra.Command{
+	Use:   "list",
+	Short: "List all operations in the region",
+	Long:  "List all operations in the region",
 	Args: func(cmd *cobra.Command, args []string) (err error) {
 		cmdProject := cmd.Flag("proj")
 		cmdRegion := cmd.Flag("reg")
@@ -36,37 +34,26 @@ var GetCmd = &cobra.Command{
 		if err = apiclient.SetRegion(cmdRegion.Value.String()); err != nil {
 			return err
 		}
-		if view != "BASIC" && view != "FULL" {
-			return fmt.Errorf("view must be BASIC or FULL")
-		}
 		return apiclient.SetProjectID(cmdProject.Value.String())
 	},
 	RunE: func(cmd *cobra.Command, args []string) (err error) {
-		name := cmd.Flag("name").Value.String()
-		if overrides {
-			minimal = true
-		}
-		_, err = connections.Get(name, view, minimal, overrides)
+		_, err = connections.ListOperations(pageSize,
+			cmd.Flag("pageToken").Value.String(),
+			cmd.Flag("filter").Value.String(),
+			cmd.Flag("orderBy").Value.String())
 		return
 	},
 }
 
-var (
-	view               string
-	minimal, overrides bool
-)
-
 func init() {
-	var name string
+	var pageToken, filter, orderBy string
 
-	GetCmd.Flags().StringVarP(&name, "name", "n",
-		"", "The name of the connection")
-	GetCmd.Flags().StringVarP(&view, "view", "",
-		"BASIC", "fields of the Connection to be returned; default is BASIC. FULL is the other option")
-	GetCmd.Flags().BoolVarP(&minimal, "minimal", "",
-		false, "fields of the Connection to be returned; default is false")
-	GetCmd.Flags().BoolVarP(&overrides, "overrides", "",
-		false, "fetch connector details for use with scaffold")
-
-	_ = GetCmd.MarkFlagRequired("name")
+	ListOperationsCmd.Flags().IntVarP(&pageSize, "pageSize", "",
+		-1, "The maximum number of versions to return")
+	ListOperationsCmd.Flags().StringVarP(&pageToken, "pageToken", "",
+		"", "A page token, received from a previous call")
+	ListOperationsCmd.Flags().StringVarP(&filter, "filter", "",
+		"", "Filter results")
+	ListOperationsCmd.Flags().StringVarP(&orderBy, "orderBy", "",
+		"", "The results would be returned in order")
 }

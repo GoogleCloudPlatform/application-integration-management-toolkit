@@ -16,6 +16,7 @@ package integrations
 
 import (
 	"internal/apiclient"
+	"internal/clilog"
 
 	"internal/client/integrations"
 
@@ -28,27 +29,39 @@ var ExportVerCmd = &cobra.Command{
 	Short: "Export Integrations flow versions to a folder",
 	Long:  "Export Integrations flow versions to a folder",
 	Args: func(cmd *cobra.Command, args []string) (err error) {
-		if err = apiclient.SetRegion(region); err != nil {
+		cmdProject := cmd.Flag("proj")
+		cmdRegion := cmd.Flag("reg")
+
+		if err = apiclient.SetRegion(cmdRegion.Value.String()); err != nil {
 			return err
 		}
-		return apiclient.SetProjectID(project)
+		return apiclient.SetProjectID(cmdProject.Value.String())
 	},
 	RunE: func(cmd *cobra.Command, args []string) (err error) {
+		name := cmd.Flag("name").Value.String()
 		if err = apiclient.FolderExists(folder); err != nil {
 			return err
 		}
 
 		apiclient.SetExportToFile(folder)
+		apiclient.DisableCmdPrintHttpResponse()
+		clilog.Warning.Println("API calls to integration.googleapis.com have a quota of 480 per min. " +
+			"Running this tool against large list of entities can exhaust the quota. Throttling to 360 per min.")
+
 		_, err = integrations.ListVersions(name, -1, "", "", "", true, true, false)
 		return err
 	},
 }
 
-var folder string
-var allVersions bool
-var numConnections int
+var (
+	folder         string
+	allVersions    bool
+	numConnections int
+)
 
 func init() {
+	var name string
+
 	ExportVerCmd.Flags().StringVarP(&folder, "folder", "f",
 		"", "Folder to export Integration flows")
 	ExportVerCmd.Flags().StringVarP(&name, "name", "n",

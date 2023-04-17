@@ -17,40 +17,86 @@ package apiclient
 import (
 	"fmt"
 	"os"
+	"sync"
 
 	"internal/clilog"
 )
 
 // BaseURL is the Integration control plane endpoint
-const integrationBaseURL = "https://%s-integrations.googleapis.com/v1/projects/%s/locations/%s/products/apigee/"
-const appIntegrationBaseURL = "https://%s-integrations.googleapis.com/v1/projects/%s/locations/%s/"
-const connectorBaseURL = "https://connectors.googleapis.com/v1/projects/%s/locations/%s/connections"
-const connectorOperationsBaseURL = "https://connectors.googleapis.com/v1/projects/%s/locations/%s/operations"
-
-var integrationRegions = []string{"us", "us-west1"}
+const (
+	integrationBaseURL         = "https://%s-integrations.googleapis.com/v1/projects/%s/locations/%s/products/apigee/"
+	appIntegrationBaseURL      = "https://%s-integrations.googleapis.com/v1/projects/%s/locations/%s/"
+	connectorBaseURL           = "https://connectors.googleapis.com/v1/projects/%s/locations/%s/connections"
+	connectorOperationsBaseURL = "https://connectors.googleapis.com/v1/projects/%s/locations/%s/operations"
+)
 
 // IntegrationClientOptions is the base struct to hold all command arguments
 type IntegrationClientOptions struct {
-	Region               string //Integration region
-	Token                string //Google OAuth access token
-	ServiceAccount       string //Google service account json
-	ProjectID            string //GCP Project ID
-	SkipLogInfo          bool   //LogInfo controls the log level
-	SkipCheck            bool   //skip checking access token expiry
-	SkipCache            bool   //skip writing access token to file
-	PrintOutput          bool   //prints output from http calls
-	ProxyUrl             string //use a proxy url
-	ExportToFile         string //determine of the contents should be written to file
-	UseApigeeIntegration bool   //use Apigee Integration; defaults to Application Integration
-	NoOutput             bool   //disables printing API responses
+	Region               string // Integration region
+	Token                string // Google OAuth access token
+	ServiceAccount       string // Google service account json
+	ProjectID            string // GCP Project ID
+	DebugLog             bool   // Enable debug logs
+	TokenCheck           bool   // skip checking access token expiry
+	SkipCache            bool   // skip writing access token to file
+	PrintOutput          bool   // prints output from http calls
+	NoOutput             bool   // Disable all statements to stdout
+	SuppressWarnings     bool   // Disable printing of warnings to stdout
+	ProxyUrl             string // use a proxy url
+	ExportToFile         string // determine of the contents should be written to file
+	UseApigeeIntegration bool   // use Apigee Integration; defaults to Application Integration
+	ConflictsAreErrors   bool   // treat statusconflict as an error
 }
 
 var options *IntegrationClientOptions
+
+type Rate uint8
+
+const (
+	None Rate = iota
+	IntegrationAPI
+	ConnectorsAPI
+)
+
+var apiRate Rate
+
+var cmdPrintHttpResponses = true
+
+type clientPrintHttpResponse struct {
+	enable bool
+	sync.Mutex
+}
+
+var ClientPrintHttpResponse = &clientPrintHttpResponse{enable: true}
 
 // NewIntegrationClient sets up options to invoke Integration APIs
 func NewIntegrationClient(o IntegrationClientOptions) {
 	if options == nil {
 		options = new(IntegrationClientOptions)
+	}
+
+	options.TokenCheck = o.TokenCheck
+	options.SkipCache = o.SkipCache
+	options.DebugLog = o.DebugLog
+	options.PrintOutput = o.PrintOutput
+	options.NoOutput = o.NoOutput
+	options.SuppressWarnings = o.SuppressWarnings
+
+	// initialize logs
+	clilog.Init(options.DebugLog, options.PrintOutput, options.NoOutput, options.SuppressWarnings)
+
+	cliPref, err := readPreferencesFile()
+	if err != nil {
+		clilog.Debug.Println(err)
+	}
+
+	if cliPref != nil {
+		options.ProjectID = cliPref.Project
+		options.Region = cliPref.Region
+		options.ProxyUrl = cliPref.ProxyUrl
+		options.Token = cliPref.Token
+		options.UseApigeeIntegration = cliPref.UseApigee
+		options.TokenCheck = cliPref.Nocheck
 	}
 
 	if o.Region != "" {
@@ -65,39 +111,11 @@ func NewIntegrationClient(o IntegrationClientOptions) {
 	if o.ProjectID != "" {
 		options.ProjectID = o.ProjectID
 	}
-	if o.SkipCheck {
-		options.SkipCheck = true
-	} else {
-		options.SkipCheck = false
-	}
-	if o.SkipCache {
-		options.SkipCache = true
-	} else {
-		options.SkipCache = false
-	}
-	if o.SkipLogInfo {
-		options.SkipLogInfo = true
-		clilog.Init(true)
-	} else {
-		options.SkipLogInfo = false
-		clilog.Init(false)
-	}
-	if o.PrintOutput {
-		options.PrintOutput = true
-	} else {
-		options.PrintOutput = false
-	}
 	if o.ExportToFile != "" {
 		options.ExportToFile = o.ExportToFile
 	}
-	if o.NoOutput {
-		options.NoOutput = true
-	} else {
-		options.NoOutput = false
-	}
-	//read preference file
-	_ = ReadPreferencesFile()
 
+	options.ConflictsAreErrors = true
 }
 
 // SetRegion sets the org variable
@@ -160,9 +178,9 @@ func GetServiceAccount() string {
 	return options.ServiceAccount
 }
 
-// IsSkipCheck
-func IsSkipCheck() bool {
-	return options.SkipCheck
+// TokenCheckEnabled
+func TokenCheckEnabled() bool {
+	return options.TokenCheck
 }
 
 // IsSkipCache
@@ -170,15 +188,9 @@ func IsSkipCache() bool {
 	return options.SkipCache
 }
 
-// IsSkipLogInfo
-func IsSkipLogInfo() bool {
-	return options.SkipLogInfo
-}
-
-// SetSkipLogIngo
-func SetSkipLogInfo(l bool) {
-	options.SkipLogInfo = l
-	clilog.Init(l)
+// DebugEnabled
+func DebugEnabled() bool {
+	return options.DebugLog
 }
 
 // PrintOutput
@@ -189,6 +201,35 @@ func SetPrintOutput(output bool) {
 // GetPrintOutput
 func GetPrintOutput() bool {
 	return options.PrintOutput
+}
+
+// DisableCmdPrintHttpResponse
+func DisableCmdPrintHttpResponse() {
+	cmdPrintHttpResponses = false
+}
+
+// EnableCmdPrintHttpResponse
+func EnableCmdPrintHttpResponse() {
+	cmdPrintHttpResponses = true
+}
+
+// GetPrintHttpResponseSetting
+func GetCmdPrintHttpResponseSetting() bool {
+	return cmdPrintHttpResponses
+}
+
+// SetClientPrintHttpResponse
+func (c *clientPrintHttpResponse) Set(b bool) {
+	c.Lock()
+	defer c.Unlock()
+	c.enable = b
+}
+
+// GetPrintHttpResponseSetting
+func (c *clientPrintHttpResponse) Get() bool {
+	c.Lock()
+	defer c.Unlock()
+	return c.enable
 }
 
 // GetProxyURL
@@ -228,11 +269,6 @@ func GetBaseConnectorOperationsrURL() (connectorUrl string) {
 	return fmt.Sprintf(connectorOperationsBaseURL, GetProjectID(), GetRegion())
 }
 
-// GetIntegrationRegions
-func GetIntegrationRegions() []string {
-	return integrationRegions
-}
-
 // SetExportToFile
 func SetExportToFile(exportToFile string) {
 	options.ExportToFile = exportToFile
@@ -254,4 +290,39 @@ func DryRun() bool {
 
 func UseApigeeIntegration() {
 	options.UseApigeeIntegration = true
+}
+
+// SetNoOutput
+func SetNoOutput(b bool) {
+	options.NoOutput = b
+}
+
+// GetNoOutput
+func GetNoOutput() bool {
+	return options.NoOutput
+}
+
+// GetSuppressWarning
+func GetSuppressWarning() bool {
+	return options.SuppressWarnings
+}
+
+// SetConflictsAsErrors
+func SetConflictsAsErrors(b bool) {
+	options.ConflictsAreErrors = b
+}
+
+// GetConflictsAsErrors
+func GetConflictsAsErrors() bool {
+	return options.ConflictsAreErrors
+}
+
+// SetRate
+func SetRate(r Rate) {
+	apiRate = r
+}
+
+// GetRate
+func GetRate() Rate {
+	return apiRate
 }

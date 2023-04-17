@@ -28,17 +28,20 @@ var ImportCmd = &cobra.Command{
 	Short: "Import connections to a region from a folder",
 	Long:  "Import connections to a region from a folder",
 	Args: func(cmd *cobra.Command, args []string) (err error) {
-		if err = apiclient.SetRegion(region); err != nil {
+		cmdProject := cmd.Flag("proj")
+		cmdRegion := cmd.Flag("reg")
+
+		if err = apiclient.SetRegion(cmdRegion.Value.String()); err != nil {
 			return err
 		}
-		return apiclient.SetProjectID(project)
+		return apiclient.SetProjectID(cmdProject.Value.String())
 	},
 	RunE: func(cmd *cobra.Command, args []string) (err error) {
 		if err = apiclient.FolderExists(folder); err != nil {
 			return err
 		}
 
-		return connections.Import(folder, createSecret)
+		return connections.Import(folder, createSecret, wait)
 	},
 }
 
@@ -47,6 +50,8 @@ func init() {
 		"", "Folder to import connections")
 	ImportCmd.Flags().BoolVarP(&createSecret, "create-secret", "",
 		true, "Create Secret Manager secrets when creating the connection")
+	ImportCmd.Flags().BoolVarP(&wait, "wait", "",
+		false, "Waits for the connector to finish, with success or error")
 
 	_ = ImportCmd.MarkFlagRequired("folder")
 }

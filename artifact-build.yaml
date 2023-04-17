@@ -11,33 +11,54 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# gcloud builds submit --config=artifactory-build.yaml --project=project-name --substitutions=TAG_NAME="v0.65"
+# gcloud builds submit --config=artifact-build.yaml --project=project-name --substitutions=TAG="v0.65"
 steps:
 #publish integrationcli
 - name: 'gcr.io/cloud-builders/docker'
-  args: ['build', '-t', 'us-docker.pkg.dev/$PROJECT_ID/${_REPO}/integrationcli:$TAG_NAME', '-f', 'Dockerfile', '.']
+  args:
+    - 'build'
+    - '-t'
+    - '${_IMAGE_NAME}:${TAG_NAME}'
+    - '-f'
+    - 'Dockerfile'
+    - '.'
+    - '--build-arg'
+    - 'TAG=${TAG_NAME}'
+    - '--build-arg'
+    - 'COMMIT=$COMMIT_SHA'
 - name: 'gcr.io/cloud-builders/docker'
-  args: ['push', 'us-docker.pkg.dev/$PROJECT_ID/${_REPO}/integrationcli:$TAG_NAME']
+  args: ['push', '${_IMAGE_NAME}:${TAG_NAME}']
 - name: 'gcr.io/cloud-builders/docker'
-  args: ['tag', 'us-docker.pkg.dev/$PROJECT_ID/${_REPO}/integrationcli:$TAG_NAME', 'us-docker.pkg.dev/$PROJECT_ID/${_REPO}/integrationcli:latest']
+  args: ['tag', '${_IMAGE_NAME}:${TAG_NAME}', '${_IMAGE_NAME}:latest']
 - name: 'gcr.io/cloud-builders/docker'
-  args: ['push', 'us-docker.pkg.dev/$PROJECT_ID/${_REPO}/integrationcli:latest']
+  args: ['push', '${_IMAGE_NAME}:latest']
 #publish integrationcli-builder
 - name: 'gcr.io/cloud-builders/docker'
-  args: ['build', '-t', 'us-docker.pkg.dev/$PROJECT_ID/${_REPO}/integrationcli-builder:$TAG_NAME', '-f', 'Dockerfile.builder', '.']
+  args:
+  - 'build'
+  - '-t'
+  - '${_IMAGE_NAME}-builder:${TAG_NAME}'
+  - '-f'
+  - 'Dockerfile.builder'
+  - '.'
+  - '--build-arg'
+  - 'TAG=${TAG_NAME}'
+  - '--build-arg'
+  - 'COMMIT=$COMMIT_SHA'
 - name: 'gcr.io/cloud-builders/docker'
-  args: ['push', 'us-docker.pkg.dev/$PROJECT_ID/${_REPO}/integrationcli-builder:$TAG_NAME']
+  args: ['push', '${_IMAGE_NAME}-builder:${TAG_NAME}']
 - name: 'gcr.io/cloud-builders/docker'
-  args: ['tag', 'us-docker.pkg.dev/$PROJECT_ID/${_REPO}/integrationcli-builder:$TAG_NAME', 'us-docker.pkg.dev/$PROJECT_ID/${_REPO}/integrationcli-builder:latest']
+  args: ['tag', '${_IMAGE_NAME}-builder:${TAG_NAME}', '${_IMAGE_NAME}-builder:latest']
 - name: 'gcr.io/cloud-builders/docker'
-  args: ['push', 'us-docker.pkg.dev/$PROJECT_ID/${_REPO}/integrationcli-builder:latest']
+  args: ['push', '${_IMAGE_NAME}-builder:latest']
 
 #repo name
 substitutions:
   _REPO: "images"
+  _IMAGE_NAME: "us-docker.pkg.dev/${PROJECT_ID}/${_REPO}/integrationcli"
 
 options:
-  env: ["DEBUG=true"]
   machineType: E2_HIGHCPU_8
   logging: CLOUD_LOGGING_ONLY
   substitution_option: ALLOW_LOOSE
+  dynamic_substitutions: true

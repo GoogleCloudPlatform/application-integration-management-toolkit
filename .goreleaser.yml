@@ -13,7 +13,7 @@
 # limitations under the License.
 
 # goreleaser version 1.16.0
-#commit: 945b5453d953e36c7fcad8ff64206c021413271b
+# commit: 945b5453d953e36c7fcad8ff64206c021413271b
 # built by: homebrew
 # goos: darwin
 # goarch: arm64
@@ -36,8 +36,7 @@ builds:
       - windows
     flags:
     - -trimpath
-    ldflags:
-    - -s -w -a -extldflags "-static" -X main.Version={{.Tag}} -X main.Git={{.Commit}}
+    - -buildvcs=true
     gcflags:
     - all="-l"
     env:
@@ -55,6 +54,7 @@ archives:
       {{- else if eq .Arch "darwin" }}Darwin
       {{- else }}{{ .Arch }}{{ end }}
     wrap_in_directory: true
+    rlcp: true
     files:
       - LICENSE.txt
     builds:
@@ -75,6 +75,13 @@ signs:
         "--detach-sign",
         "${artifact}",
       ]
+
+changelog:
+  sort: asc
+  use: github
+  groups:
+    - title: 'Change Log'
+      order: 0
 
 release:
   draft: true

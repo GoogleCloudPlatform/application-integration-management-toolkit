@@ -30,12 +30,17 @@ var PatchCmd = &cobra.Command{
 	Short: "Update an existing connection",
 	Long:  "Update an existing connection in a region",
 	Args: func(cmd *cobra.Command, args []string) (err error) {
-		if err = apiclient.SetRegion(region); err != nil {
+		cmdProject := cmd.Flag("proj")
+		cmdRegion := cmd.Flag("reg")
+
+		if err = apiclient.SetRegion(cmdRegion.Value.String()); err != nil {
 			return err
 		}
-		return apiclient.SetProjectID(project)
+		return apiclient.SetProjectID(cmdProject.Value.String())
 	},
 	RunE: func(cmd *cobra.Command, args []string) (err error) {
+		name := cmd.Flag("name").Value.String()
+
 		if _, err := os.Stat(connectionFile); os.IsNotExist(err) {
 			return err
 		}
@@ -53,6 +58,8 @@ var PatchCmd = &cobra.Command{
 var updateMask []string
 
 func init() {
+	var name string
+
 	PatchCmd.Flags().StringVarP(&name, "name", "n",
 		"", "Connection name")
 	PatchCmd.Flags().StringVarP(&connectionFile, "file", "f",

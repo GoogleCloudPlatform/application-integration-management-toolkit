@@ -28,21 +28,29 @@ var ImportflowCmd = &cobra.Command{
 	Short: "Import all versions of an Integration flows to a region",
 	Long:  "Import all versions of an Integration flows to a region",
 	Args: func(cmd *cobra.Command, args []string) (err error) {
-		if err = apiclient.SetRegion(region); err != nil {
+		cmdProject := cmd.Flag("proj")
+		cmdRegion := cmd.Flag("reg")
+
+		if err = apiclient.SetRegion(cmdRegion.Value.String()); err != nil {
 			return err
 		}
-		return apiclient.SetProjectID(project)
+		return apiclient.SetProjectID(cmdProject.Value.String())
 	},
 	RunE: func(cmd *cobra.Command, args []string) (err error) {
+		const maxConnections = 4
+		name := cmd.Flag("name").Value.String()
+
 		if err = apiclient.FolderExists(folder); err != nil {
 			return err
 		}
-
-		return integrations.ImportFlow(name, folder, 4)
+		apiclient.DisableCmdPrintHttpResponse()
+		return integrations.ImportFlow(name, folder, maxConnections)
 	},
 }
 
 func init() {
+	var name string
+
 	ImportflowCmd.Flags().StringVarP(&name, "name", "n",
 		"", "Name of the Integration flow")
 

@@ -28,22 +28,27 @@ var ListCmd = &cobra.Command{
 	Short: "List all integration flows in the region",
 	Long:  "List all integration flows in the region",
 	Args: func(cmd *cobra.Command, args []string) (err error) {
-		if err = apiclient.SetRegion(region); err != nil {
+		cmdProject := cmd.Flag("proj")
+		cmdRegion := cmd.Flag("reg")
+		if err = apiclient.SetRegion(cmdRegion.Value.String()); err != nil {
 			return err
 		}
-		return apiclient.SetProjectID(project)
+		return apiclient.SetProjectID(cmdProject.Value.String())
 	},
 	RunE: func(cmd *cobra.Command, args []string) (err error) {
-		_, err = integrations.List(pageSize, pageToken, filter, orderBy)
+		_, err = integrations.List(pageSize,
+			cmd.Flag("pageToken").Value.String(),
+			cmd.Flag("filter").Value.String(),
+			cmd.Flag("orderBy").Value.String())
 		return
-
 	},
 }
 
-var pageToken, filter string
 var pageSize int
 
 func init() {
+	var pageToken, filter, orderBy string
+
 	ListCmd.Flags().IntVarP(&pageSize, "pageSize", "",
 		-1, "The maximum number of versions to return")
 	ListCmd.Flags().StringVarP(&pageToken, "pageToken", "",

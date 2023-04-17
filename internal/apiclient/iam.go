@@ -54,7 +54,6 @@ type setIamPolicy struct {
 }
 
 func iamServiceAccountExists(iamname string) (code int, err error) {
-
 	var resp *http.Response
 	var req *http.Request
 
@@ -64,8 +63,8 @@ func iamServiceAccountExists(iamname string) (code int, err error) {
 		return -1, err
 	}
 
-	var getendpoint = fmt.Sprintf("https://iam.googleapis.com/v1/projects/%s/serviceAccounts/%s", projectid, iamname)
-	var contentType = "application/json"
+	getendpoint := fmt.Sprintf("https://iam.googleapis.com/v1/projects/%s/serviceAccounts/%s", projectid, iamname)
+	contentType := "application/json"
 
 	client, err := getHttpClient()
 	if err != nil {
@@ -89,7 +88,7 @@ func iamServiceAccountExists(iamname string) (code int, err error) {
 		return -1, err
 	}
 
-	clilog.Info.Println("Content-Type : ", contentType)
+	clilog.Debug.Println("Content-Type : ", contentType)
 	req.Header.Set("Content-Type", contentType)
 
 	resp, err = client.Do(req)
@@ -120,10 +119,12 @@ func iamServiceAccountExists(iamname string) (code int, err error) {
 
 // setIAMPermission set permissions for a member
 func setIAMPermission(endpoint string, name string, memberName string, role string, memberType string) (err error) {
-
 	u, _ := url.Parse(endpoint)
 	u.Path = path.Join(u.Path, name+":getIamPolicy")
-	getIamPolicyBody, err := HttpClient(false, u.String())
+
+	ClientPrintHttpResponse.Set(false)
+	getIamPolicyBody, err := HttpClient(u.String())
+	ClientPrintHttpResponse.Set(GetCmdPrintHttpResponseSetting())
 	if err != nil {
 		clilog.Error.Println(err)
 		return err
@@ -140,13 +141,13 @@ func setIAMPermission(endpoint string, name string, memberName string, role stri
 	foundRole := false
 	for i, binding := range getIamPolicy.Bindings {
 		if binding.Role == role {
-			//found members with the role already, add the new SA to the role
+			// found members with the role already, add the new SA to the role
 			getIamPolicy.Bindings[i].Members = append(binding.Members, memberType+":"+memberName)
 			foundRole = true
 		}
 	}
 
-	//no members with the role, add a new one
+	// no members with the role, add a new one
 	if !foundRole {
 		binding := roleBinding{}
 		binding.Role = role
@@ -166,26 +167,30 @@ func setIAMPermission(endpoint string, name string, memberName string, role stri
 		return err
 	}
 
-	_, err = HttpClient(false, u.String(), string(setIamPolicyBody))
+	ClientPrintHttpResponse.Set(false)
+	_, err = HttpClient(u.String(), string(setIamPolicyBody))
+	ClientPrintHttpResponse.Set(GetCmdPrintHttpResponseSetting())
 
 	return err
 }
 
 // setProjectIAMPermission
 func setProjectIAMPermission(project string, memberName string, role string) (err error) {
-	var getendpoint = fmt.Sprintf("https://cloudresourcemanager.googleapis.com/v1/projects/%s:getIamPolicy", project)
-	var setendpoint = fmt.Sprintf("https://cloudresourcemanager.googleapis.com/v1/projects/%s:setIamPolicy", project)
+	getendpoint := fmt.Sprintf("https://cloudresourcemanager.googleapis.com/v1/projects/%s:getIamPolicy", project)
+	setendpoint := fmt.Sprintf("https://cloudresourcemanager.googleapis.com/v1/projects/%s:setIamPolicy", project)
 
-	//this method treats errors as info since this is not a blocking problem
+	// this method treats errors as info since this is not a blocking problem
 
-	//Get the current IAM policies for the project
-	respBody, err := HttpClient(false, getendpoint, "")
+	ClientPrintHttpResponse.Set(false)
+
+	// Get the current IAM policies for the project
+	respBody, err := HttpClient(getendpoint, "")
 	if err != nil {
-		clilog.Info.Printf("error getting IAM policies for the project %s: %v", project, err)
+		clilog.Debug.Printf("error getting IAM policies for the project %s: %v", project, err)
 		return err
 	}
 
-	//binding for IAM Roles
+	// binding for IAM Roles
 	type roleBinding struct {
 		Role      string     `json:"role,omitempty"`
 		Members   []string   `json:"members,omitempty"`
@@ -199,7 +204,7 @@ func setProjectIAMPermission(project string, memberName string, role string) (er
 		Bindings []roleBinding `json:"bindings,omitempty"`
 	}
 
-	//iamPolicyRequest holds the request to set IAM
+	// iamPolicyRequest holds the request to set IAM
 	type iamPolicyRequest struct {
 		Policy iamPolicy `json:"policy,omitempty"`
 	}
@@ -208,7 +213,7 @@ func setProjectIAMPermission(project string, memberName string, role string) (er
 
 	err = json.Unmarshal(respBody, &policy)
 	if err != nil {
-		clilog.Info.Println(err)
+		clilog.Debug.Println(err)
 		return err
 	}
 
@@ -222,22 +227,22 @@ func setProjectIAMPermission(project string, memberName string, role string) (er
 	policyRequest.Policy = policy
 	policyRequestBody, err := json.Marshal(policyRequest)
 	if err != nil {
-		clilog.Info.Println(err)
+		clilog.Debug.Println(err)
 		return err
 	}
 
-	_, err = HttpClient(false, setendpoint, string(policyRequestBody))
+	_, err = HttpClient(setendpoint, string(policyRequestBody))
 	if err != nil {
-		clilog.Info.Printf("error setting IAM policies for the project %s: %v", project, err)
+		clilog.Debug.Printf("error setting IAM policies for the project %s: %v", project, err)
 		return err
 	}
 
+	ClientPrintHttpResponse.Set(GetCmdPrintHttpResponseSetting())
 	return nil
 }
 
 // CreateServiceAccount
 func CreateServiceAccount(iamname string) (err error) {
-
 	var statusCode int
 
 	projectid, displayname, err := getNameAndProject(iamname)
@@ -253,13 +258,14 @@ func CreateServiceAccount(iamname string) (err error) {
 	case 200:
 		return nil
 	case 404:
-		var createendpoint = fmt.Sprintf("https://iam.googleapis.com/v1/projects/%s/serviceAccounts", projectid)
+		createendpoint := fmt.Sprintf("https://iam.googleapis.com/v1/projects/%s/serviceAccounts", projectid)
 		iamPayload := []string{}
 		iamPayload = append(iamPayload, "\"accountId\":\""+displayname+"\"")
 		iamPayload = append(iamPayload, "\"serviceAccount\": {\"displayName\": \""+displayname+"\"}")
 		payload := "{" + strings.Join(iamPayload, ",") + "}"
-
-		if _, err = HttpClient(false, createendpoint, payload); err != nil {
+		ClientPrintHttpResponse.Set(false)
+		defer ClientPrintHttpResponse.Set(GetCmdPrintHttpResponseSetting())
+		if _, err = HttpClient(createendpoint, payload); err != nil {
 			clilog.Error.Println(err)
 			return err
 		}
@@ -280,7 +286,7 @@ func SetConnectorIAMPermission(name string, memberName string, iamRole string, m
 		role = "roles/connectors.invoker"
 	case "viewer":
 		role = "roles/connectors.viewer"
-	default: //assume this is a custom role definition
+	default: // assume this is a custom role definition
 		re := regexp.MustCompile(`projects\/([a-zA-Z0-9_-]+)\/roles\/([a-zA-Z0-9_-]+)`)
 		result := re.FindString(iamRole)
 		if result == "" {
@@ -294,7 +300,7 @@ func SetConnectorIAMPermission(name string, memberName string, iamRole string, m
 
 // SetPubSubIAMPermission set permissions for a SA on a topic
 func SetPubSubIAMPermission(project string, topic string, memberName string) (err error) {
-	var endpoint = fmt.Sprintf("https://pubsub.googleapis.com/v1/projects/%s/topics", project)
+	endpoint := fmt.Sprintf("https://pubsub.googleapis.com/v1/projects/%s/topics", project)
 	const memberType = "serviceAccount"
 	const role = "roles/pubsub.publisher"
 	return setIAMPermission(endpoint, topic, memberName, role, memberType)
@@ -302,7 +308,7 @@ func SetPubSubIAMPermission(project string, topic string, memberName string) (er
 
 // SetSecretManagerIAMPermission set permissions for a SA on a secret
 func SetSecretManagerIAMPermission(project string, secretName string, memberName string) (err error) {
-	var endpoint = fmt.Sprintf("https://secretmanager.googleapis.com/v1/projects/%s/secrets", project)
+	endpoint := fmt.Sprintf("https://secretmanager.googleapis.com/v1/projects/%s/secrets", project)
 	const memberType = "serviceAccount"
 	const role1 = "roles/secretmanager.secretAccessor"
 	const role2 = "roles/secretmanager.viewer"
@@ -314,12 +320,15 @@ func SetSecretManagerIAMPermission(project string, secretName string, memberName
 
 // SetBigQueryIAMPermission
 func SetBigQueryIAMPermission(project string, datasetid string, memberName string) (err error) {
-	var endpoint = fmt.Sprintf("https://bigquery.googleapis.com/bigquery/v2/projects/%s/datasets/%s", project, datasetid)
+	endpoint := fmt.Sprintf("https://bigquery.googleapis.com/bigquery/v2/projects/%s/datasets/%s", project, datasetid)
 	const role = "WRITER"
 	var content []byte
 
-	//first fetch the information
-	respBody, err := HttpClient(false, endpoint)
+	defer ClientPrintHttpResponse.Set(GetCmdPrintHttpResponseSetting())
+	ClientPrintHttpResponse.Set(false)
+
+	// first fetch the information
+	respBody, err := HttpClient(endpoint)
 	if err != nil {
 		return err
 	}
@@ -346,15 +355,15 @@ func SetBigQueryIAMPermission(project string, datasetid string, memberName strin
 	access.UserByEmail = new(string)
 	*access.UserByEmail = memberName
 
-	//merge the updates
+	// merge the updates
 	dataset.Access = append(dataset.Access, access)
 
 	if content, err = json.Marshal(dataset); err != nil {
 		return err
 	}
 
-	//patch the update
-	if _, err = HttpClient(false, endpoint, string(content), "PATCH"); err != nil {
+	// patch the update
+	if _, err = HttpClient(endpoint, string(content), "PATCH"); err != nil {
 		return err
 	}
 
@@ -363,7 +372,7 @@ func SetBigQueryIAMPermission(project string, datasetid string, memberName strin
 
 // SetCloudStorageIAMPermission
 func SetCloudStorageIAMPermission(project string, memberName string) (err error) {
-	//the connector currently requires storage.buckets.list. other built-in roles didn't have this permission
+	// the connector currently requires storage.buckets.list. other built-in roles didn't have this permission
 	const role = "roles/storage.admin"
 
 	return setProjectIAMPermission(project, memberName, role)
@@ -375,18 +384,24 @@ func SetCloudSQLIAMPermission(project string, memberName string) (err error) {
 	return setProjectIAMPermission(project, memberName, role)
 }
 
-func getNameAndProject(iamFullName string) (projectid string, name string, err error) {
+// SetCloudSpannerIAMPermission
+func SetCloudSpannerIAMPermission(project string, memberName string) (err error) {
+	const role = "roles/spanner.databaseUser"
+	return setProjectIAMPermission(project, memberName, role)
+}
 
+func getNameAndProject(iamFullName string) (projectid string, name string, err error) {
 	riam := regexp.MustCompile(`^[a-zA-Z0-9-]{6,30}$`)
 
 	parts := strings.Split(iamFullName, "@")
+
 	if len(parts) != 2 {
-		return "", "", fmt.Errorf("invalid iam name")
+		return "", "", fmt.Errorf("invalid iam name, %s", parts)
 	}
 	name = parts[0]
-	projectid = strings.Split(parts[1], ".iam.gserviceaccount.com")[0]
+	projectid = strings.ReplaceAll(parts[1], ".iam.gserviceaccount.com", "") // strings.Split(parts[1], ".iam.gserviceaccount.com")[0]
 	if name == "" || projectid == "" {
-		return "", "", fmt.Errorf("invalid iam name")
+		return "", "", fmt.Errorf("invalid iam name %s, %s", name, projectid)
 	}
 	if ok := riam.Match([]byte(name)); !ok {
 		return "", "", fmt.Errorf("the ID must be between 6 and 30 characters")
@@ -396,12 +411,15 @@ func getNameAndProject(iamFullName string) (projectid string, name string, err e
 
 // GetDefaultServiceAccount
 func GetComputeEngineDefaultServiceAccount(projectId string) (serviceAccount string, err error) {
-	var getendpoint = fmt.Sprintf("https://cloudresourcemanager.googleapis.com/v3/projects/%s", projectId)
+	getendpoint := fmt.Sprintf("https://cloudresourcemanager.googleapis.com/v3/projects/%s", projectId)
 
-	//Get the project number
-	respBody, err := HttpClient(false, getendpoint, "")
+	// Get the project number
+	ClientPrintHttpResponse.Set(false)
+	defer ClientPrintHttpResponse.Set(GetCmdPrintHttpResponseSetting())
+
+	respBody, err := HttpClient(getendpoint)
 	if err != nil {
-		clilog.Info.Printf("error getting details for the project %s: %v", projectId, err)
+		clilog.Debug.Printf("error getting details for the project %s: %v", projectId, err)
 		return serviceAccount, err
 	}
 
@@ -422,7 +440,7 @@ func GetComputeEngineDefaultServiceAccount(projectId string) (serviceAccount str
 
 	err = json.Unmarshal(respBody, &p)
 	if err != nil {
-		clilog.Info.Println(err)
+		clilog.Debug.Println(err)
 		return serviceAccount, err
 	}
 
@@ -430,7 +448,7 @@ func GetComputeEngineDefaultServiceAccount(projectId string) (serviceAccount str
 		return serviceAccount, fmt.Errorf("project number was not available")
 	}
 
-	//get the project number
+	// get the project number
 	projectNumber := strings.Split(p.Name, "/")[1]
 	serviceAccount = fmt.Sprintf("%s-compute@developer.gserviceaccount.com", projectNumber)
 

@@ -1,0 +1,19 @@
+# ignore github actions
+.github
+
+# ignore test folder
+test/
+
+# ignore licenses
+third-party/
+
+# ignore documentation
+docs/
+
+# ignore documentation
+cicd/
+
+# other files
+README.md
+CONTRIBUTING.md
+downloadLatest.sh

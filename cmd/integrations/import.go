@@ -28,17 +28,21 @@ var ImportCmd = &cobra.Command{
 	Short: "Import all Integration flows from folder",
 	Long:  "Import all Integration flows from folder",
 	Args: func(cmd *cobra.Command, args []string) (err error) {
-		if err = apiclient.SetRegion(region); err != nil {
+		cmdProject := cmd.Flag("proj")
+		cmdRegion := cmd.Flag("reg")
+
+		if err = apiclient.SetRegion(cmdRegion.Value.String()); err != nil {
 			return err
 		}
-		return apiclient.SetProjectID(project)
+		return apiclient.SetProjectID(cmdProject.Value.String())
 	},
 	RunE: func(cmd *cobra.Command, args []string) (err error) {
+		const maxConnections = 4
 		if err = apiclient.FolderExists(folder); err != nil {
 			return err
 		}
-
-		return integrations.Import(folder, 4)
+		apiclient.DisableCmdPrintHttpResponse()
+		return integrations.Import(folder, maxConnections)
 	},
 }
 

@@ -28,28 +28,31 @@ var ListCmd = &cobra.Command{
 	Short: "List all certificates in the region",
 	Long:  "List all certificates in the region",
 	Args: func(cmd *cobra.Command, args []string) (err error) {
+		project := cmd.Flag("proj").Value.String()
+		region := cmd.Flag("reg").Value.String()
+
 		if err = apiclient.SetRegion(region); err != nil {
 			return err
 		}
 		return apiclient.SetProjectID(project)
 	},
 	RunE: func(cmd *cobra.Command, args []string) (err error) {
+		pageToken := cmd.Flag("pageToken").Value.String()
+		filter := cmd.Flag("filter").Value.String()
 		_, err = certificates.List(pageSize, pageToken, filter)
 		return
-
 	},
 }
 
-var pageToken, filter, orderBy string
 var pageSize int
 
 func init() {
+	var pageToken, filter string
+
 	ListCmd.Flags().IntVarP(&pageSize, "pageSize", "",
 		-1, "The maximum number of versions to return")
 	ListCmd.Flags().StringVarP(&pageToken, "pageToken", "",
 		"", "A page token, received from a previous call")
 	ListCmd.Flags().StringVarP(&filter, "filter", "",
 		"", "Filter results")
-	ListCmd.Flags().StringVarP(&orderBy, "orderBy", "",
-		"", "The results would be returned in order")
 }

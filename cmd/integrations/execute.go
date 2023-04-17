@@ -15,6 +15,7 @@
 package integrations
 
 import (
+	"errors"
 	"fmt"
 	"os"
 
@@ -31,17 +32,20 @@ var ExecuteCmd = &cobra.Command{
 	Short: "Execute an integration",
 	Long:  "execute an integration",
 	Args: func(cmd *cobra.Command, args []string) (err error) {
-		if err = apiclient.SetRegion(region); err != nil {
+		cmdProject := cmd.Flag("proj")
+		cmdRegion := cmd.Flag("reg")
+
+		if err = apiclient.SetRegion(cmdRegion.Value.String()); err != nil {
 			return err
 		}
-		if executionFile != "" && triggerId != "" {
-			return fmt.Errorf("cannot pass trigger id and execution file")
+		if executionFile != "" && triggerID != "" {
+			return errors.New("cannot pass trigger id and execution file")
 		}
-		return apiclient.SetProjectID(project)
+		return apiclient.SetProjectID(cmdProject.Value.String())
 	},
 	RunE: func(cmd *cobra.Command, args []string) (err error) {
-
 		var content []byte
+		name := cmd.Flag("name").Value.String()
 
 		if executionFile != "" {
 			if _, err := os.Stat(executionFile); os.IsNotExist(err) {
@@ -52,26 +56,29 @@ var ExecuteCmd = &cobra.Command{
 			if err != nil {
 				return err
 			}
-		} else if triggerId != "" {
-			content = []byte(fmt.Sprintf("{\"triggerId\": \"api_trigger/%s\",\"inputParameters\": {}}", triggerId))
+		} else if triggerID != "" {
+			content = []byte(fmt.Sprintf("{\"triggerId\": \"api_trigger/%s\",\"inputParameters\": {}}", triggerID))
 		}
 
 		_, err = integrations.Execute(name, content)
 		return
-
 	},
 }
 
-var executionFile, triggerId string
+var executionFile, triggerID string
 
 func init() {
+	var name string
+
 	ExecuteCmd.Flags().StringVarP(&name, "name", "n",
 		"", "Integration flow name")
 	ExecuteCmd.Flags().StringVarP(&executionFile, "file", "f",
 		"", "Integration payload JSON file path. For the payload structure, visit docs at"+
-			" https://cloud.google.com/application-integration/docs/reference/rest/v1/projects.locations.integrations/execute#request-body")
+			" https://cloud.google.com/application-integration/docs/reference/"+
+			"rest/v1/projects.locations.integrations/execute#request-body")
 	ExecuteCmd.Flags().StringVarP(&executionFile, "trigger-id", "",
-		"", "Specify only the trigger id of the integration if there are no input parameters to be sent. Cannot be combined with -f")
+		"", "Specify only the trigger id of the integration if there "+
+			"are no input parameters to be sent. Cannot be combined with -f")
 
 	_ = ExecuteCmd.MarkFlagRequired("name")
 	_ = ExecuteCmd.MarkFlagRequired("file")

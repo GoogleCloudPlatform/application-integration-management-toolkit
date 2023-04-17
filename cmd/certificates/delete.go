@@ -28,19 +28,24 @@ var DelCmd = &cobra.Command{
 	Short: "Delete a certificate from a region",
 	Long:  "Delete a certificate from a region",
 	Args: func(cmd *cobra.Command, args []string) (err error) {
+		project := cmd.Flag("proj").Value.String()
+		region := cmd.Flag("reg").Value.String()
+
 		if err = apiclient.SetRegion(region); err != nil {
 			return err
 		}
 		return apiclient.SetProjectID(project)
 	},
 	RunE: func(cmd *cobra.Command, args []string) (err error) {
+		name := cmd.Flag("name").Value.String()
 		_, err = certificates.Delete(name)
 		return
-
 	},
 }
 
 func init() {
+	var name string
+
 	DelCmd.Flags().StringVarP(&name, "name", "n",
 		"", "Integration flow name")
 

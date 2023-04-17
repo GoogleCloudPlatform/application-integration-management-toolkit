@@ -20,12 +20,16 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// Cmd to get org details
+// SetCmd to set preferences
 var SetCmd = &cobra.Command{
 	Use:   "set",
 	Short: "Set default preferences for integrationcli",
 	Long:  "Set default preferences for integrationcli",
 	RunE: func(cmd *cobra.Command, args []string) (err error) {
+		project := cmd.Flag("proj").Value.String()
+		region := cmd.Flag("reg").Value.String()
+		proxyURL := cmd.Flag("proxy").Value.String()
+
 		if err = apiclient.WriteDefaultProject(project); err != nil {
 			return err
 		}
@@ -34,7 +38,7 @@ var SetCmd = &cobra.Command{
 			return err
 		}
 
-		if err = apiclient.SetProxy(proxyUrl); err != nil {
+		if err = apiclient.SetProxy(proxyURL); err != nil {
 			return err
 		}
 
@@ -54,10 +58,10 @@ var SetCmd = &cobra.Command{
 	},
 }
 
-var project, region, proxyUrl string
 var nocheck, useapigee bool
 
 func init() {
+	var project, region, proxyURL string
 
 	SetCmd.Flags().StringVarP(&project, "proj", "p",
 		"", "Integration GCP Project name")
@@ -65,7 +69,7 @@ func init() {
 	SetCmd.Flags().StringVarP(&region, "reg", "r",
 		"", "Integration region name")
 
-	SetCmd.Flags().StringVarP(&proxyUrl, "proxy", "",
+	SetCmd.Flags().StringVarP(&proxyURL, "proxy", "",
 		"", "Use http proxy before contacting the control plane")
 
 	SetCmd.Flags().BoolVarP(&nocheck, "nocheck", "",
