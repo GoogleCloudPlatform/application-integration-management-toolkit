@@ -281,12 +281,10 @@ var ApplyCmd = &cobra.Command{
 	},
 }
 
-var (
-	serviceAccountName, serviceAccountProject, encryptionKey string
-)
+var serviceAccountName, serviceAccountProject, encryptionKey string
 
 func init() {
-	var grantPermission, createSecret, wait = false, false, false
+	grantPermission, createSecret, wait := false, false, false
 
 	ApplyCmd.Flags().StringVarP(&folder, "folder", "f",
 		"", "Folder containing scaffolding configuration")

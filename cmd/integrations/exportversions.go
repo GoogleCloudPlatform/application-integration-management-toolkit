@@ -15,9 +15,10 @@
 package integrations
 
 import (
+	"strconv"
+
 	"internal/apiclient"
 	"internal/clilog"
-	"strconv"
 
 	"internal/client/integrations"
 
@@ -62,7 +63,7 @@ var (
 
 func init() {
 	var name string
-	var allVersions = true
+	allVersions := true
 
 	ExportVerCmd.Flags().StringVarP(&folder, "folder", "f",
 		"", "Folder to export Integration flows")

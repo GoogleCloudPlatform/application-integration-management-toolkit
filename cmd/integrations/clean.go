@@ -15,8 +15,9 @@
 package integrations
 
 import (
-	"internal/apiclient"
 	"strconv"
+
+	"internal/apiclient"
 
 	"internal/client/integrations"
 
@@ -48,7 +49,7 @@ var keepList []string
 
 func init() {
 	var name string
-	var reportOnly = true
+	reportOnly := true
 
 	CleanCmd.Flags().StringVarP(&name, "name", "n",
 		"", "Integration name")

@@ -72,13 +72,11 @@ var CreateCmd = &cobra.Command{
 	},
 }
 
-var (
-	connectionFile, serviceAccountName, serviceAccountProject, encryptionKey string
-)
+var connectionFile, serviceAccountName, serviceAccountProject, encryptionKey string
 
 func init() {
 	var name string
-	var grantPermission, wait, createSecret = false, false, false
+	grantPermission, wait, createSecret := false, false, false
 
 	CreateCmd.Flags().StringVarP(&name, "name", "n",
 		"", "Connection name")

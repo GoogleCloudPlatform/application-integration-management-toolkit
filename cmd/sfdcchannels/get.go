@@ -15,8 +15,9 @@
 package sfdcchannels
 
 import (
-	"internal/apiclient"
 	"strconv"
+
+	"internal/apiclient"
 
 	"internal/client/sfdc"
 
@@ -60,7 +61,7 @@ var GetCmd = &cobra.Command{
 
 func init() {
 	var instance, name, id string
-	var minimal = false
+	minimal := false
 
 	GetCmd.Flags().StringVarP(&name, "name", "n",
 		"", "sfdc channel name")

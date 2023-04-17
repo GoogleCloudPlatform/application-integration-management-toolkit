@@ -15,8 +15,9 @@
 package preferences
 
 import (
-	"internal/apiclient"
 	"strconv"
+
+	"internal/apiclient"
 
 	"github.com/spf13/cobra"
 )
@@ -56,7 +57,7 @@ var SetCmd = &cobra.Command{
 
 func init() {
 	var project, region, proxyURL string
-	var nocheck = false
+	nocheck := false
 
 	SetCmd.Flags().StringVarP(&project, "proj", "p",
 		"", "Integration GCP Project name")

@@ -72,7 +72,7 @@ var GetVerCmd = &cobra.Command{
 
 func init() {
 	var name, version string
-	var minimal, overrides, basic = false, false, false
+	minimal, overrides, basic := false, false, false
 
 	GetVerCmd.Flags().StringVarP(&name, "name", "n",
 		"", "Integration flow name")

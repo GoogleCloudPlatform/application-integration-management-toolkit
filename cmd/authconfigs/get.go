@@ -72,7 +72,7 @@ var GetCmd = &cobra.Command{
 
 func init() {
 	var name, id string
-	var minimal = false
+	minimal := false
 
 	GetCmd.Flags().StringVarP(&id, "id", "i",
 		"", "Authconfig name (uuid)")

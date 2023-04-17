@@ -52,7 +52,7 @@ var ListVerCmd = &cobra.Command{
 
 func init() {
 	var pageToken, filter, orderBy, name string
-	var basic = false
+	basic := false
 
 	ListVerCmd.Flags().StringVarP(&name, "name", "n",
 		"", "Integration flow name")

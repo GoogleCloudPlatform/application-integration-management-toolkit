@@ -15,8 +15,9 @@
 package connectors
 
 import (
-	"internal/apiclient"
 	"strconv"
+
+	"internal/apiclient"
 
 	"internal/client/connections"
 
@@ -50,7 +51,7 @@ var ImportCmd = &cobra.Command{
 }
 
 func init() {
-	var createSecret, wait = false, false
+	createSecret, wait := false, false
 
 	ImportCmd.Flags().StringVarP(&folder, "folder", "f",
 		"", "Folder to import connections")

@@ -58,7 +58,7 @@ var view string
 
 func init() {
 	var name string
-	var minimal, overrides = false, false
+	minimal, overrides := false, false
 
 	GetCmd.Flags().StringVarP(&name, "name", "n",
 		"", "The name of the connection")
