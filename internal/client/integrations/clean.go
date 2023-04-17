@@ -26,8 +26,8 @@ func Clean(name string, reportOnly bool, keepList []string) (err error) {
 	var listOfVersions []basicIntegrationVersion
 	var nextPage string
 
-	apiclient.SetClientPrintHttpResponse(false)
-	defer apiclient.SetClientPrintHttpResponse(apiclient.GetCmdPrintHttpResponseSetting())
+	apiclient.ClientPrintHttpResponse.Set(false)
+	defer apiclient.ClientPrintHttpResponse.Set(apiclient.GetCmdPrintHttpResponseSetting())
 	for {
 		respBody, err := ListVersions(name, -1, nextPage, "", "", false, false, true)
 		if err != nil {

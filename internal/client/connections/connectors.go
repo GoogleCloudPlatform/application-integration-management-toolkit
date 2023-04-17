@@ -183,8 +183,8 @@ func Create(name string, content []byte, serviceAccountName string, serviceAccou
 	}
 
 	if wait {
-		apiclient.SetClientPrintHttpResponse(false)
-		defer apiclient.SetClientPrintHttpResponse(apiclient.GetCmdPrintHttpResponseSetting())
+		apiclient.ClientPrintHttpResponse.Set(false)
+		defer apiclient.ClientPrintHttpResponse.Set(apiclient.GetCmdPrintHttpResponseSetting())
 
 		o := operation{}
 		if err = json.Unmarshal(operationsBytes, &o); err != nil {
@@ -509,7 +509,7 @@ func Get(name string, view string, minimal bool, overrides bool) (respBody []byt
 	u.Path = path.Join(u.Path, name)
 
 	if minimal {
-		apiclient.SetClientPrintHttpResponse(false)
+		apiclient.ClientPrintHttpResponse.Set(false)
 	}
 
 	respBody, err = apiclient.HttpClient(u.String())
@@ -552,7 +552,7 @@ func Get(name string, view string, minimal bool, overrides bool) (respBody []byt
 		if err != nil {
 			return nil, err
 		}
-		apiclient.SetClientPrintHttpResponse(apiclient.GetCmdPrintHttpResponseSetting()) // set original print output
+		apiclient.ClientPrintHttpResponse.Set(apiclient.GetCmdPrintHttpResponseSetting()) // set original print output
 		apiclient.PrettyPrint(connectionPayload)
 
 		return connectionPayload, err
@@ -616,8 +616,8 @@ func readSecretFile(name string) (payload []byte, err error) {
 
 // Import
 func Import(folder string, createSecret bool, wait bool) (err error) {
-	apiclient.SetClientPrintHttpResponse(false)
-	defer apiclient.SetClientPrintHttpResponse(apiclient.GetCmdPrintHttpResponseSetting())
+	apiclient.ClientPrintHttpResponse.Set(false)
+	defer apiclient.ClientPrintHttpResponse.Set(apiclient.GetCmdPrintHttpResponseSetting())
 	errs := []string{}
 
 	err = filepath.Walk(folder, func(path string, info os.FileInfo, err error) error {
@@ -663,8 +663,8 @@ func Import(folder string, createSecret bool, wait bool) (err error) {
 // Export
 func Export(folder string) (err error) {
 	apiclient.SetExportToFile(folder)
-	apiclient.SetClientPrintHttpResponse(false)
-	defer apiclient.SetClientPrintHttpResponse(apiclient.GetCmdPrintHttpResponseSetting())
+	apiclient.ClientPrintHttpResponse.Set(false)
+	defer apiclient.ClientPrintHttpResponse.Set(apiclient.GetCmdPrintHttpResponseSetting())
 
 	respBody, err := List(maxPageSize, "", "", "")
 	if err != nil {

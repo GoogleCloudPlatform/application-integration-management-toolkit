@@ -118,7 +118,7 @@ func Get(name string, minimal bool) (respBody []byte, err error) {
 	u.Path = path.Join(u.Path, "authConfigs", name)
 
 	if minimal {
-		apiclient.SetClientPrintHttpResponse(false)
+		apiclient.ClientPrintHttpResponse.Set(false)
 	}
 	respBody, err = apiclient.HttpClient(u.String())
 	if minimal {
@@ -134,7 +134,7 @@ func Get(name string, minimal bool) (respBody []byte, err error) {
 		}
 		apiclient.PrettyPrint(respBody)
 	}
-	apiclient.SetClientPrintHttpResponse(apiclient.GetCmdPrintHttpResponseSetting())
+	apiclient.ClientPrintHttpResponse.Set(apiclient.GetCmdPrintHttpResponseSetting())
 	return respBody, err
 }
 
@@ -143,8 +143,8 @@ func GetDisplayName(name string) (displayName string, err error) {
 	u, _ := url.Parse(apiclient.GetBaseIntegrationURL())
 	u.Path = path.Join(u.Path, "authConfigs", name)
 
-	apiclient.SetClientPrintHttpResponse(false)
-	defer apiclient.SetClientPrintHttpResponse(apiclient.GetCmdPrintHttpResponseSetting())
+	apiclient.ClientPrintHttpResponse.Set(false)
+	defer apiclient.ClientPrintHttpResponse.Set(apiclient.GetCmdPrintHttpResponseSetting())
 
 	respBody, err := apiclient.HttpClient(u.String())
 	if err != nil {
@@ -218,8 +218,8 @@ func Export(folder string) (err error) {
 	var respBody []byte
 	count := 1
 
-	apiclient.SetClientPrintHttpResponse(false)
-	defer apiclient.SetClientPrintHttpResponse(apiclient.GetCmdPrintHttpResponseSetting())
+	apiclient.ClientPrintHttpResponse.Set(false)
+	defer apiclient.ClientPrintHttpResponse.Set(apiclient.GetCmdPrintHttpResponseSetting())
 
 	apiclient.SetExportToFile(folder)
 

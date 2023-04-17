@@ -122,9 +122,9 @@ func setIAMPermission(endpoint string, name string, memberName string, role stri
 	u, _ := url.Parse(endpoint)
 	u.Path = path.Join(u.Path, name+":getIamPolicy")
 
-	SetClientPrintHttpResponse(false)
+	ClientPrintHttpResponse.Set(false)
 	getIamPolicyBody, err := HttpClient(u.String())
-	SetClientPrintHttpResponse(GetCmdPrintHttpResponseSetting())
+	ClientPrintHttpResponse.Set(GetCmdPrintHttpResponseSetting())
 	if err != nil {
 		clilog.Error.Println(err)
 		return err
@@ -167,9 +167,9 @@ func setIAMPermission(endpoint string, name string, memberName string, role stri
 		return err
 	}
 
-	SetClientPrintHttpResponse(false)
+	ClientPrintHttpResponse.Set(false)
 	_, err = HttpClient(u.String(), string(setIamPolicyBody))
-	SetClientPrintHttpResponse(GetCmdPrintHttpResponseSetting())
+	ClientPrintHttpResponse.Set(GetCmdPrintHttpResponseSetting())
 
 	return err
 }
@@ -181,7 +181,7 @@ func setProjectIAMPermission(project string, memberName string, role string) (er
 
 	// this method treats errors as info since this is not a blocking problem
 
-	SetClientPrintHttpResponse(false)
+	ClientPrintHttpResponse.Set(false)
 
 	// Get the current IAM policies for the project
 	respBody, err := HttpClient(getendpoint, "")
@@ -237,7 +237,7 @@ func setProjectIAMPermission(project string, memberName string, role string) (er
 		return err
 	}
 
-	SetClientPrintHttpResponse(GetCmdPrintHttpResponseSetting())
+	ClientPrintHttpResponse.Set(GetCmdPrintHttpResponseSetting())
 	return nil
 }
 
@@ -263,8 +263,8 @@ func CreateServiceAccount(iamname string) (err error) {
 		iamPayload = append(iamPayload, "\"accountId\":\""+displayname+"\"")
 		iamPayload = append(iamPayload, "\"serviceAccount\": {\"displayName\": \""+displayname+"\"}")
 		payload := "{" + strings.Join(iamPayload, ",") + "}"
-		SetClientPrintHttpResponse(false)
-		defer SetClientPrintHttpResponse(GetCmdPrintHttpResponseSetting())
+		ClientPrintHttpResponse.Set(false)
+		defer ClientPrintHttpResponse.Set(GetCmdPrintHttpResponseSetting())
 		if _, err = HttpClient(createendpoint, payload); err != nil {
 			clilog.Error.Println(err)
 			return err
@@ -324,8 +324,8 @@ func SetBigQueryIAMPermission(project string, datasetid string, memberName strin
 	const role = "WRITER"
 	var content []byte
 
-	defer SetClientPrintHttpResponse(GetCmdPrintHttpResponseSetting())
-	SetClientPrintHttpResponse(false)
+	defer ClientPrintHttpResponse.Set(GetCmdPrintHttpResponseSetting())
+	ClientPrintHttpResponse.Set(false)
 
 	// first fetch the information
 	respBody, err := HttpClient(endpoint)
@@ -414,8 +414,8 @@ func GetComputeEngineDefaultServiceAccount(projectId string) (serviceAccount str
 	getendpoint := fmt.Sprintf("https://cloudresourcemanager.googleapis.com/v3/projects/%s", projectId)
 
 	// Get the project number
-	SetClientPrintHttpResponse(false)
-	defer SetClientPrintHttpResponse(GetCmdPrintHttpResponseSetting())
+	ClientPrintHttpResponse.Set(false)
+	defer ClientPrintHttpResponse.Set(GetCmdPrintHttpResponseSetting())
 
 	respBody, err := HttpClient(getendpoint)
 	if err != nil {

@@ -85,7 +85,7 @@ func GetChannel(name string, instance string, minimal bool) (respBody []byte, er
 	u.Path = path.Join(u.Path, "sfdcInstances", instance, "sfdcChannels", name)
 
 	if minimal {
-		apiclient.SetClientPrintHttpResponse(false)
+		apiclient.ClientPrintHttpResponse.Set(false)
 	}
 	respBody, err = apiclient.HttpClient(u.String())
 	if minimal {
@@ -99,7 +99,7 @@ func GetChannel(name string, instance string, minimal bool) (respBody []byte, er
 		if err != nil {
 			return nil, err
 		}
-		apiclient.SetClientPrintHttpResponse(apiclient.GetCmdPrintHttpResponseSetting())
+		apiclient.ClientPrintHttpResponse.Set(apiclient.GetCmdPrintHttpResponseSetting())
 		apiclient.PrettyPrint(respBody)
 
 	}

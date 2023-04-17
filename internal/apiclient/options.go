@@ -17,6 +17,7 @@ package apiclient
 import (
 	"fmt"
 	"os"
+	"sync"
 
 	"internal/clilog"
 )
@@ -44,15 +45,29 @@ type IntegrationClientOptions struct {
 	ProxyUrl             string // use a proxy url
 	ExportToFile         string // determine of the contents should be written to file
 	UseApigeeIntegration bool   // use Apigee Integration; defaults to Application Integration
-	ConflictsAreErrors   bool   //treat statusconflict as an error
+	ConflictsAreErrors   bool   // treat statusconflict as an error
 }
 
 var options *IntegrationClientOptions
 
-var (
-	cmdPrintHttpResponses    = true
-	clientPrintHttpResponses = true
+type Rate uint8
+
+const (
+	None Rate = iota
+	IntegrationAPI
+	ConnectorsAPI
 )
+
+var apiRate Rate
+
+var cmdPrintHttpResponses = true
+
+type clientPrintHttpResponse struct {
+	enable bool
+	sync.Mutex
+}
+
+var ClientPrintHttpResponse = &clientPrintHttpResponse{enable: true}
 
 // NewIntegrationClient sets up options to invoke Integration APIs
 func NewIntegrationClient(o IntegrationClientOptions) {
@@ -204,13 +219,17 @@ func GetCmdPrintHttpResponseSetting() bool {
 }
 
 // SetClientPrintHttpResponse
-func SetClientPrintHttpResponse(b bool) {
-	clientPrintHttpResponses = b
+func (c *clientPrintHttpResponse) Set(b bool) {
+	c.Lock()
+	defer c.Unlock()
+	c.enable = b
 }
 
 // GetPrintHttpResponseSetting
-func GetClientPrintHttpResponseSetting() bool {
-	return clientPrintHttpResponses
+func (c *clientPrintHttpResponse) Get() bool {
+	c.Lock()
+	defer c.Unlock()
+	return c.enable
 }
 
 // GetProxyURL
@@ -296,4 +315,14 @@ func SetConflictsAsErrors(b bool) {
 // GetConflictsAsErrors
 func GetConflictsAsErrors() bool {
 	return options.ConflictsAreErrors
+}
+
+// SetRate
+func SetRate(r Rate) {
+	apiRate = r
+}
+
+// GetRate
+func GetRate() Rate {
+	return apiRate
 }

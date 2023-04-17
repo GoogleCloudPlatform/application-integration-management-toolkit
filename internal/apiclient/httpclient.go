@@ -25,9 +25,27 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"time"
 
 	"internal/clilog"
+
+	"golang.org/x/time/rate"
 )
+
+// RateLimitedHttpClient
+type RateLimitedHTTPClient struct {
+	client      *http.Client
+	Ratelimiter *rate.Limiter
+}
+
+// allow 6 every 1 second (360 per min, limit is 480 per min)
+var integrationAPIRateLimit = rate.NewLimiter(rate.Every(time.Second), 6)
+
+// allow 1 every 1 second (60 per min, limit is 120 per min)
+var connectorsAPIRateLimit = rate.NewLimiter(rate.Every(time.Second), 1)
+
+// disable rate limit
+var noAPIRateLimit = rate.NewLimiter(rate.Inf, 1)
 
 // PostHttpZip method is used to send resources, proxy bundles, shared flows etc.
 func PostHttpZip(auth bool, method string, url string, headers map[string]string, zipfile string) (err error) {
@@ -291,7 +309,7 @@ func HttpClient(params ...string) (respBody []byte, err error) {
 
 // PrettyPrint method prints formatted json
 func PrettyPrint(body []byte) error {
-	if GetCmdPrintHttpResponseSetting() && GetClientPrintHttpResponseSetting() {
+	if GetCmdPrintHttpResponseSetting() && ClientPrintHttpResponse.Get() {
 		var prettyJSON bytes.Buffer
 		err := json.Indent(&prettyJSON, body, "", "\t")
 		if err != nil {
@@ -343,21 +361,55 @@ func setAuthHeader(req *http.Request) (*http.Request, error) {
 	return req, nil
 }
 
-func getHttpClient() (client *http.Client, err error) {
-	if GetProxyURL() != "" {
-		if pUrl, err := url.Parse(GetProxyURL()); err != nil {
-			client = &http.Client{
-				Transport: &http.Transport{
-					Proxy: http.ProxyURL(pUrl),
-				},
-			}
-		} else {
-			return nil, err
-		}
-	} else {
-		client = &http.Client{}
+// Do the HTTP request
+func (c *RateLimitedHTTPClient) Do(req *http.Request) (*http.Response, error) {
+	ctx := context.Background()
+	// Wait until the rate is below Apigee limits
+	err := c.Ratelimiter.Wait(ctx)
+	if err != nil {
+		return nil, err
 	}
-	return client, nil
+	resp, err := c.client.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	return resp, nil
+}
+
+func getHttpClient() (client *RateLimitedHTTPClient, err error) {
+	var apiRateLimit *rate.Limiter
+
+	switch r := GetRate(); r {
+	case IntegrationAPI:
+		apiRateLimit = integrationAPIRateLimit
+	case ConnectorsAPI:
+		apiRateLimit = connectorsAPIRateLimit
+	case None:
+		apiRateLimit = noAPIRateLimit
+	default:
+		apiRateLimit = noAPIRateLimit
+	}
+
+	if GetProxyURL() != "" {
+		if proxyUrl, err := url.Parse(GetProxyURL()); err != nil {
+			integrationCLIAPIClient := &RateLimitedHTTPClient{
+				client: &http.Client{
+					Transport: &http.Transport{
+						Proxy: http.ProxyURL(proxyUrl),
+					},
+				},
+				Ratelimiter: apiRateLimit,
+			}
+			return integrationCLIAPIClient, err
+		}
+		return nil, err
+	} else {
+		integrationCLIAPIClient := &RateLimitedHTTPClient{
+			client:      http.DefaultClient,
+			Ratelimiter: apiRateLimit,
+		}
+		return integrationCLIAPIClient, nil
+	}
 }
 
 func handleResponse(resp *http.Response) (respBody []byte, err error) {

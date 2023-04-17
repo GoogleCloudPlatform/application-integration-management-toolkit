@@ -138,6 +138,13 @@ func initConfig() {
 		printOutput = noOutput
 	}
 
+	if os.Getenv("INTEGRATIONCLI_DISABLE_RATELIMIT") == ENABLED {
+		clilog.Debug.Println("integrationcli ratelimit is disabled")
+		apiclient.SetRate(apiclient.None)
+	} else {
+		apiclient.SetRate(apiclient.IntegrationAPI)
+	}
+
 	apiclient.NewIntegrationClient(apiclient.IntegrationClientOptions{
 		TokenCheck:  true,
 		PrintOutput: printOutput,

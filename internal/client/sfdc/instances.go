@@ -95,7 +95,7 @@ func GetInstance(name string, minimal bool) (respBody []byte, err error) {
 	u.Path = path.Join(u.Path, "sfdcInstances", name)
 
 	if minimal {
-		apiclient.SetClientPrintHttpResponse(false)
+		apiclient.ClientPrintHttpResponse.Set(false)
 	}
 	respBody, err = apiclient.HttpClient(u.String())
 	if minimal {
@@ -109,7 +109,7 @@ func GetInstance(name string, minimal bool) (respBody []byte, err error) {
 		if err != nil {
 			return nil, err
 		}
-		apiclient.SetClientPrintHttpResponse(apiclient.GetCmdPrintHttpResponseSetting())
+		apiclient.ClientPrintHttpResponse.Set(apiclient.GetCmdPrintHttpResponseSetting())
 		apiclient.PrettyPrint(respBody)
 	}
 	return respBody, err

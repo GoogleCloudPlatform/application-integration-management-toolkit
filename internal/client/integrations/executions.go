@@ -101,7 +101,7 @@ func Execute(name string, content []byte) (respBody []byte, err error) {
 		return nil, fmt.Errorf("triggerId must match the format api_trigger/*")
 	}
 
-	apiclient.SetClientPrintHttpResponse(false)
+	apiclient.ClientPrintHttpResponse.Set(false)
 	u, _ := url.Parse(apiclient.GetBaseIntegrationURL())
 	u.Path = path.Join(u.Path, "integrations", name+":execute")
 	respBody, err = apiclient.HttpClient(u.String(), string(content))
@@ -123,7 +123,7 @@ func Execute(name string, content []byte) (respBody []byte, err error) {
 		return nil, err
 	}
 
-	apiclient.SetClientPrintHttpResponse(apiclient.GetCmdPrintHttpResponseSetting())
+	apiclient.ClientPrintHttpResponse.Set(apiclient.GetCmdPrintHttpResponseSetting())
 	apiclient.PrettyPrint(respBody)
 
 	return respBody, err
