@@ -898,6 +898,7 @@ func Export(folder string) (err error) {
 			return fmt.Errorf("failed to unmarshall: %w", err)
 		}
 		lintegrations.Integrations = append(lintegrations.Integrations, l.Integrations...)
+		pageToken = l.NextPageToken
 		if l.NextPageToken == "" {
 			break
 		}
