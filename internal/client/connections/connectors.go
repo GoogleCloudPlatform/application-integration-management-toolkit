@@ -666,15 +666,24 @@ func Export(folder string) (err error) {
 	apiclient.ClientPrintHttpResponse.Set(false)
 	defer apiclient.ClientPrintHttpResponse.Set(apiclient.GetCmdPrintHttpResponseSetting())
 
-	respBody, err := List(maxPageSize, "", "", "")
-	if err != nil {
-		return err
-	}
-
+	pageToken := ""
 	lconnections := listconnections{}
 
-	if err = json.Unmarshal(respBody, &lconnections); err != nil {
-		return err
+	for {
+		l := listconnections{}
+		respBody, err := List(maxPageSize, pageToken, "", "")
+		if err != nil {
+			return fmt.Errorf("failed to fetch Integrations: %w", err)
+		}
+		err = json.Unmarshal(respBody, &l)
+		if err != nil {
+			return fmt.Errorf("failed to unmarshall: %w", err)
+		}
+		lconnections.Connections = append(lconnections.Connections, l.Connections...)
+		pageToken = l.NextPageToken
+		if l.NextPageToken == "" {
+			break
+		}
 	}
 
 	// no connections where found
