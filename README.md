@@ -255,6 +255,24 @@ base64 ./test/enc_password.txt > ./test/b64_enc_password.txt # on MacOS, use bas
 * [GCS](./test/gcs_connection.json)
 * [CloudSQL - MySQL](./test/cloudsql_mysql_connection.json)
 
+## How do I verify the binary?
+
+All artifacts are signed by [cosign](https://github.com/sigstore/cosign). We recommend verifying any artifact before using them.
+
+You can use the distroless public key to verify any distroless image with:
+
+```
+cat cosign.pub
+-----BEGIN PUBLIC KEY-----
+MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEQBXcARDlva9s89a5299yn/VboBdd
+9bDj+j7FVYyzKAufqC9kaCR3naZ3JIAFYjxrXF0GlRjKzJU4ubriT4P6zQ==
+-----END PUBLIC KEY-----
+
+cosign verify-blob --key cosign.pub --signature integrationcli_<platform>_<arch>.zip.sig integrationcli_<platform>_<arch>.zip
+```
+
+Where `platform` can be one of `Darwin`, `Linux` or `Windows` and arch (architecture) can be one of `arm64` or `x86_64`
+
 ___
 
 ## Support
