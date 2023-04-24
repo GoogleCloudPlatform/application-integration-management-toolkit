@@ -89,9 +89,10 @@ steps:
   entrypoint: 'sh'
   env:
     - 'COSIGN_PASSWORD=${_COSIGN_PASSWORD}'
+    - 'COSIGN_PRIVATE_KEY=${_COSIGN_PRIVATE_KEY}'
   args:
     - '-c'
-    - 'cosign sign --key=env://${_COSIGN_PRIVATE_KEY} --output-signature=/tmp/integrationcli-builder_${TAG_NAME}.sig --yes ${_IMAGE_NAME}-builder:${TAG_NAME}'
+    - 'cosign sign --key=env://${COSIGN_PRIVATE_KEY} --output-signature=/tmp/integrationcli-builder_${TAG_NAME}.sig --yes ${_IMAGE_NAME}-builder:${TAG_NAME}'
 - name: 'gcr.io/projectsigstore/cosign:latest'
   id: attach_sign_integrationcli_builder
   entrypoint: 'sh'
@@ -103,9 +104,10 @@ steps:
   entrypoint: 'sh'
   env:
     - 'COSIGN_PASSWORD=${_COSIGN_PASSWORD}'
+    - 'COSIGN_PRIVATE_KEY=${_COSIGN_PRIVATE_KEY}'
   args:
     - '-c'
-    - 'cosign sign --key=env://${_COSIGN_PRIVATE_KEY} --output-signature=/tmp/integrationcli-builder_latest.sig --yes ${_IMAGE_NAME}-builder:latest'
+    - 'cosign sign --key=env://${COSIGN_PRIVATE_KEY} --output-signature=/tmp/integrationcli-builder_latest.sig --yes ${_IMAGE_NAME}-builder:latest'
 - name: 'gcr.io/projectsigstore/cosign:latest'
   id: attach_latest_sign_integrationcli_builder
   entrypoint: 'sh'
