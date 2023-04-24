@@ -433,7 +433,7 @@ func handleResponse(resp *http.Response) (respBody []byte, err error) {
 		}
 		clilog.Debug.Printf("status code %d, error in response: %s\n", resp.StatusCode, string(respBody))
 		clilog.HttpError.Println(string(respBody))
-		return nil, errors.New(getErrorMessage(resp.StatusCode))
+		return nil, errors.New(getErrorMessage(resp.StatusCode) + ": " + string(respBody))
 	}
 
 	return respBody, PrettyPrint(respBody)
