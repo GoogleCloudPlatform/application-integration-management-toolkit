@@ -65,7 +65,7 @@ steps:
   entrypoint: 'sh'
   args:
     - '-c'
-    - 'echo ${_COSIGN_PRIVATE_KEY} > /tmp/cosign.key'
+    - 'echo "${_COSIGN_PRIVATE_KEY}" > /tmp/cosign.key'
 - name: 'gcr.io/projectsigstore/cosign:latest'
   id: sign_integrationcli
   entrypoint: 'sh'
