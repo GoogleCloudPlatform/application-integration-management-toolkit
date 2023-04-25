@@ -138,10 +138,11 @@ func PostHttpOctet(update bool, url string, proxyName string) (respBody []byte, 
 	}
 
 	clilog.Debug.Println("Connecting to : ", url)
-	if !update {
-		req, err = http.NewRequest("POST", url, body)
+	ctx := context.Background()
+	if update {
+		req, err = http.NewRequestWithContext(ctx, http.MethodPut, url, body)
 	} else {
-		req, err = http.NewRequest("PUT", url, body)
+		req, err = http.NewRequestWithContext(ctx, http.MethodPost, url, body)
 	}
 
 	if err != nil {
@@ -175,7 +176,8 @@ func DownloadFile(url string, auth bool) (resp *http.Response, err error) {
 	}
 
 	clilog.Debug.Println("Connecting to : ", url)
-	req, err := http.NewRequest("GET", url, nil)
+	ctx := context.Background()
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
 	if err != nil {
 		clilog.Error.Println("error in client: ", err)
 		return nil, err
@@ -265,13 +267,14 @@ func HttpClient(params ...string) (respBody []byte, err error) {
 	}
 
 	clilog.Debug.Println("Connecting to: ", params[0])
+	ctx := context.Background()
 
 	switch paramLen := len(params); paramLen {
 	case 1:
-		req, err = http.NewRequest("GET", params[0], nil)
+		req, err = http.NewRequestWithContext(ctx, http.MethodGet, params[0], nil)
 	case 2:
 		clilog.Debug.Println("Payload: ", params[1])
-		req, err = http.NewRequest("POST", params[0], bytes.NewBuffer([]byte(params[1])))
+		req, err = http.NewRequestWithContext(ctx, http.MethodPost, params[0], bytes.NewBuffer([]byte(params[1])))
 	case 3:
 		if req, err = getRequest(params); err != nil {
 			return nil, err
@@ -333,17 +336,18 @@ func PrettifyJson(body []byte) (prettyJson []byte, err error) {
 }
 
 func getRequest(params []string) (req *http.Request, err error) {
+	ctx := context.Background()
 	if params[2] == "DELETE" {
-		req, err = http.NewRequest("DELETE", params[0], nil)
+		req, err = http.NewRequestWithContext(ctx, http.MethodDelete, params[0], nil)
 	} else if params[2] == "PUT" {
 		clilog.Debug.Println("Payload: ", params[1])
-		req, err = http.NewRequest("PUT", params[0], bytes.NewBuffer([]byte(params[1])))
+		req, err = http.NewRequestWithContext(ctx, http.MethodPut, params[0], bytes.NewBuffer([]byte(params[1])))
 	} else if params[2] == "PATCH" {
 		clilog.Debug.Println("Payload: ", params[1])
-		req, err = http.NewRequest("PATCH", params[0], bytes.NewBuffer([]byte(params[1])))
+		req, err = http.NewRequestWithContext(ctx, http.MethodPatch, params[0], bytes.NewBuffer([]byte(params[1])))
 	} else if params[2] == "POST" {
 		clilog.Debug.Println("Payload: ", params[1])
-		req, err = http.NewRequest("POST", params[0], bytes.NewBuffer([]byte(params[1])))
+		req, err = http.NewRequestWithContext(ctx, http.MethodPost, params[0], bytes.NewBuffer([]byte(params[1])))
 	} else {
 		return nil, errors.New("unsupported method")
 	}
