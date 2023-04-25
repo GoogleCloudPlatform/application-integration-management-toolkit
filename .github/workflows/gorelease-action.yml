@@ -50,6 +50,7 @@ jobs:
           args: release --clean
         env:
           COSIGN_PASSWORD: ${{ secrets.COSIGN_PASSWORD }}
+          GITHUB_TOKEN: ${{ secrets.TOKEN }}
 
       - name: Upload assets
         uses: actions/upload-artifact@v3
