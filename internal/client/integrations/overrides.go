@@ -52,8 +52,9 @@ type connectionoverrides struct {
 }
 
 type connectionoverrideparams struct {
-	ConnectionName     string `json:"connectionName,omitempty"`
-	ConnectionLocation string `json:"connectionLocation,omitempty"`
+	ConnectionName     string          `json:"connectionName,omitempty"`
+	ConnectionLocation string          `json:"connectionLocation,omitempty"`
+	EntityType         *eventparameter `json:"entityType,omitempty"`
 }
 
 type connectiondetails struct {
@@ -167,6 +168,11 @@ func mergeOverrides(eversion integrationVersionExternal, o overrides) (integrati
 
 					*cparams.Value.JsonValue = jsonValue
 					task.Parameters["config"] = cparams
+
+					if connectionOverride.Parameters.EntityType != nil {
+						task.Parameters["entityType"] = *connectionOverride.Parameters.EntityType
+					}
+
 					eversion.TaskConfigs[taskIndex] = task
 
 					foundOverride = true
