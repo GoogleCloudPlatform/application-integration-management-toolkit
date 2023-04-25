@@ -15,6 +15,7 @@
 steps:
 #publish integrationcli
 - name: 'gcr.io/cloud-builders/docker'
+  id: build_integrationcli
   args:
     - 'build'
     - '-t'
@@ -27,34 +28,67 @@ steps:
     - '--build-arg'
     - 'COMMIT=$COMMIT_SHA'
 - name: 'gcr.io/cloud-builders/docker'
+  id: push_integrationcli
   args: ['push', '${_IMAGE_NAME}:${TAG_NAME}']
 - name: 'gcr.io/cloud-builders/docker'
+  id: tag_latest_integrationcli
   args: ['tag', '${_IMAGE_NAME}:${TAG_NAME}', '${_IMAGE_NAME}:latest']
 - name: 'gcr.io/cloud-builders/docker'
+  id: push_latest_integrationcli
   args: ['push', '${_IMAGE_NAME}:latest']
 #publish integrationcli-builder
 - name: 'gcr.io/cloud-builders/docker'
+  id: build_integrationcli_builder
   args:
-  - 'build'
-  - '-t'
-  - '${_IMAGE_NAME}-builder:${TAG_NAME}'
-  - '-f'
-  - 'Dockerfile.builder'
-  - '.'
-  - '--build-arg'
-  - 'TAG=${TAG_NAME}'
-  - '--build-arg'
-  - 'COMMIT=$COMMIT_SHA'
+    - 'build'
+    - '-t'
+    - '${_IMAGE_NAME}-builder:${TAG_NAME}'
+    - '-f'
+    - 'Dockerfile.builder'
+    - '.'
+    - '--build-arg'
+    - 'TAG=${TAG_NAME}'
+    - '--build-arg'
+    - 'COMMIT=$COMMIT_SHA'
 - name: 'gcr.io/cloud-builders/docker'
   args: ['push', '${_IMAGE_NAME}-builder:${TAG_NAME}']
 - name: 'gcr.io/cloud-builders/docker'
+  id: tag_latest_integrationcli_builder
   args: ['tag', '${_IMAGE_NAME}-builder:${TAG_NAME}', '${_IMAGE_NAME}-builder:latest']
 - name: 'gcr.io/cloud-builders/docker'
+  id: push_latest_integrationcli_builder
   args: ['push', '${_IMAGE_NAME}-builder:latest']
+
+#sign and attach integrationcli
+- name: 'gcr.io/projectsigstore/cosign:latest'
+  id: sign_integrationcli
+  entrypoint: 'sh'
+  env:
+    - 'COSIGN_PASSWORD=${_COSIGN_PASSWORD}'
+  args:
+    - -c
+    - |
+      echo "${_COSIGN_PRIVATE_KEY}" > /tmp/cosign.key
+      cosign sign --key=/tmp/cosign.key --output-signature=/tmp/integrationcli_${TAG_NAME}.sig --yes ${_IMAGE_NAME}:${TAG_NAME}
+      cosign attach signature --signature=/tmp/integrationcli_${TAG_NAME}.sig ${_IMAGE_NAME}:${TAG_NAME}
+#sign and attach integrationcli-builder
+- name: 'gcr.io/projectsigstore/cosign:latest'
+  id: sign_integrationcli_builder
+  entrypoint: 'sh'
+  env:
+    - 'COSIGN_PASSWORD=${_COSIGN_PASSWORD}'
+  args:
+    - -c
+    - |
+      echo "${_COSIGN_PRIVATE_KEY}" > /tmp/cosign.key
+      cosign sign --key=/tmp/cosign.key --output-signature=/tmp/integrationcli-builder_${TAG_NAME}.sig --yes ${_IMAGE_NAME}-builder:${TAG_NAME}
+      cosign attach signature --signature=/tmp/integrationcli-builder_${TAG_NAME}.sig ${_IMAGE_NAME}-builder:${TAG_NAME}
 
 #repo name
 substitutions:
   _REPO: "images"
+  _COSIGN_PASSWORD: "set-externally"
+  _COSIGN_PRIVATE_KEY: "set-externally"
   _IMAGE_NAME: "us-docker.pkg.dev/${PROJECT_ID}/${_REPO}/integrationcli"
 
 options:

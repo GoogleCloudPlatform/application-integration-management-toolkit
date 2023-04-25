@@ -37,12 +37,10 @@ jobs:
         with:
           reporter: github-check
 
-      - name: Import GPG key
-        id: import_gpg
-        uses: crazy-max/ghaction-import-gpg@v5
-        with:
-          gpg_private_key: ${{ secrets.GPG_PRIVATE_KEY }}
-          passphrase: ${{ secrets.PASSPHRASE }}
+      - name: Write private key to disk
+        run: echo "${{ secrets.COSIGN_PRIVATE_KEY }}" > /tmp/cosign.key
+
+      - uses: sigstore/cosign-installer@main
 
       - name: Run GoReleaser
         uses: goreleaser/goreleaser-action@v3
@@ -51,8 +49,8 @@ jobs:
           version: latest
           args: release --clean
         env:
+          COSIGN_PASSWORD: ${{ secrets.COSIGN_PASSWORD }}
           GITHUB_TOKEN: ${{ secrets.TOKEN }}
-          GPG_FINGERPRINT: ${{ secrets.FINGERPRINT }}
 
       - name: Upload assets
         uses: actions/upload-artifact@v3
