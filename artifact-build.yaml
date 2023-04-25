@@ -71,17 +71,6 @@ steps:
       echo "${_COSIGN_PRIVATE_KEY}" > /tmp/cosign.key
       cosign sign --key=/tmp/cosign.key --output-signature=/tmp/integrationcli_${TAG_NAME}.sig --yes ${_IMAGE_NAME}:${TAG_NAME}
       cosign attach signature --signature=/tmp/integrationcli_${TAG_NAME}.sig ${_IMAGE_NAME}:${TAG_NAME}
-- name: 'gcr.io/projectsigstore/cosign:latest'
-  id: sign_latest_integrationcli
-  entrypoint: 'sh'
-  env:
-    - 'COSIGN_PASSWORD=${_COSIGN_PASSWORD}'
-  args:
-    - -c
-    - |
-      echo "${_COSIGN_PRIVATE_KEY}" > /tmp/cosign.key
-      cosign sign --key=/tmp/cosign.key --output-signature=/tmp/integrationcli_latest.sig --yes ${_IMAGE_NAME}:latest
-      cosign attach signature --signature=/tmp/integrationcli_latest.sig ${_IMAGE_NAME}:latest
 #sign and attach integrationcli-builder
 - name: 'gcr.io/projectsigstore/cosign:latest'
   id: sign_integrationcli_builder
@@ -94,17 +83,6 @@ steps:
       echo "${_COSIGN_PRIVATE_KEY}" > /tmp/cosign.key
       cosign sign --key=/tmp/cosign.key --output-signature=/tmp/integrationcli-builder_${TAG_NAME}.sig --yes ${_IMAGE_NAME}-builder:${TAG_NAME}
       cosign attach signature --signature=/tmp/integrationcli-builder_${TAG_NAME}.sig ${_IMAGE_NAME}-builder:${TAG_NAME}
-- name: 'gcr.io/projectsigstore/cosign:latest'
-  id: sign_latest_integrationcli_builder
-  entrypoint: 'sh'
-  env:
-    - 'COSIGN_PASSWORD=${_COSIGN_PASSWORD}'
-  args:
-    - -c
-    - |
-      echo "${_COSIGN_PRIVATE_KEY}" > /tmp/cosign.key
-      cosign sign --key=/tmp/cosign.key --output-signature=/tmp/integrationcli-builder_latest.sig --yes ${_IMAGE_NAME}-builder:latest
-      cosign attach signature --signature=/tmp/integrationcli-builder_latest.sig ${_IMAGE_NAME}-builder:latest
 
 #repo name
 substitutions:
