@@ -15,6 +15,8 @@
 package integrations
 
 import (
+	"strconv"
+
 	"internal/apiclient"
 	"internal/clilog"
 
@@ -39,6 +41,7 @@ var ExportVerCmd = &cobra.Command{
 	},
 	RunE: func(cmd *cobra.Command, args []string) (err error) {
 		name := cmd.Flag("name").Value.String()
+		allVersions, _ := strconv.ParseBool(cmd.Flag("all-versions").Value.String())
 		if err = apiclient.FolderExists(folder); err != nil {
 			return err
 		}
@@ -48,24 +51,26 @@ var ExportVerCmd = &cobra.Command{
 		clilog.Warning.Println("API calls to integration.googleapis.com have a quota of 480 per min. " +
 			"Running this tool against large list of entities can exhaust the quota. Throttling to 360 per min.")
 
-		_, err = integrations.ListVersions(name, -1, "", "", "", true, true, false)
+		_, err = integrations.ListVersions(name, -1, "", "", "", allVersions, true, false)
 		return err
 	},
 }
 
 var (
 	folder         string
-	allVersions    bool
 	numConnections int
 )
 
 func init() {
 	var name string
+	allVersions := true
 
 	ExportVerCmd.Flags().StringVarP(&folder, "folder", "f",
 		"", "Folder to export Integration flows")
 	ExportVerCmd.Flags().StringVarP(&name, "name", "n",
 		"", "Integration flow name")
+	ExportVerCmd.Flags().BoolVarP(&allVersions, "all-versions", "l",
+		true, "Export all versions of the Integration")
 
 	_ = ExportVerCmd.MarkFlagRequired("folder")
 	_ = ExportVerCmd.MarkFlagRequired("name")

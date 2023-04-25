@@ -15,8 +15,6 @@
 package integrations
 
 import (
-	"errors"
-
 	"internal/apiclient"
 
 	"internal/client/integrations"
@@ -35,12 +33,6 @@ var ListExecCmd = &cobra.Command{
 
 		if err = apiclient.SetRegion(cmdRegion.Value.String()); err != nil {
 			return err
-		}
-		if allVersions && pageSize != -1 {
-			return errors.New("allVersions and pageSize cannot be combined")
-		}
-		if allVersions && cmd.Flag("pageToken").Value.String() != "" {
-			return errors.New("allVersions and pageToken cannot be combined")
 		}
 		return apiclient.SetProjectID(cmdProject.Value.String())
 	},

@@ -18,6 +18,7 @@ import (
 	"fmt"
 	"os"
 	"regexp"
+	"strconv"
 
 	"internal/apiclient"
 
@@ -41,14 +42,18 @@ var CreateCmd = &cobra.Command{
 		return apiclient.SetProjectID(cmdProject.Value.String())
 	},
 	RunE: func(cmd *cobra.Command, args []string) (err error) {
+		createSecret, _ := strconv.ParseBool(cmd.Flag("create-secret").Value.String())
+		grantPermission, _ := strconv.ParseBool(cmd.Flag("grant-permission").Value.String())
+		wait, _ := strconv.ParseBool(cmd.Flag("wait").Value.String())
 		name := cmd.Flag("name").Value.String()
-		if _, err := os.Stat(connectionFile); os.IsNotExist(err) {
-			return err
+
+		if _, err = os.Stat(connectionFile); err != nil {
+			return fmt.Errorf("unable to open file %w", err)
 		}
 
 		content, err := os.ReadFile(connectionFile)
 		if err != nil {
-			return err
+			return fmt.Errorf("unable to open file %w", err)
 		}
 
 		if encryptionKey != "" {
@@ -67,13 +72,12 @@ var CreateCmd = &cobra.Command{
 	},
 }
 
-var (
-	connectionFile, serviceAccountName, serviceAccountProject, encryptionKey string
-	grantPermission, wait, createSecret                                      bool
-)
+var connectionFile, serviceAccountName, serviceAccountProject, encryptionKey string
 
 func init() {
 	var name string
+	grantPermission, wait, createSecret := false, false, false
+
 	CreateCmd.Flags().StringVarP(&name, "name", "n",
 		"", "Connection name")
 	CreateCmd.Flags().StringVarP(&connectionFile, "file", "f",

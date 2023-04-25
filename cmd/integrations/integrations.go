@@ -25,10 +25,7 @@ var Cmd = &cobra.Command{
 	Long:  "Manage integrations in a GCP project",
 }
 
-var (
-	userLabel, snapshot string
-	overrides           bool
-)
+var userLabel, snapshot string
 
 func init() {
 	var project, region string

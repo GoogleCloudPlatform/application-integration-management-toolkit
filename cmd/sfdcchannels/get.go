@@ -15,6 +15,8 @@
 package sfdcchannels
 
 import (
+	"strconv"
+
 	"internal/apiclient"
 
 	"internal/client/sfdc"
@@ -40,6 +42,7 @@ var GetCmd = &cobra.Command{
 		instance := cmd.Flag("instance").Value.String()
 		name := cmd.Flag("name").Value.String()
 		id := cmd.Flag("id").Value.String()
+		minimal, _ := strconv.ParseBool(cmd.Flag("minimal").Value.String())
 
 		if name != "" {
 			apiclient.DisableCmdPrintHttpResponse()
@@ -56,10 +59,9 @@ var GetCmd = &cobra.Command{
 	},
 }
 
-var minimal bool
-
 func init() {
 	var instance, name, id string
+	minimal := false
 
 	GetCmd.Flags().StringVarP(&name, "name", "n",
 		"", "sfdc channel name")

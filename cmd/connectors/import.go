@@ -15,6 +15,8 @@
 package connectors
 
 import (
+	"strconv"
+
 	"internal/apiclient"
 
 	"internal/client/connections"
@@ -37,6 +39,9 @@ var ImportCmd = &cobra.Command{
 		return apiclient.SetProjectID(cmdProject.Value.String())
 	},
 	RunE: func(cmd *cobra.Command, args []string) (err error) {
+		createSecret, _ := strconv.ParseBool(cmd.Flag("create-secret").Value.String())
+		wait, _ := strconv.ParseBool(cmd.Flag("wait").Value.String())
+
 		if err = apiclient.FolderExists(folder); err != nil {
 			return err
 		}
@@ -46,10 +51,12 @@ var ImportCmd = &cobra.Command{
 }
 
 func init() {
+	createSecret, wait := false, false
+
 	ImportCmd.Flags().StringVarP(&folder, "folder", "f",
 		"", "Folder to import connections")
 	ImportCmd.Flags().BoolVarP(&createSecret, "create-secret", "",
-		true, "Create Secret Manager secrets when creating the connection")
+		false, "Create Secret Manager secrets when creating the connection")
 	ImportCmd.Flags().BoolVarP(&wait, "wait", "",
 		false, "Waits for the connector to finish, with success or error")
 
