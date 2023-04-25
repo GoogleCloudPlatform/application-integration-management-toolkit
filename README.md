@@ -277,14 +277,6 @@ Where `platform` can be one of `Darwin`, `Linux` or `Windows` and arch (architec
 
 All images are signed by [cosign](https://github.com/sigstore/cosign). We recommend verifying any container before using them.
 
-1. Get the container digest
-
-```sh
-docker inspect --format='{{.RepoDigests}}' us-docker.pkg.dev/appintegration-toolkit/images/integrationcli-builder:<tag>
-```
-
-2. Copy the image url with digest to verify the container
-
 ```sh
 cat cosign.pub
 -----BEGIN PUBLIC KEY-----
@@ -292,7 +284,7 @@ MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEQBXcARDlva9s89a5299yn/VboBdd
 9bDj+j7FVYyzKAufqC9kaCR3naZ3JIAFYjxrXF0GlRjKzJU4ubriT4P6zQ==
 -----END PUBLIC KEY-----
 
-cosign verify --key=cosign.pub us-docker.pkg.dev/appintegration-toolkit/images/integrationcli-builder@sha256:<sha>
+cosign verify --key=cosign.pub us-docker.pkg.dev/appintegration-toolkit/images/integrationcli-builder:latest
 ```
 
 ___
