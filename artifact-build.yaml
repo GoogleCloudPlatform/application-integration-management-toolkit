@@ -66,14 +66,11 @@ steps:
   env:
     - 'COSIGN_PASSWORD=${_COSIGN_PASSWORD}'
   args:
-    - '-c'
-    - 'echo "${_COSIGN_PRIVATE_KEY}" > /tmp/cosign.key && cosign sign --key=/tmp/cosign.key --output-signature=/tmp/integrationcli_${TAG_NAME}.sig --yes ${_IMAGE_NAME}:${TAG_NAME}'
-- name: 'gcr.io/projectsigstore/cosign:latest'
-  id: attach_sign_integrationcli
-  entrypoint: 'sh'
-  args:
-    - '-c'
-    - 'cosign attach signature --signature=/tmp/integrationcli_${TAG_NAME}.sig ${_IMAGE_NAME}:${TAG_NAME}'
+    - -c
+    - |
+      echo "${_COSIGN_PRIVATE_KEY}" > /tmp/cosign.key
+      cosign sign --key=/tmp/cosign.key --output-signature=/tmp/integrationcli_${TAG_NAME}.sig --yes ${_IMAGE_NAME}:${TAG_NAME}
+      cosign attach signature --signature=/tmp/integrationcli_${TAG_NAME}.sig ${_IMAGE_NAME}:${TAG_NAME}
 - name: 'gcr.io/projectsigstore/cosign:latest'
   id: sign_latest_integrationcli
   entrypoint: 'sh'
