@@ -73,7 +73,7 @@ steps:
   entrypoint: 'sh'
   args:
     - '-c'
-    - 'cosign attach signature --signature=/tmp/integrationcli_${TAG_NAME}.sig'
+    - 'cosign attach signature --signature=/tmp/integrationcli_${TAG_NAME}.sig ${_IMAGE_NAME}:${TAG_NAME}'
 - name: 'gcr.io/projectsigstore/cosign:latest'
   id: sign_latest_integrationcli
   entrypoint: 'sh'
@@ -87,7 +87,7 @@ steps:
   entrypoint: 'sh'
   args:
     - '-c'
-    - 'cosign attach signature --signature=/tmp/integrationcli_latest.sig'
+    - 'cosign attach signature --signature=/tmp/integrationcli_latest.sig ${_IMAGE_NAME}:latest'
 #sign and attach integrationcli-builder
 - name: 'gcr.io/projectsigstore/cosign:latest'
   id: sign_integrationcli_builder
@@ -102,7 +102,7 @@ steps:
   entrypoint: 'sh'
   args:
     - '-c'
-    - 'cosign attach signature --signature=/tmp/integrationcli-builder_${TAG_NAME}.sig'
+    - 'cosign attach signature --signature=/tmp/integrationcli-builder_${TAG_NAME}.sig ${_IMAGE_NAME}-builder:${TAG_NAME}'
 - name: 'gcr.io/projectsigstore/cosign:latest'
   id: sign_latest_integrationcli_builder
   entrypoint: 'sh'
@@ -116,7 +116,7 @@ steps:
   entrypoint: 'sh'
   args:
     - '-c'
-    - 'cosign attach signature --signature=/tmp/integrationcli-builder_latest.sig'
+    - 'cosign attach signature --signature=/tmp/integrationcli-builder_latest.sig ${_IMAGE_NAME}-builder:latest'
 
 #repo name
 substitutions:
