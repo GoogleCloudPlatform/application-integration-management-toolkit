@@ -49,6 +49,8 @@ type connection struct {
 	AuthConfig        authConfig          `json:"authConfig,omitempty"`
 	DestinationConfig []destinationConfig `json:"destinationConfigs,omitempty"`
 	Suspended         bool                `json:"suspended,omitempty"`
+	LogConfig         *logConfig          `json:"logConfig,omitempty"`
+	SslConfig         *sslConfig          `json:"sslConfig,omitempty"`
 }
 
 type connectionRequest struct {
@@ -63,6 +65,8 @@ type connectionRequest struct {
 	ServiceAccount     *string              `json:"serviceAccount,omitempty"`
 	Suspended          *bool                `json:"suspended,omitempty"`
 	NodeConfig         *nodeConfig          `json:"nodeConfig,omitempty"`
+	LogConfig          *logConfig           `json:"logConfig,omitempty"`
+	SslConfig          *sslConfig           `json:"sslConfig,omitempty"`
 }
 
 type authConfig struct {
@@ -77,6 +81,21 @@ type authConfig struct {
 type lockConfig struct {
 	Locked bool   `json:"locked,omitempty"`
 	Reason string `json:"reason,omitempty"`
+}
+
+type logConfig struct {
+	Enabled bool `json:"enabled,omitempty"`
+}
+
+type sslConfig struct {
+	UseSSL                   bool                      `json:"useSsl,omitempty"`
+	Type                     *string                   `json:"type,omitempty"`
+	PrivateServerCertificate *privateServerCertificate `json:"privateServerCertificate,omitempty"`
+	ClientCertificate        *clientCertificate        `json:"clientCertificate,omitempty"`
+	ClientPrivateKey         *clientPrivateKey         `json:"clientPrivateKey,omitempty"`
+	ClientPrivateKeyPass     *clientPrivateKeyPass     `json:"clientPrivateKeyPass,omitempty"`
+	ClientCertType           *string                   `json:"clientCertType,omitempty"`
+	ServerCertType           *string                   `json:"serverCertType,omitempty"`
 }
 
 type connectorDetails struct {
@@ -152,6 +171,26 @@ type destination struct {
 type nodeConfig struct {
 	MinNodeCount int `json:"minNodeCount,omitempty"`
 	MaxNodeCount int `json:"maxNodeCount,omitempty"`
+}
+
+type privateServerCertificate struct {
+	SecretVersion *string        `json:"secretVersion,omitempty"`
+	SecretDetails *secretDetails `json:"secretDetails,omitempty"`
+}
+
+type clientCertificate struct {
+	SecretVersion *string        `json:"secretVersion,omitempty"`
+	SecretDetails *secretDetails `json:"secretDetails,omitempty"`
+}
+
+type clientPrivateKey struct {
+	SecretVersion *string        `json:"secretVersion,omitempty"`
+	SecretDetails *secretDetails `json:"secretDetails,omitempty"`
+}
+
+type clientPrivateKeyPass struct {
+	SecretVersion *string        `json:"secretVersion,omitempty"`
+	SecretDetails *secretDetails `json:"secretDetails,omitempty"`
 }
 
 type status struct {
@@ -480,6 +519,139 @@ func create(name string, content []byte, serviceAccountName string, serviceAccou
 		}
 	}
 
+	//handle secrets for ssl config
+	if c.SslConfig != nil {
+		if c.SslConfig.PrivateServerCertificate != nil && c.SslConfig.PrivateServerCertificate.SecretDetails != nil {
+			if createSecret {
+				payload, err := readSecretFile(c.SslConfig.PrivateServerCertificate.SecretDetails.Reference)
+				if err != nil {
+					return nil, err
+				}
+				// check if a Cloud KMS key was passsed, assume the file is encrypted
+				if encryptionKey != "" {
+					encryptionKey := path.Join("projects", apiclient.GetProjectID(), encryptionKey)
+					payload, err = cloudkms.DecryptSymmetric(encryptionKey, payload)
+					if err != nil {
+						return nil, err
+					}
+				}
+
+				if secretVersion, err = secmgr.Create(
+					apiclient.GetProjectID(),
+					c.SslConfig.PrivateServerCertificate.SecretDetails.SecretName,
+					payload); err != nil {
+					return nil, err
+				}
+
+				c.SslConfig.PrivateServerCertificate.SecretVersion = new(string)
+				*c.SslConfig.PrivateServerCertificate.SecretVersion = secretVersion
+				c.SslConfig.PrivateServerCertificate.SecretDetails = nil // clean the input
+
+			} else {
+				c.SslConfig.PrivateServerCertificate.SecretVersion = new(string)
+				*c.SslConfig.PrivateServerCertificate.SecretVersion = fmt.Sprintf("projects/%s/secrets/%s/versions/1",
+					apiclient.GetProjectID(), c.SslConfig.PrivateServerCertificate.SecretDetails.SecretName)
+				c.SslConfig.PrivateServerCertificate.SecretDetails = nil // clean the input
+			}
+		}
+		if c.SslConfig.ClientCertificate != nil && c.SslConfig.ClientCertificate.SecretDetails != nil {
+			if createSecret {
+				payload, err := readSecretFile(c.SslConfig.ClientCertificate.SecretDetails.Reference)
+				if err != nil {
+					return nil, err
+				}
+				// check if a Cloud KMS key was passsed, assume the file is encrypted
+				if encryptionKey != "" {
+					encryptionKey := path.Join("projects", apiclient.GetProjectID(), encryptionKey)
+					payload, err = cloudkms.DecryptSymmetric(encryptionKey, payload)
+					if err != nil {
+						return nil, err
+					}
+				}
+
+				if secretVersion, err = secmgr.Create(
+					apiclient.GetProjectID(),
+					c.SslConfig.ClientCertificate.SecretDetails.SecretName,
+					payload); err != nil {
+					return nil, err
+				}
+
+				c.SslConfig.ClientCertificate.SecretVersion = new(string)
+				*c.SslConfig.ClientCertificate.SecretVersion = secretVersion
+				c.SslConfig.ClientCertificate.SecretDetails = nil // clean the input
+			} else {
+				c.SslConfig.ClientCertificate.SecretVersion = new(string)
+				*c.SslConfig.ClientCertificate.SecretVersion = fmt.Sprintf("projects/%s/secrets/%s/versions/1",
+					apiclient.GetProjectID(), c.SslConfig.ClientCertificate.SecretDetails.SecretName)
+				c.SslConfig.ClientCertificate.SecretDetails = nil // clean the input
+			}
+		}
+		if c.SslConfig.ClientPrivateKey != nil && c.SslConfig.ClientPrivateKey.SecretDetails != nil {
+			if createSecret {
+				payload, err := readSecretFile(c.SslConfig.ClientPrivateKey.SecretDetails.Reference)
+				if err != nil {
+					return nil, err
+				}
+				// check if a Cloud KMS key was passsed, assume the file is encrypted
+				if encryptionKey != "" {
+					encryptionKey := path.Join("projects", apiclient.GetProjectID(), encryptionKey)
+					payload, err = cloudkms.DecryptSymmetric(encryptionKey, payload)
+					if err != nil {
+						return nil, err
+					}
+				}
+
+				if secretVersion, err = secmgr.Create(
+					apiclient.GetProjectID(),
+					c.SslConfig.ClientPrivateKey.SecretDetails.SecretName,
+					payload); err != nil {
+					return nil, err
+				}
+
+				c.SslConfig.ClientPrivateKey.SecretVersion = new(string)
+				*c.SslConfig.ClientPrivateKey.SecretVersion = secretVersion
+				c.SslConfig.ClientPrivateKey.SecretDetails = nil // clean the input
+			} else {
+				c.SslConfig.ClientPrivateKey.SecretVersion = new(string)
+				*c.SslConfig.ClientPrivateKey.SecretVersion = fmt.Sprintf("projects/%s/secrets/%s/versions/1",
+					apiclient.GetProjectID(), c.SslConfig.ClientPrivateKey.SecretDetails.SecretName)
+				c.SslConfig.ClientPrivateKey.SecretDetails = nil // clean the input
+			}
+		}
+		if c.SslConfig.ClientPrivateKeyPass != nil && c.SslConfig.ClientPrivateKeyPass.SecretDetails != nil {
+			if createSecret {
+				payload, err := readSecretFile(c.SslConfig.ClientPrivateKeyPass.SecretDetails.Reference)
+				if err != nil {
+					return nil, err
+				}
+				// check if a Cloud KMS key was passsed, assume the file is encrypted
+				if encryptionKey != "" {
+					encryptionKey := path.Join("projects", apiclient.GetProjectID(), encryptionKey)
+					payload, err = cloudkms.DecryptSymmetric(encryptionKey, payload)
+					if err != nil {
+						return nil, err
+					}
+				}
+
+				if secretVersion, err = secmgr.Create(
+					apiclient.GetProjectID(),
+					c.SslConfig.ClientPrivateKeyPass.SecretDetails.SecretName,
+					payload); err != nil {
+					return nil, err
+				}
+
+				c.SslConfig.ClientPrivateKeyPass.SecretVersion = new(string)
+				*c.SslConfig.ClientPrivateKeyPass.SecretVersion = secretVersion
+				c.SslConfig.ClientPrivateKeyPass.SecretDetails = nil // clean the input
+			} else {
+				c.SslConfig.ClientPrivateKeyPass.SecretVersion = new(string)
+				*c.SslConfig.ClientPrivateKeyPass.SecretVersion = fmt.Sprintf("projects/%s/secrets/%s/versions/1",
+					apiclient.GetProjectID(), c.SslConfig.ClientPrivateKeyPass.SecretDetails.SecretName)
+				c.SslConfig.ClientPrivateKeyPass.SecretDetails = nil // clean the input
+			}
+		}
+	}
+
 	u, _ := url.Parse(apiclient.GetBaseConnectorURL())
 	q := u.Query()
 	q.Set("connectionId", name)
@@ -487,6 +659,11 @@ func create(name string, content []byte, serviceAccountName string, serviceAccou
 
 	if content, err = json.Marshal(c); err != nil {
 		return nil, err
+	}
+
+	if true {
+		fmt.Println(string(content))
+		os.Exit(0)
 	}
 
 	respBody, err = apiclient.HttpClient(u.String(), string(content))
@@ -548,6 +725,32 @@ func Get(name string, view string, minimal bool, overrides bool) (respBody []byt
 					if configVar.Key == "project_id" {
 						*configVar.StringValue = "$PROJECT_ID$"
 					}
+				}
+			}
+			if c.SslConfig != nil {
+				if c.SslConfig.PrivateServerCertificate != nil && c.SslConfig.PrivateServerCertificate.SecretVersion != nil {
+					p := *c.SslConfig.PrivateServerCertificate.SecretVersion
+					c.SslConfig.PrivateServerCertificate.SecretDetails = new(secretDetails)
+					c.SslConfig.PrivateServerCertificate.SecretDetails.SecretName = strings.Split(p, "/")[3]
+					c.SslConfig.PrivateServerCertificate.SecretVersion = nil
+				}
+				if c.SslConfig.ClientCertificate != nil && c.SslConfig.ClientCertificate.SecretVersion != nil {
+					p := *c.SslConfig.ClientCertificate.SecretVersion
+					c.SslConfig.ClientCertificate.SecretDetails = new(secretDetails)
+					c.SslConfig.ClientCertificate.SecretDetails.SecretName = strings.Split(p, "/")[3]
+					c.SslConfig.ClientCertificate.SecretVersion = nil
+				}
+				if c.SslConfig.ClientPrivateKey != nil && c.SslConfig.ClientPrivateKey.SecretVersion != nil {
+					p := *c.SslConfig.ClientPrivateKey.SecretVersion
+					c.SslConfig.ClientPrivateKey.SecretDetails = new(secretDetails)
+					c.SslConfig.ClientPrivateKey.SecretDetails.SecretName = strings.Split(p, "/")[3]
+					c.SslConfig.ClientPrivateKey.SecretVersion = nil
+				}
+				if c.SslConfig.ClientPrivateKeyPass != nil && c.SslConfig.ClientPrivateKeyPass.SecretVersion != nil {
+					p := *c.SslConfig.ClientPrivateKeyPass.SecretVersion
+					c.SslConfig.ClientPrivateKeyPass.SecretDetails = new(secretDetails)
+					c.SslConfig.ClientPrivateKeyPass.SecretDetails.SecretName = strings.Split(p, "/")[3]
+					c.SslConfig.ClientPrivateKeyPass.SecretVersion = nil
 				}
 			}
 		}
