@@ -38,7 +38,7 @@ jobs:
           reporter: github-check
 
       - name: Write private key to disk
-        run: echo "${{ secrets.COSIGN_PRIVATE_KEY }}" > cosign.key
+        run: echo "${{ secrets.COSIGN_PRIVATE_KEY }}" > /tmp/cosign.key
 
       - uses: sigstore/cosign-installer@main
 
