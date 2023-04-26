@@ -661,11 +661,6 @@ func create(name string, content []byte, serviceAccountName string, serviceAccou
 		return nil, err
 	}
 
-	if true {
-		fmt.Println(string(content))
-		os.Exit(0)
-	}
-
 	respBody, err = apiclient.HttpClient(u.String(), string(content))
 	return respBody, err
 }
