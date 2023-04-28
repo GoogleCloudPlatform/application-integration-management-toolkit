@@ -59,7 +59,7 @@ var GetCmd = &cobra.Command{
 			if err != nil {
 				return err
 			}
-			apiclient.DisableCmdPrintHttpResponse()
+			apiclient.EnableCmdPrintHttpResponse()
 			_, err = authconfigs.Get(path.Base(version), minimal)
 			return err
 		}
