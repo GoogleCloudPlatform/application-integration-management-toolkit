@@ -45,7 +45,7 @@ var GetCmd = &cobra.Command{
 	RunE: func(cmd *cobra.Command, args []string) (err error) {
 		name := cmd.Flag("name").Value.String()
 		minimal, _ := strconv.ParseBool(cmd.Flag("minimal").Value.String())
-		overrides, _ := strconv.ParseBool(cmd.Flag("override").Value.String())
+		overrides, _ := strconv.ParseBool(cmd.Flag("overrides").Value.String())
 		if overrides {
 			minimal = true
 		}
