@@ -49,6 +49,8 @@ NOTES
 │   └── <connector-name>.json #there is one file per connector. the connector name is the file name.
 ├── authconfigs
 │   └── <authconfig-name>.json #there is one file per authconfig. the authconfig name is the file name.
+├── endpoints
+│   └── <endpoint-name>.json #there is one file per endpoint attachment. the endpoint attachment name is the file name.
 ├── sfdcinstances
 │   └── <instance-name>.json #there is one file per sfdc instance. the sfdc instance name is the file name.
 ├── sfdcchannels
@@ -70,6 +72,8 @@ integrationcli integrations scaffold -n <integration-name> -s <snapShot> -p <pro
 ```
 
 This generates the folder structure mentioned above.
+
+**NOTE:** Scaffodling **does not** export endpoint attchaments. They have to be added manually.
 
 
 ## Apply Scaffolding

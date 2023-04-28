@@ -4,7 +4,7 @@
 [![GitHub release](https://img.shields.io/github/v/release/GoogleCloudPlatform/application-integration-management-toolkit)](https://github.com/GoogleCloudPlatform/application-integration-management-toolkit/releases)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 
-This is a tool to interact with [Application Integration APIs](https://cloud.google.com/application-integration/docs/reference/rest), [Apigee Integration APIs](https://cloud.google.com/apigee/docs/api-platform/integration/reference/rest) and [Connector APIs](https://cloud.google.com/integration-connectors/docs/reference/rest). The tool lets you manage (Create,Get, List, Update, Delete, Export and Import) Integration entities like integrations, authConfigs etc.
+This is a tool to interact with [Application Integration APIs](https://cloud.google.com/application-integration/docs/reference/rest) and [Connector APIs](https://cloud.google.com/integration-connectors/docs/reference/rest). The tool lets you manage (Create,Get, List, Update, Delete, Export and Import) Integration entities like integrations, authConfigs etc.
 
 ## Installation
 
@@ -89,7 +89,7 @@ Here is a [list](./docs/integrationcli.md) of available commands
 
 ## Enviroment Variables
 
-The following environment variables may be set to control the behavior of `apigeecli`. The default values are all `false`
+The following environment variables may be set to control the behavior of `integrationcli`. The default values are all `false`
 
 * `INTEGRATIONCLI_DEBUG=true` enables debug log
 * `INTEGRATIONCLI_SKIPCACHE=true` will not cache the access token on the disk
@@ -97,11 +97,6 @@ The following environment variables may be set to control the behavior of `apige
 * `INTEGRATIONCLI_NO_USAGE=true` does not print usage when the command fails
 * `INTEGRATIONCLI_NO_ERRORS=true` does not print error messages from the CLI (control plane error messages are displayed)
 * `INTEGRATIONCLI_DRYRUN=true` does not execute control plane APIs
-
-## Selecting the endpoint
-
-By default `integrationcli` uses Application Integration endpoints. This can be changed per command through the flag `--apigee-integration=true` or set permanently by leveraging preferences. See the `preferences` section below.
-
 
 ## Automate via Cloud Build
 

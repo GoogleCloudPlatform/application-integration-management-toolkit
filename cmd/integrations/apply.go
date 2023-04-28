@@ -67,6 +67,7 @@ var ApplyCmd = &cobra.Command{
 		overridesFile := path.Join(folder, "overrides/overrides.json")
 		sfdcinstancesFolder := path.Join(folder, "sfdcinstances")
 		sfdcchannelsFolder := path.Join(folder, "sfdcchannels")
+		endpointsFolder := path.Join(folder, "endpoints")
 
 		var stat fs.FileInfo
 		var integrationNames []string
@@ -104,6 +105,42 @@ var ApplyCmd = &cobra.Command{
 				return nil
 			})
 
+			if err != nil {
+				return
+			}
+		}
+
+		if stat, err = os.Stat(endpointsFolder); err == nil && stat.IsDir() {
+			// create any endpoint attachments
+			err = filepath.Walk(endpointsFolder, func(path string, info os.FileInfo, err error) error {
+				if err != nil {
+					return err
+				}
+				if !info.IsDir() {
+					endpointFile := filepath.Base(path)
+					if rJSONFiles.MatchString(endpointFile) {
+						clilog.Info.Printf("Found configuration for endpoint attachment: %s\n", endpointFile)
+					}
+					if !connections.FindEndpoint(getFilenameWithoutExtension(endpointFile)) {
+						// the endpoint does not exist, try to create it
+						endpointBytes, err := utils.ReadFile(path)
+						if err != nil {
+							return err
+						}
+						serviceAccountName, err := getServiceAttachment(endpointBytes)
+						if err != nil {
+							return err
+						}
+						if _, err = connections.CreateEndpoint(getFilenameWithoutExtension(endpointFile),
+							serviceAccountName, "", false); err != nil {
+							return err
+						}
+					} else {
+						clilog.Info.Printf("Endpoint %s already exists\n", endpointFile)
+					}
+				}
+				return nil
+			})
 			if err != nil {
 				return
 			}
@@ -325,4 +362,16 @@ func getVersion(respBody []byte) (version string, err error) {
 		return "", errors.New("version not found")
 	}
 	return version, nil
+}
+
+func getServiceAttachment(respBody []byte) (sa string, err error) {
+	var jsonMap map[string]string
+
+	if err = json.Unmarshal(respBody, &jsonMap); err != nil {
+		return "", err
+	}
+	if jsonMap["serviceAttachment"] == "" {
+		return "", errors.New("serviceAttachment not found")
+	}
+	return jsonMap["serviceAttachment"], nil
 }

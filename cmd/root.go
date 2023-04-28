@@ -26,6 +26,7 @@ import (
 	"github.com/GoogleCloudPlatform/application-integration-management-toolkit/cmd/authconfigs"
 	"github.com/GoogleCloudPlatform/application-integration-management-toolkit/cmd/certificates"
 	"github.com/GoogleCloudPlatform/application-integration-management-toolkit/cmd/connectors"
+	"github.com/GoogleCloudPlatform/application-integration-management-toolkit/cmd/endpoints"
 	"github.com/GoogleCloudPlatform/application-integration-management-toolkit/cmd/integrations"
 	"github.com/GoogleCloudPlatform/application-integration-management-toolkit/cmd/preferences"
 	"github.com/GoogleCloudPlatform/application-integration-management-toolkit/cmd/sfdcchannels"
@@ -63,9 +64,7 @@ var RootCmd = &cobra.Command{
 			}
 		}
 
-		if useApigee {
-			apiclient.UseApigeeIntegration()
-		}
+		apiclient.SetAPI(api)
 
 		_ = apiclient.SetAccessToken()
 
@@ -81,7 +80,10 @@ func Execute() {
 	}
 }
 
-var disableCheck, useApigee, printOutput, noOutput, suppressWarnings, verbose bool
+var (
+	disableCheck, printOutput, noOutput, suppressWarnings, verbose bool
+	api                                                            apiclient.API
+)
 
 const ENABLED = "true"
 
@@ -99,9 +101,6 @@ func init() {
 	RootCmd.PersistentFlags().BoolVarP(&disableCheck, "disable-check", "",
 		false, "Disable check for newer versions")
 
-	RootCmd.PersistentFlags().BoolVarP(&useApigee, "apigee-integration", "",
-		false, "Use Apigee Integration; default is false (Application Integration)")
-
 	RootCmd.PersistentFlags().BoolVarP(&printOutput, "print-output", "",
 		true, "Control printing of info log statements")
 
@@ -114,6 +113,9 @@ func init() {
 	RootCmd.PersistentFlags().BoolVarP(&verbose, "verbose", "",
 		false, "Enable verbose output from integrationcli")
 
+	RootCmd.PersistentFlags().Var(&api, "api", "Sets the control plane API. Must be one of prod, "+
+		"staging or autopush; default is prod")
+
 	RootCmd.AddCommand(integrations.Cmd)
 	RootCmd.AddCommand(preferences.Cmd)
 	RootCmd.AddCommand(authconfigs.Cmd)
@@ -122,6 +124,7 @@ func init() {
 	RootCmd.AddCommand(certificates.Cmd)
 	RootCmd.AddCommand(sfdcinstances.Cmd)
 	RootCmd.AddCommand(sfdcchannels.Cmd)
+	RootCmd.AddCommand(endpoints.Cmd)
 }
 
 func initConfig() {

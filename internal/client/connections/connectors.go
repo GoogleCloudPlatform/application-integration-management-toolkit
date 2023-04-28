@@ -519,7 +519,7 @@ func create(name string, content []byte, serviceAccountName string, serviceAccou
 		}
 	}
 
-	//handle secrets for ssl config
+	// handle secrets for ssl config
 	if c.SslConfig != nil {
 		if c.SslConfig.PrivateServerCertificate != nil && c.SslConfig.PrivateServerCertificate.SecretDetails != nil {
 			if createSecret {
