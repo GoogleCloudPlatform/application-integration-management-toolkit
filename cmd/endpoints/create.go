@@ -15,8 +15,9 @@
 package endpoints
 
 import (
-	"internal/apiclient"
 	"strconv"
+
+	"internal/apiclient"
 
 	"internal/client/connections"
 
