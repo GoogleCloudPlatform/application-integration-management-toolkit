@@ -131,7 +131,8 @@ var ApplyCmd = &cobra.Command{
 						if err != nil {
 							return err
 						}
-						if _, err = connections.CreateEndpoint(getFilenameWithoutExtension(endpointFile), serviceAccountName, "", false); err != nil {
+						if _, err = connections.CreateEndpoint(getFilenameWithoutExtension(endpointFile),
+							serviceAccountName, "", false); err != nil {
 							return err
 						}
 					} else {
