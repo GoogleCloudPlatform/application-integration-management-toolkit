@@ -22,11 +22,11 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// ListCmd to list Integrations
-var ListCmd = &cobra.Command{
-	Use:   "list",
-	Short: "List all endpoint attachments in the region",
-	Long:  "List all endpoint attachments in the region",
+// DelCmd to get endpoint attachments
+var DelCmd = &cobra.Command{
+	Use:   "delete",
+	Short: "Delete an endpoint attachments in the region",
+	Long:  "Delete an endpoint attachments in the region",
 	Args: func(cmd *cobra.Command, args []string) (err error) {
 		project := cmd.Flag("proj").Value.String()
 		region := cmd.Flag("reg").Value.String()
@@ -37,23 +37,18 @@ var ListCmd = &cobra.Command{
 		return apiclient.SetProjectID(project)
 	},
 	RunE: func(cmd *cobra.Command, args []string) (err error) {
-		pageToken := cmd.Flag("pageToken").Value.String()
-		filter := cmd.Flag("filter").Value.String()
+		name := cmd.Flag("name").Value.String()
 
-		_, err = connections.ListEndpoints(pageSize, pageToken, filter, "")
+		_, err = connections.DeleteEndpoint(name)
 		return
 	},
 }
 
-var pageSize int
-
 func init() {
-	var pageToken, filter string
+	var name string
 
-	ListCmd.Flags().IntVarP(&pageSize, "pageSize", "",
-		-1, "The maximum number of versions to return")
-	ListCmd.Flags().StringVarP(&pageToken, "pageToken", "",
-		"", "A page token, received from a previous call")
-	ListCmd.Flags().StringVarP(&filter, "filter", "",
-		"", "Filter results")
+	DelCmd.Flags().StringVarP(&name, "name", "n",
+		"", "Endpoint attachment name")
+
+	_ = DelCmd.MarkFlagRequired("name")
 }

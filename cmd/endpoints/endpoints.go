@@ -35,4 +35,6 @@ func init() {
 		"", "Integration region name")
 
 	Cmd.AddCommand(ListCmd)
+	Cmd.AddCommand(GetCmd)
+	Cmd.AddCommand(CreateCmd)
 }

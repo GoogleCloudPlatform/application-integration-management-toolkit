@@ -16,6 +16,7 @@ package apiclient
 
 import (
 	"encoding/json"
+	"fmt"
 	"os"
 	"os/user"
 	"path"
@@ -36,7 +37,7 @@ type integrationCLI struct {
 	Region    string `json:"region,omitempty"`
 	ProxyUrl  string `json:"proxyUrl,omitempty"`
 	Nocheck   bool   `json:"nocheck,omitempty" default:"false"`
-	UseApigee bool   `json:"useapigee,omitempty" default:"false"`
+	Api       API    `json:"api,omitempty" default:"prod"`
 }
 
 func readPreferencesFile() (cliPref *integrationCLI, err error) {
@@ -62,6 +63,12 @@ func readPreferencesFile() (cliPref *integrationCLI, err error) {
 	if err != nil {
 		clilog.Debug.Printf("Error marshalling: %v\n", err)
 		return cliPref, DeletePreferencesFile()
+	}
+
+	if cliPref.Api != "" {
+		if cliPref.Api != PROD && cliPref.Api != STAGING && cliPref.Api != AUTOPUSH {
+			return cliPref, fmt.Errorf("invalid api settings in configuration file")
+		}
 	}
 
 	return cliPref, nil
@@ -133,12 +140,12 @@ func SetNoCheck(nocheck bool) (err error) {
 	return writePerferencesFile(data)
 }
 
-func SetUseApigee(useapigee bool) (err error) {
-	clilog.Debug.Println("UseApigee set to: ", useapigee)
+func SetAPIPref(a API) (err error) {
+	clilog.Debug.Println("API is set to: ", a)
 
 	cliPref, err := readPreferencesFile()
 
-	cliPref.UseApigee = false
+	cliPref.Api = a
 	data, err := json.Marshal(&cliPref)
 	if err != nil {
 		clilog.Debug.Printf("Error marshalling: %v\n", err)

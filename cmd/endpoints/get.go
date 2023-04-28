@@ -16,17 +16,18 @@ package endpoints
 
 import (
 	"internal/apiclient"
+	"strconv"
 
 	"internal/client/connections"
 
 	"github.com/spf13/cobra"
 )
 
-// ListCmd to list Integrations
-var ListCmd = &cobra.Command{
-	Use:   "list",
-	Short: "List all endpoint attachments in the region",
-	Long:  "List all endpoint attachments in the region",
+// GetCmd to get endpoint attachments
+var GetCmd = &cobra.Command{
+	Use:   "get",
+	Short: "Get an endpoint attachments in the region",
+	Long:  "Get an endpoint attachments in the region",
 	Args: func(cmd *cobra.Command, args []string) (err error) {
 		project := cmd.Flag("proj").Value.String()
 		region := cmd.Flag("reg").Value.String()
@@ -37,23 +38,22 @@ var ListCmd = &cobra.Command{
 		return apiclient.SetProjectID(project)
 	},
 	RunE: func(cmd *cobra.Command, args []string) (err error) {
-		pageToken := cmd.Flag("pageToken").Value.String()
-		filter := cmd.Flag("filter").Value.String()
+		name := cmd.Flag("name").Value.String()
+		overrides, _ := strconv.ParseBool(cmd.Flag("overrides").Value.String())
 
-		_, err = connections.ListEndpoints(pageSize, pageToken, filter, "")
+		_, err = connections.GetEndpoint(name, overrides)
 		return
 	},
 }
 
-var pageSize int
-
 func init() {
-	var pageToken, filter string
+	var name string
+	var overrides bool
 
-	ListCmd.Flags().IntVarP(&pageSize, "pageSize", "",
-		-1, "The maximum number of versions to return")
-	ListCmd.Flags().StringVarP(&pageToken, "pageToken", "",
-		"", "A page token, received from a previous call")
-	ListCmd.Flags().StringVarP(&filter, "filter", "",
-		"", "Filter results")
+	GetCmd.Flags().StringVarP(&name, "name", "n",
+		"", "Endpoint attachment name")
+	GetCmd.Flags().BoolVarP(&overrides, "overrides", "",
+		false, "Only returns overriable values")
+
+	_ = GetCmd.MarkFlagRequired("name")
 }

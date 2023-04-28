@@ -15,8 +15,6 @@
 package preferences
 
 import (
-	"strconv"
-
 	"internal/apiclient"
 
 	"github.com/spf13/cobra"
@@ -31,7 +29,7 @@ var SetCmd = &cobra.Command{
 		project := cmd.Flag("proj").Value.String()
 		region := cmd.Flag("reg").Value.String()
 		proxyURL := cmd.Flag("proxy").Value.String()
-		nocheck, _ := strconv.ParseBool(cmd.Flag("nocheck").Value.String())
+		api := cmd.Flag("api").Value.String()
 
 		if err = apiclient.WriteDefaultProject(project); err != nil {
 			return err
@@ -51,13 +49,21 @@ var SetCmd = &cobra.Command{
 			}
 		}
 
+		if api != "" {
+			if err = apiclient.SetAPIPref(apiclient.API(api)); err != nil {
+				return err
+			}
+		}
+
 		return nil
 	},
 }
 
+var nocheck bool
+
 func init() {
 	var project, region, proxyURL string
-	nocheck := false
+	var api apiclient.API
 
 	SetCmd.Flags().StringVarP(&project, "proj", "p",
 		"", "Integration GCP Project name")
@@ -70,4 +76,7 @@ func init() {
 
 	SetCmd.Flags().BoolVarP(&nocheck, "nocheck", "",
 		false, "Don't check for newer versions of cmd")
+
+	SetCmd.Flags().Var(&api, "api", "Sets the control plane API. Must be one of prod, "+
+		"staging or autopush; default is prod")
 }
