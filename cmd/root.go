@@ -26,6 +26,7 @@ import (
 	"github.com/GoogleCloudPlatform/application-integration-management-toolkit/cmd/authconfigs"
 	"github.com/GoogleCloudPlatform/application-integration-management-toolkit/cmd/certificates"
 	"github.com/GoogleCloudPlatform/application-integration-management-toolkit/cmd/connectors"
+	"github.com/GoogleCloudPlatform/application-integration-management-toolkit/cmd/endpoints"
 	"github.com/GoogleCloudPlatform/application-integration-management-toolkit/cmd/integrations"
 	"github.com/GoogleCloudPlatform/application-integration-management-toolkit/cmd/preferences"
 	"github.com/GoogleCloudPlatform/application-integration-management-toolkit/cmd/sfdcchannels"
@@ -122,6 +123,7 @@ func init() {
 	RootCmd.AddCommand(certificates.Cmd)
 	RootCmd.AddCommand(sfdcinstances.Cmd)
 	RootCmd.AddCommand(sfdcchannels.Cmd)
+	RootCmd.AddCommand(endpoints.Cmd)
 }
 
 func initConfig() {

@@ -28,6 +28,7 @@ const (
 	appIntegrationBaseURL      = "https://%s-integrations.googleapis.com/v1/projects/%s/locations/%s/"
 	connectorBaseURL           = "https://connectors.googleapis.com/v1/projects/%s/locations/%s/connections"
 	connectorOperationsBaseURL = "https://connectors.googleapis.com/v1/projects/%s/locations/%s/operations"
+	connectorEndpointAttachURL = "https://connectors.googleapis.com/v1/projects/%s/locations/%s/endpointAttachments"
 )
 
 // IntegrationClientOptions is the base struct to hold all command arguments
@@ -267,6 +268,14 @@ func GetBaseConnectorOperationsrURL() (connectorUrl string) {
 		return ""
 	}
 	return fmt.Sprintf(connectorOperationsBaseURL, GetProjectID(), GetRegion())
+}
+
+// GetBaseConnectorEndpointAttachURL
+func GetBaseConnectorEndpointAttachURL() (connectorUrl string) {
+	if options.ProjectID == "" || options.Region == "" {
+		return ""
+	}
+	return fmt.Sprintf(connectorEndpointAttachURL, GetProjectID(), GetRegion())
 }
 
 // SetExportToFile
