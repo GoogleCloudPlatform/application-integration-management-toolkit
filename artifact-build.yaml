@@ -78,7 +78,7 @@ steps:
   args:
     - -c
     - |
-      echo "${COSIGN_PRIVATE_KEY}" > /tmp/cosign.key
+      echo "$$COSIGN_PRIVATE_KEY" > /tmp/cosign.key
       cosign sign --key=/tmp/cosign.key --output-signature=/tmp/integrationcli-builder_${TAG_NAME}.sig --yes ${_IMAGE_NAME}-builder:${TAG_NAME}
       cosign attach signature --signature=/tmp/integrationcli-builder_${TAG_NAME}.sig ${_IMAGE_NAME}-builder:${TAG_NAME}
 
