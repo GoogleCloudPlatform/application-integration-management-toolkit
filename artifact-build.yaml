@@ -63,41 +63,35 @@ steps:
 - name: 'gcr.io/projectsigstore/cosign:latest'
   id: sign_integrationcli
   entrypoint: 'sh'
-  env:
-    - 'COSIGN_PASSWORD=${_COSIGN_PASSWORD}'
-  secretEnv: ['_COSIGN_PASSWORD', '_COSIGN_PRIVATE_KEY']
+  secretEnv: ['COSIGN_PASSWORD', 'COSIGN_PRIVATE_KEY']
   args:
     - -c
     - |
-      echo "${_COSIGN_PRIVATE_KEY}" > /tmp/cosign.key
+      echo "$$COSIGN_PRIVATE_KEY" > /tmp/cosign.key
       cosign sign --key=/tmp/cosign.key --output-signature=/tmp/integrationcli_${TAG_NAME}.sig --yes ${_IMAGE_NAME}:${TAG_NAME}
       cosign attach signature --signature=/tmp/integrationcli_${TAG_NAME}.sig ${_IMAGE_NAME}:${TAG_NAME}
 #sign and attach integrationcli-builder
 - name: 'gcr.io/projectsigstore/cosign:latest'
   id: sign_integrationcli_builder
   entrypoint: 'sh'
-  env:
-    - 'COSIGN_PASSWORD=${_COSIGN_PASSWORD}'
-  secretEnv: ['_COSIGN_PASSWORD', '_COSIGN_PRIVATE_KEY']
+  secretEnv: ['COSIGN_PASSWORD', 'COSIGN_PRIVATE_KEY']
   args:
     - -c
     - |
-      echo "${_COSIGN_PRIVATE_KEY}" > /tmp/cosign.key
+      echo "$$COSIGN_PRIVATE_KEY" > /tmp/cosign.key
       cosign sign --key=/tmp/cosign.key --output-signature=/tmp/integrationcli-builder_${TAG_NAME}.sig --yes ${_IMAGE_NAME}-builder:${TAG_NAME}
       cosign attach signature --signature=/tmp/integrationcli-builder_${TAG_NAME}.sig ${_IMAGE_NAME}-builder:${TAG_NAME}
 
 availableSecrets:
   secretManager:
   - versionName: projects/$PROJECT_ID/secrets/integrationcli-cosign-password/versions/latest
-    env: '_COSIGN_PASSWORD'
+    env: 'COSIGN_PASSWORD'
   - versionName: projects/$PROJECT_ID/secrets/integrationcli-cosign-private-key/versions/latest
-    env: '_COSIGN_PRIVATE_KEY'
+    env: 'COSIGN_PRIVATE_KEY'
 
 #repo name
 substitutions:
   _REPO: "images"
-  _COSIGN_PASSWORD: "set-in-secret-manager"
-  _COSIGN_PRIVATE_KEY: "set-in-secret-manager"
   _IMAGE_NAME: "us-docker.pkg.dev/${PROJECT_ID}/${_REPO}/integrationcli"
 
 options:
