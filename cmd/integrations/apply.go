@@ -68,6 +68,7 @@ var ApplyCmd = &cobra.Command{
 		sfdcinstancesFolder := path.Join(folder, "sfdcinstances")
 		sfdcchannelsFolder := path.Join(folder, "sfdcchannels")
 		endpointsFolder := path.Join(folder, "endpoints")
+		zonesFolder := path.Join(folder, "zones")
 
 		var stat fs.FileInfo
 		var integrationNames []string
@@ -137,6 +138,39 @@ var ApplyCmd = &cobra.Command{
 						}
 					} else {
 						clilog.Info.Printf("Endpoint %s already exists\n", endpointFile)
+					}
+				}
+				return nil
+			})
+			if err != nil {
+				return
+			}
+		}
+
+		//create any managed zones
+		if stat, err = os.Stat(zonesFolder); err == nil && stat.IsDir() {
+			// create any managedzones
+			err = filepath.Walk(zonesFolder, func(path string, info os.FileInfo, err error) error {
+				if err != nil {
+					return err
+				}
+				if !info.IsDir() {
+					zoneFile := filepath.Base(path)
+					if rJSONFiles.MatchString(zoneFile) {
+						clilog.Info.Printf("Found configuration for managed zone: %s\n", zoneFile)
+					}
+					if _, err = connections.GetZone(getFilenameWithoutExtension(zoneFile), true); err != nil {
+						// the managed zone does not exist, try to create it
+						zoneBytes, err := utils.ReadFile(path)
+						if err != nil {
+							return err
+						}
+						if _, err = connections.CreateZone(getFilenameWithoutExtension(zoneFile),
+							zoneBytes); err != nil {
+							return err
+						}
+					} else {
+						clilog.Info.Printf("Zone %s already exists\n", zoneFile)
 					}
 				}
 				return nil
