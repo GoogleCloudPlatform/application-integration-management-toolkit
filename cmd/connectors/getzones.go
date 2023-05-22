@@ -15,8 +15,9 @@
 package connectors
 
 import (
-	"internal/apiclient"
 	"strconv"
+
+	"internal/apiclient"
 
 	"internal/client/connections"
 
@@ -56,5 +57,4 @@ func init() {
 		false, "fetch zone details details for use with scaffold")
 
 	_ = GetManagedZonesCmd.MarkFlagRequired("name")
-
 }

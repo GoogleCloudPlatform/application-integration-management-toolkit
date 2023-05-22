@@ -51,5 +51,4 @@ func init() {
 		"", "The name of the managedzone")
 
 	_ = DelManagedZonesCmd.MarkFlagRequired("name")
-
 }

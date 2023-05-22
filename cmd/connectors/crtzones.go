@@ -15,8 +15,9 @@
 package connectors
 
 import (
-	"internal/apiclient"
 	"strings"
+
+	"internal/apiclient"
 
 	"internal/client/connections"
 
@@ -77,5 +78,4 @@ func init() {
 	_ = CreateManagedZonesCmd.MarkFlagRequired("target-project")
 	_ = CreateManagedZonesCmd.MarkFlagRequired("target-vpc")
 	_ = CreateManagedZonesCmd.MarkFlagRequired("dns")
-
 }

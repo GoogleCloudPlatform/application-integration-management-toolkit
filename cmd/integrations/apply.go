@@ -147,7 +147,7 @@ var ApplyCmd = &cobra.Command{
 			}
 		}
 
-		//create any managed zones
+		// create any managed zones
 		if stat, err = os.Stat(zonesFolder); err == nil && stat.IsDir() {
 			// create any managedzones
 			err = filepath.Walk(zonesFolder, func(path string, info os.FileInfo, err error) error {
