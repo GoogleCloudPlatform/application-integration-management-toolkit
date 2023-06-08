@@ -41,7 +41,7 @@ var ListCmd = &cobra.Command{
 		filter := cmd.Flag("filter").Value.String()
 
 		_, err = authconfigs.List(pageSize, pageToken, filter)
-		return
+		return err
 	},
 }
 

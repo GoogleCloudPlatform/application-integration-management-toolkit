@@ -77,7 +77,7 @@ var CreateCmd = &cobra.Command{
 		}
 
 		_, err = certificates.Create(name, description, string(sslCertContent), string(privateKeyCertContent), passphrase)
-		return
+		return err
 	},
 }
 

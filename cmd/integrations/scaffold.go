@@ -239,7 +239,7 @@ var ScaffoldCmd = &cobra.Command{
 			}
 		}
 
-		return
+		return err
 	},
 }
 

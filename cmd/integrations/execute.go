@@ -61,7 +61,7 @@ var ExecuteCmd = &cobra.Command{
 		}
 
 		_, err = integrations.Execute(name, content)
-		return
+		return err
 	},
 }
 

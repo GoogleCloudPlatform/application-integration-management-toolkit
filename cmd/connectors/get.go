@@ -50,7 +50,7 @@ var GetCmd = &cobra.Command{
 			minimal = true
 		}
 		_, err = connections.Get(name, view, minimal, overrides)
-		return
+		return err
 	},
 }
 

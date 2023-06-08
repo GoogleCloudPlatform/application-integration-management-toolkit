@@ -51,7 +51,7 @@ var UnPublishVerCmd = &cobra.Command{
 		} else if snapshot != "" {
 			_, err = integrations.UnpublishSnapshot(name, snapshot)
 		}
-		return
+		return err
 	},
 }
 

@@ -51,7 +51,7 @@ var PatchVerCmd = &cobra.Command{
 			return err
 		}
 		_, err = integrations.Patch(name, version, content)
-		return
+		return err
 	},
 }
 

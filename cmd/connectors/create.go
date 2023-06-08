@@ -68,7 +68,7 @@ var CreateCmd = &cobra.Command{
 		_, err = connections.Create(name, content, serviceAccountName,
 			serviceAccountProject, encryptionKey, grantPermission, createSecret, wait)
 
-		return
+		return err
 	},
 }
 

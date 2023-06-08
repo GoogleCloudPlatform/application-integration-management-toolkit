@@ -48,7 +48,7 @@ var ArchiveVerCmd = &cobra.Command{
 		} else if snapshot != "" {
 			_, err = integrations.ArchiveSnapshot(name, snapshot)
 		}
-		return
+		return err
 	},
 }
 
