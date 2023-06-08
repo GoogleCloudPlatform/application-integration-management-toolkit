@@ -62,7 +62,7 @@ var GetCmd = &cobra.Command{
 		}
 
 		_, err = certificates.Get(id)
-		return
+		return err
 	},
 }
 

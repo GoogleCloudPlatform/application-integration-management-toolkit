@@ -63,7 +63,7 @@ var GetCmd = &cobra.Command{
 		} else {
 			_, err = sfdc.GetInstance(id, minimal)
 		}
-		return
+		return err
 	},
 }
 

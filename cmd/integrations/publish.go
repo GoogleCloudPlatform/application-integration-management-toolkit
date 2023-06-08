@@ -53,7 +53,7 @@ var PublishVerCmd = &cobra.Command{
 		} else if snapshot != "" {
 			_, err = integrations.PublishSnapshot(name, snapshot)
 		}
-		return
+		return err
 	},
 }
 

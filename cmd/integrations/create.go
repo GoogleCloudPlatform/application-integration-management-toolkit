@@ -63,7 +63,7 @@ var CreateCmd = &cobra.Command{
 		}
 
 		_, err = integrations.CreateVersion(name, content, overridesContent, snapshot, userLabel)
-		return
+		return err
 	},
 }
 

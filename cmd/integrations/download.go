@@ -51,7 +51,7 @@ var DownloadVerCmd = &cobra.Command{
 		} else if snapshot != "" {
 			_, err = integrations.DownloadSnapshot(name, snapshot)
 		}
-		return
+		return err
 	},
 }
 

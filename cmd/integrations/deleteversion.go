@@ -62,7 +62,7 @@ var DelVerCmd = &cobra.Command{
 		} else {
 			_, err = integrations.DeleteByUserlabel(name, userLabel)
 		}
-		return
+		return err
 	},
 }
 

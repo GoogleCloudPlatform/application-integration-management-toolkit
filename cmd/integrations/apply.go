@@ -106,7 +106,7 @@ var ApplyCmd = &cobra.Command{
 			})
 
 			if err != nil {
-				return
+				return err
 			}
 		}
 
@@ -142,7 +142,7 @@ var ApplyCmd = &cobra.Command{
 				return nil
 			})
 			if err != nil {
-				return
+				return err
 			}
 		}
 
@@ -184,7 +184,7 @@ var ApplyCmd = &cobra.Command{
 			})
 
 			if err != nil {
-				return
+				return err
 			}
 		}
 
@@ -219,7 +219,7 @@ var ApplyCmd = &cobra.Command{
 			})
 
 			if err != nil {
-				return
+				return err
 			}
 		}
 
@@ -260,7 +260,7 @@ var ApplyCmd = &cobra.Command{
 			})
 
 			if err != nil {
-				return
+				return err
 			}
 		}
 
@@ -314,7 +314,7 @@ var ApplyCmd = &cobra.Command{
 
 		clilog.Warning.Printf("No integration files were found\n")
 
-		return
+		return err
 	},
 }
 
