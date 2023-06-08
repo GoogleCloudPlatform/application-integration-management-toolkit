@@ -39,7 +39,7 @@ var LiftSuspCmd = &cobra.Command{
 	RunE: func(cmd *cobra.Command, args []string) (err error) {
 		name := cmd.Flag("name").Value.String()
 		_, err = integrations.Lift(name, execution, suspension, result)
-		return
+		return err
 	},
 }
 

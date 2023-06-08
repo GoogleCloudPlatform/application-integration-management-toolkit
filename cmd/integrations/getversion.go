@@ -66,7 +66,7 @@ var GetVerCmd = &cobra.Command{
 		} else {
 			_, err = integrations.GetByUserlabel(name, userLabel, minimal, overrides)
 		}
-		return
+		return err
 	},
 }
 

@@ -43,7 +43,7 @@ var GetCmd = &cobra.Command{
 		overrides, _ := strconv.ParseBool(cmd.Flag("overrides").Value.String())
 
 		_, err = connections.GetEndpoint(name, overrides)
-		return
+		return err
 	},
 }
 

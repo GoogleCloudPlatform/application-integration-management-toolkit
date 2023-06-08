@@ -92,7 +92,7 @@ var CreateCmd = &cobra.Command{
 		}
 
 		_, err = authconfigs.Create(content)
-		return
+		return err
 	},
 }
 

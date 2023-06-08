@@ -55,7 +55,7 @@ var GetCmd = &cobra.Command{
 		} else {
 			_, err = sfdc.GetChannel(id, instance, minimal)
 		}
-		return
+		return err
 	},
 }
 

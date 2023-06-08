@@ -15,6 +15,8 @@
 package endpoints
 
 import (
+	"fmt"
+	"regexp"
 	"strconv"
 
 	"internal/apiclient"
@@ -44,15 +46,15 @@ var CreateCmd = &cobra.Command{
 		description := cmd.Flag("description").Value.String()
 		wait, _ := strconv.ParseBool(cmd.Flag("wait").Value.String())
 
-		/*re := regexp.MustCompile(`projects\/([a-zA-Z0-9_-]+)\/regions` +
+		re := regexp.MustCompile(`projects\/([a-zA-Z0-9_-]+)\/regions` +
 			`\/([a-zA-Z0-9_-]+)\/serviceAttachments\/([a-zA-Z0-9_-]+)`)
 
 		if ok := re.Match([]byte(name)); !ok {
 			return fmt.Errorf("the service atachment does not match the required format")
-		}*/
+		}
 
 		_, err = connections.CreateEndpoint(name, serviceAttachment, description, wait)
-		return
+		return err
 	},
 }
 

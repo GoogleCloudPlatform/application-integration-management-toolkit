@@ -42,7 +42,7 @@ var ListSuspCmd = &cobra.Command{
 			cmd.Flag("pageToken").Value.String(),
 			cmd.Flag("filter").Value.String(),
 			cmd.Flag("orderBy").Value.String())
-		return
+		return err
 	},
 }
 

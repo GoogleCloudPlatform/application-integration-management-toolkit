@@ -46,7 +46,7 @@ var ListVerCmd = &cobra.Command{
 			cmd.Flag("filter").Value.String(),
 			cmd.Flag("orderBy").Value.String(),
 			false, false, basic)
-		return
+		return err
 	},
 }
 
