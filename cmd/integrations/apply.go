@@ -176,7 +176,7 @@ var ApplyCmd = &cobra.Command{
 				return nil
 			})
 			if err != nil {
-				return
+				return err
 			}
 		}
 

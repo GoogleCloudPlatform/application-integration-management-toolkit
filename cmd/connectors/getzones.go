@@ -43,7 +43,7 @@ var GetManagedZonesCmd = &cobra.Command{
 		overrides, _ := strconv.ParseBool(cmd.Flag("overrides").Value.String())
 
 		_, err = connections.GetZone(name, overrides)
-		return
+		return err
 	},
 }
 

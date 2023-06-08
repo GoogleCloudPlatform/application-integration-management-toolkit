@@ -56,7 +56,7 @@ var CreateManagedZonesCmd = &cobra.Command{
 
 		_, err = connections.CreateZone(cmd.Flag("name").Value.String(),
 			[]byte(payload))
-		return
+		return err
 	},
 }
 
