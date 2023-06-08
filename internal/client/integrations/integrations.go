@@ -68,15 +68,19 @@ type integrationVersion struct {
 	TaskConfigs                   []taskconfig             `json:"taskConfigs,omitempty"`
 	IntegrationParameters         []parameterExternal      `json:"integrationParameters,omitempty"`
 	UserLabel                     *string                  `json:"userLabel,omitempty"`
+	DatabasePersistencePolicy     string                   `json:"databasePersistencePolicy,omitempty,default:DATABASE_PERSISTENCE_POLICY_UNSPECIFIED"`
+	ErrorCatcherConfigs           []errorCatcherConfig     `json:"errorCatcherConfigs,omitempty"`
 }
 
 type integrationVersionExternal struct {
-	Description           string              `json:"description,omitempty"`
-	SnapshotNumber        string              `json:"snapshotNumber,omitempty"`
-	TriggerConfigs        []triggerconfig     `json:"triggerConfigs,omitempty"`
-	TaskConfigs           []taskconfig        `json:"taskConfigs,omitempty"`
-	IntegrationParameters []parameterExternal `json:"integrationParameters,omitempty"`
-	UserLabel             *string             `json:"userLabel,omitempty"`
+	Description               string               `json:"description,omitempty"`
+	SnapshotNumber            string               `json:"snapshotNumber,omitempty"`
+	TriggerConfigs            []triggerconfig      `json:"triggerConfigs,omitempty"`
+	TaskConfigs               []taskconfig         `json:"taskConfigs,omitempty"`
+	IntegrationParameters     []parameterExternal  `json:"integrationParameters,omitempty"`
+	UserLabel                 *string              `json:"userLabel,omitempty"`
+	DatabasePersistencePolicy string               `json:"databasePersistencePolicy,omitempty,default:DATABASE_PERSISTENCE_POLICY_UNSPECIFIED"`
+	ErrorCatcherConfigs       []errorCatcherConfig `json:"errorCatcherConfigs,omitempty"`
 }
 
 type listbasicIntegrationVersions struct {
@@ -158,6 +162,18 @@ type taskconfig struct {
 	TaskTemplate                 string                    `json:"taskTemplate,omitempty"`
 	FailurePolicy                *failurePolicy            `json:"failurePolicy,omitempty"`
 	SynchronousCallFailurePolicy *failurePolicy            `json:"synchronousCallFailurePolicy,omitempty"`
+	ErrorCatcherId               string                    `json:"errorCatcherId,omitempty"`
+}
+
+type errorCatcherConfig struct {
+	Label              string  `json:"label,omitempty"`
+	ErrorCatcherNumber string  `json:"errorCatcherNumber,omitempty"`
+	ErrorCatcherId     string  `json:"errorCatcherId,omitempty"`
+	StartErrorTasks    []tasks `json:"startErrorTasks,omitempty"`
+}
+
+type tasks struct {
+	TaskId string `json:"taskId,omitempty"`
 }
 
 type eventparameter struct {
