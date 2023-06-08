@@ -51,7 +51,7 @@ var PatchCmd = &cobra.Command{
 		}
 
 		_, err = connections.Patch(name, content, updateMask)
-		return
+		return err
 	},
 }
 
