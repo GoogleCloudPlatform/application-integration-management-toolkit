@@ -41,6 +41,10 @@ const (
 	connectorEndpointAttachURL         = "https://connectors.googleapis.com/v1/projects/%s/locations/%s/endpointAttachments"
 	connectorEndpointAttachAutoPushURL = "https://autopush-connectors.sandbox.googleapis.com/v1/projects/%s/locations/%s/endpointAttachments"
 	connectorEndpointAttachStagingURL  = "https://staging-connectors.sandbox.googleapis.com/v1/projects/%s/locations/%s/endpointAttachments"
+
+	connectorZonesURL         = "https://connectors.googleapis.com/v1/projects/%s/locations/global/managedZones"
+	connectorZonesAutoPushURL = "https://autopush-connectors.sandbox.googleapis.com/v1/projects/%s/locations/global/managedZones"
+	connectorZonesStagingURL  = "https://staging-connectors.sandbox.googleapis.com/v1/projects/%s/locations/global/managedZones"
 )
 
 // IntegrationClientOptions is the base struct to hold all command arguments
@@ -355,6 +359,23 @@ func GetBaseConnectorEndpointAttachURL() (connectorUrl string) {
 		return fmt.Sprintf(connectorEndpointAttachAutoPushURL, GetProjectID(), GetRegion())
 	default:
 		return fmt.Sprintf(connectorEndpointAttachURL, GetProjectID(), GetRegion())
+	}
+}
+
+// GetBaseConnectorZonesURL
+func GetBaseConnectorZonesURL() (connectorUrl string) {
+	if options.ProjectID == "" || options.Region == "" {
+		return ""
+	}
+	switch options.Api {
+	case PROD:
+		return fmt.Sprintf(connectorZonesURL, GetProjectID())
+	case STAGING:
+		return fmt.Sprintf(connectorZonesAutoPushURL, GetProjectID())
+	case AUTOPUSH:
+		return fmt.Sprintf(connectorZonesAutoPushURL, GetProjectID())
+	default:
+		return fmt.Sprintf(connectorZonesURL, GetProjectID())
 	}
 }
 

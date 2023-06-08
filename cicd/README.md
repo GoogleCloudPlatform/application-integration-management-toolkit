@@ -51,6 +51,8 @@ NOTES
 │   └── <authconfig-name>.json #there is one file per authconfig. the authconfig name is the file name.
 ├── endpoints
 │   └── <endpoint-name>.json #there is one file per endpoint attachment. the endpoint attachment name is the file name.
+├── zones
+│   └── <zone-name>.json #there is one file per managed zone. the managed zone name is the file name.
 ├── sfdcinstances
 │   └── <instance-name>.json #there is one file per sfdc instance. the sfdc instance name is the file name.
 ├── sfdcchannels
