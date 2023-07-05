@@ -221,6 +221,11 @@ type cloudSchedulerConfig struct {
 	ErrorMessage        string `json:"errorMessage,omitempty"`
 }
 
+type integrationConnection struct {
+	Name   string
+	Region string
+}
+
 // CreateVersion
 func CreateVersion(name string, content []byte, overridesContent []byte, snapshot string,
 	userlabel string,
@@ -746,6 +751,7 @@ func GetSfdcInstances(integration []byte) (instances map[string]string, err erro
 
 // GetConnections
 func GetConnections(integration []byte) (connections []string, err error) {
+
 	iversion := integrationVersion{}
 
 	err = json.Unmarshal(integration, &iversion)
@@ -759,6 +765,31 @@ func GetConnections(integration []byte) (connections []string, err error) {
 			if connectionParams.Key == "config" {
 				connectionName := getConnectionName(*connectionParams.Value.JsonValue)
 				connections = append(connections, connectionName)
+			}
+		}
+	}
+	return connections, err
+}
+
+// GetConnectionsWithRegion
+func GetConnectionsWithRegion(integration []byte) (connections []integrationConnection, err error) {
+
+	iversion := integrationVersion{}
+
+	err = json.Unmarshal(integration, &iversion)
+	if err != nil {
+		return connections, err
+	}
+
+	for _, taskConfig := range iversion.TaskConfigs {
+		if taskConfig.Task == "GenericConnectorTask" {
+			connectionParams := taskConfig.Parameters["config"]
+			if connectionParams.Key == "config" {
+				newConnection := integrationConnection{}
+				newConnection.Name = getConnectionName(*connectionParams.Value.JsonValue)
+				newConnection.Region = getConnectionRegion(*connectionParams.Value.JsonValue)
+
+				connections = append(connections, newConnection)
 			}
 		}
 	}
@@ -1219,4 +1250,26 @@ func getConnectionName(jsonValue string) string {
 	_ = json.Unmarshal([]byte(jsonValue), &c)
 	name := c.Connection.ConnectionName
 	return name[strings.LastIndex(name, "/")+1:]
+}
+
+// getConnectionRegion
+func getConnectionRegion(jsonValue string) string {
+	type connection struct {
+		ConnectionName    string `json:"connectionName,omitempty"`
+		ServiceName       string `json:"serviceName,omitempty"`
+		ConnectionVersion string `json:"connectionVersion,omitempty"`
+	}
+
+	type config struct {
+		Type       string     `json:"@type,omitempty"`
+		Connection connection `json:"connection,omitempty"`
+		Operation  string     `json:"operation,omitempty"`
+	}
+
+	c := config{}
+
+	_ = json.Unmarshal([]byte(jsonValue), &c)
+	name := c.Connection.ConnectionName
+	r := regexp.MustCompile(`.*/locations/(.*)/connections/.*`)
+	return r.FindStringSubmatch(name)[1]
 }

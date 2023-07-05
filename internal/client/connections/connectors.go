@@ -761,6 +761,94 @@ func Get(name string, view string, minimal bool, overrides bool) (respBody []byt
 	return respBody, err
 }
 
+// Get Connection details With region
+func GetConnectionDetailWithRegion(name string, region string, view string, minimal bool, overrides bool) (respBody []byte, err error) {
+	var connectionPayload []byte
+	u, _ := url.Parse(apiclient.GetBaseConnectorURLWithRegion(region))
+	q := u.Query()
+	if view != "" {
+		q.Set("view", view)
+	}
+	u.Path = path.Join(u.Path, name)
+
+	if minimal {
+		apiclient.ClientPrintHttpResponse.Set(false)
+	}
+
+	respBody, err = apiclient.HttpClient(u.String())
+
+	if minimal {
+		c := connection{}
+		err := json.Unmarshal(respBody, &c)
+		if err != nil {
+			return nil, err
+		}
+
+		c.ConnectorDetails = new(connectorDetails)
+		c.ConnectorDetails.Name = getConnectorName(*c.ConnectorVersion)
+		c.ConnectorDetails.Version = getConnectorVersion(*c.ConnectorVersion)
+		c.ConnectorDetails.Provider = getConnectorProvider(*c.ConnectorVersion)
+		c.ConnectorVersion = nil
+		c.Name = nil
+		if overrides {
+			switch c.AuthConfig.AuthType {
+			case "USER_PASSWORD":
+				p := c.AuthConfig.UserPassword.Password.SecretVersion
+				c.AuthConfig.UserPassword.PasswordDetails = new(secretDetails)
+				c.AuthConfig.UserPassword.PasswordDetails.SecretName = strings.Split(p, "/")[3]
+				c.AuthConfig.UserPassword.Password = nil
+			case "OAUTH2_JWT_BEARER":
+				p := c.AuthConfig.Oauth2JwtBearer.ClientKey.SecretVersion
+				c.AuthConfig.Oauth2JwtBearer.ClientKeyDetails = new(secretDetails)
+				c.AuthConfig.Oauth2JwtBearer.ClientKeyDetails.SecretName = strings.Split(p, "/")[3]
+				c.AuthConfig.Oauth2JwtBearer.ClientKey = nil
+			}
+			if isGoogleConnection(c.ConnectorDetails.Name) {
+				for _, configVar := range c.ConfigVariables {
+					if configVar.Key == "project_id" {
+						*configVar.StringValue = "$PROJECT_ID$"
+					}
+				}
+			}
+			if c.SslConfig != nil {
+				if c.SslConfig.PrivateServerCertificate != nil && c.SslConfig.PrivateServerCertificate.SecretVersion != nil {
+					p := *c.SslConfig.PrivateServerCertificate.SecretVersion
+					c.SslConfig.PrivateServerCertificate.SecretDetails = new(secretDetails)
+					c.SslConfig.PrivateServerCertificate.SecretDetails.SecretName = strings.Split(p, "/")[3]
+					c.SslConfig.PrivateServerCertificate.SecretVersion = nil
+				}
+				if c.SslConfig.ClientCertificate != nil && c.SslConfig.ClientCertificate.SecretVersion != nil {
+					p := *c.SslConfig.ClientCertificate.SecretVersion
+					c.SslConfig.ClientCertificate.SecretDetails = new(secretDetails)
+					c.SslConfig.ClientCertificate.SecretDetails.SecretName = strings.Split(p, "/")[3]
+					c.SslConfig.ClientCertificate.SecretVersion = nil
+				}
+				if c.SslConfig.ClientPrivateKey != nil && c.SslConfig.ClientPrivateKey.SecretVersion != nil {
+					p := *c.SslConfig.ClientPrivateKey.SecretVersion
+					c.SslConfig.ClientPrivateKey.SecretDetails = new(secretDetails)
+					c.SslConfig.ClientPrivateKey.SecretDetails.SecretName = strings.Split(p, "/")[3]
+					c.SslConfig.ClientPrivateKey.SecretVersion = nil
+				}
+				if c.SslConfig.ClientPrivateKeyPass != nil && c.SslConfig.ClientPrivateKeyPass.SecretVersion != nil {
+					p := *c.SslConfig.ClientPrivateKeyPass.SecretVersion
+					c.SslConfig.ClientPrivateKeyPass.SecretDetails = new(secretDetails)
+					c.SslConfig.ClientPrivateKeyPass.SecretDetails.SecretName = strings.Split(p, "/")[3]
+					c.SslConfig.ClientPrivateKeyPass.SecretVersion = nil
+				}
+			}
+		}
+		connectionPayload, err = json.Marshal(c)
+		if err != nil {
+			return nil, err
+		}
+		apiclient.ClientPrintHttpResponse.Set(apiclient.GetCmdPrintHttpResponseSetting()) // set original print output
+		apiclient.PrettyPrint(connectionPayload)
+
+		return connectionPayload, err
+	}
+	return respBody, err
+}
+
 // List
 func List(pageSize int, pageToken string, filter string, orderBy string) (respBody []byte, err error) {
 	u, _ := url.Parse(apiclient.GetBaseConnectorURL())

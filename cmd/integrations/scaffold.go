@@ -159,7 +159,7 @@ var ScaffoldCmd = &cobra.Command{
 			}
 		}
 
-		connectors, err := integrations.GetConnections(integrationBody)
+		connectors, err := integrations.GetConnectionsWithRegion(integrationBody)
 		if err != nil {
 			return err
 		}
@@ -170,7 +170,7 @@ var ScaffoldCmd = &cobra.Command{
 				return err
 			}
 			for _, connector := range connectors {
-				connectionResp, err := connections.Get(connector, "", true, true)
+				connectionResp, err := connections.GetConnectionDetailWithRegion(connector.Name, connector.Region, "", true, true)
 				if err != nil {
 					return err
 				}
@@ -180,7 +180,7 @@ var ScaffoldCmd = &cobra.Command{
 					return err
 				}
 				if err = apiclient.WriteByteArrayToFile(
-					path.Join(folder, "connectors", connector+".json"),
+					path.Join(folder, "connectors", connector.Name+".json"),
 					false,
 					connectionResp); err != nil {
 					return err
