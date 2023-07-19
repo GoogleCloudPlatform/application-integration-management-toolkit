@@ -328,6 +328,23 @@ func GetBaseConnectorURL() (connectorUrl string) {
 	}
 }
 
+// GetBaseConnectorURLWithRegion
+func GetBaseConnectorURLWithRegion(region string) (connectorUrl string) {
+	if options.ProjectID == "" || region == "" {
+		return ""
+	}
+	switch options.Api {
+	case PROD:
+		return fmt.Sprintf(connectorBaseURL, GetProjectID(), region)
+	case STAGING:
+		return fmt.Sprintf(connectorStagingBaseURL, GetProjectID(), region)
+	case AUTOPUSH:
+		return fmt.Sprintf(connectorAutoPushBaseURL, GetProjectID(), region)
+	default:
+		return fmt.Sprintf(connectorBaseURL, GetProjectID(), region)
+	}
+}
+
 // GetBaseConnectorOperationsURL
 func GetBaseConnectorOperationsrURL() (connectorUrl string) {
 	if options.ProjectID == "" || options.Region == "" {
