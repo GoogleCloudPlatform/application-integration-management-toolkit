@@ -131,7 +131,7 @@ func initConfig() {
 	debug := false
 	var skipCache bool
 
-	if os.Getenv("INTEGRATIONECLI_DEBUG") == ENABLED || verbose {
+	if os.Getenv("INTEGRATIONCLI_DEBUG") == ENABLED || verbose {
 		debug = true
 	}
 
