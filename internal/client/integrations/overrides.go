@@ -35,14 +35,15 @@ type overrides struct {
 }
 
 type triggeroverrides struct {
-	TriggerNumber                string  `json:"triggerNumber,omitempty"`
-	TriggerType                  string  `json:"triggerType,omitempty"`
-	ProjectId                    *string `json:"projectId,omitempty"`
-	TopicName                    *string `json:"topicName,omitempty"`
-	APIPath                      *string `json:"apiPath,omitempty"`
-	CloudSchedulerServiceAccount *string `json:"cloudSchedulerServiceAccount,omitempty"`
-	CloudSchedulerLocation       *string `json:"cloudSchedulerLocation,omitempty"`
-	CloudSchedulerCronTab        *string `json:"cloudSchedulerCronTab,omitempty"`
+	TriggerNumber                string            `json:"triggerNumber,omitempty"`
+	TriggerType                  string            `json:"triggerType,omitempty"`
+	ProjectId                    *string           `json:"projectId,omitempty"`
+	TopicName                    *string           `json:"topicName,omitempty"`
+	APIPath                      *string           `json:"apiPath,omitempty"`
+	Properties                   map[string]string `json:"properties,omitempty"`
+	CloudSchedulerServiceAccount *string           `json:"cloudSchedulerServiceAccount,omitempty"`
+	CloudSchedulerLocation       *string           `json:"cloudSchedulerLocation,omitempty"`
+	CloudSchedulerCronTab        *string           `json:"cloudSchedulerCronTab,omitempty"`
 }
 
 type connectionoverrides struct {
@@ -89,6 +90,7 @@ func mergeOverrides(eversion integrationVersionExternal, o overrides) (integrati
 					trigger.Properties["Subscription name"] = *triggerOverride.ProjectId + "_" + *triggerOverride.TopicName
 				case "API":
 					trigger.TriggerId = apiTrigger + *triggerOverride.APIPath
+					trigger.Properties = triggerOverride.Properties
 				case "CLOUD_SCHEDULER":
 					trigger.CloudSchedulerConfig.ServiceAccountEmail = *triggerOverride.CloudSchedulerServiceAccount
 					trigger.CloudSchedulerConfig.CronTab = *triggerOverride.CloudSchedulerCronTab

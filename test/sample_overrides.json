@@ -1,4 +1,12 @@
 {
+    "trigger_overrides":[{
+        "triggerType": "API",
+        "triggerNumber": "1",
+        "apiPath": "nandan_API_1",
+        "properties": {
+            "Trigger name": "nandan_API_1"
+        }
+    }],
     "task_overrides": [{
         "taskId": "1",
         "task": "GenericRestV2Task",
