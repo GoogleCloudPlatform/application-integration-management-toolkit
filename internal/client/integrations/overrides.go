@@ -86,15 +86,29 @@ func mergeOverrides(eversion integrationVersionExternal, o overrides) (integrati
 			if triggerOverride.TriggerNumber == trigger.TriggerNumber {
 				switch trigger.TriggerType {
 				case "CLOUD_PUBSUB_EXTERNAL":
+					if triggerOverride.ProjectId == nil || triggerOverride.TopicName == nil {
+						return eversion, fmt.Errorf("projectid and topicName are mandatory in the overrides")
+					}
 					trigger.TriggerId = pubsubTrigger + *triggerOverride.ProjectId + "_" + *triggerOverride.TopicName
 					trigger.Properties["Subscription name"] = *triggerOverride.ProjectId + "_" + *triggerOverride.TopicName
 				case "API":
+					if triggerOverride.APIPath == nil {
+						return eversion, fmt.Errorf("the field apiPath is missing from the API Trigger in overrides")
+					}
 					trigger.TriggerId = apiTrigger + *triggerOverride.APIPath
-					trigger.Properties = triggerOverride.Properties
+					if len(triggerOverride.Properties) > 0 {
+						trigger.Properties = triggerOverride.Properties
+					}
 				case "CLOUD_SCHEDULER":
-					trigger.CloudSchedulerConfig.ServiceAccountEmail = *triggerOverride.CloudSchedulerServiceAccount
-					trigger.CloudSchedulerConfig.CronTab = *triggerOverride.CloudSchedulerCronTab
-					trigger.CloudSchedulerConfig.Location = *triggerOverride.CloudSchedulerLocation
+					if triggerOverride.CloudSchedulerServiceAccount != nil {
+						trigger.CloudSchedulerConfig.ServiceAccountEmail = *triggerOverride.CloudSchedulerServiceAccount
+					}
+					if triggerOverride.CloudSchedulerCronTab != nil {
+						trigger.CloudSchedulerConfig.CronTab = *triggerOverride.CloudSchedulerCronTab
+					}
+					if triggerOverride.CloudSchedulerLocation != nil {
+						trigger.CloudSchedulerConfig.Location = *triggerOverride.CloudSchedulerLocation
+					}
 				default:
 					clilog.Warning.Printf("unsupported trigger type %s\n", trigger.TriggerType)
 				}
