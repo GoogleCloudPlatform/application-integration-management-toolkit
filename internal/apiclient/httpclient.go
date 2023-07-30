@@ -58,10 +58,6 @@ func HttpClient(params ...string) (respBody []byte, err error) {
 		return nil, err
 	}
 
-	if DryRun() {
-		return nil, nil
-	}
-
 	clilog.Debug.Println("Connecting to: ", params[0])
 	ctx := context.Background()
 
@@ -98,7 +94,7 @@ func HttpClient(params ...string) (respBody []byte, err error) {
 	clilog.Debug.Println("Content-Type : ", contentType)
 	req.Header.Set("Content-Type", contentType)
 
-	if options.DebugLog {
+	if DryRun() {
 		return nil, nil
 	}
 
