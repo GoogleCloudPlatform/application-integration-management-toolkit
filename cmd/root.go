@@ -46,11 +46,21 @@ var RootCmd = &cobra.Command{
 	Short: "Utility to work with Integration & Connectors",
 	Long:  "This command lets you interact with Integration and Connector APIs.",
 	PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
-		cmdServiceAccount := cmd.Flag("account")
-		cmdToken := cmd.Flag("token")
+		cmdServiceAccount := cmd.Flag("account").Value.String()
+		cmdToken := cmd.Flag("token").Value.String()
 
-		apiclient.SetServiceAccount(cmdServiceAccount.Value.String())
-		apiclient.SetIntegrationToken(cmdToken.Value.String())
+		if metadataToken && (cmdServiceAccount != "" || cmdToken != "") {
+			return fmt.Errorf("metadata-token cannot be used with token or account flags")
+		}
+
+		if cmdServiceAccount != "" && cmdToken != "" {
+			return fmt.Errorf("token and account flags cannot be used together")
+		}
+
+		if !metadataToken {
+			apiclient.SetServiceAccount(cmdServiceAccount)
+			apiclient.SetIntegrationToken(cmdToken)
+		}
 
 		if !disableCheck {
 			if ok, _ := apiclient.TestAndUpdateLastCheck(); !ok {
@@ -65,6 +75,10 @@ var RootCmd = &cobra.Command{
 		}
 
 		apiclient.SetAPI(api)
+
+		if metadataToken {
+			return apiclient.GetDefaultAccessToken()
+		}
 
 		_ = apiclient.SetAccessToken()
 
@@ -81,8 +95,8 @@ func Execute() {
 }
 
 var (
-	disableCheck, printOutput, noOutput, suppressWarnings, verbose bool
-	api                                                            apiclient.API
+	disableCheck, printOutput, noOutput, suppressWarnings, verbose, metadataToken bool
+	api                                                                           apiclient.API
 )
 
 const ENABLED = "true"
@@ -112,6 +126,9 @@ func init() {
 
 	RootCmd.PersistentFlags().BoolVarP(&verbose, "verbose", "",
 		false, "Enable verbose output from integrationcli")
+
+	RootCmd.PersistentFlags().BoolVarP(&metadataToken, "metadata-token", "",
+		false, "Metadata OAuth2 access token")
 
 	RootCmd.PersistentFlags().Var(&api, "api", "Sets the control plane API. Must be one of prod, "+
 		"staging or autopush; default is prod")
@@ -149,11 +166,12 @@ func initConfig() {
 	}
 
 	apiclient.NewIntegrationClient(apiclient.IntegrationClientOptions{
-		TokenCheck:  true,
-		PrintOutput: printOutput,
-		NoOutput:    noOutput,
-		DebugLog:    debug,
-		SkipCache:   skipCache,
+		TokenCheck:    true,
+		PrintOutput:   printOutput,
+		NoOutput:      noOutput,
+		DebugLog:      debug,
+		SkipCache:     skipCache,
+		MetadataToken: metadataToken,
 	})
 }
 

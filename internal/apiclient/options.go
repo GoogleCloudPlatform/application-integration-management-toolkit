@@ -61,6 +61,7 @@ type IntegrationClientOptions struct {
 	NoOutput           bool   // Disable all statements to stdout
 	SuppressWarnings   bool   // Disable printing of warnings to stdout
 	ProxyUrl           string // use a proxy url
+	MetadataToken      bool   // use metadata outh2 token
 	ExportToFile       string // determine of the contents should be written to file
 	ConflictsAreErrors bool   // treat statusconflict as an error
 }
@@ -463,4 +464,14 @@ func SetAPI(a API) {
 // GetAPI
 func GetAPI() API {
 	return options.Api
+}
+
+// GetMetadataToken
+func GetMetadataToken() bool {
+	return options.MetadataToken
+}
+
+// SetMetadataToken
+func SetMetadataToken(b bool) {
+	options.MetadataToken = b
 }
