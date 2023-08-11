@@ -58,10 +58,6 @@ func HttpClient(params ...string) (respBody []byte, err error) {
 		return nil, err
 	}
 
-	if DryRun() {
-		return nil, nil
-	}
-
 	clilog.Debug.Println("Connecting to: ", params[0])
 	ctx := context.Background()
 
@@ -69,7 +65,8 @@ func HttpClient(params ...string) (respBody []byte, err error) {
 	case 1:
 		req, err = http.NewRequestWithContext(ctx, http.MethodGet, params[0], nil)
 	case 2:
-		clilog.Debug.Println("Payload: ", params[1])
+		payload, _ := PrettifyJson([]byte(params[1]))
+		clilog.Debug.Println("Payload: ", string(payload))
 		req, err = http.NewRequestWithContext(ctx, http.MethodPost, params[0], bytes.NewBuffer([]byte(params[1])))
 	case 3:
 		if req, err = getRequest(params); err != nil {
@@ -96,6 +93,10 @@ func HttpClient(params ...string) (respBody []byte, err error) {
 
 	clilog.Debug.Println("Content-Type : ", contentType)
 	req.Header.Set("Content-Type", contentType)
+
+	if DryRun() {
+		return nil, nil
+	}
 
 	resp, err := client.Do(req)
 	if err != nil {
