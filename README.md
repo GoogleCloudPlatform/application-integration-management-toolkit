@@ -36,6 +36,14 @@ region=<set region here>
 integrationcli integrations list -p $project -r $region -t $token
 ```
 
+### Metadata Tokens
+
+If you are using `integrationcli` on Cloud Shell, GCE instances, Cloud Build, then you can use the metadata to get the access token
+
+```sh
+integrationcli integrations list -p $project -r $region --metadata-token
+```
+
 ### Set Preferences
 If you are using the same GCP project for Integration, then consider setting up preferences so they don't have to be included in every command
 
