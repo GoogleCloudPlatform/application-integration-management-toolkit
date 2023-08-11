@@ -43,11 +43,9 @@ steps:
   args:
     - -c
     - |
-      gcloud auth print-access-token > /tmp/token
-
       #setup preferences
-      /tmp/integrationcli prefs set integrationcli prefs set --nocheck=true --reg=$LOCATION --proj=$PROJECT_ID
-      /tmp/integrationcli token cache -t $(cat /tmp/token)
+      /integrationcli prefs set integrationcli prefs set --nocheck=true --reg=$LOCATION --proj=$PROJECT_ID
+      /integrationcli token cache --metadata-token
 
       if [ ${_DEFAULT_SA} = "false" ]; then
         echo " --sa ${_SERVICE_ACCOUNT_NAME}" >> /tmp/cmd
@@ -61,7 +59,7 @@ steps:
         echo " --g=true" >> /tmp/cmd
       fi
 
-      /tmp/integrationcli integrations apply -f . -w ${_WAIT} $(cat /tmp/cmd)
+      /integrationcli integrations apply -f . -w ${_WAIT} $(cat /tmp/cmd)
 
 #the name of the service account  to use when setting up the connector
 substitutions:
