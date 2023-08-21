@@ -91,6 +91,13 @@ token=$(gcloud auth print-access-token)
 integrationcli token cache -t $token
 ```
 
+or
+
+```bash
+integrationcli token cache --metadata-token
+```
+
+
 ## Available Commands
 
 Here is a [list](./docs/integrationcli.md) of available commands
@@ -113,12 +120,6 @@ Please see [here](./cicd/README.md) for details on how to automate deployments v
 * Container image for the CLI
 ```
 docker pull us-docker.pkg.dev/appintegration-toolkit/images/integrationcli:latest
-```
-
-* Container image for cloud build
-
-```
-docker pull us-docker.pkg.dev/appintegration-toolkit/images/integrationcli-builder:latest
 ```
 
 ## Creating Integration Connectors
@@ -287,7 +288,7 @@ MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEQBXcARDlva9s89a5299yn/VboBdd
 9bDj+j7FVYyzKAufqC9kaCR3naZ3JIAFYjxrXF0GlRjKzJU4ubriT4P6zQ==
 -----END PUBLIC KEY-----
 
-cosign verify --key=cosign.pub us-docker.pkg.dev/appintegration-toolkit/images/integrationcli-builder:latest
+cosign verify --key=cosign.pub us-docker.pkg.dev/appintegration-toolkit/images/integrationcli:latest
 ```
 
 ___
