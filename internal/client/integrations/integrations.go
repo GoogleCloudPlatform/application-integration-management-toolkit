@@ -1202,6 +1202,8 @@ func convertInternalToExternal(internalVersion integrationVersion) (externalVers
 		externalVersion.UserLabel = new(string)
 		*externalVersion.UserLabel = *internalVersion.UserLabel
 	}
+	externalVersion.ErrorCatcherConfigs = internalVersion.ErrorCatcherConfigs
+	externalVersion.DatabasePersistencePolicy = internalVersion.DatabasePersistencePolicy
 	return externalVersion
 }
 
