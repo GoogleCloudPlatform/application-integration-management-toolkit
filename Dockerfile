@@ -30,12 +30,12 @@ RUN go mod download
 RUN date +%FT%H:%I:%M+%Z > /tmp/date
 RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -trimpath -buildvcs=true -a -gcflags='all="-l"' -ldflags='-s -w -extldflags "-static" -X main.version='${TAG}' -X main.commit='${COMMIT}' -X main.date='$(cat /tmp/date) -o /go/bin/integrationcli /go/src/integrationcli/main.go
 
-FROM ghcr.io/jqlang/jq:latest as jq
-COPY --from=jq /jq /usr/local/bin/jq
+FROM us-docker.pkg.dev/appintegration-toolkit/internal/jq:latest as jq
 
 # use debug because it includes busybox
 FROM gcr.io/distroless/static-debian11:debug
 COPY --from=builder /go/bin/integrationcli /usr/local/bin/integrationcli
+COPY --from=jq /jq /usr/local/bin/jq
 COPY LICENSE.txt /
 COPY third-party-licenses.txt /
 
