@@ -50,6 +50,10 @@ var PatchCmd = &cobra.Command{
 			return err
 		}
 
+		if len(updateMask) == 0 {
+			updateMask = []string{"destinationConfigs", "description", "nodeConfig"}
+		}
+
 		_, err = connections.Patch(name, content, updateMask)
 		return err
 	},
