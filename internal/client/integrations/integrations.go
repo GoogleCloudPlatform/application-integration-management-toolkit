@@ -70,6 +70,8 @@ type integrationVersion struct {
 	UserLabel                     *string                  `json:"userLabel,omitempty"`
 	DatabasePersistencePolicy     string                   `json:"databasePersistencePolicy,omitempty,default:DATABASE_PERSISTENCE_POLICY_UNSPECIFIED"`
 	ErrorCatcherConfigs           []errorCatcherConfig     `json:"errorCatcherConfigs,omitempty"`
+	RunAsServiceAccount           string                   `json:"runAsServiceAccount,omitempty"`
+	ParentTemplateId              string                   `json:"parentTemplateId,omitempty"`
 }
 
 type integrationVersionExternal struct {
@@ -81,6 +83,8 @@ type integrationVersionExternal struct {
 	UserLabel                 *string              `json:"userLabel,omitempty"`
 	DatabasePersistencePolicy string               `json:"databasePersistencePolicy,omitempty,default:DATABASE_PERSISTENCE_POLICY_UNSPECIFIED"`
 	ErrorCatcherConfigs       []errorCatcherConfig `json:"errorCatcherConfigs,omitempty"`
+	RunAsServiceAccount       string               `json:"runAsServiceAccount,omitempty"`
+	ParentTemplateId          string               `json:"parentTemplateId,omitempty"`
 }
 
 type listbasicIntegrationVersions struct {
@@ -163,6 +167,7 @@ type taskconfig struct {
 	FailurePolicy                *failurePolicy            `json:"failurePolicy,omitempty"`
 	SynchronousCallFailurePolicy *failurePolicy            `json:"synchronousCallFailurePolicy,omitempty"`
 	ErrorCatcherId               string                    `json:"errorCatcherId,omitempty"`
+	ExternalTaskType             string                    `json:"externalTaskType,omitempty"`
 }
 
 type errorCatcherConfig struct {
