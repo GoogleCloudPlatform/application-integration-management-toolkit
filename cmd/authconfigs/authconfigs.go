@@ -39,4 +39,5 @@ func init() {
 	Cmd.AddCommand(ListCmd)
 	Cmd.AddCommand(ExportCmd)
 	Cmd.AddCommand(CreateCmd)
+	Cmd.AddCommand(PatchCmd)
 }
