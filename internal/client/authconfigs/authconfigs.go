@@ -21,6 +21,7 @@ import (
 	"path"
 	"path/filepath"
 	"strconv"
+	"strings"
 
 	"internal/apiclient"
 
@@ -259,6 +260,26 @@ func Export(folder string) (err error) {
 	}
 
 	return nil
+}
+
+func Patch(name string, content []byte, updateMask []string) (respBody []byte, err error) {
+	a := authConfig{}
+	if err = json.Unmarshal(content, &a); err != nil {
+		return nil, err
+	}
+
+	u, _ := url.Parse(apiclient.GetBaseConnectorURL())
+
+	if len(updateMask) != 0 {
+		updates := strings.Join(updateMask, ",")
+		q := u.Query()
+		q.Set("updateMask", updates)
+		u.RawQuery = q.Encode()
+	}
+
+	u.Path = path.Join(u.Path, name)
+
+	return apiclient.HttpClient(u.String(), string(content), "PATCH")
 }
 
 // convertInternalToExternal
