@@ -151,6 +151,7 @@ type triggerconfig struct {
 	AlertConfig              []map[string]interface{} `json:"alterConfig,omitempty"`
 	Properties               map[string]string        `json:"properties,omitempty"`
 	CloudSchedulerConfig     *cloudSchedulerConfig    `json:"cloudSchedulerConfig,omitempty"`
+	ErrorCatcherId           string                   `json:"errorCatcherId,omitempty"`
 }
 
 type taskconfig struct {
