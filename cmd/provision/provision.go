@@ -46,7 +46,7 @@ var Cmd = &cobra.Command{
 			ok := re.Match([]byte(cloudKMS))
 			if !ok {
 				return fmt.Errorf("CloudKMS key must be of the format " +
-					"projects/{project}/locations/{location}/keyRings/{test}/cryptoKeys/{cryptoKey}/cryptoKeyVersions/{cryptoKeyVersion}")
+					"projects/{project}/locations/{location}/keyRings/{keyRing}/cryptoKeys/{cryptoKey}/cryptoKeyVersions/{cryptoKeyVersion}")
 			}
 		}
 
