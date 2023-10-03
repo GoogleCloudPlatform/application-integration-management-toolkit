@@ -29,6 +29,7 @@ import (
 	"github.com/GoogleCloudPlatform/application-integration-management-toolkit/cmd/endpoints"
 	"github.com/GoogleCloudPlatform/application-integration-management-toolkit/cmd/integrations"
 	"github.com/GoogleCloudPlatform/application-integration-management-toolkit/cmd/preferences"
+	"github.com/GoogleCloudPlatform/application-integration-management-toolkit/cmd/provision"
 	"github.com/GoogleCloudPlatform/application-integration-management-toolkit/cmd/sfdcchannels"
 	"github.com/GoogleCloudPlatform/application-integration-management-toolkit/cmd/sfdcinstances"
 	"github.com/GoogleCloudPlatform/application-integration-management-toolkit/cmd/token"
@@ -142,6 +143,7 @@ func init() {
 	RootCmd.AddCommand(sfdcinstances.Cmd)
 	RootCmd.AddCommand(sfdcchannels.Cmd)
 	RootCmd.AddCommand(endpoints.Cmd)
+	RootCmd.AddCommand(provision.Cmd)
 }
 
 func initConfig() {
