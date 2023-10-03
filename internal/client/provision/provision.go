@@ -16,11 +16,12 @@ package provision
 
 import (
 	"fmt"
-	"internal/apiclient"
 	"net/url"
 	"path"
 	"strconv"
 	"strings"
+
+	"internal/apiclient"
 )
 
 // Provision
@@ -43,7 +44,6 @@ func Provision(cloudkms string, samples bool, gmek bool, serviceAccount string) 
 	u.Path = path.Join(u.Path, "client:provision")
 
 	payload := "{" + strings.Join(provStr, ",") + "}"
-	fmt.Println(payload)
 	respBody, err = apiclient.HttpClient(u.String(), payload)
 	return respBody, err
 }

@@ -16,9 +16,10 @@ package provision
 
 import (
 	"fmt"
+	"regexp"
+
 	"internal/apiclient"
 	"internal/client/provision"
-	"regexp"
 
 	"github.com/spf13/cobra"
 )
