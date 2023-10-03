@@ -33,6 +33,7 @@ internal/client/authconfigs,Unknown,Unknown
 internal/client/certificates,Unknown,Unknown
 internal/client/connections,Unknown,Unknown
 internal/client/integrations,Unknown,Unknown
+internal/client/provision,Unknown,Unknown
 internal/client/sfdc,Unknown,Unknown
 internal/clilog,Unknown,Unknown
 internal/cloudkms,Unknown,Unknown
