@@ -42,11 +42,13 @@ var Cmd = &cobra.Command{
 		serviceAccount := cmd.Flag("service-account").Value.String()
 
 		if cloudKMS != "" {
-			re := regexp.MustCompile(`projects\/([a-zA-Z0-9_-]+)\/locations\/([a-zA-Z0-9_-]+)\/keyRings\/([a-zA-Z0-9_-]+)\/cryptoKeys\/([a-zA-Z0-9_-]+)\/cryptoKeyVersions\/([0-9]+)`)
+			re := regexp.MustCompile(`projects\/([a-zA-Z0-9_-]+)\/locations\/([a-zA-Z0-9_-]+)\/` +
+				`keyRings\/([a-zA-Z0-9_-]+)\/cryptoKeys\/([a-zA-Z0-9_-]+)\/cryptoKeyVersions\/([0-9]+)`)
 			ok := re.Match([]byte(cloudKMS))
 			if !ok {
 				return fmt.Errorf("CloudKMS key must be of the format " +
-					"projects/{project}/locations/{location}/keyRings/{keyRing}/cryptoKeys/{cryptoKey}/cryptoKeyVersions/{cryptoKeyVersion}")
+					"projects/{project}/locations/{location}/keyRings/{keyRing}/cryptoKeys/{cryptoKey}" +
+					"/cryptoKeyVersions/{cryptoKeyVersion}")
 			}
 		}
 
