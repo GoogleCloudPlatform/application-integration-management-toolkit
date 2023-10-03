@@ -757,7 +757,6 @@ func GetSfdcInstances(integration []byte) (instances map[string]string, err erro
 
 // GetConnections
 func GetConnections(integration []byte) (connections []string, err error) {
-
 	iversion := integrationVersion{}
 
 	err = json.Unmarshal(integration, &iversion)
@@ -779,7 +778,6 @@ func GetConnections(integration []byte) (connections []string, err error) {
 
 // GetConnectionsWithRegion
 func GetConnectionsWithRegion(integration []byte) (connections []integrationConnection, err error) {
-
 	iversion := integrationVersion{}
 
 	err = json.Unmarshal(integration, &iversion)
