@@ -41,7 +41,7 @@ func Provision(cloudkms string, samples bool, gmek bool, serviceAccount string) 
 	provStr = append(provStr, "\"createSampleWorkflows\":"+strconv.FormatBool(samples))
 	provStr = append(provStr, "\"provisionGmek\":"+strconv.FormatBool(gmek))
 
-	u.Path = path.Join(u.Path, "client:provision")
+	u.Path = path.Join(u.Path, "clients:provision")
 
 	payload := "{" + strings.Join(provStr, ",") + "}"
 	respBody, err = apiclient.HttpClient(u.String(), payload)
