@@ -60,6 +60,8 @@ NAME="integrationcli_$INTEGRATIONCLI_VERSION"
 
 cd "$tmp" || exit
 URL="https://github.com/GoogleCloudPlatform/application-integration-management-toolkit/releases/download/${INTEGRATIONCLI_VERSION}/integrationcli_${OSEXT}_${INTEGRATIONCLI_ARCH}.zip"
+SIG_URL="https://github.com/GoogleCloudPlatform/application-integration-management-toolkit/releases/download/${INTEGRATIONCLI_VERSION}/integrationcli_${OSEXT}_${INTEGRATIONCLI_ARCH}.zip.sig"
+COSIGN_PUBLIC_KEY="https://raw.githubusercontent.com/GoogleCloudPlatform/application-integration-management-toolkit/main/cosign.pub"
 
 download_cli() {
   printf "\nDownloading %s from %s ...\n" "$NAME" "$URL"
@@ -69,6 +71,25 @@ download_cli() {
   fi
   curl -fsLO -H 'Cache-Control: no-cache, no-store' "$URL"
   filename="integrationcli_${OSEXT}_${INTEGRATIONCLI_ARCH}.zip"
+  # Check if cosign is installed
+  set +e # disable exit on error
+  cosign version 2>&1 >/dev/null
+  RESULT=$?
+  set -e # re-enable exit on error
+  if [ $RESULT -eq 0 ]; then
+    echo "Verifying the signature of the binary " "$filename"
+    echo "Downloading the cosign public key"
+    curl -fsLO -H 'Cache-Control: no-cache, no-store' "$COSIGN_PUBLIC_KEY"
+    echo "Downloading the signature file " "$SIG_URL"
+    curl -fsLO -H 'Cache-Control: no-cache, no-store' "$SIG_URL"
+    sig_filename="integrationcli_${OSEXT}_${INTEGRATIONCLI_ARCH}.zip.sig"
+    echo "Verifying the signature"
+    cosign verify-blob --key cosign.pub --signature "$sig_filename" "$filename"
+    rm "$sig_filename"
+    rm cosign.pub
+  else
+    echo "cosign is not installed, skipping signature verification"
+  fi
   unzip "${filename}"
   rm "${filename}"
 }
