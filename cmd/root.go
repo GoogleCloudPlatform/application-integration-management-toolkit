@@ -50,17 +50,20 @@ var RootCmd = &cobra.Command{
 		cmdServiceAccount := cmd.Flag("account").Value.String()
 		cmdToken := cmd.Flag("token").Value.String()
 
+		if metadataToken && defaultToken {
+			return fmt.Errorf("metadata-token and default-token cannot be used together")
+		}
+
 		if metadataToken && (cmdServiceAccount != "" || cmdToken != "") {
 			return fmt.Errorf("metadata-token cannot be used with token or account flags")
 		}
 
-		if cmdServiceAccount != "" && cmdToken != "" {
-			return fmt.Errorf("token and account flags cannot be used together")
+		if defaultToken && (cmdServiceAccount != "" || cmdToken != "") {
+			return fmt.Errorf("default-token cannot be used with token or account flags")
 		}
 
-		if !metadataToken {
-			apiclient.SetServiceAccount(cmdServiceAccount)
-			apiclient.SetIntegrationToken(cmdToken)
+		if cmdServiceAccount != "" && cmdToken != "" {
+			return fmt.Errorf("token and account flags cannot be used together")
 		}
 
 		if !disableCheck {
@@ -77,7 +80,16 @@ var RootCmd = &cobra.Command{
 
 		apiclient.SetAPI(api)
 
+		if !metadataToken && !defaultToken {
+			apiclient.SetServiceAccount(cmdServiceAccount)
+			apiclient.SetIntegrationToken(cmdToken)
+		}
+
 		if metadataToken {
+			return apiclient.GetMetadataAccessToken()
+		}
+
+		if defaultToken {
 			return apiclient.GetDefaultAccessToken()
 		}
 
@@ -96,8 +108,8 @@ func Execute() {
 }
 
 var (
-	disableCheck, printOutput, noOutput, suppressWarnings, verbose, metadataToken bool
-	api                                                                           apiclient.API
+	disableCheck, printOutput, noOutput, suppressWarnings, verbose, metadataToken, defaultToken bool
+	api                                                                                         apiclient.API
 )
 
 const ENABLED = "true"
@@ -130,6 +142,9 @@ func init() {
 
 	RootCmd.PersistentFlags().BoolVarP(&metadataToken, "metadata-token", "",
 		false, "Metadata OAuth2 access token")
+
+	RootCmd.PersistentFlags().BoolVarP(&defaultToken, "default-token", "",
+		false, "Use Google default application credentials access token")
 
 	RootCmd.PersistentFlags().Var(&api, "api", "Sets the control plane API. Must be one of prod, "+
 		"staging or autopush; default is prod")
