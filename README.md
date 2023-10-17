@@ -22,10 +22,10 @@ Run this script to download & install the latest version (on Linux or Darwin)
 curl -L https://raw.githubusercontent.com/GoogleCloudPlatform/application-integration-management-toolkit/main/downloadLatest.sh | sh -
 ```
 
-
 ## Getting Started
 
 ### User Tokens
+
 The simplest way to get started with integrationcli is
 
 ```sh
@@ -44,7 +44,24 @@ If you are using `integrationcli` on Cloud Shell, GCE instances, Cloud Build, th
 integrationcli integrations list -p $project -r $region --metadata-token
 ```
 
+### Google Default Application Credentials
+
+You can configure gcloud to setup/create default application credentials. These credentials can be used by `apigeecli`.
+
+```sh
+gcloud auth application-default login
+integrationcli integrations list -p $project -r $region --default-token
+```
+
+or through impersonation
+
+```sh
+gcloud auth application-default login --impersonate-service-account <SA>
+integrationcli integrations list -p $project -r $region --default-token
+```
+
 ### Set Preferences
+
 If you are using the same GCP project for Integration, then consider setting up preferences so they don't have to be included in every command
 
 ```sh
@@ -97,7 +114,6 @@ or
 integrationcli token cache --metadata-token
 ```
 
-
 ## Available Commands
 
 Here is a [list](./docs/integrationcli.md) of available commands
@@ -118,6 +134,7 @@ The following environment variables may be set to control the behavior of `integ
 Please see [here](./cicd/README.md) for details on how to automate deployments via Cloud Build. The container images for integrationcli are:
 
 * Container image for the CLI
+
 ```
 docker pull us-docker.pkg.dev/appintegration-toolkit/images/integrationcli:latest
 ```
