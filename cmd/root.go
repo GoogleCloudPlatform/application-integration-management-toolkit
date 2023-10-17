@@ -80,7 +80,7 @@ var RootCmd = &cobra.Command{
 
 		apiclient.SetAPI(api)
 
-		if !metadataToken {
+		if !metadataToken && !defaultToken {
 			apiclient.SetServiceAccount(cmdServiceAccount)
 			apiclient.SetIntegrationToken(cmdToken)
 		}
