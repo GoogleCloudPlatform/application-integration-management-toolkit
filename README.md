@@ -46,7 +46,7 @@ integrationcli integrations list -p $project -r $region --metadata-token
 
 ### Google Default Application Credentials
 
-You can configure gcloud to setup/create default application credentials. These credentials can be used by `apigeecli`.
+You can configure gcloud to setup/create default application credentials. These credentials can be used by `integrationcli`.
 
 ```sh
 gcloud auth application-default login
