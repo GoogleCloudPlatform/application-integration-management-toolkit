@@ -86,7 +86,7 @@ var RootCmd = &cobra.Command{
 		}
 
 		if metadataToken {
-			return apiclient.GetDefaultAccessToken()
+			return apiclient.GetMetadataAccessToken()
 		}
 
 		if defaultToken {
