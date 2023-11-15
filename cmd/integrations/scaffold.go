@@ -56,6 +56,7 @@ var ScaffoldCmd = &cobra.Command{
 		return apiclient.SetProjectID(cmdProject.Value.String())
 	},
 	RunE: func(cmd *cobra.Command, args []string) (err error) {
+		const jsonExt = ".json"
 		var integrationBody, overridesBody []byte
 		version := cmd.Flag("ver").Value.String()
 		name := cmd.Flag("name").Value.String()
@@ -106,7 +107,7 @@ var ScaffoldCmd = &cobra.Command{
 		}
 
 		if err = apiclient.WriteByteArrayToFile(
-			path.Join(folder, "src", name+".json"),
+			path.Join(folder, "src", name+jsonExt),
 			false,
 			integrationBody); err != nil {
 			return err
@@ -151,7 +152,7 @@ var ScaffoldCmd = &cobra.Command{
 					return err
 				}
 				if err = apiclient.WriteByteArrayToFile(
-					path.Join(folder, "authconfigs", authConfigName+".json"),
+					path.Join(folder, "authconfigs", authConfigName+jsonExt),
 					false,
 					authConfigResp); err != nil {
 					return err
@@ -180,7 +181,7 @@ var ScaffoldCmd = &cobra.Command{
 					return err
 				}
 				if err = apiclient.WriteByteArrayToFile(
-					path.Join(folder, "connectors", connector.Name+".json"),
+					path.Join(folder, "connectors", connector.Name+jsonExt),
 					false,
 					connectionResp); err != nil {
 					return err
@@ -213,14 +214,14 @@ var ScaffoldCmd = &cobra.Command{
 					channelName := getName([]byte(channel))
 					clilog.Info.Printf("Storing sfdcinstance %s\n", instanceName)
 					if err = apiclient.WriteByteArrayToFile(
-						path.Join(folder, "sfdcinstances", instanceName+".json"),
+						path.Join(folder, "sfdcinstances", instanceName+jsonExt),
 						false,
 						instanceBytes); err != nil {
 						return err
 					}
 					clilog.Info.Printf("Storing sfdcchannel %s\n", channelName)
 					if err = apiclient.WriteByteArrayToFile(
-						path.Join(folder, "sfdcchannels", instanceName+"_"+channelName+".json"),
+						path.Join(folder, "sfdcchannels", instanceName+"_"+channelName+jsonExt),
 						false,
 						channelBytes); err != nil {
 						return err
