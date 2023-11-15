@@ -47,7 +47,7 @@ func init() {
 	var name string
 
 	DelCmd.Flags().StringVarP(&name, "name", "n",
-		"", "Integration flow name")
+		"", "AuthConfig name")
 
 	_ = DelCmd.MarkFlagRequired("name")
 }

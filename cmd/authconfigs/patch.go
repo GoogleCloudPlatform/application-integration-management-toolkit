@@ -64,7 +64,7 @@ func init() {
 	PatchCmd.Flags().StringVarP(&authConfigFile, "file", "f",
 		"", "AuthConfig details JSON file path")
 	PatchCmd.Flags().StringArrayVarP(&updateMask, "update-mask", "",
-		nil, "Update mask: A list of comma separates values to update")
+		nil, "Update mask: A list of comma separated values to update")
 
 	_ = PatchCmd.MarkFlagRequired("updateMask")
 }
