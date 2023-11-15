@@ -268,7 +268,7 @@ func Patch(name string, content []byte, updateMask []string) (respBody []byte, e
 		return nil, err
 	}
 
-	u, _ := url.Parse(apiclient.GetBaseConnectorURL())
+	u, _ := url.Parse(apiclient.GetBaseIntegrationURL())
 
 	if len(updateMask) != 0 {
 		updates := strings.Join(updateMask, ",")
