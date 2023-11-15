@@ -126,7 +126,7 @@ func PrettifyJson(body []byte) (prettyJson []byte, err error) {
 	prettyJSON := bytes.Buffer{}
 	err = json.Indent(&prettyJSON, body, "", "\t")
 	if err != nil {
-		clilog.Error.Println("error parsing response: ", err)
+		clilog.Error.Printf("error parsing json response: %v, the original response was: %s\n", err, string(body))
 		return nil, err
 	}
 	return prettyJSON.Bytes(), err
