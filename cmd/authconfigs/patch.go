@@ -60,7 +60,7 @@ func init() {
 	var name string
 
 	PatchCmd.Flags().StringVarP(&name, "name", "n",
-		"", "Connection name")
+		"", "AuthConfig name")
 	PatchCmd.Flags().StringVarP(&authConfigFile, "file", "f",
 		"", "AuthConfig details JSON file path")
 	PatchCmd.Flags().StringArrayVarP(&updateMask, "update-mask", "",
