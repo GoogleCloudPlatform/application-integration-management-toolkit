@@ -12,29 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-steps:
-#publish cosign
-- name: 'gcr.io/cloud-builders/docker'
-  id: build_cosign
-  args:
-    - 'build'
-    - '-t'
-    - '${_IMAGE_NAME}:${TAG_NAME}'
-    - '-f'
-    - 'Dockerfile'
-    - '.'
-- name: 'gcr.io/cloud-builders/docker'
-  id: push_cosign
-  args: ['push', '${_IMAGE_NAME}:${TAG_NAME}']
+#Usage: https://github.com/sigstore/cosign#dockerfile
+
+FROM gcr.io/projectsigstore/cosign:latest as cosign
 
 
-#repo name
-substitutions:
-  _REPO: "images"
-  _IMAGE_NAME: "us-docker.pkg.dev/${PROJECT_ID}/${_REPO}/cosign"
-
-options:
-  machineType: E2_HIGHCPU_8
-  logging: CLOUD_LOGGING_ONLY
-  substitution_option: ALLOW_LOOSE
-  dynamic_substitutions: true
+FROM gcr.io/distroless/static-debian11:debug
+COPY --from=cosign /ko-app/cosign /usr/bin

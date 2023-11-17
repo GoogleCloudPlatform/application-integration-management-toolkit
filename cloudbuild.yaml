@@ -13,6 +13,19 @@
 # limitations under the License.
 # gcloud builds submit --config=artifact-build.yaml --project=project-name --substitutions=TAG="v0.65"
 steps:
+#publish latest cosign
+- name: 'gcr.io/cloud-builders/docker'
+  id: build_cosign
+  args:
+    - 'build'
+    - '-t'
+    - '${_IMAGE_NAME}:latest'
+    - '-f'
+    - 'Dockerfile.cosign'
+    - '.'
+- name: 'gcr.io/cloud-builders/docker'
+  id: push_cosign
+  args: ['push', '${_IMAGE_NAME}:latest']
 #publish integrationcli
 - name: 'gcr.io/cloud-builders/docker'
   id: build_integrationcli
@@ -38,7 +51,7 @@ steps:
   args: ['push', '${_IMAGE_NAME}:latest']
 
 #sign and attach integrationcli
-- name: 'gcr.io/projectsigstore/cosign:latest'
+- name: 'us-docker.pkg.dev/${PROJECT_ID}/${_REPO}/cosign:latest'
   id: sign_integrationcli
   entrypoint: 'sh'
   secretEnv: ['COSIGN_PASSWORD', 'COSIGN_PRIVATE_KEY']
