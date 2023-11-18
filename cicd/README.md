@@ -214,22 +214,6 @@ To use this encrypted file in the automation, add the following lines to cloudbu
 ```bash
 /tmp/integrationcli authconfigs create -n <auth-config-name> -e <path-to-encrypted-file> -k <cloud-kms-decryption-key-name>
 ```
-
-## Customize Cloud Builder
-
-This repo uses a custom cloud builder. The cloud builder is hosted at `us-docker.pkg.dev/appintegration-toolkit/images/integrationcli:latest`. The cloud builder can be customized from
-
-1. The [cloud-builder.yaml](../artifact-builder.yaml) file
-2. The [Dockerfile](../Dockerfile)
-
-```sh
-
-git clone https://github.com/GoogleCloudPlatform/application-integration-management-toolkit.git
-gcloud builds submit --config=artifactory-build.yaml --project=project-name
-```
-
-Be sure to modify the [artifactory-build.yaml](../artifactory-build.yaml) file to point to the appropriate repo.
-
 ___
 
 ## Support
