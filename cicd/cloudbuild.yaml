@@ -23,8 +23,7 @@ steps:
     - -c
     - |
       set -e
-      gcloud auth print-access-token > /tmp/token
-
+      
       ls -A src | sed 's/\.json'$// > /tmp/name
       echo "./src/"$(ls -A src) > /tmp/filename
 
@@ -32,7 +31,8 @@ steps:
       echo "filename: " $(cat /tmp/filename)
 
       /tmp/integrationcli prefs set integrationcli prefs set --nocheck=true --reg=$LOCATION --proj=$PROJECT_ID
-      /tmp/integrationcli token cache -t $(cat /tmp/token)
+      /integrationcli token cache --metadata-token
+
       /tmp/integrationcli integrations create -n $(cat /tmp/name) -f $(cat /tmp/filename) -u $SHORT_SHA -o ./overrides/overrides.json > /tmp/response
       echo "integration response: " $(cat /tmp/response)
       basename $(cat /tmp/response | jq -r .name) > /tmp/version
