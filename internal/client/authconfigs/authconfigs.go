@@ -277,7 +277,7 @@ func Patch(name string, content []byte, updateMask []string) (respBody []byte, e
 		u.RawQuery = q.Encode()
 	}
 
-	u.Path = path.Join(u.Path, name)
+	u.Path = path.Join(u.Path, "authConfigs", name)
 
 	return apiclient.HttpClient(u.String(), string(content), "PATCH")
 }
