@@ -65,8 +65,11 @@ func HttpClient(params ...string) (respBody []byte, err error) {
 	case 1:
 		req, err = http.NewRequestWithContext(ctx, http.MethodGet, params[0], nil)
 	case 2:
-		payload, _ := PrettifyJson([]byte(params[1]))
-		clilog.Debug.Println("Payload: ", string(payload))
+		// some POST functions don't have a body
+		if len([]byte(params[1])) > 0 {
+			payload, _ := PrettifyJson([]byte(params[1]))
+			clilog.Debug.Println("Payload: ", string(payload))
+		}
 		req, err = http.NewRequestWithContext(ctx, http.MethodPost, params[0], bytes.NewBuffer([]byte(params[1])))
 	case 3:
 		if req, err = getRequest(params); err != nil {
