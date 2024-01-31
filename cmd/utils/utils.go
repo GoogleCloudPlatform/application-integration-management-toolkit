@@ -44,8 +44,8 @@ steps:
     - -c
     - |
       #setup preferences
-      /integrationcli prefs set integrationcli prefs set --nocheck=true --reg=$LOCATION --proj=$PROJECT_ID
-      /integrationcli token cache --metadata-token
+      integrationcli prefs set integrationcli prefs set --nocheck=true --reg=$LOCATION --proj=$PROJECT_ID
+      integrationcli token cache --metadata-token
 
       if [ ${_DEFAULT_SA} = "false" ]; then
         echo " --sa ${_SERVICE_ACCOUNT_NAME}" >> /tmp/cmd
@@ -59,7 +59,7 @@ steps:
         echo " --g=true" >> /tmp/cmd
       fi
 
-      /integrationcli integrations apply -f . -w ${_WAIT} $(cat /tmp/cmd)
+      integrationcli integrations apply -f . -w ${_WAIT} $(cat /tmp/cmd)
 
 #the name of the service account  to use when setting up the connector
 substitutions:
