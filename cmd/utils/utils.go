@@ -44,6 +44,7 @@ steps:
     - -c
     - |
       #setup preferences
+      touch /tmp/cmd
       integrationcli prefs set integrationcli prefs set --nocheck=true --reg=$LOCATION --proj=$PROJECT_ID
       integrationcli token cache --metadata-token
 
