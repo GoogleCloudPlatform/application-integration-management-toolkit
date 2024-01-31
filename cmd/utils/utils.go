@@ -39,7 +39,7 @@ const cloudBuild = `# Copyright 2023 Google LLC
 steps:
 - id: 'Apply Integration scaffolding configuration'
   name: us-docker.pkg.dev/appintegration-toolkit/images/integrationcli:latest
-  entrypoint: 'bash'
+  entrypoint: 'sh'
   args:
     - -c
     - |
