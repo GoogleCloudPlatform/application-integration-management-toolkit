@@ -59,7 +59,7 @@ steps:
         echo " --g=true" >> /tmp/cmd
       fi
 
-      integrationcli integrations apply -f . -w ${_WAIT} $(cat /tmp/cmd)
+      integrationcli integrations apply -f . --wait=${_WAIT} $(cat /tmp/cmd)
 
 #the name of the service account  to use when setting up the connector
 substitutions:
