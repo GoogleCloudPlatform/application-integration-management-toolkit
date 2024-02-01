@@ -39,28 +39,21 @@ const cloudBuild = `# Copyright 2023 Google LLC
 steps:
 - id: 'Apply Integration scaffolding configuration'
   name: us-docker.pkg.dev/appintegration-toolkit/images/integrationcli:latest
-  entrypoint: 'sh'
   args:
-    - -c
-    - |
-      #setup preferences
-      touch /tmp/cmd
-      integrationcli prefs set integrationcli prefs set --nocheck=true --reg=$LOCATION --proj=$PROJECT_ID
-      integrationcli token cache --metadata-token
-
-      if [ ${_DEFAULT_SA} = "false" ]; then
-        echo " --sa ${_SERVICE_ACCOUNT_NAME}" >> /tmp/cmd
-      fi
-
-      if [ ${_ENCRYPTED} = "true" ]; then
-        echo " -k locations/$LOCATION/keyRings/${_KMS_RING_NAME}/cryptoKeys/${_KMS_KEY_NAME}" >> /tmp/cmd
-      fi
-
-      if [ ${_GRANT_PERMISSION} = "true" ]; then
-        echo " --g=true" >> /tmp/cmd
-      fi
-
-      integrationcli integrations apply -f . --wait=${_WAIT} $(cat /tmp/cmd)
+    - integrations
+    - apply
+    - -f
+    - .
+    - --wait=${_WAIT}
+    - --reg=${_LOCATION}
+    - --proj=${PROJECT_ID}
+    - --metadata-token
+    - $(cat /tmp/cmd)
+    # uncomment these as necessary
+    #- --g=${_GRANT_PERMISSIONS}
+    #- --create-secret=${_CREATE_SECRET}
+    #- -k=locations/$LOCATION/keyRings/${_KMS_RING_NAME}/cryptoKeys/${_KMS_KEY_NAME}
+    #- --sa=${_SERVICE_ACCOUNT_NAME}
 
 #the name of the service account  to use when setting up the connector
 substitutions:
