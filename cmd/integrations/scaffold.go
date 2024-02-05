@@ -244,7 +244,10 @@ var ScaffoldCmd = &cobra.Command{
 	},
 }
 
-var cloudBuild bool
+var (
+	cloudBuild bool
+	env        string
+)
 
 func init() {
 	var name, version string
@@ -261,12 +264,19 @@ func init() {
 		true, "don't generate cloud build file; default is true")
 	ScaffoldCmd.Flags().StringVarP(&folder, "folder", "f",
 		"", "Folder to generate the scaffolding")
+	ScaffoldCmd.Flags().StringVarP(&env, "env", "e",
+		"", "Environment name for the scaffolding")
 
 	_ = ScaffoldCmd.MarkFlagRequired("name")
 }
 
 func generateFolder(name string) (err error) {
-	err = os.Mkdir(path.Join(folder, name), os.ModePerm)
+	if name != "src" {
+		if env != "" {
+			folder = path.Join(folder, env)
+		}
+		err = os.Mkdir(path.Join(folder, name), os.ModePerm)
+	}
 	return err
 }
 

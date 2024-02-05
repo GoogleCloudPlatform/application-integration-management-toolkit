@@ -52,6 +52,9 @@ var ApplyCmd = &cobra.Command{
 		return apiclient.SetProjectID(cmdProject.Value.String())
 	},
 	RunE: func(cmd *cobra.Command, args []string) (err error) {
+		if env != "" {
+			folder = path.Join(folder, env)
+		}
 		if stat, err := os.Stat(folder); err != nil || !stat.IsDir() {
 			return fmt.Errorf("problem with supplied path, %w", err)
 		}
@@ -369,6 +372,8 @@ func init() {
 		"", "Service Account Project for the connection. Default is the connection's project id")
 	ApplyCmd.Flags().StringVarP(&encryptionKey, "encryption-keyid", "k",
 		"", "Cloud KMS key for decrypting Auth Config; Format = locations/*/keyRings/*/cryptoKeys/*")
+	ApplyCmd.Flags().StringVarP(&env, "env", "e",
+		"", "Environment name for the scaffolding")
 	ApplyCmd.Flags().BoolVarP(&createSecret, "create-secret", "",
 		false, "Create Secret Manager secrets when creating the connection; default is false")
 	ApplyCmd.Flags().BoolVarP(&wait, "wait", "",
