@@ -373,7 +373,7 @@ func init() {
 	ApplyCmd.Flags().StringVarP(&encryptionKey, "encryption-keyid", "k",
 		"", "Cloud KMS key for decrypting Auth Config; Format = locations/*/keyRings/*/cryptoKeys/*")
 	ApplyCmd.Flags().StringVarP(&env, "env", "e",
-		"", "Environment name for te scaffolding")
+		"", "Environment name for the scaffolding")
 	ApplyCmd.Flags().BoolVarP(&createSecret, "create-secret", "",
 		false, "Create Secret Manager secrets when creating the connection; default is false")
 	ApplyCmd.Flags().BoolVarP(&wait, "wait", "",

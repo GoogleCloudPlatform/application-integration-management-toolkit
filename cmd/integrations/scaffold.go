@@ -265,7 +265,7 @@ func init() {
 	ScaffoldCmd.Flags().StringVarP(&folder, "folder", "f",
 		"", "Folder to generate the scaffolding")
 	ScaffoldCmd.Flags().StringVarP(&env, "env", "e",
-		"", "Environment name for te scaffolding")
+		"", "Environment name for the scaffolding")
 
 	_ = ScaffoldCmd.MarkFlagRequired("name")
 }
