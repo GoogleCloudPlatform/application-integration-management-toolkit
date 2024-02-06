@@ -73,6 +73,16 @@ var ScaffoldCmd = &cobra.Command{
 			}
 		}
 
+		srcFolder := folder
+		if env != "" {
+			folder = path.Join(folder, env)
+			if err = generateFolder(folder); err != nil {
+				return err
+			}
+		}
+
+		// Get
+
 		if version != "" {
 			if integrationBody, err = integrations.Get(name, version, false, true, false); err != nil {
 				return err
@@ -97,7 +107,7 @@ var ScaffoldCmd = &cobra.Command{
 		}
 
 		clilog.Info.Printf("Storing the Integration: %s\n", name)
-		if err = generateFolder("src"); err != nil {
+		if err = generateFolder(path.Join(srcFolder, "src")); err != nil {
 			return err
 		}
 
@@ -107,7 +117,7 @@ var ScaffoldCmd = &cobra.Command{
 		}
 
 		if err = apiclient.WriteByteArrayToFile(
-			path.Join(folder, "src", name+jsonExt),
+			path.Join(srcFolder, "src", name+jsonExt),
 			false,
 			integrationBody); err != nil {
 			return err
@@ -115,7 +125,7 @@ var ScaffoldCmd = &cobra.Command{
 
 		if len(overridesBody) > 0 && string(overridesBody) != "{}" {
 			clilog.Info.Printf("Found overrides in the integration, storing the overrides file\n")
-			if err = generateFolder("overrides"); err != nil {
+			if err = generateFolder(path.Join(folder, "overrides")); err != nil {
 				return err
 			}
 			overridesBody, err = apiclient.PrettifyJson(overridesBody)
@@ -137,7 +147,7 @@ var ScaffoldCmd = &cobra.Command{
 
 		if len(authConfigUuids) > 0 {
 			clilog.Info.Printf("Found authconfigs in the integration\n")
-			if err = generateFolder("authconfigs"); err != nil {
+			if err = generateFolder(path.Join(folder, "authconfigs")); err != nil {
 				return err
 			}
 			for _, authConfigUUIDs := range authConfigUuids {
@@ -167,7 +177,7 @@ var ScaffoldCmd = &cobra.Command{
 
 		if len(connectors) > 0 {
 			clilog.Info.Printf("Found connectors in the integration\n")
-			if err = generateFolder("connectors"); err != nil {
+			if err = generateFolder(path.Join(folder, "connectors")); err != nil {
 				return err
 			}
 			for _, connector := range connectors {
@@ -201,10 +211,10 @@ var ScaffoldCmd = &cobra.Command{
 				return err
 			}
 			if len(instancesContent) > 0 {
-				if err = generateFolder("sfdcinstances"); err != nil {
+				if err = generateFolder(path.Join(folder, "sfdcinstances")); err != nil {
 					return err
 				}
-				if err = generateFolder("sfdcchannels"); err != nil {
+				if err = generateFolder(path.Join(folder, "sfdcchannels")); err != nil {
 					return err
 				}
 				for instance, channel := range instancesContent {
@@ -271,12 +281,10 @@ func init() {
 }
 
 func generateFolder(name string) (err error) {
-	if name != "src" {
-		if env != "" {
-			folder = path.Join(folder, env)
-		}
-		err = os.Mkdir(path.Join(folder, name), os.ModePerm)
+	if _, err = os.Stat(name); !os.IsNotExist(err) {
+		return nil
 	}
+	err = os.Mkdir(name, os.ModePerm)
 	return err
 }
 
