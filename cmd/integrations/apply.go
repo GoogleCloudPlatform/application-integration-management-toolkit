@@ -52,7 +52,6 @@ var ApplyCmd = &cobra.Command{
 		return apiclient.SetProjectID(cmdProject.Value.String())
 	},
 	RunE: func(cmd *cobra.Command, args []string) (err error) {
-		srcFolder := folder
 		if env != "" {
 			folder = path.Join(folder, env)
 		}
@@ -65,7 +64,7 @@ var ApplyCmd = &cobra.Command{
 		wait, _ := strconv.ParseBool(cmd.Flag("wait").Value.String())
 
 		rJSONFiles := regexp.MustCompile(`(\S*)\.json`)
-		integrationFolder := path.Join(srcFolder, "src")
+		integrationFolder := path.Join(folder, "src")
 		authconfigFolder := path.Join(folder, "authconfigs")
 		connectorsFolder := path.Join(folder, "connectors")
 		overridesFile := path.Join(folder, "overrides/overrides.json")
