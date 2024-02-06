@@ -73,7 +73,7 @@ var ScaffoldCmd = &cobra.Command{
 			}
 		}
 
-		srcFolder := folder
+		baseFolder := folder
 		if env != "" {
 			folder = path.Join(folder, env)
 			if err = generateFolder(folder); err != nil {
@@ -107,7 +107,7 @@ var ScaffoldCmd = &cobra.Command{
 		}
 
 		clilog.Info.Printf("Storing the Integration: %s\n", name)
-		if err = generateFolder(path.Join(srcFolder, "src")); err != nil {
+		if err = generateFolder(path.Join(baseFolder, "src")); err != nil {
 			return err
 		}
 
@@ -117,7 +117,7 @@ var ScaffoldCmd = &cobra.Command{
 		}
 
 		if err = apiclient.WriteByteArrayToFile(
-			path.Join(srcFolder, "src", name+jsonExt),
+			path.Join(baseFolder, "src", name+jsonExt),
 			false,
 			integrationBody); err != nil {
 			return err
@@ -243,7 +243,7 @@ var ScaffoldCmd = &cobra.Command{
 		if cloudBuild {
 			clilog.Info.Printf("Storing cloudbuild.yaml\n")
 			if err = apiclient.WriteByteArrayToFile(
-				path.Join(folder, "cloudbuild.yaml"),
+				path.Join(baseFolder, "cloudbuild.yaml"),
 				false,
 				[]byte(utils.GetCloudBuildYaml())); err != nil {
 				return err
