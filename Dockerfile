@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM golang:1.20 as builder
+FROM golang:1.21 as builder
 
 ARG TAG
 ARG COMMIT
@@ -20,7 +20,6 @@ ARG COMMIT
 ADD ./internal /go/src/integrationcli/internal
 ADD ./cmd /go/src/integrationcli/cmd
 
-COPY main.go /go/src/integrationcli/main.go
 COPY go.mod go.sum /go/src/integrationcli/
 WORKDIR /go/src/integrationcli
 
@@ -28,12 +27,18 @@ ENV GO111MODULE=on
 RUN go mod tidy
 RUN go mod download
 RUN date +%FT%H:%I:%M+%Z > /tmp/date
-RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -trimpath -buildvcs=true -a -gcflags='all="-l"' -ldflags='-s -w -extldflags "-static" -X main.version='${TAG}' -X main.commit='${COMMIT}' -X main.date='$(cat /tmp/date) -o /go/bin/integrationcli /go/src/integrationcli/main.go
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -trimpath -buildvcs=true -a -gcflags='all="-l"' -ldflags='-s -w -extldflags "-static" -X main.version='${TAG}' -X main.commit='${COMMIT}' -X main.date='$(cat /tmp/date) -o /go/bin/integrationcli /go/src/integrationcli/cmd/integrationcli/integrationcli.go
 
 FROM us-docker.pkg.dev/appintegration-toolkit/internal/jq:latest as jq
 
 # use debug because it includes busybox
-FROM gcr.io/distroless/static-debian11:debug
+FROM gcr.io/distroless/static-debian11:debug-nonroot
+LABEL org.opencontainers.image.url='https://github.com/GoogleCloudPlatform/application-integration-management-toolkit' \
+    org.opencontainers.image.documentation='https://github.com/GoogleCloudPlatform/application-integration-management-toolkit' \
+    org.opencontainers.image.source='https://github.com/GoogleCloudPlatform/application-integration-management-toolkit' \
+    org.opencontainers.image.vendor='Google LLC' \
+    org.opencontainers.image.licenses='Apache-2.0' \
+    org.opencontainers.image.description='This is a tool to interact with Application Integration APIs'
 COPY --from=builder /go/bin/integrationcli /usr/local/bin/integrationcli
 COPY --from=jq /jq /usr/local/bin/jq
 COPY LICENSE.txt /

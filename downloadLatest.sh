@@ -27,7 +27,7 @@ fi
 # Determine the latest INTEGRATIONCLI version by version number ignoring alpha, beta, and rc versions.
 if [ "${INTEGRATIONCLI_VERSION}" = "" ] ; then
   INTEGRATIONCLI_VERSION="$(curl -sL https://github.com/GoogleCloudPlatform/application-integration-management-toolkit/releases/latest | \
-                  grep -i release | grep -v beta | grep -o 'v[0-9]\.[0-9]*' | head -1)"
+                  grep -i release | grep -o 'v[0-9].[0-9][0-9][0-9].[0-9]' | head -1)"
   INTEGRATIONCLI_VERSION="${INTEGRATIONCLI_VERSION##*/}"
 fi
 

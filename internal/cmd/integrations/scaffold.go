@@ -29,7 +29,7 @@ import (
 	"internal/client/integrations"
 	"internal/client/sfdc"
 
-	"github.com/GoogleCloudPlatform/application-integration-management-toolkit/cmd/utils"
+	"internal/cmd/utils"
 
 	"github.com/spf13/cobra"
 )
