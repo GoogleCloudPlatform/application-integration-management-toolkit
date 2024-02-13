@@ -28,7 +28,7 @@ before:
 
 builds:
   - id: integrationcli
-    main: ./main.go
+    main: ./cmd/integrationcli/integrationcli.go
     binary: integrationcli
     goos:
       - linux
