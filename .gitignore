@@ -11,3 +11,9 @@ integrationcli
 # binaries
 dist/
 
+!test/*.json
+!test/*.yaml
+!test/*.zip
+!test/*.txt
+!cmd/integrationcli*
+!internal/integrationcli*

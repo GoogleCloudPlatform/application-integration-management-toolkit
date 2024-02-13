@@ -1,6 +1,6 @@
 module github.com/GoogleCloudPlatform/application-integration-management-toolkit
 
-go 1.20
+go 1.21
 
 require internal/apiclient v1.0.0
 
@@ -21,6 +21,10 @@ replace internal/cloudkms => ./internal/cloudkms
 require internal/secmgr v1.0.0 // indirect
 
 replace internal/secmgr => ./internal/secmgr
+
+require internal/cmd v1.0.0
+
+replace internal/cmd => ./internal/cmd
 
 require github.com/spf13/cobra v1.6.1
 

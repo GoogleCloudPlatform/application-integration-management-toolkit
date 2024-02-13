@@ -1,0 +1,35 @@
+{
+    // Default Editor Config
+    "editor.formatOnSave": true,
+    "files.trimTrailingWhitespace": true,
+    "files.insertFinalNewline": true,
+    "files.associations": {
+        "*.yaml.tpl": "yaml",
+        "*.yaml.envtpl": "yaml"
+    },
+    // Golang Config
+    "go.enableCodeLens": {
+        "references": false,
+        "runtest": false
+    },
+    "go.useLanguageServer": true,
+    "go.lintTool": "golangci-lint",
+    "go.lintFlags": [
+        "--fast",
+    ],
+    "go.lintOnSave": "file",
+    "go.formatTool": "goimports",
+    "go.vetOnSave": "package",
+    "[go]": {
+        "editor.insertSpaces": true,
+        "editor.formatOnSave": true,
+        "editor.codeActionsOnSave": {
+            "source.organizeImports": "explicit"
+        },
+        "editor.defaultFormatter": "golang.go"
+    },
+    // YAML Config
+    "[yaml]": {
+        "editor.formatOnSave": true
+    },
+}

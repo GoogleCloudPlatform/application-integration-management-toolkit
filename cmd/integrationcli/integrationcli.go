@@ -18,7 +18,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/GoogleCloudPlatform/application-integration-management-toolkit/cmd"
+	"internal/cmd"
 )
 
 // https://goreleaser.com/cookbooks/using-main.version/?h=ldflags

@@ -14,7 +14,6 @@ dist/
 .github/
 docs/
 test/
-cicd/
 
 README.md
 CONTRIBUTING.md

@@ -18,8 +18,11 @@ on:
   push:
     # Publish semver tags as releases.
     tags:
-      - v[0-1].[0-9]+
-      - v[0-1].[0-9]+.[0-9]+-beta
+      - v[0-9].[0-9]+(.[0-9])?
+      - v[0-9].[0-9]+.[0-9]+-beta.[0-9]
+      - v[0-9].[0-9]+-beta.[0-9]
+  workflow_dispatch:
+
 
 jobs:
 

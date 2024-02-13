@@ -131,7 +131,7 @@ The following environment variables may be set to control the behavior of `integ
 
 ## Automate via Cloud Build
 
-Please see [here](./cicd/README.md) for details on how to automate deployments via Cloud Build. The container images for integrationcli are:
+Please see [here](./docs/cicd/README.md) for details on how to automate deployments via Cloud Build. The container images for integrationcli are:
 
 * Container image for the CLI
 
