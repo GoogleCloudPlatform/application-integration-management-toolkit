@@ -72,6 +72,8 @@ type integrationVersion struct {
 	ErrorCatcherConfigs           []errorCatcherConfig     `json:"errorCatcherConfigs,omitempty"`
 	RunAsServiceAccount           string                   `json:"runAsServiceAccount,omitempty"`
 	ParentTemplateId              string                   `json:"parentTemplateId,omitempty"`
+	CloudLoggingDetails           *cloudLoggingDetails     `json:"cloudLoggingDetails,omitempty"`
+	EnableVariableMasking         *bool                    `json:"enableVariableMasking,omitempty"`
 }
 
 type integrationVersionExternal struct {
@@ -85,6 +87,13 @@ type integrationVersionExternal struct {
 	ErrorCatcherConfigs       []errorCatcherConfig `json:"errorCatcherConfigs,omitempty"`
 	RunAsServiceAccount       string               `json:"runAsServiceAccount,omitempty"`
 	ParentTemplateId          string               `json:"parentTemplateId,omitempty"`
+	CloudLoggingDetails       *cloudLoggingDetails `json:"cloudLoggingDetails,omitempty"`
+	EnableVariableMasking     *bool                `json:"enableVariableMasking,omitempty"`
+}
+
+type cloudLoggingDetails struct {
+	CloudLoggingSeverity string `json:"cloudLoggingSeverity,omitempty"`
+	EnableCloudLogging   bool   `json:"enableCloudLogging,omitempty"`
 }
 
 type listbasicIntegrationVersions struct {
