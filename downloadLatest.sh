@@ -26,9 +26,7 @@ fi
 
 # Determine the latest INTEGRATIONCLI version by version number ignoring alpha, beta, and rc versions.
 if [ "${INTEGRATIONCLI_VERSION}" = "" ] ; then
-  INTEGRATIONCLI_VERSION="$(curl -sL https://github.com/GoogleCloudPlatform/application-integration-management-toolkit/releases/latest | \
-                  grep -i release | grep -E -i -o 'v[0-9]\.\d+\.[0-9]' | tail -1)"
-  INTEGRATIONCLI_VERSION="${INTEGRATIONCLI_VERSION##*/}"
+  INTEGRATIONCLI_VERSION="$(curl -sL https://api.github.com/repos/GoogleCloudPlatform/application-integration-management-toolkit/releases/latest | grep tag_name | sed -E 's/.*"([^"]+)".*/\1/')"
 fi
 
 LOCAL_ARCH=$(uname -m)
