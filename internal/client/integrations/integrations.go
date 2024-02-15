@@ -503,9 +503,13 @@ func Get(name string, version string, basicInfo bool, minimal bool, override boo
 		}
 
 		eversion := convertInternalToExternal(iversion)
-		respBody, err = json.Marshal(eversion)
+		respExtBody, err := json.Marshal(eversion)
+		if err != nil {
+			return nil, err
+		}
 		apiclient.ClientPrintHttpResponse.Set(apiclient.GetCmdPrintHttpResponseSetting())
-		apiclient.PrettyPrint(respBody)
+		apiclient.PrettyPrint(respExtBody)
+		return respExtBody, nil
 	}
 
 	if override {
@@ -516,15 +520,16 @@ func Get(name string, version string, basicInfo bool, minimal bool, override boo
 		}
 
 		var or overrides
-
+		var respOvrBody []byte
 		if or, err = extractOverrides(iversion); err != nil {
 			return nil, err
 		}
-		if respBody, err = json.Marshal(or); err != nil {
+		if respOvrBody, err = json.Marshal(or); err != nil {
 			return nil, err
 		}
 		apiclient.ClientPrintHttpResponse.Set(apiclient.GetCmdPrintHttpResponseSetting())
-		apiclient.PrettyPrint(respBody)
+		apiclient.PrettyPrint(respOvrBody)
+		return respBody, err
 	}
 	return respBody, err
 }
@@ -1217,6 +1222,13 @@ func convertInternalToExternal(internalVersion integrationVersion) (externalVers
 	}
 	externalVersion.ErrorCatcherConfigs = internalVersion.ErrorCatcherConfigs
 	externalVersion.DatabasePersistencePolicy = internalVersion.DatabasePersistencePolicy
+	if internalVersion.EnableVariableMasking != nil {
+		externalVersion.EnableVariableMasking = new(bool)
+		*externalVersion.EnableVariableMasking = *internalVersion.EnableVariableMasking
+	}
+	if internalVersion.CloudLoggingDetails != nil {
+		externalVersion.CloudLoggingDetails = internalVersion.CloudLoggingDetails
+	}
 	return externalVersion
 }
 
