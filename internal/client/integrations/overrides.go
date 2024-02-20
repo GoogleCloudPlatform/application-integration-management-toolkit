@@ -37,7 +37,7 @@ type overrides struct {
 
 type integrationoverrides struct {
 	RunAsServiceAccount       *string             `json:"runAsServiceAccount,omitempty"`
-	DatabasePersistencePolicy string              `json:"databasePersistencePolicy,omitempty"`
+	DatabasePersistencePolicy string              `json:"databasePersistencePolicy"`
 	EnableVariableMasking     bool                `json:"enableVariableMasking"`
 	CloudLoggingDetails       cloudLoggingDetails `json:"cloudLoggingDetails,omitempty"`
 }
@@ -231,11 +231,11 @@ func extractOverrides(iversion integrationVersion) (overrides, error) {
 	taskOverrides := overrides{
 		IntegrationOverrides: integrationoverrides{
 			RunAsServiceAccount:       nil,
-			DatabasePersistencePolicy: "DATABASE_PERSISTENCE_POLICY_UNSPECIFIED",
+			DatabasePersistencePolicy: "",
 			EnableVariableMasking:     false,
 			CloudLoggingDetails: cloudLoggingDetails{
 				EnableCloudLogging:   false,
-				CloudLoggingSeverity: "LOGGING_TYPE_UNSPECIFIED",
+				CloudLoggingSeverity: "",
 			},
 		},
 	}
@@ -299,7 +299,7 @@ func extractOverrides(iversion integrationVersion) (overrides, error) {
 	if iversion.EnableVariableMasking {
 		taskOverrides.IntegrationOverrides.EnableVariableMasking = iversion.EnableVariableMasking
 	}
-	if iversion.CloudLoggingDetails.CloudLoggingSeverity != "" {
+	if iversion.CloudLoggingDetails.CloudLoggingSeverity != "" && iversion.CloudLoggingDetails.CloudLoggingSeverity != "CLOUD_LOGGING_SEVERITY_UNSPECIFIED" {
 		taskOverrides.IntegrationOverrides.CloudLoggingDetails.CloudLoggingSeverity = iversion.CloudLoggingDetails.CloudLoggingSeverity
 	}
 	if iversion.CloudLoggingDetails.EnableCloudLogging {
