@@ -68,10 +68,12 @@ type integrationVersion struct {
 	TaskConfigs                   []taskconfig             `json:"taskConfigs,omitempty"`
 	IntegrationParameters         []parameterExternal      `json:"integrationParameters,omitempty"`
 	UserLabel                     *string                  `json:"userLabel,omitempty"`
-	DatabasePersistencePolicy     string                   `json:"databasePersistencePolicy,omitempty,default:DATABASE_PERSISTENCE_POLICY_UNSPECIFIED"`
+	DatabasePersistencePolicy     string                   `json:"databasePersistencePolicy,default=DATABASE_PERSISTENCE_POLICY_UNSPECIFIED"`
 	ErrorCatcherConfigs           []errorCatcherConfig     `json:"errorCatcherConfigs,omitempty"`
 	RunAsServiceAccount           string                   `json:"runAsServiceAccount,omitempty"`
 	ParentTemplateId              string                   `json:"parentTemplateId,omitempty"`
+	CloudLoggingDetails           cloudLoggingDetails      `json:"cloudLoggingDetails,omitempty"`
+	EnableVariableMasking         bool                     `json:"enableVariableMasking,omitempty"`
 }
 
 type integrationVersionExternal struct {
@@ -81,10 +83,17 @@ type integrationVersionExternal struct {
 	TaskConfigs               []taskconfig         `json:"taskConfigs,omitempty"`
 	IntegrationParameters     []parameterExternal  `json:"integrationParameters,omitempty"`
 	UserLabel                 *string              `json:"userLabel,omitempty"`
-	DatabasePersistencePolicy string               `json:"databasePersistencePolicy,omitempty,default:DATABASE_PERSISTENCE_POLICY_UNSPECIFIED"`
+	DatabasePersistencePolicy string               `json:"databasePersistencePolicy,default=DATABASE_PERSISTENCE_POLICY_UNSPECIFIED"`
 	ErrorCatcherConfigs       []errorCatcherConfig `json:"errorCatcherConfigs,omitempty"`
 	RunAsServiceAccount       string               `json:"runAsServiceAccount,omitempty"`
 	ParentTemplateId          string               `json:"parentTemplateId,omitempty"`
+	CloudLoggingDetails       cloudLoggingDetails  `json:"cloudLoggingDetails,omitempty"`
+	EnableVariableMasking     bool                 `json:"enableVariableMasking,omitempty"`
+}
+
+type cloudLoggingDetails struct {
+	CloudLoggingSeverity string `json:"cloudLoggingSeverity,default=CLOUD_LOGGING_SEVERITY_UNSPECIFIED"`
+	EnableCloudLogging   bool   `json:"enableCloudLogging"`
 }
 
 type listbasicIntegrationVersions struct {
@@ -467,6 +476,11 @@ func List(pageSize int, pageToken string, filter string, orderBy string) (respBo
 
 // Get
 func Get(name string, version string, basicInfo bool, minimal bool, override bool) ([]byte, error) {
+
+	if (basicInfo && minimal) || (basicInfo && override) || (minimal && override) {
+		return nil, errors.New("cannot combine basicInfo, minimal and override flags")
+	}
+
 	u, _ := url.Parse(apiclient.GetBaseIntegrationURL())
 	u.Path = path.Join(u.Path, "integrations", name, "versions", version)
 	if basicInfo {
@@ -494,9 +508,13 @@ func Get(name string, version string, basicInfo bool, minimal bool, override boo
 		}
 
 		eversion := convertInternalToExternal(iversion)
-		respBody, err = json.Marshal(eversion)
+		respExtBody, err := json.Marshal(eversion)
+		if err != nil {
+			return nil, err
+		}
 		apiclient.ClientPrintHttpResponse.Set(apiclient.GetCmdPrintHttpResponseSetting())
-		apiclient.PrettyPrint(respBody)
+		apiclient.PrettyPrint(respExtBody)
+		return respExtBody, nil
 	}
 
 	if override {
@@ -507,15 +525,16 @@ func Get(name string, version string, basicInfo bool, minimal bool, override boo
 		}
 
 		var or overrides
-
+		var respOvrBody []byte
 		if or, err = extractOverrides(iversion); err != nil {
 			return nil, err
 		}
-		if respBody, err = json.Marshal(or); err != nil {
+		if respOvrBody, err = json.Marshal(or); err != nil {
 			return nil, err
 		}
 		apiclient.ClientPrintHttpResponse.Set(apiclient.GetCmdPrintHttpResponseSetting())
-		apiclient.PrettyPrint(respBody)
+		apiclient.PrettyPrint(respOvrBody)
+		return respOvrBody, err
 	}
 	return respBody, err
 }
@@ -1208,6 +1227,9 @@ func convertInternalToExternal(internalVersion integrationVersion) (externalVers
 	}
 	externalVersion.ErrorCatcherConfigs = internalVersion.ErrorCatcherConfigs
 	externalVersion.DatabasePersistencePolicy = internalVersion.DatabasePersistencePolicy
+	externalVersion.EnableVariableMasking = internalVersion.EnableVariableMasking
+	externalVersion.CloudLoggingDetails = internalVersion.CloudLoggingDetails
+
 	return externalVersion
 }
 
