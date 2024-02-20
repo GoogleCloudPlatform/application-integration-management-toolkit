@@ -476,6 +476,11 @@ func List(pageSize int, pageToken string, filter string, orderBy string) (respBo
 
 // Get
 func Get(name string, version string, basicInfo bool, minimal bool, override bool) ([]byte, error) {
+
+	if (basicInfo && minimal) || (basicInfo && override) || (minimal && override) {
+		return nil, errors.New("cannot combine basicInfo, minimal and override flags")
+	}
+
 	u, _ := url.Parse(apiclient.GetBaseIntegrationURL())
 	u.Path = path.Join(u.Path, "integrations", name, "versions", version)
 	if basicInfo {
