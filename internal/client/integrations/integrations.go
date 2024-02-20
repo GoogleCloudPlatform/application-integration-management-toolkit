@@ -72,8 +72,8 @@ type integrationVersion struct {
 	ErrorCatcherConfigs           []errorCatcherConfig     `json:"errorCatcherConfigs,omitempty"`
 	RunAsServiceAccount           string                   `json:"runAsServiceAccount,omitempty"`
 	ParentTemplateId              string                   `json:"parentTemplateId,omitempty"`
-	CloudLoggingDetails           *cloudLoggingDetails     `json:"cloudLoggingDetails,omitempty"`
-	EnableVariableMasking         *bool                    `json:"enableVariableMasking,omitempty"`
+	CloudLoggingDetails           cloudLoggingDetails      `json:"cloudLoggingDetails,omitempty"`
+	EnableVariableMasking         bool                     `json:"enableVariableMasking,omitempty"`
 }
 
 type integrationVersionExternal struct {
@@ -87,13 +87,13 @@ type integrationVersionExternal struct {
 	ErrorCatcherConfigs       []errorCatcherConfig `json:"errorCatcherConfigs,omitempty"`
 	RunAsServiceAccount       string               `json:"runAsServiceAccount,omitempty"`
 	ParentTemplateId          string               `json:"parentTemplateId,omitempty"`
-	CloudLoggingDetails       *cloudLoggingDetails `json:"cloudLoggingDetails,omitempty"`
-	EnableVariableMasking     *bool                `json:"enableVariableMasking,omitempty"`
+	CloudLoggingDetails       cloudLoggingDetails  `json:"cloudLoggingDetails,omitempty"`
+	EnableVariableMasking     bool                 `json:"enableVariableMasking,omitempty"`
 }
 
 type cloudLoggingDetails struct {
 	CloudLoggingSeverity string `json:"cloudLoggingSeverity,omitempty"`
-	EnableCloudLogging   bool   `json:"enableCloudLogging,omitempty"`
+	EnableCloudLogging   bool   `json:"enableCloudLogging"`
 }
 
 type listbasicIntegrationVersions struct {
@@ -1227,13 +1227,9 @@ func convertInternalToExternal(internalVersion integrationVersion) (externalVers
 	}
 	externalVersion.ErrorCatcherConfigs = internalVersion.ErrorCatcherConfigs
 	externalVersion.DatabasePersistencePolicy = internalVersion.DatabasePersistencePolicy
-	if internalVersion.EnableVariableMasking != nil {
-		externalVersion.EnableVariableMasking = new(bool)
-		*externalVersion.EnableVariableMasking = *internalVersion.EnableVariableMasking
-	}
-	if internalVersion.CloudLoggingDetails != nil {
-		externalVersion.CloudLoggingDetails = internalVersion.CloudLoggingDetails
-	}
+	externalVersion.EnableVariableMasking = internalVersion.EnableVariableMasking
+	externalVersion.CloudLoggingDetails = internalVersion.CloudLoggingDetails
+
 	return externalVersion
 }
 

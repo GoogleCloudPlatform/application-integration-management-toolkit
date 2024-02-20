@@ -32,14 +32,14 @@ type overrides struct {
 	TaskOverrides        []taskconfig          `json:"task_overrides,omitempty"`
 	ConnectionOverrides  []connectionoverrides `json:"connection_overrides,omitempty"`
 	ParamOverrides       []parameterExternal   `json:"param_overrides,omitempty"`
-	IntegrationOverrides *integrationoverrides `json:"integration_overrides,omitempty"`
+	IntegrationOverrides integrationoverrides  `json:"integration_overrides,omitempty"`
 }
 
 type integrationoverrides struct {
-	RunAsServiceAccount       *string              `json:"runAsServiceAccount,omitempty"`
-	DatabasePersistencePolicy string               `json:"databasePersistencePolicy,omitempty"`
-	EnableVariableMasking     *bool                `json:"enableVariableMasking,omitempty"`
-	CloudLoggingDetails       *cloudLoggingDetails `json:"cloudLoggingDetails,omitempty"`
+	RunAsServiceAccount       *string             `json:"runAsServiceAccount,omitempty"`
+	DatabasePersistencePolicy string              `json:"databasePersistencePolicy,omitempty"`
+	EnableVariableMasking     bool                `json:"enableVariableMasking"`
+	CloudLoggingDetails       cloudLoggingDetails `json:"cloudLoggingDetails,omitempty"`
 }
 
 type triggeroverrides struct {
@@ -211,36 +211,34 @@ func mergeOverrides(eversion integrationVersionExternal, o overrides) (integrati
 
 	// apply integration overrides
 
-	if o.IntegrationOverrides != nil {
-		if o.IntegrationOverrides.DatabasePersistencePolicy != "" {
-			eversion.DatabasePersistencePolicy = o.IntegrationOverrides.DatabasePersistencePolicy
-		}
-
-		if o.IntegrationOverrides.CloudLoggingDetails != nil {
-			if eversion.CloudLoggingDetails == nil {
-				eversion.CloudLoggingDetails = new(cloudLoggingDetails)
-			}
-			eversion.CloudLoggingDetails.CloudLoggingSeverity = o.IntegrationOverrides.CloudLoggingDetails.CloudLoggingSeverity
-			eversion.CloudLoggingDetails.EnableCloudLogging = o.IntegrationOverrides.CloudLoggingDetails.EnableCloudLogging
-		}
-
-		if o.IntegrationOverrides.RunAsServiceAccount != nil {
-			eversion.RunAsServiceAccount = *o.IntegrationOverrides.RunAsServiceAccount
-		}
-
-		if o.IntegrationOverrides.EnableVariableMasking != nil {
-			if eversion.EnableVariableMasking == nil {
-				eversion.EnableVariableMasking = new(bool)
-			}
-			*eversion.EnableVariableMasking = *o.IntegrationOverrides.EnableVariableMasking
-		}
+	if o.IntegrationOverrides.DatabasePersistencePolicy != "" {
+		eversion.DatabasePersistencePolicy = o.IntegrationOverrides.DatabasePersistencePolicy
 	}
+
+	eversion.CloudLoggingDetails.CloudLoggingSeverity = o.IntegrationOverrides.CloudLoggingDetails.CloudLoggingSeverity
+	eversion.CloudLoggingDetails.EnableCloudLogging = o.IntegrationOverrides.CloudLoggingDetails.EnableCloudLogging
+
+	if o.IntegrationOverrides.RunAsServiceAccount != nil {
+		eversion.RunAsServiceAccount = *o.IntegrationOverrides.RunAsServiceAccount
+	}
+
+	eversion.EnableVariableMasking = o.IntegrationOverrides.EnableVariableMasking
 
 	return eversion, nil
 }
 
 func extractOverrides(iversion integrationVersion) (overrides, error) {
-	taskOverrides := overrides{}
+	taskOverrides := overrides{
+		IntegrationOverrides: integrationoverrides{
+			RunAsServiceAccount:       nil,
+			DatabasePersistencePolicy: "DATABASE_PERSISTENCE_POLICY_UNSPECIFIED",
+			EnableVariableMasking:     false,
+			CloudLoggingDetails: cloudLoggingDetails{
+				EnableCloudLogging:   false,
+				CloudLoggingSeverity: "LOGGING_TYPE_UNSPECIFIED",
+			},
+		},
+	}
 
 	for _, task := range iversion.TaskConfigs {
 		if task.Task == "GenericConnectorTask" {
@@ -290,34 +288,21 @@ func extractOverrides(iversion integrationVersion) (overrides, error) {
 	// handle integration overrides
 
 	if iversion.DatabasePersistencePolicy != "" {
-		if taskOverrides.IntegrationOverrides == nil {
-			taskOverrides.IntegrationOverrides = new(integrationoverrides)
-		}
 		taskOverrides.IntegrationOverrides.DatabasePersistencePolicy = iversion.DatabasePersistencePolicy
 	}
 
 	if iversion.RunAsServiceAccount != "" {
-		if taskOverrides.IntegrationOverrides == nil {
-			taskOverrides.IntegrationOverrides = new(integrationoverrides)
-		}
 		taskOverrides.IntegrationOverrides.RunAsServiceAccount = new(string)
 		*taskOverrides.IntegrationOverrides.RunAsServiceAccount = iversion.RunAsServiceAccount
 	}
 
-	if iversion.EnableVariableMasking != nil {
-		if taskOverrides.IntegrationOverrides == nil {
-			taskOverrides.IntegrationOverrides = new(integrationoverrides)
-		}
-		taskOverrides.IntegrationOverrides.EnableVariableMasking = new(bool)
-		*taskOverrides.IntegrationOverrides.EnableVariableMasking = *iversion.EnableVariableMasking
+	if iversion.EnableVariableMasking {
+		taskOverrides.IntegrationOverrides.EnableVariableMasking = iversion.EnableVariableMasking
 	}
-
-	if iversion.CloudLoggingDetails != nil {
-		if taskOverrides.IntegrationOverrides == nil {
-			taskOverrides.IntegrationOverrides = new(integrationoverrides)
-		}
-		taskOverrides.IntegrationOverrides.CloudLoggingDetails = new(cloudLoggingDetails)
+	if iversion.CloudLoggingDetails.CloudLoggingSeverity != "" {
 		taskOverrides.IntegrationOverrides.CloudLoggingDetails.CloudLoggingSeverity = iversion.CloudLoggingDetails.CloudLoggingSeverity
+	}
+	if iversion.CloudLoggingDetails.EnableCloudLogging {
 		taskOverrides.IntegrationOverrides.CloudLoggingDetails.EnableCloudLogging = iversion.CloudLoggingDetails.EnableCloudLogging
 	}
 
