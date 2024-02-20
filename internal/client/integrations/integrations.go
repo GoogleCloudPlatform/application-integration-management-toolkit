@@ -68,7 +68,7 @@ type integrationVersion struct {
 	TaskConfigs                   []taskconfig             `json:"taskConfigs,omitempty"`
 	IntegrationParameters         []parameterExternal      `json:"integrationParameters,omitempty"`
 	UserLabel                     *string                  `json:"userLabel,omitempty"`
-	DatabasePersistencePolicy     string                   `json:"databasePersistencePolicy"`
+	DatabasePersistencePolicy     string                   `json:"databasePersistencePolicy,default=DATABASE_PERSISTENCE_POLICY_UNSPECIFIED"`
 	ErrorCatcherConfigs           []errorCatcherConfig     `json:"errorCatcherConfigs,omitempty"`
 	RunAsServiceAccount           string                   `json:"runAsServiceAccount,omitempty"`
 	ParentTemplateId              string                   `json:"parentTemplateId,omitempty"`
@@ -83,7 +83,7 @@ type integrationVersionExternal struct {
 	TaskConfigs               []taskconfig         `json:"taskConfigs,omitempty"`
 	IntegrationParameters     []parameterExternal  `json:"integrationParameters,omitempty"`
 	UserLabel                 *string              `json:"userLabel,omitempty"`
-	DatabasePersistencePolicy string               `json:"databasePersistencePolicy"`
+	DatabasePersistencePolicy string               `json:"databasePersistencePolicy,default=DATABASE_PERSISTENCE_POLICY_UNSPECIFIED"`
 	ErrorCatcherConfigs       []errorCatcherConfig `json:"errorCatcherConfigs,omitempty"`
 	RunAsServiceAccount       string               `json:"runAsServiceAccount,omitempty"`
 	ParentTemplateId          string               `json:"parentTemplateId,omitempty"`
@@ -92,7 +92,7 @@ type integrationVersionExternal struct {
 }
 
 type cloudLoggingDetails struct {
-	CloudLoggingSeverity string `json:"cloudLoggingSeverity"`
+	CloudLoggingSeverity string `json:"cloudLoggingSeverity,default=CLOUD_LOGGING_SEVERITY_UNSPECIFIED"`
 	EnableCloudLogging   bool   `json:"enableCloudLogging"`
 }
 

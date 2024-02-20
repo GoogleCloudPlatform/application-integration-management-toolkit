@@ -231,11 +231,11 @@ func extractOverrides(iversion integrationVersion) (overrides, error) {
 	taskOverrides := overrides{
 		IntegrationOverrides: integrationoverrides{
 			RunAsServiceAccount:       nil,
-			DatabasePersistencePolicy: "",
+			DatabasePersistencePolicy: "DATABASE_PERSISTENCE_POLICY_UNSPECIFIED",
 			EnableVariableMasking:     false,
 			CloudLoggingDetails: cloudLoggingDetails{
 				EnableCloudLogging:   false,
-				CloudLoggingSeverity: "",
+				CloudLoggingSeverity: "CLOUD_LOGGING_SEVERITY_UNSPECIFIED",
 			},
 		},
 	}
@@ -299,7 +299,7 @@ func extractOverrides(iversion integrationVersion) (overrides, error) {
 	if iversion.EnableVariableMasking {
 		taskOverrides.IntegrationOverrides.EnableVariableMasking = iversion.EnableVariableMasking
 	}
-	if iversion.CloudLoggingDetails.CloudLoggingSeverity != "" && iversion.CloudLoggingDetails.CloudLoggingSeverity != "CLOUD_LOGGING_SEVERITY_UNSPECIFIED" {
+	if iversion.CloudLoggingDetails.CloudLoggingSeverity != "" {
 		taskOverrides.IntegrationOverrides.CloudLoggingDetails.CloudLoggingSeverity = iversion.CloudLoggingDetails.CloudLoggingSeverity
 	}
 	if iversion.CloudLoggingDetails.EnableCloudLogging {
