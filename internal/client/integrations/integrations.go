@@ -529,7 +529,7 @@ func Get(name string, version string, basicInfo bool, minimal bool, override boo
 		}
 		apiclient.ClientPrintHttpResponse.Set(apiclient.GetCmdPrintHttpResponseSetting())
 		apiclient.PrettyPrint(respOvrBody)
-		return respBody, err
+		return respOvrBody, err
 	}
 	return respBody, err
 }
