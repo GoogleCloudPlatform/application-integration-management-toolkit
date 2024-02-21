@@ -255,7 +255,18 @@ func CreateVersion(name string, content []byte, overridesContent []byte, snapsho
 
 	// merge overrides if overrides were provided
 	if len(overridesContent) > 0 {
-		o := overrides{}
+		o := overrides{
+			IntegrationOverrides: integrationoverrides{
+				RunAsServiceAccount:       nil,
+				DatabasePersistencePolicy: "DATABASE_PERSISTENCE_POLICY_UNSPECIFIED",
+				EnableVariableMasking:     false,
+				CloudLoggingDetails: cloudLoggingDetails{
+					EnableCloudLogging:   false,
+					CloudLoggingSeverity: "CLOUD_LOGGING_SEVERITY_UNSPECIFIED",
+				},
+			},
+		}
+
 		if err = json.Unmarshal(overridesContent, &o); err != nil {
 			return nil, err
 		}
