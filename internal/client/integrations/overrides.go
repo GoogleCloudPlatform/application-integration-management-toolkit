@@ -259,7 +259,9 @@ func extractOverrides(iversion integrationVersion) (overrides, error) {
 		if strings.HasPrefix(param.Key, "_") && !inputOutputVariable(param.InputOutputType) {
 			ip := parameterExternal{}
 			ip.Key = param.Key
-			ip.DefaultValue = param.DefaultValue
+			if param.DefaultValue != nil {
+				ip.DefaultValue = param.DefaultValue
+			}
 			taskOverrides.ParamOverrides = append(taskOverrides.ParamOverrides, ip)
 		}
 	}
