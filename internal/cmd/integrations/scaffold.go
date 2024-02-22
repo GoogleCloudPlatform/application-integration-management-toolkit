@@ -91,17 +91,17 @@ var ScaffoldCmd = &cobra.Command{
 				return err
 			}
 		} else if userLabel != "" {
-			if integrationBody, err = integrations.GetByUserlabel(name, userLabel, true, false); err != nil {
+			if integrationBody, err = integrations.GetByUserlabel(name, userLabel, false, true, false); err != nil {
 				return err
 			}
-			if overridesBody, err = integrations.GetByUserlabel(name, userLabel, false, true); err != nil {
+			if overridesBody, err = integrations.GetByUserlabel(name, userLabel, false, false, true); err != nil {
 				return err
 			}
 		} else if snapshot != "" {
-			if integrationBody, err = integrations.GetBySnapshot(name, snapshot, true, false); err != nil {
+			if integrationBody, err = integrations.GetBySnapshot(name, snapshot, false, true, false); err != nil {
 				return err
 			}
-			if overridesBody, err = integrations.GetBySnapshot(name, snapshot, false, true); err != nil {
+			if overridesBody, err = integrations.GetBySnapshot(name, snapshot, false, false, true); err != nil {
 				return err
 			}
 		}

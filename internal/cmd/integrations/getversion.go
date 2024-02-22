@@ -62,9 +62,9 @@ var GetVerCmd = &cobra.Command{
 		if version != "" {
 			_, err = integrations.Get(name, version, basic, minimal, overrides)
 		} else if snapshot != "" {
-			_, err = integrations.GetBySnapshot(name, snapshot, minimal, overrides)
+			_, err = integrations.GetBySnapshot(name, snapshot, basic, minimal, overrides)
 		} else {
-			_, err = integrations.GetByUserlabel(name, userLabel, minimal, overrides)
+			_, err = integrations.GetByUserlabel(name, userLabel, basic, minimal, overrides)
 		}
 		return err
 	},

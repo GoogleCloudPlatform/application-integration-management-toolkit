@@ -55,3 +55,12 @@ func TestCreateVersionOverrides(t *testing.T) {
 		t.Fatalf("Create failed: %v", err)
 	}
 }
+
+func TestDelete(t *testing.T) {
+	if err := clienttest.TestSetup(); err != nil {
+		t.Fatalf("TestSetup failed: %v", err)
+	}
+	if _, err := Delete("test"); err != nil {
+		t.Fatalf("Delete failed: %v", err)
+	}
+}

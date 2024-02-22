@@ -192,12 +192,14 @@ type tasks struct {
 }
 
 type eventparameter struct {
-	Key   string    `json:"key,omitempty"`
-	Value valueType `json:"value,omitempty"`
+	Key    string    `json:"key,omitempty"`
+	Value  valueType `json:"value,omitempty"`
+	Masked bool      `json:"masked,omitempty"`
 }
 
 type valueType struct {
 	StringValue  *string          `json:"stringValue,omitempty"`
+	IntValue     *string          `json:"intValue,omitempty"`
 	BooleanValue *bool            `json:"booleanValue,omitempty"`
 	StringArray  *stringarraytype `json:"stringArray,omitempty"`
 	JsonValue    *string          `json:"jsonValue,omitempty"`
@@ -494,30 +496,33 @@ func Get(name string, version string, basicInfo bool, minimal bool, override boo
 
 	u, _ := url.Parse(apiclient.GetBaseIntegrationURL())
 	u.Path = path.Join(u.Path, "integrations", name, "versions", version)
-	if basicInfo {
-		apiclient.ClientPrintHttpResponse.Set(false)
-		respBody, err := apiclient.HttpClient(u.String())
-		if err != nil {
-			return nil, err
-		}
-		// restore print setting
-		apiclient.ClientPrintHttpResponse.Set(apiclient.GetCmdPrintHttpResponseSetting())
-		return getBasicInfo(respBody)
-	}
-
-	if override || minimal {
-		apiclient.ClientPrintHttpResponse.Set(false)
-	}
+	apiclient.ClientPrintHttpResponse.Set(false)
 
 	respBody, err := apiclient.HttpClient(u.String())
 
-	if minimal {
-		iversion := integrationVersion{}
-		err = json.Unmarshal(respBody, &iversion)
-		if err != nil {
+	if !override && !minimal && !basicInfo {
+		apiclient.ClientPrintHttpResponse.Set(apiclient.GetCmdPrintHttpResponseSetting())
+		apiclient.PrettyPrint(respBody)
+		return respBody, nil
+	}
+
+	iversion := integrationVersion{}
+	err = json.Unmarshal(respBody, &iversion)
+	if err != nil {
+		return nil, err
+	}
+
+	if basicInfo {
+		var respBasicBody []byte
+		apiclient.ClientPrintHttpResponse.Set(apiclient.GetCmdPrintHttpResponseSetting())
+		if respBasicBody, err = getBasicInfo(respBody); err != nil {
 			return nil, err
 		}
+		apiclient.PrettyPrint(respBasicBody)
+		return respBasicBody, nil
+	}
 
+	if minimal {
 		eversion := convertInternalToExternal(iversion)
 		respExtBody, err := json.Marshal(eversion)
 		if err != nil {
@@ -529,12 +534,6 @@ func Get(name string, version string, basicInfo bool, minimal bool, override boo
 	}
 
 	if override {
-		iversion := integrationVersion{}
-		err = json.Unmarshal(respBody, &iversion)
-		if err != nil {
-			return nil, err
-		}
-
 		var or overrides
 		var respOvrBody []byte
 		if or, err = extractOverrides(iversion); err != nil {
@@ -545,19 +544,21 @@ func Get(name string, version string, basicInfo bool, minimal bool, override boo
 		}
 		apiclient.ClientPrintHttpResponse.Set(apiclient.GetCmdPrintHttpResponseSetting())
 		apiclient.PrettyPrint(respOvrBody)
-		return respOvrBody, err
+		return respOvrBody, nil
 	}
 	return respBody, err
 }
 
 // GetBySnapshot
-func GetBySnapshot(name string, snapshot string, minimal bool, override bool) ([]byte, error) {
+func GetBySnapshot(name string, snapshot string, basicInfo bool, minimal bool, override bool) ([]byte, error) {
 	apiclient.ClientPrintHttpResponse.Set(false)
 
 	listBody, err := ListVersions(name, -1, "", "snapshotNumber="+snapshot, "", false, false, true)
 	if err != nil {
 		return nil, err
 	}
+
+	apiclient.ClientPrintHttpResponse.Set(apiclient.GetCmdPrintHttpResponseSetting())
 
 	listBasicVersions := listbasicIntegrationVersions{}
 	err = json.Unmarshal(listBody, &listBasicVersions)
@@ -570,13 +571,11 @@ func GetBySnapshot(name string, snapshot string, minimal bool, override bool) ([
 	}
 
 	version := getVersion(listBasicVersions.BasicIntegrationVersions[0].Version)
-	respBody, err := Get(name, version, false, minimal, override)
-	apiclient.ClientPrintHttpResponse.Set(apiclient.GetCmdPrintHttpResponseSetting())
-	return respBody, err
+	return Get(name, version, basicInfo, minimal, override)
 }
 
 // GetByUserlabel
-func GetByUserlabel(name string, userLabel string, minimal bool, override bool) ([]byte, error) {
+func GetByUserlabel(name string, userLabel string, basicInfo bool, minimal bool, override bool) ([]byte, error) {
 	apiclient.ClientPrintHttpResponse.Set(false)
 
 	listBody, err := ListVersions(name, -1, "", "userLabel="+userLabel, "", false, false, true)
@@ -619,7 +618,7 @@ func DeleteVersion(name string, version string) (respBody []byte, err error) {
 // DeleteByUserlabel
 func DeleteByUserlabel(name string, userLabel string) (respBody []byte, err error) {
 	apiclient.ClientPrintHttpResponse.Set(false)
-	iversionBytes, err := GetByUserlabel(name, userLabel, false, false)
+	iversionBytes, err := GetByUserlabel(name, userLabel, false, false, false)
 	if err != nil {
 		return nil, err
 	}
@@ -638,7 +637,7 @@ func DeleteByUserlabel(name string, userLabel string) (respBody []byte, err erro
 // DeleteBySnapshot
 func DeleteBySnapshot(name string, snapshot string) (respBody []byte, err error) {
 	apiclient.ClientPrintHttpResponse.Set(false)
-	iversionBytes, err := GetBySnapshot(name, snapshot, false, false)
+	iversionBytes, err := GetBySnapshot(name, snapshot, false, false, false)
 	if err != nil {
 		return nil, err
 	}
@@ -1256,7 +1255,7 @@ func getBasicInfo(respBody []byte) (newResp []byte, err error) {
 	bIVer.Version = getVersion(iVer.Name)
 
 	if newResp, err = json.Marshal(bIVer); err != nil {
-		apiclient.PrettyPrint(newResp)
+		return nil, err
 	}
 
 	return newResp, err
