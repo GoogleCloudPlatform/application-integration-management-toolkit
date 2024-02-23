@@ -5,7 +5,7 @@
             "label": "Webhook (Preview)",
             "triggerType": "INTEGRATION_CONNECTOR_TRIGGER",
             "triggerNumber": "1",
-            "triggerId": "integration_connector_trigger/projects/nandanks-151422/locations/us-west1/connections/webhook/eventSubscriptions/webhook-test.event-type-field",
+            "triggerId": "integration_connector_trigger/projects/my-project/locations/us-west1/connections/webhook/eventSubscriptions/webhook-test.event-type-field",
             "startTasks": [
                 {
                     "taskId": "1"
@@ -13,7 +13,7 @@
             ],
             "properties": {
                 "Connection name": "webhook",
-                "Project name": "nandanks-151422",
+                "Project name": "my-project",
                 "Region": "us-west1",
                 "Subscription name": "webhook-test.event-type-field"
             }
