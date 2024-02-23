@@ -41,32 +41,36 @@ type listconnections struct {
 }
 
 type connection struct {
-	Name              *string             `json:"name,omitempty"`
-	Description       string              `json:"description,omitempty"`
-	ConnectorVersion  *string             `json:"connectorVersion,omitempty"`
-	ConnectorDetails  *connectorDetails   `json:"connectorDetails,omitempty"`
-	ConfigVariables   []configVar         `json:"configVariables,omitempty"`
-	AuthConfig        authConfig          `json:"authConfig,omitempty"`
-	DestinationConfig []destinationConfig `json:"destinationConfigs,omitempty"`
-	Suspended         bool                `json:"suspended,omitempty"`
-	LogConfig         *logConfig          `json:"logConfig,omitempty"`
-	SslConfig         *sslConfig          `json:"sslConfig,omitempty"`
+	Name                   *string             `json:"name,omitempty"`
+	Description            string              `json:"description,omitempty"`
+	ConnectorVersion       *string             `json:"connectorVersion,omitempty"`
+	ConnectorDetails       *connectorDetails   `json:"connectorDetails,omitempty"`
+	ConfigVariables        []configVar         `json:"configVariables,omitempty"`
+	AuthConfig             authConfig          `json:"authConfig,omitempty"`
+	DestinationConfig      []destinationConfig `json:"destinationConfigs,omitempty"`
+	Suspended              bool                `json:"suspended,omitempty"`
+	LogConfig              *logConfig          `json:"logConfig,omitempty"`
+	SslConfig              *sslConfig          `json:"sslConfig,omitempty"`
+	EventingEnablementType *string             `json:"eventingEnablementType,omitempty"`
+	EventingConfig         *eventingConfig     `json:"eventingConfig,omitempty"`
 }
 
 type connectionRequest struct {
-	Labels             *map[string]string   `json:"labels,omitempty"`
-	Description        *string              `json:"description,omitempty"`
-	ConnectorDetails   *connectorDetails    `json:"connectorDetails,omitempty"`
-	ConnectorVersion   *string              `json:"connectorVersion,omitempty"`
-	ConfigVariables    *[]configVar         `json:"configVariables,omitempty"`
-	LockConfig         *lockConfig          `json:"lockConfig,omitempty"`
-	DestinationConfigs *[]destinationConfig `json:"destinationConfigs,omitempty"`
-	AuthConfig         *authConfig          `json:"authConfig,omitempty"`
-	ServiceAccount     *string              `json:"serviceAccount,omitempty"`
-	Suspended          *bool                `json:"suspended,omitempty"`
-	NodeConfig         *nodeConfig          `json:"nodeConfig,omitempty"`
-	LogConfig          *logConfig           `json:"logConfig,omitempty"`
-	SslConfig          *sslConfig           `json:"sslConfig,omitempty"`
+	Labels                 *map[string]string   `json:"labels,omitempty"`
+	Description            *string              `json:"description,omitempty"`
+	ConnectorDetails       *connectorDetails    `json:"connectorDetails,omitempty"`
+	ConnectorVersion       *string              `json:"connectorVersion,omitempty"`
+	ConfigVariables        *[]configVar         `json:"configVariables,omitempty"`
+	LockConfig             *lockConfig          `json:"lockConfig,omitempty"`
+	DestinationConfigs     *[]destinationConfig `json:"destinationConfigs,omitempty"`
+	AuthConfig             *authConfig          `json:"authConfig,omitempty"`
+	ServiceAccount         *string              `json:"serviceAccount,omitempty"`
+	Suspended              *bool                `json:"suspended,omitempty"`
+	NodeConfig             *nodeConfig          `json:"nodeConfig,omitempty"`
+	LogConfig              *logConfig           `json:"logConfig,omitempty"`
+	SslConfig              *sslConfig           `json:"sslConfig,omitempty"`
+	EventingEnablementType *string              `json:"eventingEnablementType,omitempty"`
+	EventingConfig         *eventingConfig      `json:"eventingConfig,omitempty"`
 }
 
 type authConfig struct {
@@ -203,6 +207,45 @@ type operation struct {
 	Done     bool                    `json:"done,omitempty"`
 	Error    *status                 `json:"error,omitempty"`
 	Response *map[string]interface{} `json:"response,omitempty"`
+}
+
+type eventingConfig struct {
+	EnrichmentEnabled             bool                  `json:"enrichmentEnabled,omitempty"`
+	PrivateConnectivityEnabled    bool                  `json:"privateConnectivityEnabled,omitempty"`
+	EventsListenerIngressEndpoint string                `json:"eventsListenerIngressEndpoint,omitempty"`
+	AdditionalVariables           []additionalVariables `json:"additionalVariables,omitempty"`
+	RegistrationDestinationConfig *destinationConfig    `json:"registrationDestinationConfig,omitempty"`
+	AuthConfig                    *authConfig           `json:"authConfig,omitempty"`
+	ListenerAuthConfig            authConfig            `json:"listenerAuthConfig,omitempty"`
+	DeadLetterConfig              deadLetterConfig      `json:"deadLetterConfig,omitempty"`
+	ProxyDestinationConfig        *destinationConfig    `json:"proxyDestinationConfig,omitempty"`
+}
+
+type additionalVariables struct {
+	Key                string           `json:"key,omitempty"`
+	IntValue           string           `json:"intValue,omitempty"`
+	BoolValue          bool             `json:"boolValue,omitempty"`
+	StringValue        string           `json:"stringValue,omitempty"`
+	SecretValue        *secretValue     `json:"secretValue,omitempty"`
+	EncryptionKeyValue *encryptionValue `json:"encryptionKeyValue,omitempty"`
+}
+
+type secretValue struct {
+	SecretVersion *string `json:"secretVersion,omitempty"`
+}
+
+type encryptionValue struct {
+	Type       string `json:"type,omitempty"`
+	KmsKeyName string `json:"kmsKeyName,omitempty"`
+}
+
+type deadLetterConfig struct {
+	Topic     string `json:"topic,omitempty"`
+	ProjectId string `json:"projectId,omitempty"`
+}
+
+type proxyDestinationConfig struct {
+	Destinations []destination `json:"destinations,omitempty"`
 }
 
 const interval = 10

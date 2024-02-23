@@ -1,0 +1,172 @@
+{
+    "snapshotNumber": "1",
+    "triggerConfigs": [
+        {
+            "label": "Webhook (Preview)",
+            "triggerType": "INTEGRATION_CONNECTOR_TRIGGER",
+            "triggerNumber": "1",
+            "triggerId": "integration_connector_trigger/projects/nandanks-151422/locations/us-west1/connections/webhook/eventSubscriptions/webhook-test.event-type-field",
+            "startTasks": [
+                {
+                    "taskId": "1"
+                }
+            ],
+            "properties": {
+                "Connection name": "webhook",
+                "Project name": "nandanks-151422",
+                "Region": "us-west1",
+                "Subscription name": "webhook-test.event-type-field"
+            }
+        }
+    ],
+    "taskConfigs": [
+        {
+            "task": "GenericRestV2Task",
+            "taskId": "1",
+            "parameters": {
+                "additionalHeaders": {
+                    "key": "additionalHeaders",
+                    "value": {}
+                },
+                "authConfigName": {
+                    "key": "authConfigName",
+                    "value": {
+                        "stringValue": ""
+                    }
+                },
+                "disableSSLValidation": {
+                    "key": "disableSSLValidation",
+                    "value": {
+                        "booleanValue": false
+                    }
+                },
+                "followRedirects": {
+                    "key": "followRedirects",
+                    "value": {
+                        "booleanValue": true
+                    }
+                },
+                "httpMethod": {
+                    "key": "httpMethod",
+                    "value": {
+                        "stringValue": "GET"
+                    }
+                },
+                "httpParams": {
+                    "key": "httpParams",
+                    "value": {}
+                },
+                "requestBody": {
+                    "key": "requestBody",
+                    "value": {
+                        "stringValue": ""
+                    }
+                },
+                "requestorId": {
+                    "key": "requestorId",
+                    "value": {
+                        "stringValue": ""
+                    }
+                },
+                "responseBody": {
+                    "key": "responseBody",
+                    "value": {
+                        "stringArray": {
+                            "stringValues": [
+                                "$`Task_1_responseBody`$"
+                            ]
+                        }
+                    }
+                },
+                "responseHeader": {
+                    "key": "responseHeader",
+                    "value": {
+                        "stringArray": {
+                            "stringValues": [
+                                "$`Task_1_responseHeader`$"
+                            ]
+                        }
+                    }
+                },
+                "responseStatus": {
+                    "key": "responseStatus",
+                    "value": {
+                        "stringArray": {
+                            "stringValues": [
+                                "$`Task_1_responseStatus`$"
+                            ]
+                        }
+                    }
+                },
+                "throwError": {
+                    "key": "throwError",
+                    "value": {
+                        "booleanValue": true
+                    }
+                },
+                "url": {
+                    "key": "url",
+                    "value": {
+                        "stringValue": "https://httpbin.org/ip"
+                    }
+                },
+                "urlFetchingService": {
+                    "key": "urlFetchingService",
+                    "value": {
+                        "stringValue": "HARPOON"
+                    }
+                },
+                "urlQueryStrings": {
+                    "key": "urlQueryStrings",
+                    "value": {}
+                },
+                "useSSL": {
+                    "key": "useSSL",
+                    "value": {
+                        "booleanValue": false
+                    }
+                },
+                "userAgent": {
+                    "key": "userAgent",
+                    "value": {
+                        "stringValue": ""
+                    }
+                }
+            },
+            "displayName": "Call REST Endpoint",
+            "taskExecutionStrategy": "WHEN_ALL_SUCCEED",
+            "externalTaskType": "NORMAL_TASK"
+        }
+    ],
+    "integrationParameters": [
+        {
+            "key": "`Task_1_responseHeader`",
+            "dataType": "STRING_VALUE",
+            "isTransient": true,
+            "producer": "1_1"
+        },
+        {
+            "key": "`Task_1_responseBody`",
+            "dataType": "STRING_VALUE",
+            "isTransient": true,
+            "producer": "1_1"
+        },
+        {
+            "key": "`Task_1_responseStatus`",
+            "dataType": "STRING_VALUE",
+            "isTransient": true,
+            "producer": "1_1"
+        },
+        {
+            "key": "ConnectorEventPayload_1",
+            "dataType": "JSON_VALUE",
+            "isTransient": true,
+            "producer": "2_1"
+        }
+    ],
+    "databasePersistencePolicy": "",
+    "cloudLoggingDetails": {
+        "cloudLoggingSeverity": "",
+        "enableCloudLogging": false
+    }
+}
