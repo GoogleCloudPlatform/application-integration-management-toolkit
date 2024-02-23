@@ -793,15 +793,19 @@ func GetConnectionDetailWithRegion(name string, region string, view string, mini
 		if overrides {
 			switch c.AuthConfig.AuthType {
 			case "USER_PASSWORD":
-				p := c.AuthConfig.UserPassword.Password.SecretVersion
-				c.AuthConfig.UserPassword.PasswordDetails = new(secretDetails)
-				c.AuthConfig.UserPassword.PasswordDetails.SecretName = strings.Split(p, "/")[3]
-				c.AuthConfig.UserPassword.Password = nil
+				if c.AuthConfig.UserPassword != nil && c.AuthConfig.UserPassword.Password != nil {
+					p := c.AuthConfig.UserPassword.Password.SecretVersion
+					c.AuthConfig.UserPassword.PasswordDetails = new(secretDetails)
+					c.AuthConfig.UserPassword.PasswordDetails.SecretName = strings.Split(p, "/")[3]
+					c.AuthConfig.UserPassword.Password = nil
+				}
 			case "OAUTH2_JWT_BEARER":
-				p := c.AuthConfig.Oauth2JwtBearer.ClientKey.SecretVersion
-				c.AuthConfig.Oauth2JwtBearer.ClientKeyDetails = new(secretDetails)
-				c.AuthConfig.Oauth2JwtBearer.ClientKeyDetails.SecretName = strings.Split(p, "/")[3]
-				c.AuthConfig.Oauth2JwtBearer.ClientKey = nil
+				if c.AuthConfig.Oauth2JwtBearer != nil && c.AuthConfig.Oauth2JwtBearer.ClientKey != nil {
+					p := c.AuthConfig.Oauth2JwtBearer.ClientKey.SecretVersion
+					c.AuthConfig.Oauth2JwtBearer.ClientKeyDetails = new(secretDetails)
+					c.AuthConfig.Oauth2JwtBearer.ClientKeyDetails.SecretName = strings.Split(p, "/")[3]
+					c.AuthConfig.Oauth2JwtBearer.ClientKey = nil
+				}
 			}
 			if isGoogleConnection(c.ConnectorDetails.Name) {
 				for _, configVar := range c.ConfigVariables {
