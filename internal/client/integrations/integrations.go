@@ -802,6 +802,12 @@ func GetConnections(integration []byte) (connections []string, err error) {
 			}
 		}
 	}
+
+	for _, triggerConfig := range iversion.TriggerConfigs {
+		if triggerConfig.TriggerType == "INTEGRATION_CONNECTOR_TRIGGER" {
+			connections = append(connections, triggerConfig.Properties["Connection name"])
+		}
+	}
 	return connections, err
 }
 
@@ -824,6 +830,14 @@ func GetConnectionsWithRegion(integration []byte) (connections []integrationConn
 
 				connections = append(connections, newConnection)
 			}
+		}
+	}
+	for _, triggerConfig := range iversion.TriggerConfigs {
+		if triggerConfig.TriggerType == "INTEGRATION_CONNECTOR_TRIGGER" {
+			newConnection := integrationConnection{}
+			newConnection.Name = triggerConfig.Properties["Connection name"]
+			newConnection.Region = triggerConfig.Properties["Region"]
+			connections = append(connections, newConnection)
 		}
 	}
 	return connections, err
