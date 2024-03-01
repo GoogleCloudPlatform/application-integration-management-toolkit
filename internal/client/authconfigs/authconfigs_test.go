@@ -15,11 +15,12 @@
 package authconfigs
 
 import (
-	"internal/client/clienttest"
-	"internal/cmd/utils"
 	"os"
 	"path"
 	"testing"
+
+	"internal/client/clienttest"
+	"internal/cmd/utils"
 )
 
 var cliPath = os.Getenv("INTEGRATIONCLI_PATH")

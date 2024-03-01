@@ -34,6 +34,10 @@ const (
 	connectorAutoPushBaseURL = "https://autopush-connectors.sandbox.googleapis.com/v1/projects/%s/locations/%s/connections"
 	connectorStagingBaseURL  = "https://staging-connectors.sandbox.googleapis.com/v1/projects/%s/locations/%s/connections"
 
+	customConnectorBaseURL         = "https://connectors.googleapis.com/v1/projects/%s/locations/global/customConnectors"
+	customConnectorAutoPushBaseURL = "https://autopush-connectors.sandbox.googleapis.com/v1/projects/%s/locations/global/customConnectors"
+	customConnectorStagingBaseURL  = "https://staging-connectors.sandbox.googleapis.com/v1/projects/%s/locations/global/customConnectors"
+
 	connectorOperationsBaseURL         = "https://connectors.googleapis.com/v1/projects/%s/locations/%s/operations"
 	connectorOperationsAutoPushBaseURL = "https://autopush-connectors.sandbox.googleapis.com/v1/projects/%s/locations/%s/operations"
 	connectorOperationsStagingBaseURL  = "https://staging-connectors.sandbox.googleapis.com/v1/projects/%s/locations/%s/operations"
@@ -326,6 +330,23 @@ func GetBaseConnectorURL() (connectorUrl string) {
 		return fmt.Sprintf(connectorAutoPushBaseURL, GetProjectID(), GetRegion())
 	default:
 		return fmt.Sprintf(connectorBaseURL, GetProjectID(), GetRegion())
+	}
+}
+
+// GetBaseCustomConnectorURL
+func GetBaseCustomConnectorURL() (connectorUrl string) {
+	if options.ProjectID == "" || options.Region == "" {
+		return ""
+	}
+	switch options.Api {
+	case PROD:
+		return fmt.Sprintf(customConnectorBaseURL, GetProjectID())
+	case STAGING:
+		return fmt.Sprintf(customConnectorStagingBaseURL, GetProjectID())
+	case AUTOPUSH:
+		return fmt.Sprintf(customConnectorAutoPushBaseURL, GetProjectID())
+	default:
+		return fmt.Sprintf(customConnectorBaseURL, GetProjectID())
 	}
 }
 

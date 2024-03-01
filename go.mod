@@ -2,19 +2,19 @@ module github.com/GoogleCloudPlatform/application-integration-management-toolkit
 
 go 1.21
 
-require internal/apiclient v1.0.0
+require internal/apiclient v1.0.0 // indirect
 
 replace internal/apiclient => ./internal/apiclient
 
-require internal/clilog v1.0.0
+require internal/clilog v1.0.0 // indirect
 
 replace internal/clilog => ./internal/clilog
 
-require internal/client v1.0.0
+require internal/client v1.0.0 // indirect
 
 replace internal/client => ./internal/client
 
-require internal/cloudkms v1.0.0
+require internal/cloudkms v1.0.0 // indirect
 
 replace internal/cloudkms => ./internal/cloudkms
 

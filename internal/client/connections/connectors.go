@@ -103,9 +103,10 @@ type sslConfig struct {
 }
 
 type connectorDetails struct {
-	Name     string `json:"name,omitempty"`
-	Provider string `json:"provider,omitempty"`
-	Version  int    `json:"version,omitempty"`
+	Name      string  `json:"name,omitempty"`
+	Provider  string  `json:"provider,omitempty"`
+	Version   *int    `json:"version,omitempty"`
+	VersionId *string `json:"versionId,omitempty"`
 }
 
 type configVar struct {
@@ -346,10 +347,20 @@ func create(name string, content []byte, serviceAccountName string, serviceAccou
 			"#connectors-for-third-party-applications for more details")
 	}
 
-	if c.ConnectorDetails.Name == "" || c.ConnectorDetails.Version < 0 || c.ConnectorDetails.Provider == "" {
-		return nil, fmt.Errorf("connectorDetails Name, Provider and Version must be set." +
+	if c.ConnectorDetails.Version != nil && c.ConnectorDetails.VersionId != nil {
+		return nil, fmt.Errorf("Version and VersionId cannot be set")
+	}
+
+	if c.ConnectorDetails.Name == "" || c.ConnectorDetails.Provider == "" {
+		return nil, fmt.Errorf("connectorDetails Name and Provider must be set." +
 			" See https://github.com/GoogleCloudPlatform/application-integration-management-toolkit" +
 			"#connectors-for-third-party-applications for more details")
+	}
+
+	if c.ConnectorDetails.Provider == "customconnector" && c.ConnectorDetails.VersionId == nil {
+		return nil, fmt.Errorf("connectorDetails VersionId must be set for customconnectors")
+	} else if c.ConnectorDetails.Provider != "customconnector" && c.ConnectorDetails.Version == nil {
+		return nil, fmt.Errorf("connectorDetails Version must be set")
 	}
 
 	// handle project id & region overrides
@@ -446,8 +457,14 @@ func create(name string, content []byte, serviceAccountName string, serviceAccou
 	}
 
 	c.ConnectorVersion = new(string)
-	*c.ConnectorVersion = fmt.Sprintf("projects/%s/locations/global/providers/%s/connectors/%s/versions/%d",
-		apiclient.GetProjectID(), c.ConnectorDetails.Provider, c.ConnectorDetails.Name, c.ConnectorDetails.Version)
+	if c.ConnectorDetails.VersionId != nil {
+		*c.ConnectorVersion = fmt.Sprintf("projects/%s/locations/global/providers/%s/connectors/%s/versions/%s",
+			apiclient.GetProjectID(), c.ConnectorDetails.Provider, c.ConnectorDetails.Name, *c.ConnectorDetails.VersionId)
+	} else {
+		*c.ConnectorVersion = fmt.Sprintf("projects/%s/locations/global/providers/%s/connectors/%s/versions/%d",
+			apiclient.GetProjectID(), c.ConnectorDetails.Provider, c.ConnectorDetails.Name, *c.ConnectorDetails.Version)
+
+	}
 
 	// remove the element
 	c.ConnectorDetails = nil
@@ -741,8 +758,15 @@ func Get(name string, view string, minimal bool, overrides bool) (respBody []byt
 
 		c.ConnectorDetails = new(connectorDetails)
 		c.ConnectorDetails.Name = getConnectorName(*c.ConnectorVersion)
-		c.ConnectorDetails.Version = getConnectorVersion(*c.ConnectorVersion)
 		c.ConnectorDetails.Provider = getConnectorProvider(*c.ConnectorVersion)
+		if c.ConnectorDetails.Provider != "customconnector" {
+			c.ConnectorDetails.Version = new(int)
+			*c.ConnectorDetails.Version = getConnectorVersion(*c.ConnectorVersion)
+		} else {
+			c.ConnectorDetails.VersionId = new(string)
+			*c.ConnectorDetails.VersionId = getConnectorVersionId(*c.ConnectorVersion)
+		}
+
 		c.ConnectorVersion = nil
 		c.Name = nil
 		if overrides {
@@ -829,8 +853,15 @@ func GetConnectionDetailWithRegion(name string, region string, view string, mini
 
 		c.ConnectorDetails = new(connectorDetails)
 		c.ConnectorDetails.Name = getConnectorName(*c.ConnectorVersion)
-		c.ConnectorDetails.Version = getConnectorVersion(*c.ConnectorVersion)
 		c.ConnectorDetails.Provider = getConnectorProvider(*c.ConnectorVersion)
+		if c.ConnectorDetails.Provider != "customconnector" {
+			c.ConnectorDetails.Version = new(int)
+			*c.ConnectorDetails.Version = getConnectorVersion(*c.ConnectorVersion)
+		} else {
+			c.ConnectorDetails.VersionId = new(string)
+			*c.ConnectorDetails.VersionId = getConnectorVersionId(*c.ConnectorVersion)
+		}
+
 		c.ConnectorVersion = nil
 		c.Name = nil
 		if overrides {
@@ -1030,7 +1061,14 @@ func Export(folder string) (err error) {
 	for _, lconnection := range lconnections.Connections {
 		lconnection.ConnectorDetails = new(connectorDetails)
 		lconnection.ConnectorDetails.Name = getConnectorName(*lconnection.ConnectorVersion)
-		lconnection.ConnectorDetails.Version = getConnectorVersion(*lconnection.ConnectorVersion)
+		if lconnection.ConnectorDetails.Provider != "customconnector" {
+			lconnection.ConnectorDetails.Version = new(int)
+			*lconnection.ConnectorDetails.Version = getConnectorVersion(*lconnection.ConnectorVersion)
+		} else {
+			lconnection.ConnectorDetails.VersionId = new(string)
+			*lconnection.ConnectorDetails.VersionId = getConnectorVersionId(*lconnection.ConnectorVersion)
+		}
+
 		lconnection.ConnectorVersion = nil
 		fileName := getConnectionName(*lconnection.Name) + ".json"
 		lconnection.Name = nil
@@ -1058,6 +1096,10 @@ func getConnectorName(version string) string {
 func getConnectorVersion(version string) int {
 	i, _ := strconv.Atoi(strings.Split(version, "/")[9])
 	return i
+}
+
+func getConnectorVersionId(version string) string {
+	return strings.Split(version, "/")[9]
 }
 
 func getConnectionName(name string) string {

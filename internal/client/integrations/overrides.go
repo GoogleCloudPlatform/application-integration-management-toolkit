@@ -172,8 +172,8 @@ func mergeOverrides(eversion integrationVersionExternal, o overrides) (integrati
 
 	// apply connection overrides
 	if !apiclient.DryRun() {
+		foundOverride := false
 		for _, connectionOverride := range o.ConnectionOverrides {
-			foundOverride := false
 			for taskIndex, task := range eversion.TaskConfigs {
 				if connectionOverride.TaskId == task.TaskId && connectionOverride.Task == task.Task {
 					newcp, err := getNewConnectionParams(connectionOverride.Parameters.ConnectionName,
@@ -183,31 +183,46 @@ func mergeOverrides(eversion integrationVersionExternal, o overrides) (integrati
 					}
 
 					cparams := task.Parameters["config"]
+					// Google built connector
+					if cparams.Value.JsonValue != nil {
+						cd, err := getConnectionDetails(*cparams.Value.JsonValue)
+						if err != nil {
+							return eversion, err
+						}
 
-					cd, err := getConnectionDetails(*cparams.Value.JsonValue)
-					if err != nil {
-						return eversion, err
+						cd.Connection.ConnectionName = newcp.ConnectionName
+						cd.Connection.ConnectorVersion = newcp.ConnectorVersion
+						cd.Connection.ServiceName = newcp.ServiceName
+
+						jsonValue, err := stringifyValue(cd)
+						if err != nil {
+							return eversion, err
+						}
+
+						*cparams.Value.JsonValue = jsonValue
+						task.Parameters["config"] = cparams
+
+						if connectionOverride.Parameters.EntityType != nil {
+							task.Parameters["entityType"] = *connectionOverride.Parameters.EntityType
+						}
+
+						eversion.TaskConfigs[taskIndex] = task
+
+						foundOverride = true
 					}
-
-					cd.Connection.ConnectionName = newcp.ConnectionName
-					cd.Connection.ConnectorVersion = newcp.ConnectorVersion
-					cd.Connection.ServiceName = newcp.ServiceName
-
-					jsonValue, err := stringifyValue(cd)
-					if err != nil {
-						return eversion, err
+					cversion := task.Parameters["connectionVersion"]
+					// custom connector
+					if cversion.Value.StringValue != nil {
+						newcp, err := getNewConnectionParams(connectionOverride.Parameters.ConnectionName,
+							connectionOverride.Parameters.ConnectionLocation)
+						if err != nil {
+							return eversion, err
+						}
+						*task.Parameters["connectionVersion"].Value.StringValue = newcp.ConnectorVersion
+						*task.Parameters["connectionName"].Value.StringValue = newcp.ConnectionName
+						eversion.TaskConfigs[taskIndex] = task
+						foundOverride = true
 					}
-
-					*cparams.Value.JsonValue = jsonValue
-					task.Parameters["config"] = cparams
-
-					if connectionOverride.Parameters.EntityType != nil {
-						task.Parameters["entityType"] = *connectionOverride.Parameters.EntityType
-					}
-
-					eversion.TaskConfigs[taskIndex] = task
-
-					foundOverride = true
 				}
 			}
 			if !foundOverride {
@@ -383,19 +398,25 @@ func handleGenericConnectorTask(taskConfig taskconfig, taskOverrides *overrides)
 	co.Task = taskConfig.Task
 
 	cparams, ok := taskConfig.Parameters["config"]
-	if !ok {
-		return nil
-	}
-	cd, err := getConnectionDetails(*cparams.Value.JsonValue)
-	if err != nil {
-		return err
+	if (eventparameter{}) != cparams && ok {
+		cd, err := getConnectionDetails(*cparams.Value.JsonValue)
+		if err != nil {
+			return err
+		}
+
+		parts := strings.Split(cd.Connection.ConnectionName, "/")
+		connName := parts[len(parts)-1]
+		co.Parameters.ConnectionName = connName
+
+		taskOverrides.ConnectionOverrides = append(taskOverrides.ConnectionOverrides, co)
 	}
 
-	parts := strings.Split(cd.Connection.ConnectionName, "/")
-	connName := parts[len(parts)-1]
-	co.Parameters.ConnectionName = connName
+	cconnversion, ok := taskConfig.Parameters["connectionVersion"]
+	if (eventparameter{}) != cconnversion && ok {
+		co.Parameters.ConnectionName = strings.Split(*cconnversion.Value.StringValue, "/")[7]
+		taskOverrides.ConnectionOverrides = append(taskOverrides.ConnectionOverrides, co)
+	}
 
-	taskOverrides.ConnectionOverrides = append(taskOverrides.ConnectionOverrides, co)
 	return nil
 }
 
