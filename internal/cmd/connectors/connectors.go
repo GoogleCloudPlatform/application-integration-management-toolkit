@@ -46,4 +46,5 @@ func init() {
 	Cmd.AddCommand(OperationsCmd)
 	Cmd.AddCommand(ManagedZonesCmd)
 	Cmd.AddCommand(CustomCmd)
+	Cmd.AddCommand(EventSubCmd)
 }

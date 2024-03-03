@@ -26,8 +26,8 @@ var (
 	Info         *log.Logger
 	Warning      *log.Logger
 	Error        *log.Logger
-	HttpResponse *log.Logger
-	HttpError    *log.Logger
+	HTTPResponse *log.Logger
+	HTTPError    *log.Logger
 )
 
 // Init function initializes the logger objects
@@ -51,7 +51,8 @@ func Init(debug bool, print bool, noOutput bool, suppressWarnings bool) {
 		warningHandle = io.Discard
 	} else {
 		responseHandle = os.Stdout
-		warningHandle = os.Stdout
+		// see https://github.com/kubernetes/kubeadm/issues/2632
+		warningHandle = os.Stderr
 		errorHandle = os.Stderr
 	}
 
@@ -74,9 +75,9 @@ func Init(debug bool, print bool, noOutput bool, suppressWarnings bool) {
 		"ERROR: ",
 		log.Ldate|log.Ltime|log.Lshortfile)
 
-	HttpResponse = log.New(responseHandle,
+	HTTPResponse = log.New(responseHandle,
 		"", 0)
 
-	HttpError = log.New(errorHandle,
+	HTTPError = log.New(errorHandle,
 		"", 0)
 }
