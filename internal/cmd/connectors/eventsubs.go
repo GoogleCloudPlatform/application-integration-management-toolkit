@@ -29,4 +29,5 @@ func init() {
 	EventSubCmd.AddCommand(ListEventSubCmd)
 	EventSubCmd.AddCommand(GetEventSubCmd)
 	EventSubCmd.AddCommand(DelEventSubCmd)
+	EventSubCmd.AddCommand(CrtEventSubCmd)
 }
