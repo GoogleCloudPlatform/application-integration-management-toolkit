@@ -44,6 +44,8 @@ steps:
     - apply
     - -f
     - .
+    - -u
+    - ${SHORT_SHA}
     - --wait=${_WAIT}
     - --reg=${_LOCATION}
     - --proj=${PROJECT_ID}
@@ -64,7 +66,7 @@ substitutions:
   _SERVICE_ACCOUNT_NAME: "connectors"
   _KMS_RING_NAME: "app-integration"
   _KMS_KEY_NAME: "integration"
-  _WAIT: "false"
+  _WAIT: "true"
 
 options:
   logging: CLOUD_LOGGING_ONLY
