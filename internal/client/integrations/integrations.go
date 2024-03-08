@@ -28,6 +28,7 @@ import (
 	"sync"
 
 	"internal/apiclient"
+	"internal/client/authconfigs"
 
 	"internal/clilog"
 )
@@ -147,8 +148,8 @@ type parameterExternal struct {
 }
 
 type parameterConfig struct {
-	Parameter parameter `json:"parameter,omitempty"`
-	Value *valueType `json:"value,omitempty"`
+	Parameter parameter  `json:"parameter,omitempty"`
+	Value     *valueType `json:"value,omitempty"`
 }
 
 type parameter struct {
@@ -625,7 +626,7 @@ func GetConfigVariables(contents []byte) (respBody []byte, err error) {
 
 	for _, param := range iversion.IntegrationConfigParameters {
 		configVariables[param.Parameter.Key] = ""
-		if param.Value != nil{
+		if param.Value != nil {
 			if param.Value.StringValue != nil {
 				configVariables[param.Parameter.Key] = param.Value.StringValue
 			} else if param.Value.IntValue != nil {
@@ -638,7 +639,7 @@ func GetConfigVariables(contents []byte) (respBody []byte, err error) {
 				configVariables[param.Parameter.Key] = param.Value.StringArray.StringValues
 			}
 		} else if param.Parameter.DefaultValue != nil {
-			 if param.Parameter.DefaultValue.StringValue != nil {
+			if param.Parameter.DefaultValue.StringValue != nil {
 				configVariables[param.Parameter.Key] = param.Parameter.DefaultValue.StringValue
 			} else if param.Parameter.DefaultValue.IntValue != nil {
 				configVariables[param.Parameter.Key], _ = strconv.ParseInt(*param.Parameter.DefaultValue.IntValue, 10, 0)
@@ -795,31 +796,35 @@ func DownloadUserLabel(name string, userlabel string) (respBody []byte, err erro
 }
 
 // GetAuthConfigs
-func GetAuthConfigs(integration []byte) (authconfigs []string, err error) {
+func GetAuthConfigs(integration []byte) (authcfgs []string, err error) {
 	iversion := integrationVersion{}
 
 	err = json.Unmarshal(integration, &iversion)
 	if err != nil {
-		return authconfigs, err
+		return authcfgs, err
 	}
 
 	for _, taskConfig := range iversion.TaskConfigs {
-		if taskConfig.Task == "GenericRestV2Task" {
+		if taskConfig.Task == "GenericRestV2Task" || taskConfig.Task == "CloudFunctionTask" {
 			authConfigParams := taskConfig.Parameters["authConfig"]
 			if authConfigParams.Key == "authConfig" {
 				authConfigUuid := getAuthConfigUuid(*authConfigParams.Value.JsonValue)
-				authconfigs = append(authconfigs, authConfigUuid)
+				if authConfigUuid != "" {
+					authcfgs = append(authcfgs, authConfigUuid)
+				}
 			}
-		} else if taskConfig.Task == "CloudFunctionTask" {
-			authConfigParams := taskConfig.Parameters["authConfig"]
-			if authConfigParams.Key == "authConfig" {
-				authConfigUuid := getAuthConfigUuid(*authConfigParams.Value.JsonValue)
-				authconfigs = append(authconfigs, authConfigUuid)
+			authConfigNameParams := taskConfig.Parameters["authConfigName"]
+			if authConfigNameParams.Key == "authConfigName" {
+				authConfigUuid, err := authconfigs.Find(*authConfigNameParams.Value.StringValue, "")
+				if err != nil {
+					return nil, fmt.Errorf("unable to find authconfig with name %s", *authConfigNameParams.Value.StringValue)
+				}
+				authcfgs = append(authcfgs, authConfigUuid)
 			}
 		}
 	}
 
-	return authconfigs, err
+	return authcfgs, err
 }
 
 // GetSfdcInstances
@@ -881,7 +886,7 @@ func GetConnectionsWithRegion(integration []byte) (connections []integrationConn
 	for _, taskConfig := range iversion.TaskConfigs {
 		if taskConfig.Task == "GenericConnectorTask" {
 			connectionParams := taskConfig.Parameters["config"]
-			if connectionParams.Key == "config" {
+			if connectionParams.Key == "config" && connectionParams.Value.JsonValue != nil {
 				newConnection := integrationConnection{}
 				newConnection.Name = getConnectionName(*connectionParams.Value.JsonValue)
 				newConnection.Region = getConnectionRegion(*connectionParams.Value.JsonValue)
@@ -889,23 +894,9 @@ func GetConnectionsWithRegion(integration []byte) (connections []integrationConn
 				newConnection.CustomConnection = false
 				connections = append(connections, newConnection)
 			}
-			connectionVersion := taskConfig.Parameters["connectionVersion"]
-			if connectionVersion.Key == "connectionVersion" {
-				newCustomConnection := integrationConnection{}
-				newCustomConnection.Region = "global"
-				newCustomConnection.Name = strings.Split(*connectionVersion.Value.StringValue, "/")[7]
-				newCustomConnection.Version = strings.Split(*connectionVersion.Value.StringValue, "/")[9]
-				newCustomConnection.CustomConnection = true
-				connections = append(connections, newCustomConnection)
-			}
-			connectionName := taskConfig.Parameters["connectionName"]
-			if connectionName.Key == "connectionName" {
-				newConnection := integrationConnection{}
-				newConnection.Name = strings.Split(*connectionName.Value.StringValue, "/")[5]
-				newConnection.Region = strings.Split(*connectionName.Value.StringValue, "/")[3]
-				newConnection.CustomConnection = false
-				connections = append(connections, newConnection)
-			}
+			newConnection := getIntegrationConnection(taskConfig.Parameters["connectionName"],
+				taskConfig.Parameters["connectionVersion"], iversion.IntegrationConfigParameters)
+			connections = append(connections, newConnection)
 		}
 	}
 	for _, triggerConfig := range iversion.TriggerConfigs {
@@ -1435,4 +1426,46 @@ func getJson(contents string) map[string]interface{} {
 	m := make(map[string]interface{})
 	json.Unmarshal([]byte(contents), &m)
 	return m
+}
+
+func getIntegrationConnection(connectionName eventparameter,
+	connectionVersion eventparameter, configParams []parameterConfig) integrationConnection {
+	ic := integrationConnection{}
+
+	// determine connection name.
+
+	// connection name is a variable
+	if strings.HasPrefix(*connectionName.Value.StringValue, "$`CONFIG_") {
+		cName := getConfigParamValue(*connectionName.Value.StringValue, configParams)
+		if cName != "" {
+			ic.Name = strings.Split(cName, "/")[5]
+			ic.Region = strings.Split(cName, "/")[3]
+		}
+	} else {
+		ic.Name = strings.Split(*connectionName.Value.StringValue, "/")[5]
+		ic.Region = strings.Split(*connectionName.Value.StringValue, "/")[3]
+	}
+
+	ic.Version = strings.Split(*connectionVersion.Value.StringValue, "/")[9]
+	connectionType := strings.Split(*connectionVersion.Value.StringValue, "/")[5]
+	if connectionType == "gcp" {
+		ic.CustomConnection = false
+	} else {
+		ic.CustomConnection = true
+	}
+	return ic
+}
+
+func getConfigParamValue(name string, configParams []parameterConfig) string {
+	name = strings.ReplaceAll(name, "$", "")
+	for _, configParam := range configParams {
+		if configParam.Parameter.Key == name {
+			if configParam.Parameter.DefaultValue != nil && configParam.Parameter.DefaultValue.StringValue != nil {
+				return *configParam.Parameter.DefaultValue.StringValue
+			} else if configParam.Value != nil && configParam.Value.StringValue != nil {
+				return *configParam.Value.StringValue
+			}
+		}
+	}
+	return ""
 }
