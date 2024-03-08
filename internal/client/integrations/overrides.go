@@ -359,12 +359,14 @@ func handleGenericRestV2Task(taskConfig taskconfig, taskOverrides *overrides) er
 		if err != nil {
 			return err
 		}
+		if displayName != "" {
+			eventparam := eventparameter{}
+			eventparam.Key = taskConfig.Parameters["authConfig"].Key
+			eventparam.Value.StringValue = &displayName
 
-		eventparam := eventparameter{}
-		eventparam.Key = taskConfig.Parameters["authConfig"].Key
-		eventparam.Value.StringValue = &displayName
+			tc.Parameters["authConfig"] = eventparam
 
-		tc.Parameters["authConfig"] = eventparam
+		}
 	}
 	taskOverrides.TaskOverrides = append(taskOverrides.TaskOverrides, tc)
 	return nil
@@ -381,12 +383,13 @@ func handleCloudFunctionTask(taskConfig taskconfig, taskOverrides *overrides) er
 		if err != nil {
 			return err
 		}
+		if displayName != "" {
+			eventparam := eventparameter{}
+			eventparam.Key = taskConfig.Parameters["authConfig"].Key
+			eventparam.Value.StringValue = &displayName
 
-		eventparam := eventparameter{}
-		eventparam.Key = taskConfig.Parameters["authConfig"].Key
-		eventparam.Value.StringValue = &displayName
-
-		tc.Parameters["authConfig"] = eventparam
+			tc.Parameters["authConfig"] = eventparam
+		}
 	}
 	taskOverrides.TaskOverrides = append(taskOverrides.TaskOverrides, tc)
 	return nil
@@ -399,16 +402,18 @@ func handleGenericConnectorTask(taskConfig taskconfig, taskOverrides *overrides)
 
 	cparams, ok := taskConfig.Parameters["config"]
 	if (eventparameter{}) != cparams && ok {
-		cd, err := getConnectionDetails(*cparams.Value.JsonValue)
-		if err != nil {
-			return err
+		if cparams.Value.JsonValue != nil {
+			cd, err := getConnectionDetails(*cparams.Value.JsonValue)
+			if err != nil {
+				return err
+			}
+
+			parts := strings.Split(cd.Connection.ConnectionName, "/")
+			connName := parts[len(parts)-1]
+			co.Parameters.ConnectionName = connName
+
+			taskOverrides.ConnectionOverrides = append(taskOverrides.ConnectionOverrides, co)
 		}
-
-		parts := strings.Split(cd.Connection.ConnectionName, "/")
-		connName := parts[len(parts)-1]
-		co.Parameters.ConnectionName = connName
-
-		taskOverrides.ConnectionOverrides = append(taskOverrides.ConnectionOverrides, co)
 	}
 
 	cconnversion, ok := taskConfig.Parameters["connectionVersion"]
