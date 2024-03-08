@@ -1,14 +1,24 @@
 {
-    "task_overrides": [{
-        "taskId": "1",
-        "task": "GenericRestV2Task",
-        "parameters":  {
-            "url": {
-                "key": "url",
-                "value": {
-                    "stringValue": "https://httpbin.org/ip"
+    "task_overrides": [
+        {
+            "taskId": "1",
+            "task": "GenericRestV2Task",
+            "parameters": {
+                "url": {
+                    "key": "url",
+                    "value": {
+                        "stringValue": "https://httpbin.org/ip"
+                    }
                 }
             }
         }
-    }]
+    ],
+    "integration_overrides": {
+        "databasePersistencePolicy": "DATABASE_PERSISTENCE_POLICY_UNSPECIFIED",
+        "enableVariableMasking": false,
+        "cloudLoggingDetails": {
+            "cloudLoggingSeverity": "INFO",
+            "enableCloudLogging": true
+        }
+    }
 }
