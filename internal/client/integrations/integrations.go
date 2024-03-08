@@ -51,44 +51,46 @@ type listIntegrationVersions struct {
 }
 
 type integrationVersion struct {
-	Name                          string                   `json:"name,omitempty"`
-	Description                   string                   `json:"description,omitempty"`
-	TaskConfigsInternal           []map[string]interface{} `json:"taskConfigsInternal,omitempty"`
-	TriggerConfigsInternal        []map[string]interface{} `json:"triggerConfigsInternal,omitempty"`
-	IntegrationParametersInternal parametersInternal       `json:"integrationParametersInternal,omitempty"`
-	Origin                        string                   `json:"origin,omitempty"`
-	Status                        string                   `json:"status,omitempty"`
-	SnapshotNumber                string                   `json:"snapshotNumber,omitempty"`
-	UpdateTime                    string                   `json:"updateTime,omitempty"`
-	LockHolder                    string                   `json:"lockHolder,omitempty"`
-	CreateTime                    string                   `json:"createTime,omitempty"`
-	LastModifierEmail             string                   `json:"lastModifierEmail,omitempty"`
-	State                         string                   `json:"state,omitempty"`
-	TriggerConfigs                []triggerconfig          `json:"triggerConfigs,omitempty"`
-	TaskConfigs                   []taskconfig             `json:"taskConfigs,omitempty"`
-	IntegrationParameters         []parameterExternal      `json:"integrationParameters,omitempty"`
-	UserLabel                     *string                  `json:"userLabel,omitempty"`
-	DatabasePersistencePolicy     string                   `json:"databasePersistencePolicy,default=DATABASE_PERSISTENCE_POLICY_UNSPECIFIED"`
-	ErrorCatcherConfigs           []errorCatcherConfig     `json:"errorCatcherConfigs,omitempty"`
-	RunAsServiceAccount           string                   `json:"runAsServiceAccount,omitempty"`
-	ParentTemplateId              string                   `json:"parentTemplateId,omitempty"`
-	CloudLoggingDetails           cloudLoggingDetails      `json:"cloudLoggingDetails,omitempty"`
-	EnableVariableMasking         bool                     `json:"enableVariableMasking,omitempty"`
+	Name                          string                    `json:"name,omitempty"`
+	Description                   string                    `json:"description,omitempty"`
+	TaskConfigsInternal           []map[string]interface{}  `json:"taskConfigsInternal,omitempty"`
+	TriggerConfigsInternal        []map[string]interface{}  `json:"triggerConfigsInternal,omitempty"`
+	IntegrationParametersInternal parametersInternal        `json:"integrationParametersInternal,omitempty"`
+	Origin                        string                    `json:"origin,omitempty"`
+	Status                        string                    `json:"status,omitempty"`
+	SnapshotNumber                string                    `json:"snapshotNumber,omitempty"`
+	UpdateTime                    string                    `json:"updateTime,omitempty"`
+	LockHolder                    string                    `json:"lockHolder,omitempty"`
+	CreateTime                    string                    `json:"createTime,omitempty"`
+	LastModifierEmail             string                    `json:"lastModifierEmail,omitempty"`
+	State                         string                    `json:"state,omitempty"`
+	TriggerConfigs                []triggerconfig           `json:"triggerConfigs,omitempty"`
+	TaskConfigs                   []taskconfig              `json:"taskConfigs,omitempty"`
+	IntegrationParameters         []parameterExternal       `json:"integrationParameters,omitempty"`
+	UserLabel                     *string                   `json:"userLabel,omitempty"`
+	DatabasePersistencePolicy     string                    `json:"databasePersistencePolicy,default=DATABASE_PERSISTENCE_POLICY_UNSPECIFIED"`
+	ErrorCatcherConfigs           []errorCatcherConfig      `json:"errorCatcherConfigs,omitempty"`
+	RunAsServiceAccount           string                    `json:"runAsServiceAccount,omitempty"`
+	ParentTemplateId              string                    `json:"parentTemplateId,omitempty"`
+	CloudLoggingDetails           cloudLoggingDetails       `json:"cloudLoggingDetails,omitempty"`
+	EnableVariableMasking         bool                      `json:"enableVariableMasking,omitempty"`
+	IntegrationConfigParameters   []configParameterExternal `json:"integrationConfigParameters,omitempty"`
 }
 
 type integrationVersionExternal struct {
-	Description               string               `json:"description,omitempty"`
-	SnapshotNumber            string               `json:"snapshotNumber,omitempty"`
-	TriggerConfigs            []triggerconfig      `json:"triggerConfigs,omitempty"`
-	TaskConfigs               []taskconfig         `json:"taskConfigs,omitempty"`
-	IntegrationParameters     []parameterExternal  `json:"integrationParameters,omitempty"`
-	UserLabel                 *string              `json:"userLabel,omitempty"`
-	DatabasePersistencePolicy string               `json:"databasePersistencePolicy,default=DATABASE_PERSISTENCE_POLICY_UNSPECIFIED"`
-	ErrorCatcherConfigs       []errorCatcherConfig `json:"errorCatcherConfigs,omitempty"`
-	RunAsServiceAccount       string               `json:"runAsServiceAccount,omitempty"`
-	ParentTemplateId          string               `json:"parentTemplateId,omitempty"`
-	CloudLoggingDetails       cloudLoggingDetails  `json:"cloudLoggingDetails,omitempty"`
-	EnableVariableMasking     bool                 `json:"enableVariableMasking,omitempty"`
+	Description                 string                    `json:"description,omitempty"`
+	SnapshotNumber              string                    `json:"snapshotNumber,omitempty"`
+	TriggerConfigs              []triggerconfig           `json:"triggerConfigs,omitempty"`
+	TaskConfigs                 []taskconfig              `json:"taskConfigs,omitempty"`
+	IntegrationParameters       []parameterExternal       `json:"integrationParameters,omitempty"`
+	UserLabel                   *string                   `json:"userLabel,omitempty"`
+	DatabasePersistencePolicy   string                    `json:"databasePersistencePolicy,default=DATABASE_PERSISTENCE_POLICY_UNSPECIFIED"`
+	ErrorCatcherConfigs         []errorCatcherConfig      `json:"errorCatcherConfigs,omitempty"`
+	RunAsServiceAccount         string                    `json:"runAsServiceAccount,omitempty"`
+	ParentTemplateId            string                    `json:"parentTemplateId,omitempty"`
+	CloudLoggingDetails         cloudLoggingDetails       `json:"cloudLoggingDetails,omitempty"`
+	EnableVariableMasking       bool                      `json:"enableVariableMasking,omitempty"`
+	IntegrationConfigParameters []configParameterExternal `json:"integrationConfigParameters,omitempty"`
 }
 
 type cloudLoggingDetails struct {
@@ -142,6 +144,11 @@ type parameterExternal struct {
 	Producer        string     `json:"producer,omitempty"`
 	Searchable      bool       `json:"searchable,omitempty"`
 	JsonSchema      string     `json:"jsonSchema,omitempty"`
+}
+
+type configParameterExternal struct {
+	Parameter parameterExternal `json:"parameter,omitempty"`
+	Value     *valueType        `json:"value,omitempty"`
 }
 
 type producedBy struct {
@@ -1231,6 +1238,7 @@ func convertInternalToExternal(internalVersion integrationVersion) (externalVers
 	externalVersion.TriggerConfigs = internalVersion.TriggerConfigs
 	externalVersion.TaskConfigs = internalVersion.TaskConfigs
 	externalVersion.IntegrationParameters = internalVersion.IntegrationParameters
+	externalVersion.IntegrationConfigParameters = internalVersion.IntegrationConfigParameters
 	if internalVersion.UserLabel != nil {
 		externalVersion.UserLabel = new(string)
 		*externalVersion.UserLabel = *internalVersion.UserLabel

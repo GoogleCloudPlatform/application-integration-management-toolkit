@@ -265,6 +265,16 @@ func extractOverrides(iversion integrationVersion) (overrides, error) {
 			taskOverrides.ParamOverrides = append(taskOverrides.ParamOverrides, ip)
 		}
 	}
+	for _, param := range iversion.IntegrationConfigParameters {
+		ip := parameterExternal{}
+		ip.Key = param.Parameter.Key
+		if param.Value != nil {
+			ip.DefaultValue = param.Value
+		} else if param.Parameter.DefaultValue != nil {
+			ip.DefaultValue = param.Parameter.DefaultValue
+		}
+		taskOverrides.ParamOverrides = append(taskOverrides.ParamOverrides, ip)
+	}
 	for _, triggerConfig := range iversion.TriggerConfigs {
 		if triggerConfig.TriggerType == "CLOUD_PUBSUB_EXTERNAL" {
 			subscription := triggerConfig.Properties["Subscription name"]
