@@ -1,4 +1,4 @@
-# Copyright 2022 Google LLC
+# Copyright 2023 Google LLC
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,33 +12,41 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-#to manually trigger from glouc
+#to manually trigger from gcloud
 # gcloud builds submit --config=deploy.yaml --project=project-name --region=us-west1
 
 steps:
-- id: 'Import an integration version to a region'
+- id: 'Apply Integration scaffolding configuration'
   name: us-docker.pkg.dev/appintegration-toolkit/images/integrationcli:latest
-  entrypoint: 'bash'
   args:
-    - -c
-    - |
-      set -e
-      
-      ls -A src | sed 's/\.json'$// > /tmp/name
-      echo "./src/"$(ls -A src) > /tmp/filename
+    - integrations
+    - apply
+    - -f
+    - .
+    - -u
+    - ${SHORT_SHA}
+    - --wait=${_WAIT}
+    - --reg=${_LOCATION}
+    - --proj=${PROJECT_ID}
+    - --metadata-token
+    - $(cat /tmp/cmd)
+    # uncomment these as necessary
+    #- --g=${_GRANT_PERMISSIONS}
+    #- --create-secret=${_CREATE_SECRET}
+    #- -k=locations/$LOCATION/keyRings/${_KMS_RING_NAME}/cryptoKeys/${_KMS_KEY_NAME}
+    #- --sa=${_SERVICE_ACCOUNT_NAME}
 
-      echo "name: " $(cat /tmp/name)
-      echo "filename: " $(cat /tmp/filename)
-
-      /tmp/integrationcli prefs set integrationcli prefs set --nocheck=true --reg=$LOCATION --proj=$PROJECT_ID
-      /integrationcli token cache --metadata-token
-
-      /tmp/integrationcli integrations create -n $(cat /tmp/name) -f $(cat /tmp/filename) -u $SHORT_SHA -o ./overrides/overrides.json > /tmp/response
-      echo "integration response: " $(cat /tmp/response)
-      basename $(cat /tmp/response | jq -r .name) > /tmp/version
-      echo "integration version: " $(cat /tmp/version)
-
-      /tmp/integrationcli integrations versions publish -n $(cat /tmp/name) -v $(cat /tmp/version)
+#the name of the service account  to use when setting up the connector
+substitutions:
+  _GRANT_PERMISSIONS: "true"
+  _CREATE_SECRET: "false"
+  _ENCRYPTED: "false"
+  _DEFAULT_SA: "false"
+  _SERVICE_ACCOUNT_NAME: "connectors"
+  _KMS_RING_NAME: "app-integration"
+  _KMS_KEY_NAME: "integration"
+  _WAIT: "true"
 
 options:
   logging: CLOUD_LOGGING_ONLY
+  substitution_option: "ALLOW_LOOSE"

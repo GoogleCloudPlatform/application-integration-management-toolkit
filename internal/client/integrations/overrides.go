@@ -117,6 +117,14 @@ func mergeOverrides(eversion integrationVersionExternal, o overrides) (integrati
 					if triggerOverride.CloudSchedulerLocation != nil {
 						trigger.CloudSchedulerConfig.Location = *triggerOverride.CloudSchedulerLocation
 					}
+				case "INTEGRATION_CONNECTOR_TRIGGER":
+					if len(triggerOverride.Properties) > 0 {
+						trigger.TriggerId = fmt.Sprintf("integration_connector_trigger/projects/%s/locations/%s/connections/%s/eventSubscriptions/%s",
+							triggerOverride.Properties["Project name"],
+							triggerOverride.Properties["Region"], triggerOverride.Properties["Connection name"],
+							triggerOverride.Properties["Subscription name"])
+						trigger.Properties = triggerOverride.Properties
+					}
 				default:
 					clilog.Warning.Printf("unsupported trigger type %s\n", trigger.TriggerType)
 				}
@@ -276,7 +284,8 @@ func extractOverrides(iversion integrationVersion) (overrides, error) {
 		taskOverrides.ParamOverrides = append(taskOverrides.ParamOverrides, ip)
 	}
 	for _, triggerConfig := range iversion.TriggerConfigs {
-		if triggerConfig.TriggerType == "CLOUD_PUBSUB_EXTERNAL" {
+		switch triggerConfig.TriggerType {
+		case "CLOUD_PUBSUB_EXTERNAL":
 			subscription := triggerConfig.Properties["Subscription name"]
 			triggerOverride := triggeroverrides{}
 			triggerOverride.ProjectId = new(string)
@@ -285,7 +294,7 @@ func extractOverrides(iversion integrationVersion) (overrides, error) {
 			*triggerOverride.TopicName = strings.Split(subscription, "_")[1]
 			triggerOverride.TriggerNumber = triggerConfig.TriggerNumber
 			taskOverrides.TriggerOverrides = append(taskOverrides.TriggerOverrides, triggerOverride)
-		} else if triggerConfig.TriggerType == "CLOUD_SCHEDULER" {
+		case "CLOUD_SCHEDULER":
 			triggerOverride := triggeroverrides{}
 			triggerOverride.CloudSchedulerServiceAccount = new(string)
 			triggerOverride.CloudSchedulerLocation = new(string)
@@ -293,6 +302,12 @@ func extractOverrides(iversion integrationVersion) (overrides, error) {
 			*triggerOverride.CloudSchedulerServiceAccount = triggerConfig.CloudSchedulerConfig.ServiceAccountEmail
 			*triggerOverride.CloudSchedulerLocation = triggerConfig.CloudSchedulerConfig.Location
 			*triggerOverride.CloudSchedulerCronTab = triggerConfig.CloudSchedulerConfig.CronTab
+			taskOverrides.TriggerOverrides = append(taskOverrides.TriggerOverrides, triggerOverride)
+		case "INTEGRATION_CONNECTOR_TRIGGER":
+			triggerOverride := triggeroverrides{}
+			triggerOverride.Properties = triggerConfig.Properties
+			triggerOverride.TriggerNumber = triggerConfig.TriggerNumber
+			triggerOverride.TriggerType = triggerConfig.TriggerType
 			taskOverrides.TriggerOverrides = append(taskOverrides.TriggerOverrides, triggerOverride)
 		}
 	}
