@@ -1460,10 +1460,10 @@ func getConfigParamValue(name string, configParams []parameterConfig) string {
 	name = strings.ReplaceAll(name, "$", "")
 	for _, configParam := range configParams {
 		if configParam.Parameter.Key == name {
-			if configParam.Parameter.DefaultValue != nil && configParam.Parameter.DefaultValue.StringValue != nil {
-				return *configParam.Parameter.DefaultValue.StringValue
-			} else if configParam.Value != nil && configParam.Value.StringValue != nil {
+			if configParam.Value != nil && configParam.Value.StringValue != nil {
 				return *configParam.Value.StringValue
+			} else if configParam.Parameter.DefaultValue != nil && configParam.Parameter.DefaultValue.StringValue != nil {
+				return *configParam.Parameter.DefaultValue.StringValue
 			}
 		}
 	}
