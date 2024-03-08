@@ -148,6 +148,7 @@ type parameterExternal struct {
 
 type parameterConfig struct {
 	Parameter parameter `json:"parameter,omitempty"`
+	Value *valueType `json:"value,omitempty"`
 }
 
 type parameter struct {
@@ -624,8 +625,20 @@ func GetConfigVariables(contents []byte) (respBody []byte, err error) {
 
 	for _, param := range iversion.IntegrationConfigParameters {
 		configVariables[param.Parameter.Key] = ""
-		if param.Parameter.DefaultValue != nil {
-			if param.Parameter.DefaultValue.StringValue != nil {
+		if param.Value != nil{
+			if param.Value.StringValue != nil {
+				configVariables[param.Parameter.Key] = param.Value.StringValue
+			} else if param.Value.IntValue != nil {
+				configVariables[param.Parameter.Key], _ = strconv.ParseInt(*param.Value.IntValue, 10, 0)
+			} else if param.Value.JsonValue != nil {
+				configVariables[param.Parameter.Key] = getJson(*param.Value.JsonValue)
+			} else if param.Value.BooleanValue != nil {
+				configVariables[param.Parameter.Key] = param.Value.BooleanValue
+			} else if param.Value.StringArray != nil {
+				configVariables[param.Parameter.Key] = param.Value.StringArray.StringValues
+			}
+		} else if param.Parameter.DefaultValue != nil {
+			 if param.Parameter.DefaultValue.StringValue != nil {
 				configVariables[param.Parameter.Key] = param.Parameter.DefaultValue.StringValue
 			} else if param.Parameter.DefaultValue.IntValue != nil {
 				configVariables[param.Parameter.Key], _ = strconv.ParseInt(*param.Parameter.DefaultValue.IntValue, 10, 0)
