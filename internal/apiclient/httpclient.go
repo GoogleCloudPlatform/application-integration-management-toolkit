@@ -120,7 +120,7 @@ func PrettyPrint(body []byte) error {
 			return err
 		}
 
-		clilog.HttpResponse.Println(prettyJSON.String())
+		clilog.HTTPResponse.Println(prettyJSON.String())
 	}
 	return nil
 }
@@ -236,7 +236,7 @@ func handleResponse(resp *http.Response) (respBody []byte, err error) {
 			return respBody, nil
 		}
 		clilog.Debug.Printf("status code %d, error in response: %s\n", resp.StatusCode, string(respBody))
-		clilog.HttpError.Println(string(respBody))
+		clilog.HTTPError.Println(string(respBody))
 		return nil, errors.New(getErrorMessage(resp.StatusCode) + ": " + string(respBody))
 	}
 

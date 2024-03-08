@@ -45,4 +45,6 @@ func init() {
 	Cmd.AddCommand(PatchCmd)
 	Cmd.AddCommand(OperationsCmd)
 	Cmd.AddCommand(ManagedZonesCmd)
+	Cmd.AddCommand(CustomCmd)
+	Cmd.AddCommand(EventSubCmd)
 }

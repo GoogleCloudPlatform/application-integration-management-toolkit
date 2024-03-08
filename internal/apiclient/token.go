@@ -323,7 +323,7 @@ func GetMetadataAccessToken() (err error) {
 		return err
 	} else if resp.StatusCode > 399 {
 		clilog.Debug.Printf("status code %d, error in response: %s\n", resp.StatusCode, string(respBody))
-		clilog.HttpError.Println(string(respBody))
+		clilog.HTTPError.Println(string(respBody))
 		return errors.New(getErrorMessage(resp.StatusCode))
 	}
 

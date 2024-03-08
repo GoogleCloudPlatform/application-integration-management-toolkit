@@ -239,8 +239,10 @@ type cloudSchedulerConfig struct {
 }
 
 type integrationConnection struct {
-	Name   string
-	Region string
+	Name             string
+	Region           string
+	Version          string
+	CustomConnection bool
 }
 
 // CreateVersion
@@ -292,7 +294,6 @@ func CreateVersion(name string, content []byte, overridesContent []byte, snapsho
 
 	u, _ := url.Parse(apiclient.GetBaseIntegrationURL())
 	u.Path = path.Join(u.Path, "integrations", name, "versions")
-
 	respBody, err = apiclient.HttpClient(u.String(), string(content))
 	return respBody, err
 }
@@ -489,7 +490,6 @@ func List(pageSize int, pageToken string, filter string, orderBy string) (respBo
 
 // Get
 func Get(name string, version string, basicInfo bool, minimal bool, override bool) ([]byte, error) {
-
 	if (basicInfo && minimal) || (basicInfo && override) || (minimal && override) {
 		return nil, errors.New("cannot combine basicInfo, minimal and override flags")
 	}
@@ -827,7 +827,25 @@ func GetConnectionsWithRegion(integration []byte) (connections []integrationConn
 				newConnection := integrationConnection{}
 				newConnection.Name = getConnectionName(*connectionParams.Value.JsonValue)
 				newConnection.Region = getConnectionRegion(*connectionParams.Value.JsonValue)
-
+				newConnection.Version = getConnectionVersion(*connectionParams.Value.JsonValue)
+				newConnection.CustomConnection = false
+				connections = append(connections, newConnection)
+			}
+			connectionVersion := taskConfig.Parameters["connectionVersion"]
+			if connectionVersion.Key == "connectionVersion" {
+				newCustomConnection := integrationConnection{}
+				newCustomConnection.Region = "global"
+				newCustomConnection.Name = strings.Split(*connectionVersion.Value.StringValue, "/")[7]
+				newCustomConnection.Version = strings.Split(*connectionVersion.Value.StringValue, "/")[9]
+				newCustomConnection.CustomConnection = true
+				connections = append(connections, newCustomConnection)
+			}
+			connectionName := taskConfig.Parameters["connectionName"]
+			if connectionName.Key == "connectionName" {
+				newConnection := integrationConnection{}
+				newConnection.Name = strings.Split(*connectionName.Value.StringValue, "/")[5]
+				newConnection.Region = strings.Split(*connectionName.Value.StringValue, "/")[3]
+				newConnection.CustomConnection = false
 				connections = append(connections, newConnection)
 			}
 		}
@@ -1324,4 +1342,24 @@ func getConnectionRegion(jsonValue string) string {
 	name := c.Connection.ConnectionName
 	r := regexp.MustCompile(`.*/locations/(.*)/connections/.*`)
 	return r.FindStringSubmatch(name)[1]
+}
+
+func getConnectionVersion(jsonValue string) string {
+	type connection struct {
+		ConnectionName    string `json:"connectionName,omitempty"`
+		ServiceName       string `json:"serviceName,omitempty"`
+		ConnectionVersion string `json:"connectionVersion,omitempty"`
+	}
+
+	type config struct {
+		Type       string     `json:"@type,omitempty"`
+		Connection connection `json:"connection,omitempty"`
+		Operation  string     `json:"operation,omitempty"`
+	}
+
+	c := config{}
+
+	_ = json.Unmarshal([]byte(jsonValue), &c)
+	version := c.Connection.ConnectionVersion
+	return version[strings.LastIndex(version, "/")+1:]
 }

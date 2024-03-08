@@ -44,8 +44,8 @@ import (
 // RootCmd to manage integrationcli
 var RootCmd = &cobra.Command{
 	Use:   "integrationcli",
-	Short: "Utility to work with Integration & Connectors",
-	Long:  "This command lets you interact with Integration and Connector APIs.",
+	Short: "Utility to work with GCP App Integration & Connectors",
+	Long:  "This command lets you interact with GCP Application Integration and Integration Connector APIs.",
 	PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
 		cmdServiceAccount := cmd.Flag("account").Value.String()
 		cmdToken := cmd.Flag("token").Value.String()
@@ -135,7 +135,7 @@ func init() {
 		false, "Disable printing all statements to stdout")
 
 	RootCmd.Flags().BoolVarP(&suppressWarnings, "suppress-warnings", "",
-		false, "Disable printing warning statements to stdout")
+		false, "Disable printing warning statements to stderr")
 
 	RootCmd.PersistentFlags().BoolVarP(&verbose, "verbose", "",
 		false, "Enable verbose output from integrationcli")

@@ -16,12 +16,12 @@ package clienttest
 
 import (
 	"fmt"
-	"internal/apiclient"
 	"os"
+
+	"internal/apiclient"
 )
 
 func TestSetup() (err error) {
-
 	apiclient.NewIntegrationClient(apiclient.IntegrationClientOptions{
 		TokenCheck:  true,
 		PrintOutput: true,

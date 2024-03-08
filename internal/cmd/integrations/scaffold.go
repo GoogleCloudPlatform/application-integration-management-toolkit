@@ -180,21 +180,48 @@ var ScaffoldCmd = &cobra.Command{
 			if err = generateFolder(path.Join(folder, "connectors")); err != nil {
 				return err
 			}
+			//check for custom connectors
 			for _, connector := range connectors {
-				connectionResp, err := connections.GetConnectionDetailWithRegion(connector.Name, connector.Region, "", true, true)
-				if err != nil {
-					return err
+				if connector.CustomConnection {
+					if err = generateFolder(path.Join(folder, "custom-connectors")); err != nil {
+						return err
+					}
+					break
 				}
-				clilog.Info.Printf("Storing connector %s\n", connector)
-				connectionResp, err = apiclient.PrettifyJson(connectionResp)
-				if err != nil {
-					return err
-				}
-				if err = apiclient.WriteByteArrayToFile(
-					path.Join(folder, "connectors", connector.Name+jsonExt),
-					false,
-					connectionResp); err != nil {
-					return err
+			}
+			for _, connector := range connectors {
+				if connector.CustomConnection {
+					customConnectionResp, err := connections.GetCustomVersion(connector.Name, connector.Version, true)
+					if err != nil {
+						return err
+					}
+					clilog.Info.Printf("Storing custom connector %s\n", connector.Name)
+					customConnectionResp, err = apiclient.PrettifyJson(customConnectionResp)
+					if err != nil {
+						return err
+					}
+					if err = apiclient.WriteByteArrayToFile(
+						path.Join(folder, "custom-connectors", connector.Name+"-"+connector.Version+jsonExt),
+						false,
+						customConnectionResp); err != nil {
+						return err
+					}
+				} else {
+					connectionResp, err := connections.GetConnectionDetailWithRegion(connector.Name, connector.Region, "", true, true)
+					if err != nil {
+						return err
+					}
+					clilog.Info.Printf("Storing connector %s\n", connector.Name)
+					connectionResp, err = apiclient.PrettifyJson(connectionResp)
+					if err != nil {
+						return err
+					}
+					if err = apiclient.WriteByteArrayToFile(
+						path.Join(folder, "connectors", connector.Name+jsonExt),
+						false,
+						connectionResp); err != nil {
+						return err
+					}
 				}
 			}
 		}

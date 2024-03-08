@@ -69,6 +69,7 @@ var ApplyCmd = &cobra.Command{
 		integrationFolder := path.Join(srcFolder, "src")
 		authconfigFolder := path.Join(folder, "authconfigs")
 		connectorsFolder := path.Join(folder, "connectors")
+		customConnectorsFolder := path.Join(folder, "custom-connectors")
 		overridesFile := path.Join(folder, "overrides/overrides.json")
 		sfdcinstancesFolder := path.Join(folder, "sfdcinstances")
 		sfdcchannelsFolder := path.Join(folder, "sfdcchannels")
@@ -183,6 +184,34 @@ var ApplyCmd = &cobra.Command{
 			if err != nil {
 				return err
 			}
+		}
+
+		if stat, err = os.Stat(customConnectorsFolder); err == nil && stat.IsDir() {
+			//create any custom connectors
+			err = filepath.Walk(customConnectorsFolder, func(path string, info os.FileInfo, err error) error {
+				if err != nil {
+					return err
+				}
+				if !info.IsDir() {
+					customConnectionFile := filepath.Base(path)
+					if rJSONFiles.MatchString(customConnectionFile) {
+						customConnectionDetails := strings.Split(strings.TrimSuffix(customConnectionFile, filepath.Ext(customConnectionFile)), "-")
+						// the file format is name-version.json
+						if len(customConnectionDetails) == 2 {
+							clilog.Info.Printf("Found configuration for custom connection: %v\n", customConnectionFile)
+							contents, err := utils.ReadFile(path)
+							if err != nil {
+								return err
+							}
+							if err = connections.CreateCustomWithVersion(customConnectionDetails[0],
+								customConnectionDetails[1], contents, serviceAccountName, serviceAccountProject); err != nil {
+								return err
+							}
+						}
+					}
+				}
+				return nil
+			})
 		}
 
 		if stat, err = os.Stat(connectorsFolder); err == nil && stat.IsDir() {

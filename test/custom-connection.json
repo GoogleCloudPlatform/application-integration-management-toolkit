@@ -1,0 +1,4 @@
+{
+    "enableBackendDestinationConfig": false,
+    "specLocation": "https://raw.githubusercontent.com/apigee/apigeecli/main/test/petstore.json"
+}
