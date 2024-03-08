@@ -16,7 +16,9 @@ package integrations
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
+	"regexp"
 	"strings"
 
 	"internal/apiclient"
@@ -265,7 +267,7 @@ func extractOverrides(iversion integrationVersion) (overrides, error) {
 
 	for _, task := range iversion.TaskConfigs {
 		if task.Task == "GenericConnectorTask" {
-			if err := handleGenericConnectorTask(task, &taskOverrides); err != nil {
+			if err := handleGenericConnectorTask(task, &taskOverrides, iversion.IntegrationConfigParameters); err != nil {
 				return taskOverrides, err
 			}
 		} else if task.Task == "GenericRestV2Task" {
@@ -395,13 +397,30 @@ func handleCloudFunctionTask(taskConfig taskconfig, taskOverrides *overrides) er
 	return nil
 }
 
-func handleGenericConnectorTask(taskConfig taskconfig, taskOverrides *overrides) error {
+func handleGenericConnectorTask(taskConfig taskconfig, taskOverrides *overrides, iconfigParam []parameterConfig) error {
 	co := connectionoverrides{}
 	co.TaskId = taskConfig.TaskId
 	co.Task = taskConfig.Task
 
 	cparams, ok := taskConfig.Parameters["config"]
-	if (eventparameter{}) != cparams && ok {
+	connectionNameparams, okConnectionName := taskConfig.Parameters["connectionName"]
+
+	if !ok && !okConnectionName {
+		return nil
+	}
+	if connectionNameparams.Key == "connectionName" {
+		if connectionNameparams.Value.StringValue != nil {
+			connectionName, err := getConnectionStringFromConnectionName(*connectionNameparams.Value.StringValue, iconfigParam)
+			if err != nil {
+				return err
+			}
+			parts := strings.Split(connectionName, "/")
+			connName := parts[len(parts)-1]
+			co.Parameters.ConnectionName = connName
+
+		}
+
+	} else if (eventparameter{}) != cparams && ok {
 		if cparams.Value.JsonValue != nil {
 			cd, err := getConnectionDetails(*cparams.Value.JsonValue)
 			if err != nil {
@@ -411,16 +430,9 @@ func handleGenericConnectorTask(taskConfig taskconfig, taskOverrides *overrides)
 			parts := strings.Split(cd.Connection.ConnectionName, "/")
 			connName := parts[len(parts)-1]
 			co.Parameters.ConnectionName = connName
-
-			taskOverrides.ConnectionOverrides = append(taskOverrides.ConnectionOverrides, co)
 		}
 	}
-
-	cconnversion, ok := taskConfig.Parameters["connectionVersion"]
-	if (eventparameter{}) != cconnversion && ok {
-		co.Parameters.ConnectionName = strings.Split(*cconnversion.Value.StringValue, "/")[7]
-		taskOverrides.ConnectionOverrides = append(taskOverrides.ConnectionOverrides, co)
-	}
+	taskOverrides.ConnectionOverrides = append(taskOverrides.ConnectionOverrides, co)
 
 	return nil
 }
@@ -503,4 +515,29 @@ func stringifyValue(cd connectiondetails) (string, error) {
 		return "", err
 	}
 	return string(jsonValue), nil
+}
+
+// getConnectionStringFromConnectionName
+func getConnectionStringFromConnectionName(connectionName string, iconfigParam []parameterConfig) (connection string, err error) {
+
+	var name string
+	if strings.HasPrefix(connectionName, "$`CONFIG_") {
+		for _, param := range iconfigParam {
+			if param.Parameter.Key == strings.ReplaceAll(connectionName, "$", "") {
+				if param.Value != nil {
+					name = *param.Value.StringValue
+				} else if param.Parameter.DefaultValue != nil {
+					name = *param.Parameter.DefaultValue.StringValue
+				}
+			}
+		}
+	} else {
+		name = connectionName
+	}
+
+	re := regexp.MustCompile(`projects/(.*)/locations/(.*)/connections/(.*)`)
+	if !re.MatchString(name) {
+		return "", errors.New("Connection Name is not valid. Connection name should be in the format: projects/{projectId}/locations/{locationId}/connections/{connectionId}")
+	}
+	return name, nil
 }
