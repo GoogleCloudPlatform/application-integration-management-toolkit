@@ -16,6 +16,7 @@ package integrations
 
 import (
 	"errors"
+	"os"
 
 	"internal/apiclient"
 
@@ -45,20 +46,30 @@ var PublishVerCmd = &cobra.Command{
 	RunE: func(cmd *cobra.Command, args []string) (err error) {
 		version := cmd.Flag("ver").Value.String()
 		name := cmd.Flag("name").Value.String()
+		configVarsFile := cmd.Flag("config-vars").Value.String()
+
+		if _, err := os.Stat(configVarsFile); os.IsNotExist(err) {
+			return err
+		}
+
+		contents, err := os.ReadFile(configVarsFile)
+		if err != nil {
+			return err
+		}
 
 		if version != "" {
-			_, err = integrations.Publish(name, version)
+			_, err = integrations.Publish(name, version, contents)
 		} else if userLabel != "" {
-			_, err = integrations.PublishUserLabel(name, userLabel)
+			_, err = integrations.PublishUserLabel(name, userLabel, contents)
 		} else if snapshot != "" {
-			_, err = integrations.PublishSnapshot(name, snapshot)
+			_, err = integrations.PublishSnapshot(name, snapshot, contents)
 		}
 		return err
 	},
 }
 
 func init() {
-	var name, version string
+	var name, version, configVars string
 
 	PublishVerCmd.Flags().StringVarP(&name, "name", "n",
 		"", "Integration flow name")
@@ -68,6 +79,8 @@ func init() {
 		"", "Integration flow user label")
 	PublishVerCmd.Flags().StringVarP(&snapshot, "snapshot", "s",
 		"", "Integration flow snapshot number")
+	PublishVerCmd.Flags().StringVarP(&configVars, "config-vars", "",
+		"", "Path to file containing config variables")
 
 	_ = PublishVerCmd.MarkFlagRequired("name")
 }

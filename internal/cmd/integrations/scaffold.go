@@ -123,6 +123,7 @@ var ScaffoldCmd = &cobra.Command{
 			return err
 		}
 
+		// write integration overrides
 		if len(overridesBody) > 0 && string(overridesBody) != "{}" {
 			clilog.Info.Printf("Found overrides in the integration, storing the overrides file\n")
 			if err = generateFolder(path.Join(folder, "overrides")); err != nil {
@@ -136,6 +137,25 @@ var ScaffoldCmd = &cobra.Command{
 				path.Join(folder, "overrides", "overrides.json"),
 				false,
 				overridesBody); err != nil {
+				return err
+			}
+		}
+
+		// write integation config variables
+		configVariables, err := integrations.GetConfigVariables(integrationBody)
+		if err != nil {
+			return err
+		}
+		if len(configVariables) > 0 {
+			clilog.Info.Printf("Found config variables in the integration, storing the config file\n")
+			if err = generateFolder(path.Join(folder, "config-variables")); err != nil {
+				return err
+			}
+			configVariables, err = apiclient.PrettifyJson(configVariables)
+			if err = apiclient.WriteByteArrayToFile(
+				path.Join(folder, "config-variables", name+"-config.json"),
+				false,
+				configVariables); err != nil {
 				return err
 			}
 		}

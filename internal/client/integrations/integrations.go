@@ -67,6 +67,7 @@ type integrationVersion struct {
 	TriggerConfigs                []triggerconfig          `json:"triggerConfigs,omitempty"`
 	TaskConfigs                   []taskconfig             `json:"taskConfigs,omitempty"`
 	IntegrationParameters         []parameterExternal      `json:"integrationParameters,omitempty"`
+	IntegrationConfigParameters   []parameterConfig        `json:"integrationConfigParameters,omitempty"`
 	UserLabel                     *string                  `json:"userLabel,omitempty"`
 	DatabasePersistencePolicy     string                   `json:"databasePersistencePolicy,default=DATABASE_PERSISTENCE_POLICY_UNSPECIFIED"`
 	ErrorCatcherConfigs           []errorCatcherConfig     `json:"errorCatcherConfigs,omitempty"`
@@ -77,18 +78,19 @@ type integrationVersion struct {
 }
 
 type integrationVersionExternal struct {
-	Description               string               `json:"description,omitempty"`
-	SnapshotNumber            string               `json:"snapshotNumber,omitempty"`
-	TriggerConfigs            []triggerconfig      `json:"triggerConfigs,omitempty"`
-	TaskConfigs               []taskconfig         `json:"taskConfigs,omitempty"`
-	IntegrationParameters     []parameterExternal  `json:"integrationParameters,omitempty"`
-	UserLabel                 *string              `json:"userLabel,omitempty"`
-	DatabasePersistencePolicy string               `json:"databasePersistencePolicy,default=DATABASE_PERSISTENCE_POLICY_UNSPECIFIED"`
-	ErrorCatcherConfigs       []errorCatcherConfig `json:"errorCatcherConfigs,omitempty"`
-	RunAsServiceAccount       string               `json:"runAsServiceAccount,omitempty"`
-	ParentTemplateId          string               `json:"parentTemplateId,omitempty"`
-	CloudLoggingDetails       cloudLoggingDetails  `json:"cloudLoggingDetails,omitempty"`
-	EnableVariableMasking     bool                 `json:"enableVariableMasking,omitempty"`
+	Description                 string               `json:"description,omitempty"`
+	SnapshotNumber              string               `json:"snapshotNumber,omitempty"`
+	TriggerConfigs              []triggerconfig      `json:"triggerConfigs,omitempty"`
+	TaskConfigs                 []taskconfig         `json:"taskConfigs,omitempty"`
+	IntegrationParameters       []parameterExternal  `json:"integrationParameters,omitempty"`
+	IntegrationConfigParameters []parameterConfig    `json:"integrationConfigParameters,omitempty"`
+	UserLabel                   *string              `json:"userLabel,omitempty"`
+	DatabasePersistencePolicy   string               `json:"databasePersistencePolicy,default=DATABASE_PERSISTENCE_POLICY_UNSPECIFIED"`
+	ErrorCatcherConfigs         []errorCatcherConfig `json:"errorCatcherConfigs,omitempty"`
+	RunAsServiceAccount         string               `json:"runAsServiceAccount,omitempty"`
+	ParentTemplateId            string               `json:"parentTemplateId,omitempty"`
+	CloudLoggingDetails         cloudLoggingDetails  `json:"cloudLoggingDetails,omitempty"`
+	EnableVariableMasking       bool                 `json:"enableVariableMasking,omitempty"`
 }
 
 type cloudLoggingDetails struct {
@@ -142,6 +144,18 @@ type parameterExternal struct {
 	Producer        string     `json:"producer,omitempty"`
 	Searchable      bool       `json:"searchable,omitempty"`
 	JsonSchema      string     `json:"jsonSchema,omitempty"`
+}
+
+type parameterConfig struct {
+	Parameter parameter `json:"parameter,omitempty"`
+	Value *valueType `json:"value,omitempty"`
+}
+
+type parameter struct {
+	Key          string     `json:"key,omitempty"`
+	DataType     string     `json:"dataType,omitempty"`
+	DefaultValue *valueType `json:"defaultValue,omitempty"`
+	DisplayName  string     `json:"displayName,omitempty"`
 }
 
 type producedBy struct {
@@ -599,6 +613,50 @@ func GetByUserlabel(name string, userLabel string, basicInfo bool, minimal bool,
 	return Get(name, version, false, minimal, override)
 }
 
+// GetConfigVariables
+func GetConfigVariables(contents []byte) (respBody []byte, err error) {
+	iversion := integrationVersion{}
+	configVariables := make(map[string]interface{})
+
+	err = json.Unmarshal(contents, &iversion)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, param := range iversion.IntegrationConfigParameters {
+		configVariables[param.Parameter.Key] = ""
+		if param.Value != nil{
+			if param.Value.StringValue != nil {
+				configVariables[param.Parameter.Key] = param.Value.StringValue
+			} else if param.Value.IntValue != nil {
+				configVariables[param.Parameter.Key], _ = strconv.ParseInt(*param.Value.IntValue, 10, 0)
+			} else if param.Value.JsonValue != nil {
+				configVariables[param.Parameter.Key] = getJson(*param.Value.JsonValue)
+			} else if param.Value.BooleanValue != nil {
+				configVariables[param.Parameter.Key] = param.Value.BooleanValue
+			} else if param.Value.StringArray != nil {
+				configVariables[param.Parameter.Key] = param.Value.StringArray.StringValues
+			}
+		} else if param.Parameter.DefaultValue != nil {
+			 if param.Parameter.DefaultValue.StringValue != nil {
+				configVariables[param.Parameter.Key] = param.Parameter.DefaultValue.StringValue
+			} else if param.Parameter.DefaultValue.IntValue != nil {
+				configVariables[param.Parameter.Key], _ = strconv.ParseInt(*param.Parameter.DefaultValue.IntValue, 10, 0)
+			} else if param.Parameter.DefaultValue.JsonValue != nil {
+				configVariables[param.Parameter.Key] = getJson(*param.Parameter.DefaultValue.JsonValue)
+			} else if param.Parameter.DefaultValue.BooleanValue != nil {
+				configVariables[param.Parameter.Key] = param.Parameter.DefaultValue.BooleanValue
+			} else if param.Parameter.DefaultValue.StringArray != nil {
+				configVariables[param.Parameter.Key] = param.Parameter.DefaultValue.StringArray.StringValues
+			}
+		}
+	}
+	if len(configVariables) > 0 {
+		respBody, err = json.Marshal(configVariables)
+	}
+	return respBody, err
+}
+
 // Delete
 func Delete(name string) (respBody []byte, err error) {
 	u, _ := url.Parse(apiclient.GetBaseIntegrationURL())
@@ -655,67 +713,67 @@ func DeleteBySnapshot(name string, snapshot string) (respBody []byte, err error)
 
 // Deactivate
 func Deactivate(name string, version string) (respBody []byte, err error) {
-	return changeState(name, version, "", ":deactivate")
+	return changeState(name, version, "", nil, ":deactivate")
 }
 
 // Archive
 func Archive(name string, version string) (respBody []byte, err error) {
-	return changeState(name, version, "", ":archive")
+	return changeState(name, version, "", nil, ":archive")
 }
 
 // Publish
-func Publish(name string, version string) (respBody []byte, err error) {
-	return changeState(name, version, "", ":publish")
+func Publish(name string, version string, configVariables []byte) (respBody []byte, err error) {
+	return changeState(name, version, "", configVariables, ":publish")
 }
 
 // Unpublish
 func Unpublish(name string, version string) (respBody []byte, err error) {
-	return changeState(name, version, "", ":unpublish")
+	return changeState(name, version, "", nil, ":unpublish")
 }
 
 // UnpublishSnapshot
 func UnpublishSnapshot(name string, snapshot string) (respBody []byte, err error) {
-	return changeState(name, "", "snapshotNumber="+snapshot, ":unpublish")
+	return changeState(name, "", "snapshotNumber="+snapshot, nil, ":unpublish")
 }
 
 // UnpublishUserLabel
 func UnpublishUserLabel(name string, userLabel string) (respBody []byte, err error) {
-	return changeState(name, "", "userLabel="+userLabel, ":unpublish")
+	return changeState(name, "", "userLabel="+userLabel, nil, ":unpublish")
 }
 
 // Download
 func Download(name string, version string) (respBody []byte, err error) {
-	return changeState(name, version, "", ":download")
+	return changeState(name, version, "", nil, ":download")
 }
 
 // ArchiveSnapshot
 func ArchiveSnapshot(name string, snapshot string) (respBody []byte, err error) {
-	return changeState(name, "", "snapshotNumber="+snapshot, ":archive")
+	return changeState(name, "", "snapshotNumber="+snapshot, nil, ":archive")
 }
 
 // DeactivateSnapshot
 func DeactivateSnapshot(name string, snapshot string) (respBody []byte, err error) {
-	return changeState(name, "", "snapshotNumber="+snapshot, ":deactivate")
+	return changeState(name, "", "snapshotNumber="+snapshot, nil, ":deactivate")
 }
 
 // ArchiveUserLabel
 func ArchiveUserLabel(name string, userLabel string) (respBody []byte, err error) {
-	return changeState(name, "", "userLabel="+userLabel, ":archive")
+	return changeState(name, "", "userLabel="+userLabel, nil, ":archive")
 }
 
 // DeactivateUserLabel
 func DeactivateUserLabel(name string, userLabel string) (respBody []byte, err error) {
-	return changeState(name, "", "userLabel="+userLabel, ":deactivate")
+	return changeState(name, "", "userLabel="+userLabel, nil, ":deactivate")
 }
 
 // PublishUserLabel
-func PublishUserLabel(name string, userlabel string) (respBody []byte, err error) {
-	return changeState(name, "", "userLabel="+userlabel, ":publish")
+func PublishUserLabel(name string, userlabel string, configVariables []byte) (respBody []byte, err error) {
+	return changeState(name, "", "userLabel="+userlabel, configVariables, ":publish")
 }
 
 // PublishSnapshot
-func PublishSnapshot(name string, snapshot string) (respBody []byte, err error) {
-	return changeState(name, "", "snapshotNumber="+snapshot, ":publish")
+func PublishSnapshot(name string, snapshot string, configVariables []byte) (respBody []byte, err error) {
+	return changeState(name, "", "snapshotNumber="+snapshot, configVariables, ":publish")
 }
 
 // DownloadSnapshot
@@ -862,7 +920,7 @@ func GetConnectionsWithRegion(integration []byte) (connections []integrationConn
 }
 
 // changeState
-func changeState(name string, version string, filter string, action string) (respBody []byte, err error) {
+func changeState(name string, version string, filter string, configVars []byte, action string) (respBody []byte, err error) {
 	// if a version is sent, use it, else try the filter
 	if version == "" {
 		if version, err = getVersionId(name, filter); err != nil {
@@ -874,6 +932,13 @@ func changeState(name string, version string, filter string, action string) (res
 	// download is a get, the rest are post
 	if action == ":download" {
 		respBody, err = apiclient.HttpClient(u.String())
+	} else if action == ":publish" {
+		if configVars != nil {
+			contents := fmt.Sprintf("{\"configParameters\":%s}", string(configVars))
+			respBody, err = apiclient.HttpClient(u.String(), contents)
+		} else {
+			respBody, err = apiclient.HttpClient(u.String(), "")
+		}
 	} else {
 		respBody, err = apiclient.HttpClient(u.String(), "")
 	}
@@ -1263,6 +1328,7 @@ func convertInternalToExternal(internalVersion integrationVersion) (externalVers
 	externalVersion.TriggerConfigs = internalVersion.TriggerConfigs
 	externalVersion.TaskConfigs = internalVersion.TaskConfigs
 	externalVersion.IntegrationParameters = internalVersion.IntegrationParameters
+	externalVersion.IntegrationConfigParameters = internalVersion.IntegrationConfigParameters
 	if internalVersion.UserLabel != nil {
 		externalVersion.UserLabel = new(string)
 		*externalVersion.UserLabel = *internalVersion.UserLabel
@@ -1362,4 +1428,11 @@ func getConnectionVersion(jsonValue string) string {
 	_ = json.Unmarshal([]byte(jsonValue), &c)
 	version := c.Connection.ConnectionVersion
 	return version[strings.LastIndex(version, "/")+1:]
+}
+
+func getJson(contents string) map[string]interface{} {
+	contents = strings.Replace(contents, "\n", "", -1)
+	m := make(map[string]interface{})
+	json.Unmarshal([]byte(contents), &m)
+	return m
 }
