@@ -266,7 +266,7 @@ func EnableCmdPrintHttpResponse() {
 	cmdPrintHttpResponses = true
 }
 
-// GetPrintHttpResponseSetting
+// GetCmdPrintHttpResponseSetting
 func GetCmdPrintHttpResponseSetting() bool {
 	return cmdPrintHttpResponses
 }

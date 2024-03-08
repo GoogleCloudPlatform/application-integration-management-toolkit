@@ -38,6 +38,16 @@ var GetVerCmd = &cobra.Command{
 		if err = apiclient.SetRegion(cmdRegion.Value.String()); err != nil {
 			return err
 		}
+
+		minimal, _ := strconv.ParseBool(cmd.Flag("minimal").Value.String())
+		overrides, _ := strconv.ParseBool(cmd.Flag("overrides").Value.String())
+		basic, _ := strconv.ParseBool(cmd.Flag("basic").Value.String())
+		configVar, _ := strconv.ParseBool(cmd.Flag("config-vars").Value.String())
+
+		if configVar && (overrides || minimal || basic) {
+			return errors.New("config-vars cannot be combined with overrides, minimal or basic")
+		}
+
 		if snapshot == "" && userLabel == "" && version == "" {
 			return errors.New("at least one of snapshot, userLabel and version must be supplied")
 		}
@@ -53,18 +63,39 @@ var GetVerCmd = &cobra.Command{
 		return apiclient.SetProjectID(cmdProject.Value.String())
 	},
 	RunE: func(cmd *cobra.Command, args []string) (err error) {
+		var integrationBody, respBody []byte
 		version := cmd.Flag("ver").Value.String()
 		name := cmd.Flag("name").Value.String()
 		minimal, _ := strconv.ParseBool(cmd.Flag("minimal").Value.String())
 		overrides, _ := strconv.ParseBool(cmd.Flag("overrides").Value.String())
 		basic, _ := strconv.ParseBool(cmd.Flag("basic").Value.String())
+		configVar, _ := strconv.ParseBool(cmd.Flag("config-vars").Value.String())
+
+		if configVar {
+			apiclient.DisableCmdPrintHttpResponse()
+		}
 
 		if version != "" {
-			_, err = integrations.Get(name, version, basic, minimal, overrides)
+			integrationBody, err = integrations.Get(name, version, basic, minimal, overrides)
 		} else if snapshot != "" {
-			_, err = integrations.GetBySnapshot(name, snapshot, basic, minimal, overrides)
+			integrationBody, err = integrations.GetBySnapshot(name, snapshot, basic, minimal, overrides)
 		} else {
-			_, err = integrations.GetByUserlabel(name, userLabel, basic, minimal, overrides)
+			integrationBody, err = integrations.GetByUserlabel(name, userLabel, basic, minimal, overrides)
+		}
+		if err != nil {
+			return err
+		}
+		if configVar {
+			apiclient.EnableCmdPrintHttpResponse()
+			apiclient.ClientPrintHttpResponse.Set(true)
+			respBody, err = integrations.GetConfigVariables(integrationBody)
+			if err != nil {
+				return err
+			}
+			if respBody != nil {
+				apiclient.PrettyPrint(respBody)
+			}
+			return nil
 		}
 		return err
 	},
@@ -72,7 +103,7 @@ var GetVerCmd = &cobra.Command{
 
 func init() {
 	var name, version string
-	minimal, overrides, basic := false, false, false
+	minimal, overrides, basic, configVar := false, false, false, false
 
 	GetVerCmd.Flags().StringVarP(&name, "name", "n",
 		"", "Integration flow name")
@@ -88,6 +119,7 @@ func init() {
 		false, "Returns overrides only for integration")
 	GetVerCmd.Flags().BoolVarP(&minimal, "minimal", "",
 		false, "fields of the Integration to be returned; default is false")
-
+	GetVerCmd.Flags().BoolVarP(&configVar, "config-vars", "",
+		false, "Returns config variables for the integration")
 	_ = GetVerCmd.MarkFlagRequired("name")
 }

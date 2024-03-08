@@ -70,6 +70,7 @@ var ApplyCmd = &cobra.Command{
 		authconfigFolder := path.Join(folder, "authconfigs")
 		connectorsFolder := path.Join(folder, "connectors")
 		customConnectorsFolder := path.Join(folder, "custom-connectors")
+		configVarsFolder := path.Join(folder, "config-variables")
 		overridesFile := path.Join(folder, "overrides/overrides.json")
 		sfdcinstancesFolder := path.Join(folder, "sfdcinstances")
 		sfdcchannelsFolder := path.Join(folder, "sfdcchannels")
@@ -376,7 +377,16 @@ var ApplyCmd = &cobra.Command{
 			}
 			clilog.Info.Printf("Publish integration %s with version %s\n",
 				getFilenameWithoutExtension(integrationNames[0]), version)
-			_, err = integrations.Publish(getFilenameWithoutExtension(integrationNames[0]), version)
+			// read any config variables
+			configVarsFile := path.Join(configVarsFolder, integrationNames[0]+"-config.json")
+			var configVarBytes []byte
+			if _, err = os.Stat(configVarsFile); err == nil {
+				configVarBytes, err = utils.ReadFile(configVarsFile)
+				if err != nil {
+					return err
+				}
+			}
+			_, err = integrations.Publish(getFilenameWithoutExtension(integrationNames[0]), version, configVarBytes)
 			return err
 		}
 
