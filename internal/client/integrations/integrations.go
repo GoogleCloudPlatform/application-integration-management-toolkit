@@ -927,7 +927,11 @@ func changeState(name string, version string, filter string, configVars []byte, 
 		respBody, err = apiclient.HttpClient(u.String())
 	} else if action == ":publish" {
 		if configVars != nil {
-			contents := fmt.Sprintf("{\"configParameters\":%s}", string(configVars))
+			contents := string(configVars)
+			contents = strings.Replace(contents, "\n", "", -1)
+			contents = strings.Replace(contents, "\t", "", -1)
+			contents = strings.Replace(contents, "\\", "", -1)
+			contents = fmt.Sprintf("{\"configParameters\":%s}", contents)
 			respBody, err = apiclient.HttpClient(u.String(), contents)
 		} else {
 			respBody, err = apiclient.HttpClient(u.String(), "")
