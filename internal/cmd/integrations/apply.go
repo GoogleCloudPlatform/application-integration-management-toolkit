@@ -378,7 +378,7 @@ var ApplyCmd = &cobra.Command{
 			clilog.Info.Printf("Publish integration %s with version %s\n",
 				getFilenameWithoutExtension(integrationNames[0]), version)
 			// read any config variables
-			configVarsFile := path.Join(configVarsFolder, integrationNames[0]+"-config.json")
+			configVarsFile := path.Join(configVarsFolder, getFilenameWithoutExtension(integrationNames[0])+"-config.json")
 			var configVarBytes []byte
 			if _, err = os.Stat(configVarsFile); err == nil {
 				configVarBytes, err = utils.ReadFile(configVarsFile)
