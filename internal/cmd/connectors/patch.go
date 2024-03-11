@@ -51,7 +51,9 @@ var PatchCmd = &cobra.Command{
 		}
 
 		if len(updateMask) == 0 {
-			updateMask = []string{"destinationConfigs", "description", "nodeConfig"}
+			updateMask = []string{"destinationConfigs", "description",
+				"nodeConfig", "labels", "connectorVersion",
+				"configVariables", "authConfig", "logConfig", "sslConfig", "eventingEnablementType", "eventingConfig"}
 		}
 
 		_, err = connections.Patch(name, content, updateMask)
