@@ -814,7 +814,7 @@ func GetAuthConfigs(integration []byte) (authcfgs []string, err error) {
 				}
 			}
 			authConfigNameParams := taskConfig.Parameters["authConfigName"]
-			if authConfigNameParams.Key == "authConfigName" {
+			if authConfigNameParams.Key == "authConfigName" && *authConfigNameParams.Value.StringValue != "" {
 				authConfigUuid, err := authconfigs.Find(*authConfigNameParams.Value.StringValue, "")
 				if err != nil {
 					return nil, fmt.Errorf("unable to find authconfig with name %s", *authConfigNameParams.Value.StringValue)
@@ -894,9 +894,11 @@ func GetConnectionsWithRegion(integration []byte) (connections []integrationConn
 				newConnection.CustomConnection = false
 				connections = append(connections, newConnection)
 			}
-			newConnection := getIntegrationConnection(taskConfig.Parameters["connectionName"],
-				taskConfig.Parameters["connectionVersion"], iversion.IntegrationConfigParameters)
-			connections = append(connections, newConnection)
+			if _, ok := taskConfig.Parameters["connectionName"]; ok {
+				newConnection := getIntegrationConnection(taskConfig.Parameters["connectionName"],
+					taskConfig.Parameters["connectionVersion"], iversion.IntegrationConfigParameters)
+				connections = append(connections, newConnection)
+			}
 		}
 	}
 	for _, triggerConfig := range iversion.TriggerConfigs {
