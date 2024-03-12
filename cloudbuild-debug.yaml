@@ -23,10 +23,6 @@ steps:
     - '-f'
     - 'Dockerfile.debug'
     - '.'
-    - '--build-arg'
-    - 'TAG=debug'
-    - '--build-arg'
-    - 'COMMIT=not-set'
 - name: 'gcr.io/cloud-builders/docker'
   id: push_integrationcli
   args: ['push', '${_IMAGE_NAME}:debug']
