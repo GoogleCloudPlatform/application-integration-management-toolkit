@@ -187,74 +187,78 @@ var ApplyCmd = &cobra.Command{
 			}
 		}
 
-		if stat, err = os.Stat(customConnectorsFolder); err == nil && stat.IsDir() {
-			//create any custom connectors
-			err = filepath.Walk(customConnectorsFolder, func(path string, info os.FileInfo, err error) error {
-				if err != nil {
-					return err
-				}
-				if !info.IsDir() {
-					customConnectionFile := filepath.Base(path)
-					if rJSONFiles.MatchString(customConnectionFile) {
-						customConnectionDetails := strings.Split(strings.TrimSuffix(customConnectionFile, filepath.Ext(customConnectionFile)), "-")
-						// the file format is name-version.json
-						if len(customConnectionDetails) == 2 {
-							clilog.Info.Printf("Found configuration for custom connection: %v\n", customConnectionFile)
-							contents, err := utils.ReadFile(path)
-							if err != nil {
-								return err
-							}
-							if err = connections.CreateCustomWithVersion(customConnectionDetails[0],
-								customConnectionDetails[1], contents, serviceAccountName, serviceAccountProject); err != nil {
-								return err
+		if !skipConnectors {
+			if stat, err = os.Stat(customConnectorsFolder); err == nil && stat.IsDir() {
+				//create any custom connectors
+				err = filepath.Walk(customConnectorsFolder, func(path string, info os.FileInfo, err error) error {
+					if err != nil {
+						return err
+					}
+					if !info.IsDir() {
+						customConnectionFile := filepath.Base(path)
+						if rJSONFiles.MatchString(customConnectionFile) {
+							customConnectionDetails := strings.Split(strings.TrimSuffix(customConnectionFile, filepath.Ext(customConnectionFile)), "-")
+							// the file format is name-version.json
+							if len(customConnectionDetails) == 2 {
+								clilog.Info.Printf("Found configuration for custom connection: %v\n", customConnectionFile)
+								contents, err := utils.ReadFile(path)
+								if err != nil {
+									return err
+								}
+								if err = connections.CreateCustomWithVersion(customConnectionDetails[0],
+									customConnectionDetails[1], contents, serviceAccountName, serviceAccountProject); err != nil {
+									return err
+								}
 							}
 						}
 					}
-				}
-				return nil
-			})
-		}
-
-		if stat, err = os.Stat(connectorsFolder); err == nil && stat.IsDir() {
-			// create any connectors
-			err = filepath.Walk(connectorsFolder, func(path string, info os.FileInfo, err error) error {
-				if err != nil {
-					return err
-				}
-				if !info.IsDir() {
-					connectionFile := filepath.Base(path)
-					if rJSONFiles.MatchString(connectionFile) {
-						clilog.Info.Printf("Found configuration for connection: %s\n", connectionFile)
-						_, err = connections.Get(getFilenameWithoutExtension(connectionFile), "", true, false)
-						// create the connection only if the connection is not found
-						if err != nil {
-							connectionBytes, err := utils.ReadFile(path)
-							if err != nil {
-								return err
-							}
-							clilog.Info.Printf("Creating connector: %s\n", connectionFile)
-
-							if _, err = connections.Create(getFilenameWithoutExtension(connectionFile),
-								connectionBytes,
-								serviceAccountName,
-								serviceAccountProject,
-								encryptionKey,
-								grantPermission,
-								createSecret,
-								wait); err != nil {
-								return err
-							}
-						} else {
-							clilog.Info.Printf("Connector %s already exists\n", connectionFile)
-						}
-					}
-				}
-				return nil
-			})
-
-			if err != nil {
-				return err
+					return nil
+				})
 			}
+
+			if stat, err = os.Stat(connectorsFolder); err == nil && stat.IsDir() {
+				// create any connectors
+				err = filepath.Walk(connectorsFolder, func(path string, info os.FileInfo, err error) error {
+					if err != nil {
+						return err
+					}
+					if !info.IsDir() {
+						connectionFile := filepath.Base(path)
+						if rJSONFiles.MatchString(connectionFile) {
+							clilog.Info.Printf("Found configuration for connection: %s\n", connectionFile)
+							_, err = connections.Get(getFilenameWithoutExtension(connectionFile), "", true, false)
+							// create the connection only if the connection is not found
+							if err != nil {
+								connectionBytes, err := utils.ReadFile(path)
+								if err != nil {
+									return err
+								}
+								clilog.Info.Printf("Creating connector: %s\n", connectionFile)
+
+								if _, err = connections.Create(getFilenameWithoutExtension(connectionFile),
+									connectionBytes,
+									serviceAccountName,
+									serviceAccountProject,
+									encryptionKey,
+									grantPermission,
+									createSecret,
+									wait); err != nil {
+									return err
+								}
+							} else {
+								clilog.Info.Printf("Connector %s already exists\n", connectionFile)
+							}
+						}
+					}
+					return nil
+				})
+
+				if err != nil {
+					return err
+				}
+			}
+		} else {
+			clilog.Info.Printf("Skipping applying connector configuration\n")
 		}
 
 		if stat, err = os.Stat(sfdcinstancesFolder); err == nil && stat.IsDir() {
@@ -419,6 +423,8 @@ func init() {
 		false, "Create Secret Manager secrets when creating the connection; default is false")
 	ApplyCmd.Flags().BoolVarP(&wait, "wait", "",
 		false, "Waits for the connector to finish, with success or error; default is false")
+	ApplyCmd.Flags().BoolVarP(&skipConnectors, "skip-connectors", "",
+		false, "Skip applying connector configuration; default is false")
 
 	_ = ApplyCmd.MarkFlagRequired("folder")
 }
