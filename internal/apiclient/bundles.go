@@ -199,6 +199,9 @@ func ExtractTgz(gcsURL string) (folder string, err error) {
 		if err != nil {
 			return "", fmt.Errorf("Error reading tar entry:", err)
 		}
+		if strings.Contains(header.Name, "..") {
+			continue
+		}
 
 		// Process the file header
 		switch header.Typeflag {
