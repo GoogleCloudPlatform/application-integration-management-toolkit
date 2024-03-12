@@ -355,7 +355,15 @@ func handleGenericRestV2Task(taskConfig taskconfig, taskOverrides *overrides) er
 	tc.TaskId = taskConfig.TaskId
 	tc.Task = taskConfig.Task
 	tc.Parameters = map[string]eventparameter{}
-	tc.Parameters["url"] = taskConfig.Parameters["url"]
+
+	// store in overrides only if config variables are not used
+	urlEventParam := taskConfig.Parameters["url"]
+	if urlEventParam.Value.StringValue != nil && !strings.HasPrefix(*urlEventParam.Value.StringValue, "$`CONFIG_") {
+		tc.Parameters["url"] = taskConfig.Parameters["url"]
+	} else if urlEventParam.Value.IntValue != nil && !strings.HasPrefix(*urlEventParam.Value.IntValue, "$`CONFIG_") {
+		tc.Parameters["url"] = taskConfig.Parameters["url"]
+	}
+
 	if _, ok := taskConfig.Parameters["authConfig"]; ok {
 		displayName, err := authconfigs.GetDisplayName(getAuthConfigUuid(*taskConfig.Parameters["authConfig"].Value.JsonValue))
 		if err != nil {
@@ -370,7 +378,10 @@ func handleGenericRestV2Task(taskConfig taskconfig, taskOverrides *overrides) er
 
 		}
 	}
-	taskOverrides.TaskOverrides = append(taskOverrides.TaskOverrides, tc)
+
+	if len(tc.Parameters) > 0 {
+		taskOverrides.TaskOverrides = append(taskOverrides.TaskOverrides, tc)
+	}
 	return nil
 }
 
