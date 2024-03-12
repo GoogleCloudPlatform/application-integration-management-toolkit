@@ -50,9 +50,30 @@ var ApplyCmd = &cobra.Command{
 		if err = apiclient.SetRegion(cmdRegion.Value.String()); err != nil {
 			return err
 		}
+		if folder == "" && (pipeline == "" || release == "") {
+			return fmt.Errorf("atleast one of folder or pipeline and release must be supplied")
+		}
+		if folder != "" && (pipeline != "" || release != "") {
+			return fmt.Errorf("both folder and pipeline or release cannot be supplied")
+		}
+		if (pipeline != "" && release == "") || (release != "" && pipeline == "") {
+			return fmt.Errorf("release and pipeline must be set")
+		}
 		return apiclient.SetProjectID(cmdProject.Value.String())
 	},
 	RunE: func(cmd *cobra.Command, args []string) (err error) {
+
+		if folder == "" {
+			gcsURL, err := apiclient.GetSkaffoldConfigUri(pipeline, release)
+			if err != nil {
+				return err
+			}
+			folder, err = apiclient.ExtractTgz(gcsURL)
+			if err != nil {
+				return err
+			}
+		}
+
 		srcFolder := folder
 		if env != "" {
 			folder = path.Join(folder, env)
@@ -396,13 +417,17 @@ var ApplyCmd = &cobra.Command{
 	},
 }
 
-var serviceAccountName, serviceAccountProject, encryptionKey string
+var serviceAccountName, serviceAccountProject, encryptionKey, pipeline, release string
 
 func init() {
 	grantPermission, createSecret, wait := false, false, false
 
 	ApplyCmd.Flags().StringVarP(&folder, "folder", "f",
 		"", "Folder containing scaffolding configuration")
+	ApplyCmd.Flags().StringVarP(&pipeline, "pipeline", "",
+		"", "Coud Deploy Pipeline name")
+	ApplyCmd.Flags().StringVarP(&release, "release", "",
+		"", "Coud Deploy Release name")
 	ApplyCmd.Flags().BoolVarP(&grantPermission, "grant-permission", "g",
 		false, "Grant the service account permission to the GCP resource; default is false")
 	ApplyCmd.Flags().StringVarP(&userLabel, "userlabel", "u",
@@ -420,7 +445,6 @@ func init() {
 	ApplyCmd.Flags().BoolVarP(&wait, "wait", "",
 		false, "Waits for the connector to finish, with success or error; default is false")
 
-	_ = ApplyCmd.MarkFlagRequired("folder")
 }
 
 func getFilenameWithoutExtension(filname string) string {

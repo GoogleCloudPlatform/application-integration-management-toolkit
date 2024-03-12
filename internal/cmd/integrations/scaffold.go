@@ -318,7 +318,7 @@ func init() {
 	ScaffoldCmd.Flags().StringVarP(&snapshot, "snapshot", "s",
 		"", "Integration flow snapshot number")
 	ScaffoldCmd.Flags().BoolVarP(&cloudBuild, "cloud-build", "",
-		true, "don't generate cloud build file; default is true")
+		false, "Generate cloud build file")
 	ScaffoldCmd.Flags().StringVarP(&folder, "folder", "f",
 		"", "Folder to generate the scaffolding")
 	ScaffoldCmd.Flags().StringVarP(&env, "env", "e",
