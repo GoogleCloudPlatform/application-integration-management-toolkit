@@ -125,7 +125,6 @@ func ExtractTgz(gcsURL string) (folder string, err error) {
 	ctx := context.Background()
 
 	folder, err = os.MkdirTemp("", "integration")
-	fmt.Println(folder)
 	if err != nil {
 		return "", err
 	}
@@ -229,8 +228,22 @@ func ExtractTgz(gcsURL string) (folder string, err error) {
 	return folder, nil
 }
 
-func GetSkaffoldConfigUri(pipeline string, release string) (uri string, err error) {
-	cloudDeployRespMap := make(map[string]interface{})
+func GetCloudDeployGCSLocations(pipeline string, release string) (skaffoldConfigUri string, err error) {
+	type cloudDeployRelease struct {
+		SkaffoldConfigUri string `json:"skaffoldConfigUri"`
+		TargetArtifacts   map[string]struct {
+			SkaffoldConfigPath string `json:"skaffoldConfigPath"`
+			ManifestPath       string `json:"manifestPath"`
+			ArtifactUri        string `json:"artifactUri"`
+			PhaseArtifacts     map[string]struct {
+				SkaffoldConfigPath string `json:"skaffoldConfigPath"`
+				ManifestPath       string `json:"manifestPath"`
+			} `json:"phaseArtifacts"`
+		} `json:"targetArtifacts"`
+	}
+
+	r := cloudDeployRelease{}
+
 	cloudDeployURL := fmt.Sprintf("https://clouddeploy.googleapis.com/v1/projects/%s/locations/%s/deliveryPipelines/%s/releases/%s",
 		GetProjectID(), GetRegion(), pipeline, release)
 	u, _ := url.Parse(cloudDeployURL)
@@ -243,9 +256,65 @@ func GetSkaffoldConfigUri(pipeline string, release string) (uri string, err erro
 	}
 	defer ClientPrintHttpResponse.Set(GetCmdPrintHttpResponseSetting())
 
-	err = json.Unmarshal(respBody, &cloudDeployRespMap)
+	err = json.Unmarshal(respBody, &r)
 	if err != nil {
 		return "", err
 	}
-	return fmt.Sprintf("%s", cloudDeployRespMap["skaffoldConfigUri"]), nil
+
+	return r.SkaffoldConfigUri, nil
+}
+
+func WriteResultsFile(deployOutputGCS string, status string) (err error) {
+
+	contents := fmt.Sprintf("{\"resultStatus\": \"%s\"}", status)
+	filename := "results.json"
+
+	ctx := context.Background()
+	client, err := storage.NewClient(ctx)
+	if err != nil {
+		return fmt.Errorf("storage.NewClient: %v", err)
+	}
+	defer client.Close()
+
+	// Extract bucket name and object path from GCS URI
+	bucketName, objectPath, err := parseGCSURI(deployOutputGCS)
+	objectName := path.Join(objectPath, filename)
+
+	bucket := client.Bucket(bucketName)
+	object := bucket.Object(objectName)
+	writer := object.NewWriter(ctx)
+
+	// Write the content
+	if _, err := writer.Write([]byte(contents)); err != nil {
+		return fmt.Errorf("Object(%q).NewWriter: %v", objectName, err)
+	}
+
+	// Close the writer to ensure data is uploaded
+	if err := writer.Close(); err != nil {
+		return fmt.Errorf("Writer.Close: %v", err)
+	}
+
+	return nil
+}
+
+func parseGCSURI(gcsURI string) (bucketName, objectPath string, err error) {
+	// Parse the GCS URL
+	parsedURL, err := url.Parse(gcsURI)
+	if err != nil {
+		return "", "", fmt.Errorf("Error parsing GCS URL:", err)
+	}
+	if parsedURL.Scheme != "gs" {
+		return "", "", fmt.Errorf("Invalid GCS URL scheme. Should be 'gs://'")
+	}
+	// Remove the protocol prefix
+	uri := strings.TrimPrefix(gcsURI, "gs://")
+
+	// Split based on the first '/'
+	parts := strings.SplitN(uri, "/", 2)
+
+	// Check for proper URI format
+	if len(parts) != 2 {
+		return "", "", fmt.Errorf("Invalid GCS URI format")
+	}
+	return parts[0], parts[1], nil
 }

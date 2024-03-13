@@ -50,25 +50,29 @@ var ApplyCmd = &cobra.Command{
 		if err = apiclient.SetRegion(cmdRegion.Value.String()); err != nil {
 			return err
 		}
-		if folder == "" && (pipeline == "" || release == "") {
-			return fmt.Errorf("atleast one of folder or pipeline and release must be supplied")
+		if folder == "" && (pipeline == "" || release == "" || outputGCSPath == "") {
+			return fmt.Errorf("atleast one of folder or pipeline, release and outputGCSPath must be supplied")
 		}
-		if folder != "" && (pipeline != "" || release != "") {
-			return fmt.Errorf("both folder and pipeline or release cannot be supplied")
+		if folder != "" && (pipeline != "" || release != "" || outputGCSPath != "") {
+			return fmt.Errorf("both folder and pipeline, release and outputGCSPath cannot be supplied")
 		}
-		if (pipeline != "" && release == "") || (release != "" && pipeline == "") {
-			return fmt.Errorf("release and pipeline must be set")
+		if (pipeline != "" && (release == "" || outputGCSPath == "")) ||
+			(release != "" && (pipeline == "" && outputGCSPath == "")) ||
+			(outputGCSPath != "" && (pipeline == "" && release == "")) {
+			return fmt.Errorf("release, pipeline and outputGCSPath must be set")
 		}
 		return apiclient.SetProjectID(cmdProject.Value.String())
 	},
 	RunE: func(cmd *cobra.Command, args []string) (err error) {
 
+		var skaffoldConfigUri string
+
 		if folder == "" {
-			gcsURL, err := apiclient.GetSkaffoldConfigUri(pipeline, release)
+			skaffoldConfigUri, err = apiclient.GetCloudDeployGCSLocations(pipeline, release)
 			if err != nil {
 				return err
 			}
-			folder, err = apiclient.ExtractTgz(gcsURL)
+			folder, err = apiclient.ExtractTgz(skaffoldConfigUri)
 			if err != nil {
 				return err
 			}
@@ -86,7 +90,6 @@ var ApplyCmd = &cobra.Command{
 		grantPermission, _ := strconv.ParseBool(cmd.Flag("grant-permission").Value.String())
 		wait, _ := strconv.ParseBool(cmd.Flag("wait").Value.String())
 
-		rJSONFiles := regexp.MustCompile(`(\S*)\.json`)
 		integrationFolder := path.Join(srcFolder, "src")
 		authconfigFolder := path.Join(folder, "authconfigs")
 		connectorsFolder := path.Join(folder, "connectors")
@@ -98,330 +101,49 @@ var ApplyCmd = &cobra.Command{
 		endpointsFolder := path.Join(folder, "endpoints")
 		zonesFolder := path.Join(folder, "zones")
 
-		var stat fs.FileInfo
-		var integrationNames []string
-		var overridesBytes []byte
-		const sfdcNamingConvention = 2 // when file is split with _, the result must be 2
-
 		apiclient.DisableCmdPrintHttpResponse()
 
-		if stat, err = os.Stat(authconfigFolder); err == nil && stat.IsDir() {
-			// create any authconfigs
-			err = filepath.Walk(authconfigFolder, func(path string, info os.FileInfo, err error) error {
-				if err != nil {
-					return err
-				}
-				if !info.IsDir() {
-					authConfigFile := filepath.Base(path)
-					if rJSONFiles.MatchString(authConfigFile) {
-						clilog.Info.Printf("Found configuration for authconfig: %s\n", authConfigFile)
-						version, _ := authconfigs.Find(getFilenameWithoutExtension(authConfigFile), "")
-						// create the authconfig only if the version was not found
-						if version == "" {
-							authConfigBytes, err := utils.ReadFile(path)
-							if err != nil {
-								return err
-							}
-							clilog.Info.Printf("Creating authconfig: %s\n", authConfigFile)
-							if _, err = authconfigs.Create(authConfigBytes); err != nil {
-								return err
-							}
-						} else {
-							clilog.Info.Printf("Authconfig %s already exists\n", authConfigFile)
-						}
-					}
-				}
-				return nil
-			})
-
-			if err != nil {
-				return err
-			}
+		if err = processAuthConfigs(authconfigFolder); err != nil {
+			return err
 		}
 
-		if stat, err = os.Stat(endpointsFolder); err == nil && stat.IsDir() {
-			// create any endpoint attachments
-			err = filepath.Walk(endpointsFolder, func(path string, info os.FileInfo, err error) error {
-				if err != nil {
-					return err
-				}
-				if !info.IsDir() {
-					endpointFile := filepath.Base(path)
-					if rJSONFiles.MatchString(endpointFile) {
-						clilog.Info.Printf("Found configuration for endpoint attachment: %s\n", endpointFile)
-					}
-					if !connections.FindEndpoint(getFilenameWithoutExtension(endpointFile)) {
-						// the endpoint does not exist, try to create it
-						endpointBytes, err := utils.ReadFile(path)
-						if err != nil {
-							return err
-						}
-						serviceAccountName, err := getServiceAttachment(endpointBytes)
-						if err != nil {
-							return err
-						}
-						if _, err = connections.CreateEndpoint(getFilenameWithoutExtension(endpointFile),
-							serviceAccountName, "", false); err != nil {
-							return err
-						}
-					} else {
-						clilog.Info.Printf("Endpoint %s already exists\n", endpointFile)
-					}
-				}
-				return nil
-			})
-			if err != nil {
-				return err
-			}
+		if err = processEndpoints(endpointsFolder); err != nil {
+			return err
 		}
 
-		// create any managed zones
-		if stat, err = os.Stat(zonesFolder); err == nil && stat.IsDir() {
-			// create any managedzones
-			err = filepath.Walk(zonesFolder, func(path string, info os.FileInfo, err error) error {
-				if err != nil {
-					return err
-				}
-				if !info.IsDir() {
-					zoneFile := filepath.Base(path)
-					if rJSONFiles.MatchString(zoneFile) {
-						clilog.Info.Printf("Found configuration for managed zone: %s\n", zoneFile)
-					}
-					if _, err = connections.GetZone(getFilenameWithoutExtension(zoneFile), true); err != nil {
-						// the managed zone does not exist, try to create it
-						zoneBytes, err := utils.ReadFile(path)
-						if err != nil {
-							return err
-						}
-						if _, err = connections.CreateZone(getFilenameWithoutExtension(zoneFile),
-							zoneBytes); err != nil {
-							return err
-						}
-					} else {
-						clilog.Info.Printf("Zone %s already exists\n", zoneFile)
-					}
-				}
-				return nil
-			})
-			if err != nil {
-				return err
-			}
+		if err = processManagedZones(zonesFolder); err != nil {
+			return err
 		}
 
 		if !skipConnectors {
-			if stat, err = os.Stat(customConnectorsFolder); err == nil && stat.IsDir() {
-				//create any custom connectors
-				err = filepath.Walk(customConnectorsFolder, func(path string, info os.FileInfo, err error) error {
-					if err != nil {
-						return err
-					}
-					if !info.IsDir() {
-						customConnectionFile := filepath.Base(path)
-						if rJSONFiles.MatchString(customConnectionFile) {
-							customConnectionDetails := strings.Split(strings.TrimSuffix(customConnectionFile, filepath.Ext(customConnectionFile)), "-")
-							// the file format is name-version.json
-							if len(customConnectionDetails) == 2 {
-								clilog.Info.Printf("Found configuration for custom connection: %v\n", customConnectionFile)
-								contents, err := utils.ReadFile(path)
-								if err != nil {
-									return err
-								}
-								if err = connections.CreateCustomWithVersion(customConnectionDetails[0],
-									customConnectionDetails[1], contents, serviceAccountName, serviceAccountProject); err != nil {
-									return err
-								}
-							}
-						}
-					}
-					return nil
-				})
+			if err = processCustomConnectors(customConnectorsFolder); err != nil {
+				return err
 			}
 
-			if stat, err = os.Stat(connectorsFolder); err == nil && stat.IsDir() {
-				// create any connectors
-				err = filepath.Walk(connectorsFolder, func(path string, info os.FileInfo, err error) error {
-					if err != nil {
-						return err
-					}
-					if !info.IsDir() {
-						connectionFile := filepath.Base(path)
-						if rJSONFiles.MatchString(connectionFile) {
-							clilog.Info.Printf("Found configuration for connection: %s\n", connectionFile)
-							_, err = connections.Get(getFilenameWithoutExtension(connectionFile), "", true, false)
-							// create the connection only if the connection is not found
-							if err != nil {
-								connectionBytes, err := utils.ReadFile(path)
-								if err != nil {
-									return err
-								}
-								clilog.Info.Printf("Creating connector: %s\n", connectionFile)
-
-								if _, err = connections.Create(getFilenameWithoutExtension(connectionFile),
-									connectionBytes,
-									serviceAccountName,
-									serviceAccountProject,
-									encryptionKey,
-									grantPermission,
-									createSecret,
-									wait); err != nil {
-									return err
-								}
-							} else {
-								clilog.Info.Printf("Connector %s already exists\n", connectionFile)
-							}
-						}
-					}
-					return nil
-				})
-
-				if err != nil {
-					return err
-				}
+			if err = processConnectors(connectorsFolder, grantPermission, createSecret, wait); err != nil {
+				return err
 			}
 		} else {
 			clilog.Info.Printf("Skipping applying connector configuration\n")
 		}
 
-		if stat, err = os.Stat(sfdcinstancesFolder); err == nil && stat.IsDir() {
-			// create any sfdc instances
-			err = filepath.Walk(sfdcinstancesFolder, func(path string, info os.FileInfo, err error) error {
-				if err != nil {
-					return err
-				}
-				if !info.IsDir() {
-					instanceFile := filepath.Base(path)
-					if rJSONFiles.MatchString(instanceFile) {
-						clilog.Info.Printf("Found configuration for sfdc instance: %s\n", instanceFile)
-						_, err = sfdc.GetInstance(getFilenameWithoutExtension(instanceFile), true)
-						// create the instance only if the sfdc instance is not found
-						if err != nil {
-							instanceBytes, err := utils.ReadFile(path)
-							if err != nil {
-								return err
-							}
-							clilog.Info.Printf("Creating sfdc instance: %s\n", instanceFile)
-							_, err = sfdc.CreateInstanceFromContent(instanceBytes)
-							if err != nil {
-								return nil
-							}
-						} else {
-							clilog.Info.Printf("sfdc instance %s already exists\n", instanceFile)
-						}
-					}
-				}
-				return nil
-			})
-
-			if err != nil {
-				return err
-			}
-		}
-
-		if stat, err = os.Stat(sfdcchannelsFolder); err == nil && stat.IsDir() {
-			// create any sfdc channels
-			err = filepath.Walk(sfdcchannelsFolder, func(path string, info os.FileInfo, err error) error {
-				if err != nil {
-					return err
-				}
-				if !info.IsDir() {
-					channelFile := filepath.Base(path)
-					if rJSONFiles.MatchString(channelFile) {
-						clilog.Info.Printf("Found configuration for sfdc channel: %s\n", channelFile)
-						sfdcNames := strings.Split(getFilenameWithoutExtension(channelFile), "_")
-						if len(sfdcNames) != sfdcNamingConvention {
-							clilog.Warning.Printf("sfdc chanel file %s does not follow the naming "+
-								"convention instanceName_channelName.json\n", channelFile)
-							return nil
-						}
-						version, _, err := sfdc.FindChannel(sfdcNames[1], sfdcNames[0])
-						// create the instance only if the sfdc channel is not found
-						if err != nil {
-							channelBytes, err := utils.ReadFile(path)
-							if err != nil {
-								return err
-							}
-							clilog.Info.Printf("Creating sfdc channel: %s\n", channelFile)
-							_, err = sfdc.CreateChannelFromContent(version, channelBytes)
-							if err != nil {
-								return nil
-							}
-						} else {
-							clilog.Info.Printf("sfdc channel %s already exists\n", channelFile)
-						}
-					}
-				}
-				return nil
-			})
-
-			if err != nil {
-				return err
-			}
-		}
-
-		if _, err = os.Stat(overridesFile); err == nil {
-			overridesBytes, err = utils.ReadFile(overridesFile)
-			if err != nil {
-				return err
-			}
-		}
-
-		if len(overridesBytes) > 0 {
-			clilog.Info.Printf("Found overrides file %s\n", overridesFile)
-		}
-
-		// get the integration file
-		_ = filepath.Walk(integrationFolder, func(path string, info os.FileInfo, err error) error {
-			if err != nil {
-				return err
-			}
-			if !info.IsDir() {
-				integrationFile := filepath.Base(path)
-				if rJSONFiles.MatchString(integrationFile) {
-					clilog.Info.Printf("Found configuration for integration: %s\n", integrationFile)
-					integrationNames = append(integrationNames, integrationFile)
-				}
-			}
-			return nil
-		})
-
-		if len(integrationNames) > 0 {
-			// get only the first file
-			integrationBytes, err := utils.ReadFile(path.Join(integrationFolder, integrationNames[0]))
-			if err != nil {
-				return err
-			}
-			clilog.Info.Printf("Create integration %s\n", getFilenameWithoutExtension(integrationNames[0]))
-			respBody, err := integrations.CreateVersion(getFilenameWithoutExtension(integrationNames[0]),
-				integrationBytes, overridesBytes, "", userLabel)
-			if err != nil {
-				return err
-			}
-			version, err := getVersion(respBody)
-			if err != nil {
-				return err
-			}
-			clilog.Info.Printf("Publish integration %s with version %s\n",
-				getFilenameWithoutExtension(integrationNames[0]), version)
-			// read any config variables
-			configVarsFile := path.Join(configVarsFolder, getFilenameWithoutExtension(integrationNames[0])+"-config.json")
-			var configVarBytes []byte
-			if _, err = os.Stat(configVarsFile); err == nil {
-				configVarBytes, err = utils.ReadFile(configVarsFile)
-				if err != nil {
-					return err
-				}
-			}
-			_, err = integrations.Publish(getFilenameWithoutExtension(integrationNames[0]), version, configVarBytes)
+		if err = processSfdcInstances(sfdcinstancesFolder); err != nil {
 			return err
 		}
 
-		clilog.Warning.Printf("No integration files were found\n")
+		if err = processSfdcChannels(sfdcchannelsFolder); err != nil {
+			return err
+		}
+
+		if err = processIntegration(overridesFile, integrationFolder, configVarsFolder, pipeline); err != nil {
+			return err
+		}
 
 		return err
 	},
 }
 
-var serviceAccountName, serviceAccountProject, encryptionKey, pipeline, release string
+var serviceAccountName, serviceAccountProject, encryptionKey, pipeline, release, outputGCSPath string
 
 func init() {
 	grantPermission, createSecret, wait := false, false, false
@@ -429,9 +151,11 @@ func init() {
 	ApplyCmd.Flags().StringVarP(&folder, "folder", "f",
 		"", "Folder containing scaffolding configuration")
 	ApplyCmd.Flags().StringVarP(&pipeline, "pipeline", "",
-		"", "Coud Deploy Pipeline name")
+		"", "Cloud Deploy Pipeline name")
 	ApplyCmd.Flags().StringVarP(&release, "release", "",
-		"", "Coud Deploy Release name")
+		"", "Cloud Deploy Release name")
+	ApplyCmd.Flags().StringVarP(&outputGCSPath, "output-gcs-path", "",
+		"", "Upload a file named results.json containing the results")
 	ApplyCmd.Flags().BoolVarP(&grantPermission, "grant-permission", "g",
 		false, "Grant the service account permission to the GCP resource; default is false")
 	ApplyCmd.Flags().StringVarP(&userLabel, "userlabel", "u",
@@ -484,4 +208,368 @@ func getServiceAttachment(respBody []byte) (sa string, err error) {
 		return "", errors.New("serviceAttachment not found")
 	}
 	return jsonMap["serviceAttachment"], nil
+}
+
+func processAuthConfigs(authconfigFolder string) (err error) {
+	var stat fs.FileInfo
+	rJSONFiles := regexp.MustCompile(`(\S*)\.json`)
+
+	if stat, err = os.Stat(authconfigFolder); err == nil && stat.IsDir() {
+		// create any authconfigs
+		err = filepath.Walk(authconfigFolder, func(path string, info os.FileInfo, err error) error {
+			if err != nil {
+				return err
+			}
+			if !info.IsDir() {
+				authConfigFile := filepath.Base(path)
+				if rJSONFiles.MatchString(authConfigFile) {
+					clilog.Info.Printf("Found configuration for authconfig: %s\n", authConfigFile)
+					version, _ := authconfigs.Find(getFilenameWithoutExtension(authConfigFile), "")
+					// create the authconfig only if the version was not found
+					if version == "" {
+						authConfigBytes, err := utils.ReadFile(path)
+						if err != nil {
+							return err
+						}
+						clilog.Info.Printf("Creating authconfig: %s\n", authConfigFile)
+						if _, err = authconfigs.Create(authConfigBytes); err != nil {
+							return err
+						}
+					} else {
+						clilog.Info.Printf("Authconfig %s already exists\n", authConfigFile)
+					}
+				}
+			}
+			return nil
+		})
+
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func processEndpoints(endpointsFolder string) (err error) {
+	var stat fs.FileInfo
+	rJSONFiles := regexp.MustCompile(`(\S*)\.json`)
+
+	if stat, err = os.Stat(endpointsFolder); err == nil && stat.IsDir() {
+		// create any endpoint attachments
+		err = filepath.Walk(endpointsFolder, func(path string, info os.FileInfo, err error) error {
+			if err != nil {
+				return err
+			}
+			if !info.IsDir() {
+				endpointFile := filepath.Base(path)
+				if rJSONFiles.MatchString(endpointFile) {
+					clilog.Info.Printf("Found configuration for endpoint attachment: %s\n", endpointFile)
+				}
+				if !connections.FindEndpoint(getFilenameWithoutExtension(endpointFile)) {
+					// the endpoint does not exist, try to create it
+					endpointBytes, err := utils.ReadFile(path)
+					if err != nil {
+						return err
+					}
+					serviceAccountName, err := getServiceAttachment(endpointBytes)
+					if err != nil {
+						return err
+					}
+					if _, err = connections.CreateEndpoint(getFilenameWithoutExtension(endpointFile),
+						serviceAccountName, "", false); err != nil {
+						return err
+					}
+				} else {
+					clilog.Info.Printf("Endpoint %s already exists\n", endpointFile)
+				}
+			}
+			return nil
+		})
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func processManagedZones(zonesFolder string) (err error) {
+	var stat fs.FileInfo
+	rJSONFiles := regexp.MustCompile(`(\S*)\.json`)
+
+	// create any managed zones
+	if stat, err = os.Stat(zonesFolder); err == nil && stat.IsDir() {
+		// create any managedzones
+		err = filepath.Walk(zonesFolder, func(path string, info os.FileInfo, err error) error {
+			if err != nil {
+				return err
+			}
+			if !info.IsDir() {
+				zoneFile := filepath.Base(path)
+				if rJSONFiles.MatchString(zoneFile) {
+					clilog.Info.Printf("Found configuration for managed zone: %s\n", zoneFile)
+				}
+				if _, err = connections.GetZone(getFilenameWithoutExtension(zoneFile), true); err != nil {
+					// the managed zone does not exist, try to create it
+					zoneBytes, err := utils.ReadFile(path)
+					if err != nil {
+						return err
+					}
+					if _, err = connections.CreateZone(getFilenameWithoutExtension(zoneFile),
+						zoneBytes); err != nil {
+						return err
+					}
+				} else {
+					clilog.Info.Printf("Zone %s already exists\n", zoneFile)
+				}
+			}
+			return nil
+		})
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func processConnectors(connectorsFolder string, grantPermission bool, createSecret bool, wait bool) (err error) {
+	var stat fs.FileInfo
+	rJSONFiles := regexp.MustCompile(`(\S*)\.json`)
+
+	if stat, err = os.Stat(connectorsFolder); err == nil && stat.IsDir() {
+		// create any connectors
+		err = filepath.Walk(connectorsFolder, func(path string, info os.FileInfo, err error) error {
+			if err != nil {
+				return err
+			}
+			if !info.IsDir() {
+				connectionFile := filepath.Base(path)
+				if rJSONFiles.MatchString(connectionFile) {
+					clilog.Info.Printf("Found configuration for connection: %s\n", connectionFile)
+					_, err = connections.Get(getFilenameWithoutExtension(connectionFile), "", true, false)
+					// create the connection only if the connection is not found
+					if err != nil {
+						connectionBytes, err := utils.ReadFile(path)
+						if err != nil {
+							return err
+						}
+						clilog.Info.Printf("Creating connector: %s\n", connectionFile)
+
+						if _, err = connections.Create(getFilenameWithoutExtension(connectionFile),
+							connectionBytes,
+							serviceAccountName,
+							serviceAccountProject,
+							encryptionKey,
+							grantPermission,
+							createSecret,
+							wait); err != nil {
+							return err
+						}
+					} else {
+						clilog.Info.Printf("Connector %s already exists\n", connectionFile)
+					}
+				}
+			}
+			return nil
+		})
+
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func processCustomConnectors(customConnectorsFolder string) (err error) {
+	var stat fs.FileInfo
+	rJSONFiles := regexp.MustCompile(`(\S*)\.json`)
+
+	if stat, err = os.Stat(customConnectorsFolder); err == nil && stat.IsDir() {
+		//create any custom connectors
+		err = filepath.Walk(customConnectorsFolder, func(path string, info os.FileInfo, err error) error {
+			if err != nil {
+				return err
+			}
+			if !info.IsDir() {
+				customConnectionFile := filepath.Base(path)
+				if rJSONFiles.MatchString(customConnectionFile) {
+					customConnectionDetails := strings.Split(strings.TrimSuffix(customConnectionFile, filepath.Ext(customConnectionFile)), "-")
+					// the file format is name-version.json
+					if len(customConnectionDetails) == 2 {
+						clilog.Info.Printf("Found configuration for custom connection: %v\n", customConnectionFile)
+						contents, err := utils.ReadFile(path)
+						if err != nil {
+							return err
+						}
+						if err = connections.CreateCustomWithVersion(customConnectionDetails[0],
+							customConnectionDetails[1], contents, serviceAccountName, serviceAccountProject); err != nil {
+							return err
+						}
+					}
+				}
+			}
+			return nil
+		})
+	}
+	return nil
+}
+
+func processSfdcInstances(sfdcinstancesFolder string) (err error) {
+	var stat fs.FileInfo
+	rJSONFiles := regexp.MustCompile(`(\S*)\.json`)
+
+	if stat, err = os.Stat(sfdcinstancesFolder); err == nil && stat.IsDir() {
+		// create any sfdc instances
+		err = filepath.Walk(sfdcinstancesFolder, func(path string, info os.FileInfo, err error) error {
+			if err != nil {
+				return err
+			}
+			if !info.IsDir() {
+				instanceFile := filepath.Base(path)
+				if rJSONFiles.MatchString(instanceFile) {
+					clilog.Info.Printf("Found configuration for sfdc instance: %s\n", instanceFile)
+					_, err = sfdc.GetInstance(getFilenameWithoutExtension(instanceFile), true)
+					// create the instance only if the sfdc instance is not found
+					if err != nil {
+						instanceBytes, err := utils.ReadFile(path)
+						if err != nil {
+							return err
+						}
+						clilog.Info.Printf("Creating sfdc instance: %s\n", instanceFile)
+						_, err = sfdc.CreateInstanceFromContent(instanceBytes)
+						if err != nil {
+							return nil
+						}
+					} else {
+						clilog.Info.Printf("sfdc instance %s already exists\n", instanceFile)
+					}
+				}
+			}
+			return nil
+		})
+
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func processSfdcChannels(sfdcchannelsFolder string) (err error) {
+	var stat fs.FileInfo
+	rJSONFiles := regexp.MustCompile(`(\S*)\.json`)
+	const sfdcNamingConvention = 2 // when file is split with _, the result must be 2
+
+	if stat, err = os.Stat(sfdcchannelsFolder); err == nil && stat.IsDir() {
+		// create any sfdc channels
+		err = filepath.Walk(sfdcchannelsFolder, func(path string, info os.FileInfo, err error) error {
+			if err != nil {
+				return err
+			}
+			if !info.IsDir() {
+				channelFile := filepath.Base(path)
+				if rJSONFiles.MatchString(channelFile) {
+					clilog.Info.Printf("Found configuration for sfdc channel: %s\n", channelFile)
+					sfdcNames := strings.Split(getFilenameWithoutExtension(channelFile), "_")
+					if len(sfdcNames) != sfdcNamingConvention {
+						clilog.Warning.Printf("sfdc chanel file %s does not follow the naming "+
+							"convention instanceName_channelName.json\n", channelFile)
+						return nil
+					}
+					version, _, err := sfdc.FindChannel(sfdcNames[1], sfdcNames[0])
+					// create the instance only if the sfdc channel is not found
+					if err != nil {
+						channelBytes, err := utils.ReadFile(path)
+						if err != nil {
+							return err
+						}
+						clilog.Info.Printf("Creating sfdc channel: %s\n", channelFile)
+						_, err = sfdc.CreateChannelFromContent(version, channelBytes)
+						if err != nil {
+							return nil
+						}
+					} else {
+						clilog.Info.Printf("sfdc channel %s already exists\n", channelFile)
+					}
+				}
+			}
+			return nil
+		})
+
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func processIntegration(overridesFile string, integrationFolder string, configVarsFolder string, pipeline string) (err error) {
+	rJSONFiles := regexp.MustCompile(`(\S*)\.json`)
+
+	var integrationNames []string
+	var overridesBytes []byte
+
+	if _, err = os.Stat(overridesFile); err == nil {
+		overridesBytes, err = utils.ReadFile(overridesFile)
+		if err != nil {
+			return err
+		}
+	}
+
+	if len(overridesBytes) > 0 {
+		clilog.Info.Printf("Found overrides file %s\n", overridesFile)
+	}
+
+	// get the integration file
+	_ = filepath.Walk(integrationFolder, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+		if !info.IsDir() {
+			integrationFile := filepath.Base(path)
+			if rJSONFiles.MatchString(integrationFile) {
+				clilog.Info.Printf("Found configuration for integration: %s\n", integrationFile)
+				integrationNames = append(integrationNames, integrationFile)
+			}
+		}
+		return nil
+	})
+
+	if len(integrationNames) > 0 {
+		// get only the first file
+		integrationBytes, err := utils.ReadFile(path.Join(integrationFolder, integrationNames[0]))
+		if err != nil {
+			return err
+		}
+		clilog.Info.Printf("Create integration %s\n", getFilenameWithoutExtension(integrationNames[0]))
+		respBody, err := integrations.CreateVersion(getFilenameWithoutExtension(integrationNames[0]),
+			integrationBytes, overridesBytes, "", userLabel)
+		if err != nil {
+			return err
+		}
+		version, err := getVersion(respBody)
+		if err != nil {
+			return err
+		}
+		clilog.Info.Printf("Publish integration %s with version %s\n",
+			getFilenameWithoutExtension(integrationNames[0]), version)
+		// read any config variables
+		configVarsFile := path.Join(configVarsFolder, getFilenameWithoutExtension(integrationNames[0])+"-config.json")
+		var configVarBytes []byte
+		if _, err = os.Stat(configVarsFile); err == nil {
+			configVarBytes, err = utils.ReadFile(configVarsFile)
+			if err != nil {
+				return err
+			}
+		}
+		_, err = integrations.Publish(getFilenameWithoutExtension(integrationNames[0]), version, configVarBytes)
+		if err != nil {
+			return err
+		}
+		if pipeline != "" {
+			err = apiclient.WriteResultsFile(outputGCSPath, "SUCCEEDED")
+		}
+		return err
+	}
+	clilog.Warning.Printf("No integration files were found\n")
+	return nil
 }

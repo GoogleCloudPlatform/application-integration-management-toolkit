@@ -14,6 +14,9 @@
 
 FROM golang:1.21 as builder
 
+ARG TAG
+ARG COMMIT
+
 ADD ./internal /go/src/integrationcli/internal
 ADD ./cmd /go/src/integrationcli/cmd
 
@@ -23,17 +26,22 @@ WORKDIR /go/src/integrationcli
 ENV GO111MODULE=on
 RUN go mod tidy
 RUN go mod download
+RUN date +%FT%H:%I:%M+%Z > /tmp/date
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -trimpath -buildvcs=true -a -gcflags='all="-l"' -ldflags='-s -w -extldflags "-static" -X main.version='${TAG}' -X main.commit='${COMMIT}' -X main.date='$(cat /tmp/date) -o /go/bin/integrationcli /go/src/integrationcli/cmd/integrationcli/integrationcli.go
 
-RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -trimpath -buildvcs=true -a -gcflags='all="-l"' -ldflags='-s -w -extldflags "-static"' -o /go/bin/integrationcli /go/src/integrationcli/cmd/integrationcli/integrationcli.go
+FROM us-docker.pkg.dev/appintegration-toolkit/internal/jq:latest as jq
 
-# use debug because it includes busybox
-FROM gcr.io/distroless/static-debian11:debug-nonroot
+FROM alpine:latest
 LABEL org.opencontainers.image.url='https://github.com/GoogleCloudPlatform/application-integration-management-toolkit' \
     org.opencontainers.image.documentation='https://github.com/GoogleCloudPlatform/application-integration-management-toolkit' \
     org.opencontainers.image.source='https://github.com/GoogleCloudPlatform/application-integration-management-toolkit' \
     org.opencontainers.image.vendor='Google LLC' \
     org.opencontainers.image.licenses='Apache-2.0' \
     org.opencontainers.image.description='This is a tool to interact with Application Integration APIs'
+RUN apk --no-cache add ca-certificates \
+    && update-ca-certificates
+COPY --from=jq /jq /usr/local/bin/jq
+COPY LICENSE.txt /
+COPY third-party-licenses.txt /
 COPY --from=builder /go/bin/integrationcli /usr/local/bin/integrationcli
 
-ENTRYPOINT [ "integrationcli" ]

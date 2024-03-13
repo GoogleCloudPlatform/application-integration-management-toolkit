@@ -301,13 +301,29 @@ var ScaffoldCmd = &cobra.Command{
 			}
 		}
 
+		if cloudDeploy {
+			clilog.Info.Printf("Storing clouddeploy.yaml and skaffold.yaml\n")
+			if err = apiclient.WriteByteArrayToFile(
+				path.Join(baseFolder, "clouddeploy.yaml"),
+				false,
+				[]byte(utils.GetCloudDeployYaml(name, env))); err != nil {
+				return err
+			}
+			if err = apiclient.WriteByteArrayToFile(
+				path.Join(baseFolder, "skaffold.yaml"),
+				false,
+				[]byte(utils.GetSkaffoldYaml())); err != nil {
+				return err
+			}
+		}
+
 		return err
 	},
 }
 
 var (
-	cloudBuild, skipConnectors bool
-	env                        string
+	cloudBuild, cloudDeploy, skipConnectors bool
+	env                                     string
 )
 
 func init() {
@@ -323,6 +339,8 @@ func init() {
 		"", "Integration flow snapshot number")
 	ScaffoldCmd.Flags().BoolVarP(&cloudBuild, "cloud-build", "",
 		false, "Generate cloud build file; default is false")
+	ScaffoldCmd.Flags().BoolVarP(&cloudDeploy, "cloud-deploy", "",
+		false, "Generate cloud deploy files; default is false")
 	ScaffoldCmd.Flags().StringVarP(&folder, "folder", "f",
 		"", "Folder to generate the scaffolding")
 	ScaffoldCmd.Flags().StringVarP(&env, "env", "e",
