@@ -38,10 +38,24 @@ LABEL org.opencontainers.image.url='https://github.com/GoogleCloudPlatform/appli
     org.opencontainers.image.vendor='Google LLC' \
     org.opencontainers.image.licenses='Apache-2.0' \
     org.opencontainers.image.description='This is a tool to interact with Application Integration APIs'
+
 RUN apk --no-cache add ca-certificates \
     && update-ca-certificates
+
+ARG USER=nonroot
+ENV HOME /home/$USER
+
+RUN apk add --update sudo
+
+RUN adduser -D $USER \
+    && mkdir -p /etc/sudoers.d \
+    && echo "$USER ALL=(ALL) NOPASSWD: ALL" > /etc/sudoers.d/$USER \
+    && chmod 0440 /etc/sudoers.d/$USER
+
 COPY --from=jq /jq /usr/local/bin/jq
 COPY LICENSE.txt /
 COPY third-party-licenses.txt /
 COPY --from=builder /go/bin/integrationcli /usr/local/bin/integrationcli
 
+USER $USER
+WORKDIR $HOME
