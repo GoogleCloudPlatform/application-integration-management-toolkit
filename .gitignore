@@ -8,6 +8,9 @@
 integrationcli
 .DS_Store
 
+# VSCode
+.vscode/launch.json
+
 # binaries
 dist/
 
