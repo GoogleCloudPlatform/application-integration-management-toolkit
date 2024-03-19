@@ -895,9 +895,18 @@ func GetConnectionsWithRegion(integration []byte) (connections []integrationConn
 				connections = append(connections, newConnection)
 			}
 			if _, ok := taskConfig.Parameters["connectionName"]; ok {
-				newConnection := getIntegrationConnection(taskConfig.Parameters["connectionName"],
-					taskConfig.Parameters["connectionVersion"], iversion.IntegrationConfigParameters)
-				connections = append(connections, newConnection)
+				// check custom connection
+				if isCustomConnection(taskConfig.Parameters["connectionVersion"]) {
+					newCustomConnection := getIntegrationCustomConnection(taskConfig.Parameters["connectionVersion"])
+					connections = append(connections, newCustomConnection)
+					newConnection := getIntegrationConnection(taskConfig.Parameters["connectionName"],
+						taskConfig.Parameters["connectionVersion"], iversion.IntegrationConfigParameters)
+					connections = append(connections, newConnection)
+				} else {
+					newConnection := getIntegrationConnection(taskConfig.Parameters["connectionName"],
+						taskConfig.Parameters["connectionVersion"], iversion.IntegrationConfigParameters)
+					connections = append(connections, newConnection)
+				}
 			}
 		}
 	}
@@ -1434,6 +1443,15 @@ func getJson(contents string) map[string]interface{} {
 	return m
 }
 
+func getIntegrationCustomConnection(connectionVersion eventparameter) integrationConnection {
+	ic := integrationConnection{}
+	ic.Name = strings.Split(*connectionVersion.Value.StringValue, "/")[7]
+	ic.Version = strings.Split(*connectionVersion.Value.StringValue, "/")[9]
+	ic.Region = "global"
+	ic.CustomConnection = true
+	return ic
+}
+
 func getIntegrationConnection(connectionName eventparameter,
 	connectionVersion eventparameter, configParams []parameterConfig) integrationConnection {
 	ic := integrationConnection{}
@@ -1453,12 +1471,7 @@ func getIntegrationConnection(connectionName eventparameter,
 	}
 
 	ic.Version = strings.Split(*connectionVersion.Value.StringValue, "/")[9]
-	connectionType := strings.Split(*connectionVersion.Value.StringValue, "/")[5]
-	if connectionType == "gcp" {
-		ic.CustomConnection = false
-	} else {
-		ic.CustomConnection = true
-	}
+	ic.CustomConnection = false
 	return ic
 }
 
@@ -1474,4 +1487,13 @@ func getConfigParamValue(name string, configParams []parameterConfig) string {
 		}
 	}
 	return ""
+}
+
+func isCustomConnection(connectionVersion eventparameter) bool {
+	connectionType := strings.Split(*connectionVersion.Value.StringValue, "/")[5]
+	if connectionType == "gcp" {
+		return false
+	} else {
+		return true
+	}
 }
