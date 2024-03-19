@@ -1454,10 +1454,11 @@ func getIntegrationConnection(connectionName eventparameter,
 
 	ic.Version = strings.Split(*connectionVersion.Value.StringValue, "/")[9]
 	connectionType := strings.Split(*connectionVersion.Value.StringValue, "/")[5]
-	if connectionType == "gcp" {
-		ic.CustomConnection = false
-	} else {
+	// CustomConnector will have the provider as customConnector. For others the provider can be default/GCP or any other provider.
+	if strings.EqualFold(connectionType, "customConnector") {
 		ic.CustomConnection = true
+	} else {
+		ic.CustomConnection = false
 	}
 	return ic
 }
