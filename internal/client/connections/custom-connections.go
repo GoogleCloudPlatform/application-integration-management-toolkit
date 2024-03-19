@@ -184,7 +184,7 @@ func GetCustomVersion(connName string, connVersion string, overrides bool) (resp
 			return nil, err
 		}
 		// remove the default p4s from the overrides
-		if strings.Contains(*cVerReq.ServiceAccount, "-compute@developer.gserviceaccount.com") {
+		if cVerReq.ServiceAccount != nil && strings.Contains(*cVerReq.ServiceAccount, "-compute@developer.gserviceaccount.com") {
 			cVerReq.ServiceAccount = nil
 		}
 		c.CustomConnectorVersion = cVerReq
@@ -299,7 +299,7 @@ func waitForCustom(operationName string) error {
 		if done {
 			return nil
 		}
-		time.Sleep(1 * time.Second)
+		time.Sleep(5 * time.Second)
 	}
 }
 
