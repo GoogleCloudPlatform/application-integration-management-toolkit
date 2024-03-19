@@ -1491,9 +1491,9 @@ func getConfigParamValue(name string, configParams []parameterConfig) string {
 
 func isCustomConnection(connectionVersion eventparameter) bool {
 	connectionType := strings.Split(*connectionVersion.Value.StringValue, "/")[5]
-	if connectionType == "gcp" {
-		return false
-	} else {
+	if strings.EqualFold(connectionType, "customConnector") {
 		return true
+	} else {
+		return false
 	}
 }
