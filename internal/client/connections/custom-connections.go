@@ -183,6 +183,10 @@ func GetCustomVersion(connName string, connVersion string, overrides bool) (resp
 		if err = json.Unmarshal(respBody, &cVerReq); err != nil {
 			return nil, err
 		}
+		// remove the default p4s from the overrides
+		if strings.Contains(*cVerReq.ServiceAccount, "-compute@developer.gserviceaccount.com") {
+			cVerReq.ServiceAccount = nil
+		}
 		c.CustomConnectorVersion = cVerReq
 		overridesResp, err := json.Marshal(c)
 		if err != nil {
