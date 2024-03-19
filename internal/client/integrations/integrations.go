@@ -1455,9 +1455,9 @@ func getIntegrationConnection(connectionName eventparameter,
 	ic.Version = strings.Split(*connectionVersion.Value.StringValue, "/")[9]
 	connectionType := strings.Split(*connectionVersion.Value.StringValue, "/")[5]
 	if connectionType == "gcp" {
-		ic.CustomConnection = false
-	} else {
 		ic.CustomConnection = true
+	} else {
+		ic.CustomConnection = false
 	}
 	return ic
 }
