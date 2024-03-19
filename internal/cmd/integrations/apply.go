@@ -400,9 +400,15 @@ func processCustomConnectors(customConnectorsFolder string) (err error) {
 						if err != nil {
 							return err
 						}
-						if err = connections.CreateCustomWithVersion(customConnectionDetails[0],
-							customConnectionDetails[1], contents, serviceAccountName, serviceAccountProject); err != nil {
-							return err
+						if _, err := connections.GetCustomVersion(customConnectionDetails[0],
+							customConnectionDetails[1], false); err != nil {
+							// didn't find the custom connector, create it
+							if err = connections.CreateCustomWithVersion(customConnectionDetails[0],
+								customConnectionDetails[1], contents, serviceAccountName, serviceAccountProject); err != nil {
+								return err
+							}
+						} else {
+							clilog.Info.Printf("Custom Connector %s already exists\n", customConnectionFile)
 						}
 					}
 				}
