@@ -1453,7 +1453,8 @@ func getIntegrationCustomConnection(connectionVersion eventparameter) integratio
 }
 
 func getIntegrationConnection(connectionName eventparameter,
-	connectionVersion eventparameter, configParams []parameterConfig) integrationConnection {
+	connectionVersion eventparameter, configParams []parameterConfig,
+) integrationConnection {
 	ic := integrationConnection{}
 
 	// determine connection name.

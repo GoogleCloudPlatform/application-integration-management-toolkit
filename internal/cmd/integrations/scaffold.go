@@ -57,11 +57,18 @@ var ScaffoldCmd = &cobra.Command{
 	},
 	RunE: func(cmd *cobra.Command, args []string) (err error) {
 		const jsonExt = ".json"
+		var fileSplitter string
 		var integrationBody, overridesBody []byte
 		version := cmd.Flag("ver").Value.String()
 		name := cmd.Flag("name").Value.String()
 
 		apiclient.DisableCmdPrintHttpResponse()
+
+		if useUnderscore {
+			fileSplitter = utils.LegacyFileSplitter
+		} else {
+			fileSplitter = utils.DefaultFileSplitter
+		}
 
 		if folder != "" {
 			if stat, err := os.Stat(folder); err != nil || !stat.IsDir() {
@@ -201,7 +208,7 @@ var ScaffoldCmd = &cobra.Command{
 				if err = generateFolder(path.Join(folder, "connectors")); err != nil {
 					return err
 				}
-				//check for custom connectors
+				// check for custom connectors
 				for _, connector := range connectors {
 					if connector.CustomConnection {
 						if err = generateFolder(path.Join(folder, "custom-connectors")); err != nil {
@@ -222,7 +229,7 @@ var ScaffoldCmd = &cobra.Command{
 							return err
 						}
 						if err = apiclient.WriteByteArrayToFile(
-							path.Join(folder, "custom-connectors", connector.Name+"-"+connector.Version+jsonExt),
+							path.Join(folder, "custom-connectors", connector.Name+fileSplitter+connector.Version+jsonExt),
 							false,
 							customConnectionResp); err != nil {
 							return err
@@ -282,7 +289,7 @@ var ScaffoldCmd = &cobra.Command{
 					}
 					clilog.Info.Printf("Storing sfdcchannel %s\n", channelName)
 					if err = apiclient.WriteByteArrayToFile(
-						path.Join(folder, "sfdcchannels", instanceName+"_"+channelName+jsonExt),
+						path.Join(folder, "sfdcchannels", instanceName+fileSplitter+channelName+jsonExt),
 						false,
 						channelBytes); err != nil {
 						return err
@@ -322,8 +329,8 @@ var ScaffoldCmd = &cobra.Command{
 }
 
 var (
-	cloudBuild, cloudDeploy, skipConnectors bool
-	env                                     string
+	cloudBuild, cloudDeploy, skipConnectors, useUnderscore bool
+	env                                                    string
 )
 
 func init() {
@@ -347,6 +354,8 @@ func init() {
 		"", "Environment name for the scaffolding")
 	ScaffoldCmd.Flags().BoolVarP(&skipConnectors, "skip-connectors", "",
 		false, "Exclude connectors from scaffold")
+	ScaffoldCmd.Flags().BoolVarP(&useUnderscore, "use-underscore", "",
+		false, "Use underscore as a file splitter; default is __")
 
 	_ = ScaffoldCmd.MarkFlagRequired("name")
 }

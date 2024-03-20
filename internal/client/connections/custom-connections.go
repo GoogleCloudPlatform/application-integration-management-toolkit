@@ -242,7 +242,8 @@ func IsCustomConnector(contents []byte) bool {
 }
 
 func CreateCustomWithVersion(name string, version string, contents []byte,
-	serviceAccount string, serviceAccountProject string) (err error) {
+	serviceAccount string, serviceAccountProject string,
+) (err error) {
 	c := customConnectorOverrides{}
 	err = json.Unmarshal(contents, &c)
 	if err != nil {
