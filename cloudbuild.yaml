@@ -50,6 +50,20 @@ steps:
   id: push_latest_integrationcli
   args: ['push', '${_IMAGE_NAME}:latest']
 
+# the folowing image is built for cloud deploy
+- name: 'gcr.io/cloud-builders/docker'
+  id: tag_integrationcli_deploy
+  args: ['tag', '${_IMAGE_NAME}:${TAG_NAME}', '${_CD_IMAGE_NAME}:${TAG_NAME}']
+- name: 'gcr.io/cloud-builders/docker'
+  id: push_integrationcli_deploy
+  args: ['push', '${_CD_IMAGE_NAME}:${TAG_NAME}']
+- name: 'gcr.io/cloud-builders/docker'
+  id: tag_latest_integrationcli_deploy
+  args: ['tag', '${_CD_IMAGE_NAME}:${TAG_NAME}', '${_CD_IMAGE_NAME}:latest']
+- name: 'gcr.io/cloud-builders/docker'
+  id: push_latest_integrationcli_deploy
+  args: ['push', '${_CD_IMAGE_NAME}:latest']
+
 #sign and attach integrationcli
 - name: 'us-docker.pkg.dev/${PROJECT_ID}/${_REPO}/cosign:latest'
   id: sign_integrationcli
@@ -62,6 +76,18 @@ steps:
       cosign sign --key=/tmp/cosign.key --output-signature=/tmp/integrationcli_${TAG_NAME}.sig --yes ${_IMAGE_NAME}:${TAG_NAME}
       cosign attach signature --signature=/tmp/integrationcli_${TAG_NAME}.sig ${_IMAGE_NAME}:${TAG_NAME}
 
+#sign and attach the integrationcli-deploy image
+- name: 'us-docker.pkg.dev/${PROJECT_ID}/${_REPO}/cosign:latest'
+  id: sign_integrationcli_deloy
+  entrypoint: 'sh'
+  secretEnv: ['COSIGN_PASSWORD', 'COSIGN_PRIVATE_KEY']
+  args:
+    - -c
+    - |
+      echo "$$COSIGN_PRIVATE_KEY" > /tmp/cosign.key
+      cosign sign --key=/tmp/cosign.key --output-signature=/tmp/integrationcli_${TAG_NAME}.sig --yes ${_CD_IMAGE_NAME}:${TAG_NAME}
+      cosign attach signature --signature=/tmp/integrationcli_${TAG_NAME}.sig ${_CD_IMAGE_NAME}:${TAG_NAME}
+
 availableSecrets:
   secretManager:
   - versionName: projects/$PROJECT_ID/secrets/integrationcli-cosign-password/versions/latest
@@ -73,6 +99,7 @@ availableSecrets:
 substitutions:
   _REPO: "images"
   _IMAGE_NAME: "us-docker.pkg.dev/${PROJECT_ID}/${_REPO}/integrationcli"
+  _CD_IMAGE_NAME: "us-docker.pkg.dev/${PROJECT_ID}/${_REPO}/integrationcli-deploy"
   _COSIGN_IMAGE_NAME: "us-docker.pkg.dev/${PROJECT_ID}/${_REPO}/cosign"
 
 options:

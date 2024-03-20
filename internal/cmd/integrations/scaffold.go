@@ -190,60 +190,64 @@ var ScaffoldCmd = &cobra.Command{
 			}
 		}
 
-		connectors, err := integrations.GetConnectionsWithRegion(integrationBody)
-		if err != nil {
-			return err
-		}
-
-		if len(connectors) > 0 {
-			clilog.Info.Printf("Found connectors in the integration\n")
-			if err = generateFolder(path.Join(folder, "connectors")); err != nil {
+		if !skipConnectors {
+			connectors, err := integrations.GetConnectionsWithRegion(integrationBody)
+			if err != nil {
 				return err
 			}
-			//check for custom connectors
-			for _, connector := range connectors {
-				if connector.CustomConnection {
-					if err = generateFolder(path.Join(folder, "custom-connectors")); err != nil {
-						return err
-					}
-					break
+
+			if len(connectors) > 0 {
+				clilog.Info.Printf("Found connectors in the integration\n")
+				if err = generateFolder(path.Join(folder, "connectors")); err != nil {
+					return err
 				}
-			}
-			for _, connector := range connectors {
-				if connector.CustomConnection {
-					customConnectionResp, err := connections.GetCustomVersion(connector.Name, connector.Version, true)
-					if err != nil {
-						return err
-					}
-					clilog.Info.Printf("Storing custom connector %s\n", connector.Name)
-					customConnectionResp, err = apiclient.PrettifyJson(customConnectionResp)
-					if err != nil {
-						return err
-					}
-					if err = apiclient.WriteByteArrayToFile(
-						path.Join(folder, "custom-connectors", connector.Name+"-"+connector.Version+jsonExt),
-						false,
-						customConnectionResp); err != nil {
-						return err
-					}
-				} else {
-					connectionResp, err := connections.GetConnectionDetailWithRegion(connector.Name, connector.Region, "", true, true)
-					if err != nil {
-						return err
-					}
-					clilog.Info.Printf("Storing connector %s\n", connector.Name)
-					connectionResp, err = apiclient.PrettifyJson(connectionResp)
-					if err != nil {
-						return err
-					}
-					if err = apiclient.WriteByteArrayToFile(
-						path.Join(folder, "connectors", connector.Name+jsonExt),
-						false,
-						connectionResp); err != nil {
-						return err
+				//check for custom connectors
+				for _, connector := range connectors {
+					if connector.CustomConnection {
+						if err = generateFolder(path.Join(folder, "custom-connectors")); err != nil {
+							return err
+						}
+						break
 					}
 				}
+				for _, connector := range connectors {
+					if connector.CustomConnection {
+						customConnectionResp, err := connections.GetCustomVersion(connector.Name, connector.Version, true)
+						if err != nil {
+							return err
+						}
+						clilog.Info.Printf("Storing custom connector %s\n", connector.Name)
+						customConnectionResp, err = apiclient.PrettifyJson(customConnectionResp)
+						if err != nil {
+							return err
+						}
+						if err = apiclient.WriteByteArrayToFile(
+							path.Join(folder, "custom-connectors", connector.Name+"-"+connector.Version+jsonExt),
+							false,
+							customConnectionResp); err != nil {
+							return err
+						}
+					} else {
+						connectionResp, err := connections.GetConnectionDetailWithRegion(connector.Name, connector.Region, "", true, true)
+						if err != nil {
+							return err
+						}
+						clilog.Info.Printf("Storing connector %s\n", connector.Name)
+						connectionResp, err = apiclient.PrettifyJson(connectionResp)
+						if err != nil {
+							return err
+						}
+						if err = apiclient.WriteByteArrayToFile(
+							path.Join(folder, "connectors", connector.Name+jsonExt),
+							false,
+							connectionResp); err != nil {
+							return err
+						}
+					}
+				}
 			}
+		} else {
+			clilog.Info.Printf("Skipping scaffold of connector configuration\n")
 		}
 
 		instances, err := integrations.GetSfdcInstances(integrationBody)
@@ -297,13 +301,29 @@ var ScaffoldCmd = &cobra.Command{
 			}
 		}
 
+		if cloudDeploy {
+			clilog.Info.Printf("Storing clouddeploy.yaml and skaffold.yaml\n")
+			if err = apiclient.WriteByteArrayToFile(
+				path.Join(baseFolder, "clouddeploy.yaml"),
+				false,
+				[]byte(utils.GetCloudDeployYaml(name, env))); err != nil {
+				return err
+			}
+			if err = apiclient.WriteByteArrayToFile(
+				path.Join(baseFolder, "skaffold.yaml"),
+				false,
+				[]byte(utils.GetSkaffoldYaml())); err != nil {
+				return err
+			}
+		}
+
 		return err
 	},
 }
 
 var (
-	cloudBuild bool
-	env        string
+	cloudBuild, cloudDeploy, skipConnectors bool
+	env                                     string
 )
 
 func init() {
@@ -318,11 +338,15 @@ func init() {
 	ScaffoldCmd.Flags().StringVarP(&snapshot, "snapshot", "s",
 		"", "Integration flow snapshot number")
 	ScaffoldCmd.Flags().BoolVarP(&cloudBuild, "cloud-build", "",
-		true, "don't generate cloud build file; default is true")
+		false, "Generate cloud build file; default is false")
+	ScaffoldCmd.Flags().BoolVarP(&cloudDeploy, "cloud-deploy", "",
+		false, "Generate cloud deploy files; default is false")
 	ScaffoldCmd.Flags().StringVarP(&folder, "folder", "f",
 		"", "Folder to generate the scaffolding")
 	ScaffoldCmd.Flags().StringVarP(&env, "env", "e",
 		"", "Environment name for the scaffolding")
+	ScaffoldCmd.Flags().BoolVarP(&skipConnectors, "skip-connectors", "",
+		false, "Exclude connectors from scaffold")
 
 	_ = ScaffoldCmd.MarkFlagRequired("name")
 }

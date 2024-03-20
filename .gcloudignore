@@ -5,7 +5,6 @@
 *.so
 *.dylib
 *.zip
-integrationcli
 .DS_Store
 
 # binaries
