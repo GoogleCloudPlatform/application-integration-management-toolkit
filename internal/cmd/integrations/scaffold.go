@@ -15,7 +15,6 @@
 package integrations
 
 import (
-	"cmd/utils"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -209,7 +208,7 @@ var ScaffoldCmd = &cobra.Command{
 				if err = generateFolder(path.Join(folder, "connectors")); err != nil {
 					return err
 				}
-				//check for custom connectors
+				// check for custom connectors
 				for _, connector := range connectors {
 					if connector.CustomConnection {
 						if err = generateFolder(path.Join(folder, "custom-connectors")); err != nil {

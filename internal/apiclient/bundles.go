@@ -121,7 +121,6 @@ func ClearEntityPayloadList() {
 }
 
 func ExtractTgz(gcsURL string) (folder string, err error) {
-
 	ctx := context.Background()
 
 	folder, err = os.MkdirTemp("", "integration")
@@ -206,7 +205,7 @@ func ExtractTgz(gcsURL string) (folder string, err error) {
 		switch header.Typeflag {
 		case tar.TypeDir:
 			// Create directory
-			if err := os.Mkdir(path.Join(folder, header.Name), 0755); err != nil {
+			if err := os.Mkdir(path.Join(folder, header.Name), 0o755); err != nil {
 				return "", fmt.Errorf("Error creating directory:", err)
 			}
 		case tar.TypeReg:
@@ -265,7 +264,6 @@ func GetCloudDeployGCSLocations(pipeline string, release string) (skaffoldConfig
 }
 
 func WriteResultsFile(deployOutputGCS string, status string) (err error) {
-
 	contents := fmt.Sprintf("{\"resultStatus\": \"%s\"}", status)
 	filename := "results.json"
 

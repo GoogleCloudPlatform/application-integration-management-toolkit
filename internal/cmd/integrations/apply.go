@@ -15,7 +15,6 @@
 package integrations
 
 import (
-	"cmd/utils"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -65,7 +64,6 @@ var ApplyCmd = &cobra.Command{
 		return apiclient.SetProjectID(cmdProject.Value.String())
 	},
 	RunE: func(cmd *cobra.Command, args []string) (err error) {
-
 		var skaffoldConfigUri string
 
 		if folder == "" {
@@ -177,7 +175,6 @@ func init() {
 		false, "Skip applying connector configuration; default is false")
 	ApplyCmd.Flags().BoolVarP(&useUnderscore, "use-underscore", "",
 		false, "Use underscore as a file splitter; default is __")
-
 }
 
 func getFilenameWithoutExtension(filname string) string {
@@ -394,7 +391,7 @@ func processCustomConnectors(customConnectorsFolder string) (err error) {
 	}
 
 	if stat, err = os.Stat(customConnectorsFolder); err == nil && stat.IsDir() {
-		//create any custom connectors
+		// create any custom connectors
 		err = filepath.Walk(customConnectorsFolder, func(path string, info os.FileInfo, err error) error {
 			if err != nil {
 				return err

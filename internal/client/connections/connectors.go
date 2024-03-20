@@ -463,7 +463,6 @@ func create(name string, content []byte, serviceAccountName string, serviceAccou
 	} else {
 		*c.ConnectorVersion = fmt.Sprintf("projects/%s/locations/global/providers/%s/connectors/%s/versions/%d",
 			apiclient.GetProjectID(), c.ConnectorDetails.Provider, c.ConnectorDetails.Name, *c.ConnectorDetails.Version)
-
 	}
 
 	// remove the element

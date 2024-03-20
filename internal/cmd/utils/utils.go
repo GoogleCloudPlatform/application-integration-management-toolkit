@@ -20,8 +20,10 @@ import (
 	"os"
 )
 
-const DefaultFileSplitter = "__"
-const LegacyFileSplitter = "_"
+const (
+	DefaultFileSplitter = "__"
+	LegacyFileSplitter  = "_"
+)
 
 const cloudBuild = `# Copyright 2023 Google LLC
 #

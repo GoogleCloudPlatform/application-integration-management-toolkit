@@ -430,7 +430,6 @@ func handleGenericConnectorTask(taskConfig taskconfig, taskOverrides *overrides,
 			co.Parameters.ConnectionName = connName
 
 		}
-
 	} else if (eventparameter{}) != cparams && ok {
 		if cparams.Value.JsonValue != nil {
 			cd, err := getConnectionDetails(*cparams.Value.JsonValue)
@@ -530,7 +529,6 @@ func stringifyValue(cd connectiondetails) (string, error) {
 
 // getConnectionStringFromConnectionName
 func getConnectionStringFromConnectionName(connectionName string, iconfigParam []parameterConfig) (connection string, err error) {
-
 	var name string
 	if strings.HasPrefix(connectionName, "$`CONFIG_") {
 		for _, param := range iconfigParam {
