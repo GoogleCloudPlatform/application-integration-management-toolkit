@@ -55,6 +55,8 @@ type configVariableTemplate struct {
 	LocationType    string `json:"locationType,omitempty"`
 }
 
+const waitTime = 1 * time.Second
+
 // CreateCustom
 func CreateCustom(name string, description string, displayName string,
 	connType string, labels map[string]string,
@@ -258,10 +260,12 @@ func CreateCustomWithVersion(name string, version string, contents []byte,
 	}
 
 	// wait for custom connection to be created
-	operationName := strings.Split(fmt.Sprintf("%s", createCustomMap["name"]), "/")[5]
-	err = waitForCustom(operationName)
-	if err != nil {
-		return err
+	if len(strings.Split(fmt.Sprintf("%s", createCustomMap["name"]), "/")) > 4 {
+		operationName := strings.Split(fmt.Sprintf("%s", createCustomMap["name"]), "/")[5]
+		err = waitForCustom(operationName)
+		if err != nil {
+			return err
+		}
 	}
 
 	connectionVersionContents, err := json.Marshal(c.CustomConnectorVersion)
@@ -297,9 +301,10 @@ func waitForCustom(operationName string) error {
 		}
 		done := respMap["done"].(bool)
 		if done {
+			time.Sleep(waitTime)
 			return nil
 		}
-		time.Sleep(5 * time.Second)
+		time.Sleep(waitTime)
 	}
 }
 
@@ -318,8 +323,9 @@ func waitForCustomVersion(name string, version string) error {
 		}
 
 		if respMap["state"] == "ACTIVE" {
+			time.Sleep(waitTime)
 			return nil
 		}
-		time.Sleep(1 * time.Second)
+		time.Sleep(waitTime)
 	}
 }

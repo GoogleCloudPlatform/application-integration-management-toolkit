@@ -400,6 +400,7 @@ func processCustomConnectors(customConnectorsFolder string) (err error) {
 						if err != nil {
 							return err
 						}
+						clilog.Info.Printf("Creating custom connector: %s\n", customConnectionFile)
 						if _, err := connections.GetCustomVersion(customConnectionDetails[0],
 							customConnectionDetails[1], false); err != nil {
 							// didn't find the custom connector, create it
