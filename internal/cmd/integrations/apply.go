@@ -15,6 +15,7 @@
 package integrations
 
 import (
+	"cmd/utils"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -174,6 +175,8 @@ func init() {
 		false, "Waits for the connector to finish, with success or error; default is false")
 	ApplyCmd.Flags().BoolVarP(&skipConnectors, "skip-connectors", "",
 		false, "Skip applying connector configuration; default is false")
+	ApplyCmd.Flags().BoolVarP(&useUnderscore, "use-underscore", "",
+		false, "Use underscore as a file splitter; default is __")
 
 }
 
@@ -381,7 +384,14 @@ func processConnectors(connectorsFolder string, grantPermission bool, createSecr
 
 func processCustomConnectors(customConnectorsFolder string) (err error) {
 	var stat fs.FileInfo
+	var fileSplitter string
 	rJSONFiles := regexp.MustCompile(`(\S*)\.json`)
+
+	if useUnderscore {
+		fileSplitter = utils.LegacyFileSplitter
+	} else {
+		fileSplitter = utils.DefaultFileSplitter
+	}
 
 	if stat, err = os.Stat(customConnectorsFolder); err == nil && stat.IsDir() {
 		//create any custom connectors
@@ -392,7 +402,7 @@ func processCustomConnectors(customConnectorsFolder string) (err error) {
 			if !info.IsDir() {
 				customConnectionFile := filepath.Base(path)
 				if rJSONFiles.MatchString(customConnectionFile) {
-					customConnectionDetails := strings.Split(strings.TrimSuffix(customConnectionFile, filepath.Ext(customConnectionFile)), "-")
+					customConnectionDetails := strings.Split(strings.TrimSuffix(customConnectionFile, filepath.Ext(customConnectionFile)), fileSplitter)
 					// the file format is name-version.json
 					if len(customConnectionDetails) == 2 {
 						clilog.Info.Printf("Found configuration for custom connection: %v\n", customConnectionFile)
@@ -463,8 +473,15 @@ func processSfdcInstances(sfdcinstancesFolder string) (err error) {
 
 func processSfdcChannels(sfdcchannelsFolder string) (err error) {
 	var stat fs.FileInfo
+	var fileSplitter string
 	rJSONFiles := regexp.MustCompile(`(\S*)\.json`)
 	const sfdcNamingConvention = 2 // when file is split with _, the result must be 2
+
+	if useUnderscore {
+		fileSplitter = utils.LegacyFileSplitter
+	} else {
+		fileSplitter = utils.DefaultFileSplitter
+	}
 
 	if stat, err = os.Stat(sfdcchannelsFolder); err == nil && stat.IsDir() {
 		// create any sfdc channels
@@ -476,7 +493,7 @@ func processSfdcChannels(sfdcchannelsFolder string) (err error) {
 				channelFile := filepath.Base(path)
 				if rJSONFiles.MatchString(channelFile) {
 					clilog.Info.Printf("Found configuration for sfdc channel: %s\n", channelFile)
-					sfdcNames := strings.Split(getFilenameWithoutExtension(channelFile), "_")
+					sfdcNames := strings.Split(getFilenameWithoutExtension(channelFile), fileSplitter)
 					if len(sfdcNames) != sfdcNamingConvention {
 						clilog.Warning.Printf("sfdc chanel file %s does not follow the naming "+
 							"convention instanceName_channelName.json\n", channelFile)
