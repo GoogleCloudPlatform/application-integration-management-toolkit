@@ -1,9 +1,0 @@
-{
-    "connection_overrides": [{
-        "taskId": "1",
-        "task": "GenericConnectorTask",
-        "parameters": {
-            "connectionName": "fdic-banks"
-        }
-    }]
-}
