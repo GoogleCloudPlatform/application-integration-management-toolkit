@@ -47,14 +47,17 @@ var PublishVerCmd = &cobra.Command{
 		version := cmd.Flag("ver").Value.String()
 		name := cmd.Flag("name").Value.String()
 		configVarsFile := cmd.Flag("config-vars").Value.String()
+		var contents []byte
 
-		if _, err := os.Stat(configVarsFile); os.IsNotExist(err) {
-			return err
-		}
+		if configVarsFile != "" {
+			if _, err := os.Stat(configVarsFile); os.IsNotExist(err) {
+				return err
+			}
 
-		contents, err := os.ReadFile(configVarsFile)
-		if err != nil {
-			return err
+			contents, err = os.ReadFile(configVarsFile)
+			if err != nil {
+				return err
+			}
 		}
 
 		if version != "" {
