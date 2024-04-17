@@ -50,6 +50,7 @@ type triggeroverrides struct {
 	ProjectId                    *string           `json:"projectId,omitempty"`
 	TopicName                    *string           `json:"topicName,omitempty"`
 	APIPath                      *string           `json:"apiPath,omitempty"`
+	ServiceAccount               *string           `json:"serviceAccount,omitempty"`
 	Properties                   map[string]string `json:"properties,omitempty"`
 	CloudSchedulerServiceAccount *string           `json:"cloudSchedulerServiceAccount,omitempty"`
 	CloudSchedulerLocation       *string           `json:"cloudSchedulerLocation,omitempty"`
@@ -101,6 +102,7 @@ func mergeOverrides(eversion integrationVersionExternal, o overrides) (integrati
 					}
 					trigger.TriggerId = pubsubTrigger + *triggerOverride.ProjectId + "_" + *triggerOverride.TopicName
 					trigger.Properties["Subscription name"] = *triggerOverride.ProjectId + "_" + *triggerOverride.TopicName
+					trigger.Properties["Service account"] = *triggerOverride.ServiceAccount
 				case "API":
 					if triggerOverride.APIPath == nil {
 						return eversion, fmt.Errorf("the field apiPath is missing from the API Trigger in overrides")
@@ -297,9 +299,11 @@ func extractOverrides(iversion integrationVersion) (overrides, error) {
 			triggerOverride := triggeroverrides{}
 			triggerOverride.ProjectId = new(string)
 			triggerOverride.TopicName = new(string)
+			triggerOverride.ServiceAccount = new(string)
 			*triggerOverride.ProjectId = strings.Split(subscription, "_")[0]
 			*triggerOverride.TopicName = strings.Split(subscription, "_")[1]
 			triggerOverride.TriggerNumber = triggerConfig.TriggerNumber
+			*triggerOverride.ServiceAccount = triggerConfig.Properties["Service account"]
 			taskOverrides.TriggerOverrides = append(taskOverrides.TriggerOverrides, triggerOverride)
 		case "CLOUD_SCHEDULER":
 			triggerOverride := triggeroverrides{}
