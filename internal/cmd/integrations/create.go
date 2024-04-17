@@ -62,12 +62,13 @@ var CreateCmd = &cobra.Command{
 			}
 		}
 
-		_, err = integrations.CreateVersion(name, content, overridesContent, snapshot, userLabel)
+		_, err = integrations.CreateVersion(name, content, overridesContent, snapshot, userLabel, grantPermission)
 		return err
 	},
 }
 
 var integrationFile, overridesFile string
+var grantPermission bool
 
 func init() {
 	var name string
@@ -82,6 +83,8 @@ func init() {
 		"", "Integration version snapshot number")
 	CreateCmd.Flags().StringVarP(&userLabel, "userlabel", "u",
 		"", "Integration version userlabel")
+	CreateCmd.Flags().BoolVarP(&grantPermission, "grant-permission", "g",
+		false, "Grant the service account permission for integration triggers; default is false")
 
 	_ = CreateCmd.MarkFlagRequired("name")
 	_ = CreateCmd.MarkFlagRequired("file")

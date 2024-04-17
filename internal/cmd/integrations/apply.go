@@ -134,7 +134,8 @@ var ApplyCmd = &cobra.Command{
 			return err
 		}
 
-		if err = processIntegration(overridesFile, integrationFolder, configVarsFolder, pipeline); err != nil {
+		if err = processIntegration(overridesFile, integrationFolder,
+			configVarsFolder, pipeline, grantPermission); err != nil {
 			return err
 		}
 
@@ -160,9 +161,9 @@ func init() {
 	ApplyCmd.Flags().StringVarP(&userLabel, "userlabel", "u",
 		"", "Integration version userlabel")
 	ApplyCmd.Flags().StringVarP(&serviceAccountName, "sa", "",
-		"", "Service Account name for the connection")
+		"", "Service Account name for the connection or integration trigger")
 	ApplyCmd.Flags().StringVarP(&serviceAccountProject, "sp", "",
-		"", "Service Account Project for the connection. Default is the connection's project id")
+		"", "Service Account Project for the connection or integraton trigger.")
 	ApplyCmd.Flags().StringVarP(&encryptionKey, "encryption-keyid", "k",
 		"", "Cloud KMS key for decrypting Auth Config; Format = locations/*/keyRings/*/cryptoKeys/*")
 	ApplyCmd.Flags().StringVarP(&env, "env", "e",
@@ -523,7 +524,8 @@ func processSfdcChannels(sfdcchannelsFolder string) (err error) {
 	return nil
 }
 
-func processIntegration(overridesFile string, integrationFolder string, configVarsFolder string, pipeline string) (err error) {
+func processIntegration(overridesFile string, integrationFolder string,
+	configVarsFolder string, pipeline string, grantPermission bool) (err error) {
 	rJSONFiles := regexp.MustCompile(`(\S*)\.json`)
 
 	var integrationNames []string
@@ -563,7 +565,7 @@ func processIntegration(overridesFile string, integrationFolder string, configVa
 		}
 		clilog.Info.Printf("Create integration %s\n", getFilenameWithoutExtension(integrationNames[0]))
 		respBody, err := integrations.CreateVersion(getFilenameWithoutExtension(integrationNames[0]),
-			integrationBytes, overridesBytes, "", userLabel)
+			integrationBytes, overridesBytes, "", userLabel, grantPermission)
 		if err != nil {
 			return err
 		}

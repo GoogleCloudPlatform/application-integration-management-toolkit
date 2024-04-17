@@ -50,6 +50,7 @@ type triggeroverrides struct {
 	ProjectId                    *string           `json:"projectId,omitempty"`
 	TopicName                    *string           `json:"topicName,omitempty"`
 	APIPath                      *string           `json:"apiPath,omitempty"`
+	ServiceAccount               *string           `json:"serviceAccount,omitempty"`
 	Properties                   map[string]string `json:"properties,omitempty"`
 	CloudSchedulerServiceAccount *string           `json:"cloudSchedulerServiceAccount,omitempty"`
 	CloudSchedulerLocation       *string           `json:"cloudSchedulerLocation,omitempty"`
@@ -88,7 +89,7 @@ const (
 const authConfigValue = "{  \"@type\": \"type.googleapis.com/enterprise.crm.eventbus.authconfig.AuthConfigTaskParam\",\"authConfigId\": \""
 
 // mergeOverrides
-func mergeOverrides(eversion integrationVersionExternal, o overrides) (integrationVersionExternal, error) {
+func mergeOverrides(eversion integrationVersionExternal, o overrides, grantPermission bool) (integrationVersionExternal, error) {
 	// apply trigger overrides
 	for _, triggerOverride := range o.TriggerOverrides {
 		foundOverride := false
@@ -101,6 +102,20 @@ func mergeOverrides(eversion integrationVersionExternal, o overrides) (integrati
 					}
 					trigger.TriggerId = pubsubTrigger + *triggerOverride.ProjectId + "_" + *triggerOverride.TopicName
 					trigger.Properties["Subscription name"] = *triggerOverride.ProjectId + "_" + *triggerOverride.TopicName
+					trigger.Properties["IP Project name"] = *triggerOverride.ProjectId
+					if triggerOverride.ServiceAccount != nil {
+						serviceAccountName := fmt.Sprintf("%s@%s.iam.gserviceaccount.com", *triggerOverride.ServiceAccount, *triggerOverride.ProjectId)
+						trigger.Properties["Service account"] = serviceAccountName
+						if grantPermission {
+							// create the SA if it doesn't exist
+							if err := apiclient.CreateServiceAccount(serviceAccountName); err != nil {
+								return eversion, err
+							}
+							if err := apiclient.SetIntegrationInvokerPermission(*triggerOverride.ProjectId, serviceAccountName); err != nil {
+								clilog.Warning.Printf("Unable to update permissions for the service account: %v\n", err)
+							}
+						}
+					}
 				case "API":
 					if triggerOverride.APIPath == nil {
 						return eversion, fmt.Errorf("the field apiPath is missing from the API Trigger in overrides")
@@ -297,9 +312,15 @@ func extractOverrides(iversion integrationVersion) (overrides, error) {
 			triggerOverride := triggeroverrides{}
 			triggerOverride.ProjectId = new(string)
 			triggerOverride.TopicName = new(string)
+			triggerOverride.ServiceAccount = new(string)
 			*triggerOverride.ProjectId = strings.Split(subscription, "_")[0]
 			*triggerOverride.TopicName = strings.Split(subscription, "_")[1]
 			triggerOverride.TriggerNumber = triggerConfig.TriggerNumber
+			if sa, err := apiclient.GetComputeEngineDefaultServiceAccount(apiclient.GetProjectID()); err != nil {
+				if sa != triggerConfig.Properties["Service account"] {
+					*triggerOverride.ServiceAccount = strings.Split(triggerConfig.Properties["Service account"], "@")[0]
+				}
+			}
 			taskOverrides.TriggerOverrides = append(taskOverrides.TriggerOverrides, triggerOverride)
 		case "CLOUD_SCHEDULER":
 			triggerOverride := triggeroverrides{}
