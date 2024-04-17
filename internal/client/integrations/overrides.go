@@ -89,7 +89,7 @@ const (
 const authConfigValue = "{  \"@type\": \"type.googleapis.com/enterprise.crm.eventbus.authconfig.AuthConfigTaskParam\",\"authConfigId\": \""
 
 // mergeOverrides
-func mergeOverrides(eversion integrationVersionExternal, o overrides) (integrationVersionExternal, error) {
+func mergeOverrides(eversion integrationVersionExternal, o overrides, grantPermission bool) (integrationVersionExternal, error) {
 	// apply trigger overrides
 	for _, triggerOverride := range o.TriggerOverrides {
 		foundOverride := false
@@ -102,7 +102,19 @@ func mergeOverrides(eversion integrationVersionExternal, o overrides) (integrati
 					}
 					trigger.TriggerId = pubsubTrigger + *triggerOverride.ProjectId + "_" + *triggerOverride.TopicName
 					trigger.Properties["Subscription name"] = *triggerOverride.ProjectId + "_" + *triggerOverride.TopicName
-					trigger.Properties["Service account"] = *triggerOverride.ServiceAccount
+					if triggerOverride.ServiceAccount != nil {
+						serviceAccountName := fmt.Sprintf("%s@%s.iam.gserviceaccount.com", *triggerOverride.ServiceAccount, *triggerOverride.ProjectId)
+						trigger.Properties["Service account"] = serviceAccountName
+						if grantPermission {
+							// create the SA if it doesn't exist
+							if err := apiclient.CreateServiceAccount(serviceAccountName); err != nil {
+								return eversion, err
+							}
+							if err := apiclient.SetIntegrationInvokerPermission(*triggerOverride.ProjectId, serviceAccountName); err != nil {
+								clilog.Warning.Printf("Unable to update permissions for the service account: %v\n", err)
+							}
+						}
+					}
 				case "API":
 					if triggerOverride.APIPath == nil {
 						return eversion, fmt.Errorf("the field apiPath is missing from the API Trigger in overrides")
