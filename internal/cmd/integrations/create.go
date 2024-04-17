@@ -84,7 +84,7 @@ func init() {
 	CreateCmd.Flags().StringVarP(&userLabel, "userlabel", "u",
 		"", "Integration version userlabel")
 	CreateCmd.Flags().BoolVarP(&grantPermission, "grant-permission", "g",
-		false, "Grant the service account permission the integration trigger; default is false")
+		false, "Grant the service account permission for integration triggers; default is false")
 
 	_ = CreateCmd.MarkFlagRequired("name")
 	_ = CreateCmd.MarkFlagRequired("file")
