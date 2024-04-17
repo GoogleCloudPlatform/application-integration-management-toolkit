@@ -102,6 +102,7 @@ func mergeOverrides(eversion integrationVersionExternal, o overrides, grantPermi
 					}
 					trigger.TriggerId = pubsubTrigger + *triggerOverride.ProjectId + "_" + *triggerOverride.TopicName
 					trigger.Properties["Subscription name"] = *triggerOverride.ProjectId + "_" + *triggerOverride.TopicName
+					trigger.Properties["IP Project name"] = *triggerOverride.ProjectId
 					if triggerOverride.ServiceAccount != nil {
 						serviceAccountName := fmt.Sprintf("%s@%s.iam.gserviceaccount.com", *triggerOverride.ServiceAccount, *triggerOverride.ProjectId)
 						trigger.Properties["Service account"] = serviceAccountName
