@@ -315,7 +315,7 @@ func extractOverrides(iversion integrationVersion) (overrides, error) {
 			*triggerOverride.ProjectId = strings.Split(subscription, "_")[0]
 			*triggerOverride.TopicName = strings.Split(subscription, "_")[1]
 			triggerOverride.TriggerNumber = triggerConfig.TriggerNumber
-			*triggerOverride.ServiceAccount = triggerConfig.Properties["Service account"]
+			*triggerOverride.ServiceAccount = strings.Split(triggerConfig.Properties["Service account"], "@")[0]
 			taskOverrides.TriggerOverrides = append(taskOverrides.TriggerOverrides, triggerOverride)
 		case "CLOUD_SCHEDULER":
 			triggerOverride := triggeroverrides{}
