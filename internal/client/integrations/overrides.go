@@ -90,6 +90,9 @@ const authConfigValue = "{  \"@type\": \"type.googleapis.com/enterprise.crm.even
 
 // mergeOverrides
 func mergeOverrides(eversion integrationVersionExternal, o overrides, grantPermission bool) (integrationVersionExternal, error) {
+	var err error
+	var serviceAccountName string
+
 	// apply trigger overrides
 	for _, triggerOverride := range o.TriggerOverrides {
 		foundOverride := false
@@ -106,14 +109,22 @@ func mergeOverrides(eversion integrationVersionExternal, o overrides, grantPermi
 					if triggerOverride.ServiceAccount != nil {
 						serviceAccountName := fmt.Sprintf("%s@%s.iam.gserviceaccount.com", *triggerOverride.ServiceAccount, *triggerOverride.ProjectId)
 						trigger.Properties["Service account"] = serviceAccountName
-						if grantPermission {
-							// create the SA if it doesn't exist
-							if err := apiclient.CreateServiceAccount(serviceAccountName); err != nil {
-								return eversion, err
-							}
-							if err := apiclient.SetIntegrationInvokerPermission(*triggerOverride.ProjectId, serviceAccountName); err != nil {
-								clilog.Warning.Printf("Unable to update permissions for the service account: %v\n", err)
-							}
+
+					} else {
+						serviceAccountName, err = apiclient.GetComputeEngineDefaultServiceAccount(apiclient.GetProjectID())
+						if err != nil {
+							trigger.Properties["Service account"] = serviceAccountName
+						} else {
+							clilog.Warning.Printf("Unable to get default comput engine service account: %v\n", err)
+						}
+					}
+					if grantPermission {
+						// create the SA if it doesn't exist
+						if err := apiclient.CreateServiceAccount(serviceAccountName); err != nil {
+							return eversion, err
+						}
+						if err := apiclient.SetIntegrationInvokerPermission(*triggerOverride.ProjectId, serviceAccountName); err != nil {
+							clilog.Warning.Printf("Unable to update permissions for the service account: %v\n", err)
 						}
 					}
 				case "API":
