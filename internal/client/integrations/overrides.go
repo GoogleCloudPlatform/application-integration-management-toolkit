@@ -312,12 +312,12 @@ func extractOverrides(iversion integrationVersion) (overrides, error) {
 			triggerOverride := triggeroverrides{}
 			triggerOverride.ProjectId = new(string)
 			triggerOverride.TopicName = new(string)
+			triggerOverride.ServiceAccount = new(string)
 			*triggerOverride.ProjectId = strings.Split(subscription, "_")[0]
 			*triggerOverride.TopicName = strings.Split(subscription, "_")[1]
 			triggerOverride.TriggerNumber = triggerConfig.TriggerNumber
 			if sa, err := apiclient.GetComputeEngineDefaultServiceAccount(apiclient.GetProjectID()); err != nil {
 				if sa != triggerConfig.Properties["Service account"] {
-					triggerOverride.ServiceAccount = new(string)
 					*triggerOverride.ServiceAccount = strings.Split(triggerConfig.Properties["Service account"], "@")[0]
 				}
 			}
