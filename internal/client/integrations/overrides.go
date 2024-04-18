@@ -113,10 +113,9 @@ func mergeOverrides(eversion integrationVersionExternal, o overrides, grantPermi
 					} else {
 						serviceAccountName, err = apiclient.GetComputeEngineDefaultServiceAccount(apiclient.GetProjectID())
 						if err != nil {
-							trigger.Properties["Service account"] = serviceAccountName
-						} else {
-							clilog.Warning.Printf("Unable to get default comput engine service account: %v\n", err)
+							return eversion, fmt.Errorf("Unable to get default comput engine service account: %v\n", err)
 						}
+						trigger.Properties["Service account"] = serviceAccountName
 					}
 					if grantPermission {
 						// create the SA if it doesn't exist
