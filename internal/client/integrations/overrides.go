@@ -92,6 +92,7 @@ const authConfigValue = "{  \"@type\": \"type.googleapis.com/enterprise.crm.even
 func mergeOverrides(eversion integrationVersionExternal, o overrides, grantPermission bool) (integrationVersionExternal, error) {
 	var err error
 	var serviceAccountName string
+	userDefineSA := true
 
 	// apply trigger overrides
 	for _, triggerOverride := range o.TriggerOverrides {
@@ -116,11 +117,14 @@ func mergeOverrides(eversion integrationVersionExternal, o overrides, grantPermi
 							return eversion, fmt.Errorf("Unable to get default comput engine service account: %v\n", err)
 						}
 						trigger.Properties["Service account"] = serviceAccountName
+						userDefineSA = false
 					}
 					if grantPermission {
-						// create the SA if it doesn't exist
-						if err := apiclient.CreateServiceAccount(serviceAccountName); err != nil {
-							return eversion, err
+						if userDefineSA {
+							// create the SA if it doesn't exist
+							if err := apiclient.CreateServiceAccount(serviceAccountName); err != nil {
+								return eversion, err
+							}
 						}
 						if err := apiclient.SetIntegrationInvokerPermission(*triggerOverride.ProjectId, serviceAccountName); err != nil {
 							clilog.Warning.Printf("Unable to update permissions for the service account: %v\n", err)
