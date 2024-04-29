@@ -88,6 +88,8 @@ const (
 
 const authConfigValue = "{  \"@type\": \"type.googleapis.com/enterprise.crm.eventbus.authconfig.AuthConfigTaskParam\",\"authConfigId\": \""
 
+const configVarPrefix = "$`CONFIG_"
+
 // mergeOverrides
 func mergeOverrides(eversion integrationVersionExternal, o overrides, grantPermission bool) (integrationVersionExternal, error) {
 	var err error
@@ -331,13 +333,17 @@ func extractOverrides(iversion integrationVersion) (overrides, error) {
 			triggerOverride.TriggerNumber = triggerConfig.TriggerNumber
 			triggerSA := triggerConfig.Properties["Service account"]
 			if triggerSA != "" {
-				if defaultSA, err := apiclient.GetComputeEngineDefaultServiceAccount(apiclient.GetProjectID()); err == nil {
-					if defaultSA != triggerSA {
-						triggerOverride.ServiceAccount = new(string)
-						*triggerOverride.ServiceAccount = strings.Split(triggerConfig.Properties["Service account"], "@")[0]
+				if !strings.HasPrefix(triggerSA, configVarPrefix) {
+					if defaultSA, err := apiclient.GetComputeEngineDefaultServiceAccount(apiclient.GetProjectID()); err == nil {
+						if defaultSA != triggerSA {
+							triggerOverride.ServiceAccount = new(string)
+							*triggerOverride.ServiceAccount = strings.Split(triggerConfig.Properties["Service account"], "@")[0]
+						}
+					} else {
+						clilog.Warning.Printf("unable to get default Compute Engine Service Account, %v\n", err)
 					}
 				} else {
-					clilog.Warning.Printf("unable to get default Compute Engine Service Account, %v\n", err)
+					clilog.Debug.Printf("config variable %s found, skipping from overrides\n", triggerSA)
 				}
 			}
 			taskOverrides.TriggerOverrides = append(taskOverrides.TriggerOverrides, triggerOverride)
@@ -398,9 +404,9 @@ func handleGenericRestV2Task(taskConfig taskconfig, taskOverrides *overrides) er
 
 	// store in overrides only if config variables are not used
 	urlEventParam := taskConfig.Parameters["url"]
-	if urlEventParam.Value.StringValue != nil && !strings.HasPrefix(*urlEventParam.Value.StringValue, "$`CONFIG_") {
+	if urlEventParam.Value.StringValue != nil && !strings.HasPrefix(*urlEventParam.Value.StringValue, configVarPrefix) {
 		tc.Parameters["url"] = taskConfig.Parameters["url"]
-	} else if urlEventParam.Value.IntValue != nil && !strings.HasPrefix(*urlEventParam.Value.IntValue, "$`CONFIG_") {
+	} else if urlEventParam.Value.IntValue != nil && !strings.HasPrefix(*urlEventParam.Value.IntValue, configVarPrefix) {
 		tc.Parameters["url"] = taskConfig.Parameters["url"]
 	}
 
@@ -570,7 +576,7 @@ func stringifyValue(cd connectiondetails) (string, error) {
 // getConnectionStringFromConnectionName
 func getConnectionStringFromConnectionName(connectionName string, iconfigParam []parameterConfig) (connection string, err error) {
 	var name string
-	if strings.HasPrefix(connectionName, "$`CONFIG_") {
+	if strings.HasPrefix(connectionName, configVarPrefix) {
 		for _, param := range iconfigParam {
 			if param.Parameter.Key == strings.ReplaceAll(connectionName, "$", "") {
 				if param.Value != nil {
