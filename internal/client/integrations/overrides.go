@@ -109,10 +109,17 @@ func mergeOverrides(eversion integrationVersionExternal, o overrides, grantPermi
 					trigger.TriggerId = pubsubTrigger + *triggerOverride.ProjectId + "_" + *triggerOverride.TopicName
 					trigger.Properties["Subscription name"] = *triggerOverride.ProjectId + "_" + *triggerOverride.TopicName
 					trigger.Properties["IP Project name"] = *triggerOverride.ProjectId
-					if triggerOverride.ServiceAccount != nil {
-						serviceAccountName = fmt.Sprintf("%s@%s.iam.gserviceaccount.com", *triggerOverride.ServiceAccount, *triggerOverride.ProjectId)
-						trigger.Properties["Service account"] = serviceAccountName
 
+					if triggerOverride.ServiceAccount != nil {
+						if !strings.HasPrefix(*triggerOverride.ServiceAccount, configVarPrefix) {
+							serviceAccountName = fmt.Sprintf("%s@%s.iam.gserviceaccount.com", *triggerOverride.ServiceAccount, *triggerOverride.ProjectId)
+							trigger.Properties["Service account"] = serviceAccountName
+						} else {
+							// it is a config variable. Do not set anything.
+							userDefineSA = false
+							grantPermission = false
+							clilog.Debug.Printf("config variable detected, skipping grantPermission\n")
+						}
 					} else {
 						serviceAccountName, err = apiclient.GetComputeEngineDefaultServiceAccount(apiclient.GetProjectID())
 						if err != nil {
@@ -333,17 +340,13 @@ func extractOverrides(iversion integrationVersion) (overrides, error) {
 			triggerOverride.TriggerNumber = triggerConfig.TriggerNumber
 			triggerSA := triggerConfig.Properties["Service account"]
 			if triggerSA != "" {
-				if !strings.HasPrefix(triggerSA, configVarPrefix) {
-					if defaultSA, err := apiclient.GetComputeEngineDefaultServiceAccount(apiclient.GetProjectID()); err == nil {
-						if defaultSA != triggerSA {
-							triggerOverride.ServiceAccount = new(string)
-							*triggerOverride.ServiceAccount = strings.Split(triggerConfig.Properties["Service account"], "@")[0]
-						}
-					} else {
-						clilog.Warning.Printf("unable to get default Compute Engine Service Account, %v\n", err)
+				if defaultSA, err := apiclient.GetComputeEngineDefaultServiceAccount(apiclient.GetProjectID()); err == nil {
+					if defaultSA != triggerSA {
+						triggerOverride.ServiceAccount = new(string)
+						*triggerOverride.ServiceAccount = strings.Split(triggerConfig.Properties["Service account"], "@")[0]
 					}
 				} else {
-					clilog.Debug.Printf("config variable %s found, skipping from overrides\n", triggerSA)
+					clilog.Warning.Printf("unable to get default Compute Engine Service Account, %v\n", err)
 				}
 			}
 			taskOverrides.TriggerOverrides = append(taskOverrides.TriggerOverrides, triggerOverride)
