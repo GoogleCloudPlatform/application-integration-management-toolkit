@@ -49,8 +49,8 @@ var CreateCmd = &cobra.Command{
 		re := regexp.MustCompile(`projects\/([a-zA-Z0-9_-]+)\/regions` +
 			`\/([a-zA-Z0-9_-]+)\/serviceAttachments\/([a-zA-Z0-9_-]+)`)
 
-		if ok := re.Match([]byte(name)); !ok {
-			return fmt.Errorf("the service atachment does not match the required format")
+		if ok := re.Match([]byte(serviceAttachment)); !ok {
+			return fmt.Errorf("The service attachment does not match the required format")
 		}
 
 		_, err = connections.CreateEndpoint(name, serviceAttachment, description, wait)
