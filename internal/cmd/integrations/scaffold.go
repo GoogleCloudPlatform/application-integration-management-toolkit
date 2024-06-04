@@ -334,7 +334,7 @@ var ScaffoldCmd = &cobra.Command{
 
 var (
 	cloudBuild, cloudDeploy, skipConnectors, skipAuthconfigs, useUnderscore bool
-	env                                                    								  string
+	env                                                                     string
 )
 
 func init() {
