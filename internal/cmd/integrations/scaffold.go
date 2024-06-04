@@ -172,29 +172,33 @@ var ScaffoldCmd = &cobra.Command{
 			return err
 		}
 
-		if len(authConfigUuids) > 0 {
-			clilog.Info.Printf("Found authconfigs in the integration\n")
-			if err = generateFolder(path.Join(folder, "authconfigs")); err != nil {
-				return err
+		if !skipAuthconfigs {
+			if len(authConfigUuids) > 0 {
+				clilog.Info.Printf("Found authconfigs in the integration\n")
+				if err = generateFolder(path.Join(folder, "authconfigs")); err != nil {
+					return err
+				}
+				for _, authConfigUUIDs := range authConfigUuids {
+					authConfigResp, err := authconfigs.Get(authConfigUUIDs, true)
+					if err != nil {
+						return err
+					}
+					authConfigName := getName(authConfigResp)
+					clilog.Info.Printf("Storing authconfig %s\n", authConfigName)
+					authConfigResp, err = apiclient.PrettifyJson(authConfigResp)
+					if err != nil {
+						return err
+					}
+					if err = apiclient.WriteByteArrayToFile(
+						path.Join(folder, "authconfigs", authConfigName+jsonExt),
+						false,
+						authConfigResp); err != nil {
+						return err
+					}
+				}
 			}
-			for _, authConfigUUIDs := range authConfigUuids {
-				authConfigResp, err := authconfigs.Get(authConfigUUIDs, true)
-				if err != nil {
-					return err
-				}
-				authConfigName := getName(authConfigResp)
-				clilog.Info.Printf("Storing authconfig %s\n", authConfigName)
-				authConfigResp, err = apiclient.PrettifyJson(authConfigResp)
-				if err != nil {
-					return err
-				}
-				if err = apiclient.WriteByteArrayToFile(
-					path.Join(folder, "authconfigs", authConfigName+jsonExt),
-					false,
-					authConfigResp); err != nil {
-					return err
-				}
-			}
+		} else {
+			clilog.Info.Printf("Skipping scaffold of authconfigs configuration\n")
 		}
 
 		if !skipConnectors {
@@ -329,8 +333,8 @@ var ScaffoldCmd = &cobra.Command{
 }
 
 var (
-	cloudBuild, cloudDeploy, skipConnectors, useUnderscore bool
-	env                                                    string
+	cloudBuild, cloudDeploy, skipConnectors, skipAuthconfigs, useUnderscore bool
+	env                                                    								  string
 )
 
 func init() {
@@ -354,6 +358,8 @@ func init() {
 		"", "Environment name for the scaffolding")
 	ScaffoldCmd.Flags().BoolVarP(&skipConnectors, "skip-connectors", "",
 		false, "Exclude connectors from scaffold")
+	ScaffoldCmd.Flags().BoolVarP(&skipAuthconfigs, "skip-authconfigs", "",
+		false, "Exclude authconfigs from scaffold")
 	ScaffoldCmd.Flags().BoolVarP(&useUnderscore, "use-underscore", "",
 		false, "Use underscore as a file splitter; default is __")
 
