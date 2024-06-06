@@ -47,6 +47,7 @@ type connection struct {
 	ConnectorDetails       *connectorDetails   `json:"connectorDetails,omitempty"`
 	ConfigVariables        []configVar         `json:"configVariables,omitempty"`
 	AuthConfig             authConfig          `json:"authConfig,omitempty"`
+	NodeConfig             nodeConfig          `json:"nodeConfig,omitempty"`
 	DestinationConfig      []destinationConfig `json:"destinationConfigs,omitempty"`
 	Suspended              bool                `json:"suspended,omitempty"`
 	LogConfig              *logConfig          `json:"logConfig,omitempty"`
