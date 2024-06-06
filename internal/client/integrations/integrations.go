@@ -133,6 +133,7 @@ type parameterInternal struct {
 	IsTransient bool       `json:"isTransient,omitempty"`
 	ProducedBy  producedBy `json:"producedBy,omitempty"`
 	Producer    string     `json:"producer,omitempty"`
+	Masked      bool       `json:"masked,omitempty"`
 }
 
 type parameterExternal struct {
@@ -145,6 +146,7 @@ type parameterExternal struct {
 	Producer        string     `json:"producer,omitempty"`
 	Searchable      bool       `json:"searchable,omitempty"`
 	JsonSchema      string     `json:"jsonSchema,omitempty"`
+	Masked          bool       `json:"masked,omitempty"`
 }
 
 type parameterConfig struct {
