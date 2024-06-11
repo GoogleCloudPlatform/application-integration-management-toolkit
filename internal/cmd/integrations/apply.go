@@ -102,8 +102,12 @@ var ApplyCmd = &cobra.Command{
 
 		apiclient.DisableCmdPrintHttpResponse()
 
-		if err = processAuthConfigs(authconfigFolder); err != nil {
-			return err
+		if !skipAuthconfigs {
+			if err = processAuthConfigs(authconfigFolder); err != nil {
+				return err
+			}
+		} else {
+			clilog.Info.Printf("Skipping applying authconfigs configuration\n")
 		}
 
 		if err = processEndpoints(endpointsFolder); err != nil {
@@ -174,6 +178,8 @@ func init() {
 		false, "Waits for the connector to finish, with success or error; default is false")
 	ApplyCmd.Flags().BoolVarP(&skipConnectors, "skip-connectors", "",
 		false, "Skip applying connector configuration; default is false")
+	ApplyCmd.Flags().BoolVarP(&skipAuthconfigs, "skip-authconfigs", "",
+		false, "Skip applying authconfigs configuration; default is false")
 	ApplyCmd.Flags().BoolVarP(&useUnderscore, "use-underscore", "",
 		false, "Use underscore as a file splitter; default is __")
 }
