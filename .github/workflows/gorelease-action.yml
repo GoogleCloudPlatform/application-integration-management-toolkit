@@ -36,7 +36,7 @@ jobs:
           check-latest: true
 
       - name: Reviewdog Lint
-        uses: reviewdog/action-golangci-lint@v2
+        uses: reviewdog/action-golangci-lint@v1
         with:
           reporter: github-check
 
@@ -46,7 +46,7 @@ jobs:
       - uses: sigstore/cosign-installer@main
 
       - name: Run GoReleaser
-        uses: goreleaser/goreleaser-action@v6
+        uses: goreleaser/goreleaser-action@v3
         with:
           distribution: goreleaser
           version: latest
