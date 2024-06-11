@@ -21,6 +21,8 @@
 # .goreleaser.yml
 project_name: integrationcli
 
+version: 2
+
 before:
   hooks:
     - go mod tidy
@@ -64,7 +66,6 @@ archives:
       {{- else if eq .Arch "darwin" }}Darwin
       {{- else }}{{ .Arch }}{{ end }}
     wrap_in_directory: true
-    rlcp: true
     files:
       - LICENSE.txt
     builds:
