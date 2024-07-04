@@ -1,6 +1,6 @@
 module github.com/GoogleCloudPlatform/application-integration-management-toolkit
 
-go 1.21
+go 1.21.6
 
 require internal/apiclient v1.0.0 // indirect
 
