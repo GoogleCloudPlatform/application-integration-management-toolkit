@@ -260,6 +260,11 @@ func mergeOverrides(eversion integrationVersionExternal, o overrides, grantPermi
 						}
 						*task.Parameters["connectionVersion"].Value.StringValue = newcp.ConnectorVersion
 						*task.Parameters["connectionName"].Value.StringValue = newcp.ConnectionName
+
+						if connectionOverride.Parameters.EntityType != nil {
+							task.Parameters["entityType"] = *connectionOverride.Parameters.EntityType
+						}
+						
 						eversion.TaskConfigs[taskIndex] = task
 						foundOverride = true
 					}
