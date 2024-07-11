@@ -38,8 +38,8 @@ type inputparameter struct {
 	DoubleValue  *float32      `json:"doubleValue,omitempty"`
 	BooleanValue *bool         `json:"booleanValue,omitempty"`
 	JsonValue    *string       `json:"jsonValue,omitempty"`
-	StringArray  *stringarray  `json:"stringarray,omitempty"`
-	IntArray     *intarray     `json:"intarray,omitempty"`
+	StringArray  *stringarray  `json:"stringArray,omitempty"`
+	IntArray     *intarray     `json:"intArray,omitempty"`
 	DoubleArray  *doublearray  `json:"doubleArray,omitempty"`
 	BooleanArray *booleanarray `json:"booleanArray,omitempty"`
 }
