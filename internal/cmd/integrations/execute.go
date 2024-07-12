@@ -76,10 +76,9 @@ func init() {
 		"", "Integration payload JSON file path. For the payload structure, visit docs at"+
 			" https://cloud.google.com/application-integration/docs/reference/"+
 			"rest/v1/projects.locations.integrations/execute#request-body")
-	ExecuteCmd.Flags().StringVarP(&executionFile, "trigger-id", "",
+	ExecuteCmd.Flags().StringVarP(&triggerID, "trigger-id", "",
 		"", "Specify only the trigger id of the integration if there "+
 			"are no input parameters to be sent. Cannot be combined with -f")
 
 	_ = ExecuteCmd.MarkFlagRequired("name")
-	_ = ExecuteCmd.MarkFlagRequired("file")
 }
