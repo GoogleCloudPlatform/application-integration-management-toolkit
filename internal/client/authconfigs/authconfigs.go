@@ -56,12 +56,13 @@ type authConfigExternal struct {
 }
 
 type decryptedCredential struct {
-	CredentialType            string                     `json:"credentialType,omitempty"`
-	UsernameAndPassword       *usernameAndPassword       `json:"usernameAndPassword,omitempty"`
-	OidcToken                 *oidcToken                 `json:"oidcToken,omitempty"`
-	Jwt                       *jwt                       `json:"jwt,omitempty"`
-	ServiceAccountCredentials *serviceAccountCredentials `json:"serviceAccountCredentials,omitempty"`
-	AuthToken                 *authToken                 `json:"authToken,omitempty"`
+	CredentialType                 string                           `json:"credentialType,omitempty"`
+	UsernameAndPassword            *usernameAndPassword             `json:"usernameAndPassword,omitempty"`
+	OidcToken                      *oidcToken                       `json:"oidcToken,omitempty"`
+	Jwt                            *jwt                             `json:"jwt,omitempty"`
+	ServiceAccountCredentials      *serviceAccountCredentials       `json:"serviceAccountCredentials,omitempty"`
+	AuthToken                      *authToken                       `json:"authToken,omitempty"`
+	OAuth2ResourceOwnerCredentials *oauth2ResourceOwnerCredentials  `json:"oauth2ResourceOwnerCredentials,omitempty"`
 }
 
 type usernameAndPassword struct {
@@ -88,6 +89,16 @@ type serviceAccountCredentials struct {
 type authToken struct {
 	Type  string `json:"type,omitempty"`
 	Token string `json:"token,omitempty"`
+}
+
+type oauth2ResourceOwnerCredentials struct {
+	ClientId      string `json:"clientId,omitempty"`
+	ClientSecret  string `json:"clientSecret,omitempty"`
+	Username      string `json:"username,omitempty"`
+	Password      string `json:"password,omitempty"`
+	TokenEndpoint string `json:"tokenEndpoint,omitempty"`
+	RequestType   string `json:"requestType,omitempty"`
+	Scope         string `json:"scope,omitempty"`
 }
 
 // Create
