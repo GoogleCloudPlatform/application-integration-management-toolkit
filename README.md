@@ -131,13 +131,7 @@ The following environment variables may be set to control the behavior of `integ
 
 ## Automate via Cloud Build
 
-Please see [here](./docs/cicd/README.md) for details on how to automate deployments via Cloud Build. The container images for integrationcli are:
-
-* Container image for the CLI
-
-```
-docker pull us-docker.pkg.dev/appintegration-toolkit/images/integrationcli:latest
-```
+Please see [here](https://www.googlecloudcommunity.com/gc/Cloud-Product-Articles/CI-CD-for-Application-Integration/ta-p/722811) for details on how to automate deployments via Cloud Build. The container images for integrationcli are:
 
 ## Creating Integration Connectors
 
