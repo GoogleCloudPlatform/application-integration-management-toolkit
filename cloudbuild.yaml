@@ -88,12 +88,25 @@ steps:
       cosign sign --key=/tmp/cosign.key --output-signature=/tmp/integrationcli_${TAG_NAME}.sig --yes ${_CD_IMAGE_NAME}:${TAG_NAME}
       cosign attach signature --signature=/tmp/integrationcli_${TAG_NAME}.sig ${_CD_IMAGE_NAME}:${TAG_NAME}
 
+- name: "gcr.io/google.com/cloudsdktool/cloud-sdk"
+  id: export_sbom
+  entrypoint: gcloud
+  args:
+    - artifacts
+    - sbom
+    - export
+    - --uri=${_IMAGE_NAME}:${TAG_NAME}
+    - --project=${PROJECT_ID}
+
 availableSecrets:
   secretManager:
   - versionName: projects/$PROJECT_ID/secrets/integrationcli-cosign-password/versions/latest
     env: 'COSIGN_PASSWORD'
   - versionName: projects/$PROJECT_ID/secrets/integrationcli-cosign-private-key/versions/latest
     env: 'COSIGN_PRIVATE_KEY'
+
+images:
+- '${_IMAGE_NAME}:${TAG_NAME}'
 
 #repo name
 substitutions:
