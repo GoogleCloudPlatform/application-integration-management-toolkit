@@ -15,11 +15,9 @@
 package integrations
 
 import (
-	"strconv"
-
 	"internal/apiclient"
-
 	"internal/client/integrations"
+	"strconv"
 
 	"github.com/spf13/cobra"
 )

@@ -16,9 +16,7 @@ package connectors
 
 import (
 	"errors"
-
 	"internal/apiclient"
-
 	"internal/client/connections"
 
 	"github.com/spf13/cobra"

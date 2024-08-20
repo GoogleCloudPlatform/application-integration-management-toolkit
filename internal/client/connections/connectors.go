@@ -18,6 +18,10 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"internal/apiclient"
+	"internal/clilog"
+	"internal/cloudkms"
+	"internal/secmgr"
 	"net/url"
 	"os"
 	"path"
@@ -25,12 +29,6 @@ import (
 	"strconv"
 	"strings"
 	"time"
-
-	"internal/apiclient"
-	"internal/cloudkms"
-	"internal/secmgr"
-
-	"internal/clilog"
 )
 
 const maxPageSize = 1000
@@ -1016,7 +1014,6 @@ func Import(folder string, createSecret bool, wait bool) (err error) {
 
 		return nil
 	})
-
 	if err != nil {
 		return nil
 	}

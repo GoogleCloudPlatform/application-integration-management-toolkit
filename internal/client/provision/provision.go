@@ -16,12 +16,11 @@ package provision
 
 import (
 	"fmt"
+	"internal/apiclient"
 	"net/url"
 	"path"
 	"strconv"
 	"strings"
-
-	"internal/apiclient"
 )
 
 // Provision

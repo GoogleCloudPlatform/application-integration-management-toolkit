@@ -16,10 +16,9 @@ package connections
 
 import (
 	"fmt"
+	"internal/apiclient"
 	"net/url"
 	"path"
-
-	"internal/apiclient"
 )
 
 var validMemberTypes = []string{"serviceAccount", "group", "user", "domain"}

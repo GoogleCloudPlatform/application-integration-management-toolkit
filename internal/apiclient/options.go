@@ -16,11 +16,10 @@ package apiclient
 
 import (
 	"fmt"
+	"internal/clilog"
 	"os"
 	"strings"
 	"sync"
-
-	"internal/clilog"
 )
 
 // BaseURL is the Integration control plane endpoint

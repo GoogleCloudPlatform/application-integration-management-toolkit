@@ -16,7 +16,6 @@ package sfdcchannels
 
 import (
 	"internal/apiclient"
-
 	"internal/client/sfdc"
 
 	"github.com/spf13/cobra"

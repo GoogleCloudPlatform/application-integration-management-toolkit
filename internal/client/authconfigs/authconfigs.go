@@ -17,15 +17,13 @@ package authconfigs
 import (
 	"encoding/json"
 	"fmt"
+	"internal/apiclient"
+	"internal/clilog"
 	"net/url"
 	"path"
 	"path/filepath"
 	"strconv"
 	"strings"
-
-	"internal/apiclient"
-
-	"internal/clilog"
 )
 
 type authConfigs struct {
@@ -56,13 +54,13 @@ type authConfigExternal struct {
 }
 
 type decryptedCredential struct {
-	CredentialType                 string                           `json:"credentialType,omitempty"`
-	UsernameAndPassword            *usernameAndPassword             `json:"usernameAndPassword,omitempty"`
-	OidcToken                      *oidcToken                       `json:"oidcToken,omitempty"`
-	Jwt                            *jwt                             `json:"jwt,omitempty"`
-	ServiceAccountCredentials      *serviceAccountCredentials       `json:"serviceAccountCredentials,omitempty"`
-	AuthToken                      *authToken                       `json:"authToken,omitempty"`
-	OAuth2ResourceOwnerCredentials *oauth2ResourceOwnerCredentials  `json:"oauth2ResourceOwnerCredentials,omitempty"`
+	CredentialType                 string                          `json:"credentialType,omitempty"`
+	UsernameAndPassword            *usernameAndPassword            `json:"usernameAndPassword,omitempty"`
+	OidcToken                      *oidcToken                      `json:"oidcToken,omitempty"`
+	Jwt                            *jwt                            `json:"jwt,omitempty"`
+	ServiceAccountCredentials      *serviceAccountCredentials      `json:"serviceAccountCredentials,omitempty"`
+	AuthToken                      *authToken                      `json:"authToken,omitempty"`
+	OAuth2ResourceOwnerCredentials *oauth2ResourceOwnerCredentials `json:"oauth2ResourceOwnerCredentials,omitempty"`
 }
 
 type usernameAndPassword struct {

@@ -18,6 +18,9 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"internal/apiclient"
+	"internal/client/authconfigs"
+	"internal/clilog"
 	"net/url"
 	"os"
 	"path"
@@ -26,11 +29,6 @@ import (
 	"strconv"
 	"strings"
 	"sync"
-
-	"internal/apiclient"
-	"internal/client/authconfigs"
-
-	"internal/clilog"
 )
 
 const maxPageSize = 1000
@@ -1129,7 +1127,6 @@ func ImportFlow(name string, folder string, numConnections int) (err error) {
 		}
 		return nil
 	})
-
 	if err != nil {
 		return err
 	}
@@ -1250,7 +1247,6 @@ func Import(folder string, numConnections int) (err error) {
 
 		return nil
 	})
-
 	if err != nil {
 		return err
 	}

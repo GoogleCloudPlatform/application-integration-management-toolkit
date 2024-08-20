@@ -15,10 +15,9 @@
 package authconfigs
 
 import (
-	"os"
-
 	"internal/apiclient"
 	"internal/client/authconfigs"
+	"os"
 
 	"github.com/spf13/cobra"
 )

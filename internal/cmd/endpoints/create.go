@@ -16,12 +16,10 @@ package endpoints
 
 import (
 	"fmt"
+	"internal/apiclient"
+	"internal/client/connections"
 	"regexp"
 	"strconv"
-
-	"internal/apiclient"
-
-	"internal/client/connections"
 
 	"github.com/spf13/cobra"
 )

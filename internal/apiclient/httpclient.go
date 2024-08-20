@@ -19,12 +19,11 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"internal/clilog"
 	"io"
 	"net/http"
 	"net/url"
 	"time"
-
-	"internal/clilog"
 
 	"golang.org/x/time/rate"
 )

@@ -16,9 +16,7 @@ package integrations
 
 import (
 	"encoding/json"
-
 	"internal/apiclient"
-
 	"internal/clilog"
 )
 

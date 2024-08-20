@@ -16,11 +16,9 @@ package integrations
 
 import (
 	"errors"
-	"os"
-
 	"internal/apiclient"
-
 	"internal/client/integrations"
+	"os"
 
 	"github.com/spf13/cobra"
 )

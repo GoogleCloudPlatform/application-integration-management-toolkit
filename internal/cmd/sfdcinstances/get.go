@@ -16,11 +16,9 @@ package sfdcinstances
 
 import (
 	"errors"
-	"strconv"
-
 	"internal/apiclient"
-
 	"internal/client/sfdc"
+	"strconv"
 
 	"github.com/spf13/cobra"
 )

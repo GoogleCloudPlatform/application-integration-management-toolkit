@@ -21,14 +21,13 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"internal/clilog"
 	"io"
 	"net/url"
 	"os"
 	"path"
 	"path/filepath"
 	"strings"
-
-	"internal/clilog"
 
 	"cloud.google.com/go/storage"
 )
@@ -88,7 +87,6 @@ func WriteArrayByteArrayToFile(exportFile string, fileAppend bool, payload [][]b
 	payloadFromArray = append(payloadFromArray, byte(']'))
 
 	_, err = f.Write(payloadFromArray)
-
 	if err != nil {
 		clilog.Error.Println("error writing to file: ", err)
 		return err
