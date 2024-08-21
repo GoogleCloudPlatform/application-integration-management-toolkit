@@ -16,12 +16,10 @@ package authconfigs
 
 import (
 	"errors"
+	"internal/apiclient"
+	"internal/client/authconfigs"
 	"path"
 	"strconv"
-
-	"internal/apiclient"
-
-	"internal/client/authconfigs"
 
 	"github.com/spf13/cobra"
 )

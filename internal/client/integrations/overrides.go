@@ -18,15 +18,12 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"regexp"
-	"strings"
-
 	"internal/apiclient"
-
-	"internal/clilog"
-
 	"internal/client/authconfigs"
 	"internal/client/connections"
+	"internal/clilog"
+	"regexp"
+	"strings"
 )
 
 type overrides struct {
@@ -264,7 +261,7 @@ func mergeOverrides(eversion integrationVersionExternal, o overrides, grantPermi
 						if connectionOverride.Parameters.EntityType != nil {
 							task.Parameters["entityType"] = *connectionOverride.Parameters.EntityType
 						}
-						
+
 						eversion.TaskConfigs[taskIndex] = task
 						foundOverride = true
 					}

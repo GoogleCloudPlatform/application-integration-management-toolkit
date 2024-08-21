@@ -18,6 +18,13 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"internal/apiclient"
+	"internal/client/authconfigs"
+	"internal/client/connections"
+	"internal/client/integrations"
+	"internal/client/sfdc"
+	"internal/clilog"
+	"internal/cmd/utils"
 	"io/fs"
 	"os"
 	"path"
@@ -25,15 +32,6 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
-
-	"internal/apiclient"
-	"internal/client/authconfigs"
-	"internal/client/connections"
-	"internal/client/integrations"
-	"internal/client/sfdc"
-	"internal/clilog"
-
-	"internal/cmd/utils"
 
 	"github.com/spf13/cobra"
 )
@@ -249,7 +247,6 @@ func processAuthConfigs(authconfigFolder string) (err error) {
 			}
 			return nil
 		})
-
 		if err != nil {
 			return err
 		}
@@ -378,7 +375,6 @@ func processConnectors(connectorsFolder string, grantPermission bool, createSecr
 			}
 			return nil
 		})
-
 		if err != nil {
 			return err
 		}
@@ -467,7 +463,6 @@ func processSfdcInstances(sfdcinstancesFolder string) (err error) {
 			}
 			return nil
 		})
-
 		if err != nil {
 			return err
 		}
@@ -522,7 +517,6 @@ func processSfdcChannels(sfdcchannelsFolder string) (err error) {
 			}
 			return nil
 		})
-
 		if err != nil {
 			return err
 		}
@@ -531,7 +525,8 @@ func processSfdcChannels(sfdcchannelsFolder string) (err error) {
 }
 
 func processIntegration(overridesFile string, integrationFolder string,
-	configVarsFolder string, pipeline string, grantPermission bool) (err error) {
+	configVarsFolder string, pipeline string, grantPermission bool,
+) (err error) {
 	rJSONFiles := regexp.MustCompile(`(\S*)\.json`)
 
 	var integrationNames []string

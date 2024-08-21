@@ -17,15 +17,14 @@ package connections
 import (
 	"encoding/json"
 	"fmt"
+	"internal/apiclient"
+	"internal/clilog"
 	"net/url"
 	"path"
 	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
-
-	"internal/apiclient"
-	"internal/clilog"
 )
 
 type endpoints struct {

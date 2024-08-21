@@ -17,7 +17,6 @@ package secmgr
 import (
 	"context"
 	"fmt"
-
 	"internal/apiclient"
 
 	secretmanager "cloud.google.com/go/secretmanager/apiv1"

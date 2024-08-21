@@ -17,14 +17,13 @@ package apiclient
 import (
 	"encoding/json"
 	"fmt"
+	"internal/clilog"
 	"io"
 	"net/http"
 	"net/url"
 	"path"
 	"regexp"
 	"strings"
-
-	"internal/clilog"
 )
 
 // condition for Bindings

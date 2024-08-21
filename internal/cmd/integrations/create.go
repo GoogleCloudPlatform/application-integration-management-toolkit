@@ -15,11 +15,9 @@
 package integrations
 
 import (
-	"os"
-
 	"internal/apiclient"
-
 	"internal/client/integrations"
+	"os"
 
 	"github.com/spf13/cobra"
 )
@@ -67,8 +65,10 @@ var CreateCmd = &cobra.Command{
 	},
 }
 
-var integrationFile, overridesFile string
-var grantPermission bool
+var (
+	integrationFile, overridesFile string
+	grantPermission                bool
+)
 
 func init() {
 	var name string

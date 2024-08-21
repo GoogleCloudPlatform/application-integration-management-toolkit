@@ -15,11 +15,10 @@
 package connections
 
 import (
+	"internal/apiclient"
 	"net/url"
 	"path"
 	"strconv"
-
-	"internal/apiclient"
 )
 
 // GetOperation

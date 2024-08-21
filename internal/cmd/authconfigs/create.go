@@ -17,14 +17,12 @@ package authconfigs
 import (
 	"errors"
 	"fmt"
+	"internal/apiclient"
+	"internal/client/authconfigs"
+	"internal/cloudkms"
 	"os"
 	"path"
 	"regexp"
-
-	"internal/apiclient"
-	"internal/cloudkms"
-
-	"internal/client/authconfigs"
 
 	"github.com/spf13/cobra"
 )

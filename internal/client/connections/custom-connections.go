@@ -17,13 +17,12 @@ package connections
 import (
 	"encoding/json"
 	"fmt"
+	"internal/apiclient"
 	"net/url"
 	"path"
 	"strconv"
 	"strings"
 	"time"
-
-	"internal/apiclient"
 )
 
 type customConnectorOverrides struct {

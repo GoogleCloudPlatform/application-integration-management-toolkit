@@ -18,18 +18,15 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"os"
-	"path"
-
 	"internal/apiclient"
-	"internal/clilog"
-
 	"internal/client/authconfigs"
 	"internal/client/connections"
 	"internal/client/integrations"
 	"internal/client/sfdc"
-
+	"internal/clilog"
 	"internal/cmd/utils"
+	"os"
+	"path"
 
 	"github.com/spf13/cobra"
 )

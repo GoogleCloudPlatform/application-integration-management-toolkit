@@ -16,11 +16,10 @@ package connections
 
 import (
 	"encoding/json"
+	"internal/apiclient"
 	"net/url"
 	"path"
 	"strconv"
-
-	"internal/apiclient"
 )
 
 type eventRequest struct {

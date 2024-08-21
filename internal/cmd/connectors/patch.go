@@ -15,11 +15,9 @@
 package connectors
 
 import (
-	"os"
-
 	"internal/apiclient"
-
 	"internal/client/connections"
+	"os"
 
 	"github.com/spf13/cobra"
 )

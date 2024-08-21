@@ -18,11 +18,8 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io"
-	"net/http"
-	"os"
-	"strconv"
-
+	"internal/apiclient"
+	"internal/clilog"
 	"internal/cmd/authconfigs"
 	"internal/cmd/certificates"
 	"internal/cmd/connectors"
@@ -33,10 +30,10 @@ import (
 	"internal/cmd/sfdcchannels"
 	"internal/cmd/sfdcinstances"
 	"internal/cmd/token"
-
-	"internal/apiclient"
-
-	"internal/clilog"
+	"io"
+	"net/http"
+	"os"
+	"strconv"
 
 	"github.com/spf13/cobra"
 )

@@ -16,11 +16,9 @@ package connectors
 
 import (
 	"fmt"
-	"strconv"
-
 	"internal/apiclient"
-
 	"internal/client/connections"
+	"strconv"
 
 	"github.com/spf13/cobra"
 )

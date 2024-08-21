@@ -16,9 +16,8 @@ package clienttest
 
 import (
 	"fmt"
-	"os"
-
 	"internal/apiclient"
+	"os"
 )
 
 func TestSetup() (err error) {

@@ -17,12 +17,11 @@ package integrations
 import (
 	"encoding/json"
 	"fmt"
+	"internal/apiclient"
 	"net/url"
 	"path"
 	"regexp"
 	"strconv"
-
-	"internal/apiclient"
 )
 
 type execute struct {

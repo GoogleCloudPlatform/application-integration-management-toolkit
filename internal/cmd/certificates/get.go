@@ -16,9 +16,7 @@ package certificates
 
 import (
 	"errors"
-
 	"internal/apiclient"
-
 	"internal/client/certificates"
 
 	"github.com/spf13/cobra"
