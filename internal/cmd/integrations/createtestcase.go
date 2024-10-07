@@ -64,7 +64,7 @@ func init() {
 	CrtTestCaseCmd.Flags().StringVarP(&version, "ver", "v",
 		"", "Integration flow version")
 
-	CrtTestCaseCmd.Flags().StringVarP(&contentPath, "test-case-path", "p",
+	CrtTestCaseCmd.Flags().StringVarP(&contentPath, "test-case-path", "c",
 		"", "Path to a file containing the test case content")
 
 	_ = CrtTestCaseCmd.MarkFlagRequired("name")
