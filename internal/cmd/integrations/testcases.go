@@ -30,4 +30,5 @@ func init() {
 	TestCasesCmd.AddCommand(DelTestCaseCmd)
 	TestCasesCmd.AddCommand(ListTestCaseCmd)
 	TestCasesCmd.AddCommand(CrtTestCaseCmd)
+	TestCasesCmd.AddCommand(ExecuteTestCaseCmd)
 }

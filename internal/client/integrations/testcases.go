@@ -48,7 +48,7 @@ func ListTestCases(name string, version string) (respBody []byte, err error) {
 	return respBody, err
 }
 
-func RunTestCase(name string, version string, testCaseID string) (respBody []byte, err error) {
+func ExecuteTestCase(name string, version string, testCaseID string) (respBody []byte, err error) {
 	u, _ := url.Parse(apiclient.GetBaseIntegrationURL())
 	u.Path = path.Join(u.Path, "integrations", name, "versions", version, "testCases", testCaseID, ":executeTest")
 	respBody, err = apiclient.HttpClient(u.String(), "")
