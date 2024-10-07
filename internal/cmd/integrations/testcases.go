@@ -18,22 +18,16 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// VerCmd to manage versions of an integration flow
-var VerCmd = &cobra.Command{
-	Use:   "versions",
-	Short: "Manage integrations flow versions",
-	Long:  "Manage integrations flow versions",
+// TestCasesCmd to manage versions of an integration flow
+var TestCasesCmd = &cobra.Command{
+	Use:   "testcases",
+	Short: "Manage test cases for an integrations flow version",
+	Long:  "Manage test cases for an integrations flow version",
 }
 
 func init() {
-	VerCmd.AddCommand(ListVerCmd)
-	VerCmd.AddCommand(PatchVerCmd)
-	VerCmd.AddCommand(GetVerCmd)
-	VerCmd.AddCommand(ExportVerCmd)
-	VerCmd.AddCommand(ImportflowCmd)
-	VerCmd.AddCommand(PublishVerCmd)
-	VerCmd.AddCommand(UnPublishVerCmd)
-	VerCmd.AddCommand(DownloadVerCmd)
-	VerCmd.AddCommand(DelVerCmd)
-	VerCmd.AddCommand(TestCasesCmd)
+	TestCasesCmd.AddCommand(GetTestCaseCmd)
+	TestCasesCmd.AddCommand(DelTestCaseCmd)
+	TestCasesCmd.AddCommand(ListTestCaseCmd)
+	TestCasesCmd.AddCommand(CrtTestCaseCmd)
 }
