@@ -21,6 +21,7 @@ import (
 	"internal/client/integrations"
 	"os"
 
+	"github.com/google/uuid"
 	"github.com/spf13/cobra"
 )
 
@@ -44,6 +45,7 @@ var ExecuteCmd = &cobra.Command{
 	RunE: func(cmd *cobra.Command, args []string) (err error) {
 		var content []byte
 		name := cmd.Flag("name").Value.String()
+		requestID := cmd.Flag("request-id").Value.String()
 
 		if executionFile != "" {
 			if _, err := os.Stat(executionFile); os.IsNotExist(err) {
@@ -55,7 +57,11 @@ var ExecuteCmd = &cobra.Command{
 				return err
 			}
 		} else if triggerID != "" {
-			content = []byte(fmt.Sprintf("{\"triggerId\": \"api_trigger/%s\",\"inputParameters\": {}}", triggerID))
+			if requestID == "" {
+				requestID = uuid.New().String()
+			}
+			content = []byte(fmt.Sprintf("{\"triggerId\": \"api_trigger/%s\",\"doNotPropagateError\": %t,\"requestId\": \"%s\",\"inputParameters\": {}}",
+				triggerID, doNotPropagateError, requestID))
 		}
 
 		_, err = integrations.Execute(name, content)
@@ -63,10 +69,13 @@ var ExecuteCmd = &cobra.Command{
 	},
 }
 
-var executionFile, triggerID string
+var (
+	executionFile, triggerID string
+	doNotPropagateError      bool
+)
 
 func init() {
-	var name string
+	var name, requestID string
 
 	ExecuteCmd.Flags().StringVarP(&name, "name", "n",
 		"", "Integration flow name")
@@ -77,6 +86,10 @@ func init() {
 	ExecuteCmd.Flags().StringVarP(&triggerID, "trigger-id", "",
 		"", "Specify only the trigger id of the integration if there "+
 			"are no input parameters to be sent. Cannot be combined with -f")
+	ExecuteCmd.Flags().StringVarP(&requestID, "request-id", "",
+		"", "This is used to de-dup incoming request")
+	ExecuteCmd.Flags().BoolVarP(&doNotPropagateError, "do-not-propagate-error", "",
+		false, "Flag to determine how to should propagate errors")
 
 	_ = ExecuteCmd.MarkFlagRequired("name")
 }
