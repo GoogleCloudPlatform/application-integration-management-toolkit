@@ -29,4 +29,6 @@ var ExecCmd = &cobra.Command{
 func init() {
 	ExecCmd.AddCommand(ListExecCmd)
 	ExecCmd.AddCommand(SuspendCmd)
+	ExecCmd.AddCommand(CancelExecCmd)
+	ExecCmd.AddCommand(ReplayExecCmd)
 }

@@ -127,3 +127,19 @@ func Execute(name string, content []byte) (respBody []byte, err error) {
 
 	return respBody, err
 }
+
+func Cancel(name string, executionID string, cancelReason string) (respBody []byte, err error) {
+	u, _ := url.Parse(apiclient.GetBaseIntegrationURL())
+	u.Path = path.Join(u.Path, "integrations", name, "executions", executionID, ":cancel")
+	payload := "{ \"cancelReason\":\"" + cancelReason + "\"}"
+	respBody, err = apiclient.HttpClient(u.String(), payload)
+	return respBody, err
+}
+
+func Replay(name string, executionID string, replayReason string) (respBody []byte, err error) {
+	u, _ := url.Parse(apiclient.GetBaseIntegrationURL())
+	u.Path = path.Join(u.Path, "integrations", name, "executions", executionID, ":replay")
+	payload := "{ \"replayReason\":\"" + replayReason + "\"}"
+	respBody, err = apiclient.HttpClient(u.String(), payload)
+	return respBody, err
+}
