@@ -17,6 +17,7 @@ package integrations
 import (
 	"internal/apiclient"
 	"internal/client/integrations"
+	"os"
 
 	"github.com/spf13/cobra"
 )
@@ -40,13 +41,24 @@ var ExecuteTestCaseCmd = &cobra.Command{
 		version := cmd.Flag("ver").Value.String()
 		name := cmd.Flag("name").Value.String()
 		testCaseID := cmd.Flag("test-case-id").Value.String()
-		_, err = integrations.ExecuteTestCase(name, version, testCaseID)
+		inputFile := cmd.Flag("input-file").Value.String()
+
+		if _, err := os.Stat(inputFile); os.IsNotExist(err) {
+			return err
+		}
+
+		content, err := os.ReadFile(inputFile)
+		if err != nil {
+			return err
+		}
+
+		_, err = integrations.ExecuteTestCase(name, version, testCaseID, string(content))
 		return err
 	},
 }
 
 func init() {
-	var name, version, testCaseID string
+	var name, version, testCaseID, inputFile string
 
 	ExecuteTestCaseCmd.Flags().StringVarP(&name, "name", "n",
 		"", "Integration flow name")
@@ -54,6 +66,8 @@ func init() {
 		"", "Integration flow version")
 	ExecuteTestCaseCmd.Flags().StringVarP(&testCaseID, "test-case-id", "c",
 		"", "Test Case ID")
+	ExecuteTestCaseCmd.Flags().StringVarP(&inputFile, "input-file", "f",
+		"", "Path to a file containing input parameters")
 	_ = ExecuteTestCaseCmd.MarkFlagRequired("name")
 	_ = ExecuteTestCaseCmd.MarkFlagRequired("ver")
 	_ = ExecuteTestCaseCmd.MarkFlagRequired("test-case-id")

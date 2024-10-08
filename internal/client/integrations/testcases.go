@@ -15,6 +15,7 @@
 package integrations
 
 import (
+	"encoding/json"
 	"internal/apiclient"
 	"net/url"
 	"path"
@@ -48,9 +49,50 @@ func ListTestCases(name string, version string) (respBody []byte, err error) {
 	return respBody, err
 }
 
-func ExecuteTestCase(name string, version string, testCaseID string) (respBody []byte, err error) {
+func ExecuteTestCase(name string, version string, testCaseID string, content string) (respBody []byte, err error) {
 	u, _ := url.Parse(apiclient.GetBaseIntegrationURL())
 	u.Path = path.Join(u.Path, "integrations", name, "versions", version, "testCases", testCaseID, ":executeTest")
-	respBody, err = apiclient.HttpClient(u.String(), "")
+	respBody, err = apiclient.HttpClient(u.String(), content)
+	return respBody, err
+}
+
+func ListTestCasesByUserlabel(name string, userLabel string) (respBody []byte, err error) {
+	apiclient.ClientPrintHttpResponse.Set(false)
+	defer apiclient.ClientPrintHttpResponse.Set(apiclient.GetCmdPrintHttpResponseSetting())
+
+	iversionBytes, err := GetByUserlabel(name, userLabel, false, false, false)
+	if err != nil {
+		return nil, err
+	}
+
+	iversion := integrationVersion{}
+	err = json.Unmarshal(iversionBytes, &iversion)
+	if err != nil {
+		return nil, err
+	}
+
+	version := getVersion(iversion.Name)
+
+	respBody, err = ListTestCases(name, version)
+	return respBody, err
+}
+
+func ListTestCasesBySnapshot(name string, snapshot string) (respBody []byte, err error) {
+	apiclient.ClientPrintHttpResponse.Set(false)
+	defer apiclient.ClientPrintHttpResponse.Set(apiclient.GetCmdPrintHttpResponseSetting())
+
+	iversionBytes, err := GetBySnapshot(name, snapshot, false, false, false)
+	if err != nil {
+		return nil, err
+	}
+
+	iversion := integrationVersion{}
+	err = json.Unmarshal(iversionBytes, &iversion)
+	if err != nil {
+		return nil, err
+	}
+
+	version := getVersion(iversion.Name)
+	respBody, err = ListTestCases(name, version)
 	return respBody, err
 }
