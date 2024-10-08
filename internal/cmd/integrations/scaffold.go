@@ -55,7 +55,7 @@ var ScaffoldCmd = &cobra.Command{
 	RunE: func(cmd *cobra.Command, args []string) (err error) {
 		const jsonExt = ".json"
 		var fileSplitter string
-		var integrationBody, overridesBody []byte
+		var integrationBody, overridesBody, testCasesBody []byte
 		version := cmd.Flag("ver").Value.String()
 		name := cmd.Flag("name").Value.String()
 
@@ -94,6 +94,9 @@ var ScaffoldCmd = &cobra.Command{
 			if overridesBody, err = integrations.Get(name, version, false, false, true); err != nil {
 				return err
 			}
+			if testCasesBody, err = integrations.ListTestCases(name, version); err != nil {
+				return err
+			}
 		} else if userLabel != "" {
 			if integrationBody, err = integrations.GetByUserlabel(name, userLabel, false, true, false); err != nil {
 				return err
@@ -101,11 +104,17 @@ var ScaffoldCmd = &cobra.Command{
 			if overridesBody, err = integrations.GetByUserlabel(name, userLabel, false, false, true); err != nil {
 				return err
 			}
+			if testCasesBody, err = integrations.ListTestCasesByUserlabel(name, userLabel); err != nil {
+				return err
+			}
 		} else if snapshot != "" {
 			if integrationBody, err = integrations.GetBySnapshot(name, snapshot, false, true, false); err != nil {
 				return err
 			}
 			if overridesBody, err = integrations.GetBySnapshot(name, snapshot, false, false, true); err != nil {
+				return err
+			}
+			if testCasesBody, err = integrations.ListTestCasesBySnapshot(name, snapshot); err != nil {
 				return err
 			}
 		}
@@ -125,6 +134,23 @@ var ScaffoldCmd = &cobra.Command{
 			false,
 			integrationBody); err != nil {
 			return err
+		}
+
+		if len(testCasesBody) > 0 {
+			clilog.Info.Printf("Found test cases in the integration, storing the test cases file\n")
+			if err = generateFolder(path.Join(folder, "testcases")); err != nil {
+				return err
+			}
+			testCasesBody, err = apiclient.PrettifyJson(testCasesBody)
+			if err != nil {
+				return err
+			}
+			if err = apiclient.WriteByteArrayToFile(
+				path.Join(folder, "testcases", "testcases.json"),
+				false,
+				testCasesBody); err != nil {
+				return err
+			}
 		}
 
 		// write integration overrides
