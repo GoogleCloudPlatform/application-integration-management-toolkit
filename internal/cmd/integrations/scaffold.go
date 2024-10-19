@@ -27,6 +27,7 @@ import (
 	"internal/cmd/utils"
 	"os"
 	"path"
+	"path/filepath"
 
 	"github.com/spf13/cobra"
 )
@@ -141,14 +142,7 @@ var ScaffoldCmd = &cobra.Command{
 			if err = generateFolder(path.Join(folder, "testcases")); err != nil {
 				return err
 			}
-			testCasesBody, err = apiclient.PrettifyJson(testCasesBody)
-			if err != nil {
-				return err
-			}
-			if err = apiclient.WriteByteArrayToFile(
-				path.Join(folder, "testcases", "testcases.json"),
-				false,
-				testCasesBody); err != nil {
+			if err = generateTestcases(testCasesBody, folder); err != nil {
 				return err
 			}
 		}
@@ -401,4 +395,40 @@ func getName(authConfigResp []byte) string {
 	var m map[string]string
 	_ = json.Unmarshal(authConfigResp, &m)
 	return m["displayName"]
+}
+
+func generateTestcases(testcases []byte, folder string) error {
+	var data []map[string]interface{}
+	err := json.Unmarshal(testcases, &data)
+	if err != nil {
+		return fmt.Errorf("Error decoding JSON: %s", err)
+	}
+	for _, obj := range data {
+		jsonData, err := json.Marshal(obj)
+		if err != nil {
+			return fmt.Errorf("Error encoding JSON: %s", err)
+		}
+		name, err := getTestCaseName(obj)
+		if err != nil {
+			return fmt.Errorf("unable to get name: %v", err)
+		}
+		jsonData, err = apiclient.PrettifyJson(jsonData)
+		if err != nil {
+			return err
+		}
+		if err = apiclient.WriteByteArrayToFile(
+			path.Join(folder, "testcases", name+".json"),
+			false,
+			jsonData); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func getTestCaseName(jsonData map[string]interface{}) (string, error) {
+	if name, ok := jsonData["name"].(string); ok && name != "" {
+		return filepath.Base(name), nil
+	}
+	return "", fmt.Errorf("name not found")
 }
