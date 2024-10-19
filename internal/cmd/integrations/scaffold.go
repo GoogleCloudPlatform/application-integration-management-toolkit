@@ -54,7 +54,6 @@ var ScaffoldCmd = &cobra.Command{
 		return apiclient.SetProjectID(cmdProject.Value.String())
 	},
 	RunE: func(cmd *cobra.Command, args []string) (err error) {
-		const jsonExt = ".json"
 		var fileSplitter string
 		var integrationBody, overridesBody, testCasesBody []byte
 		version := cmd.Flag("ver").Value.String()
@@ -354,6 +353,8 @@ var (
 	env                                                                     string
 )
 
+const jsonExt = ".json"
+
 func init() {
 	var name, version string
 
@@ -398,12 +399,18 @@ func getName(authConfigResp []byte) string {
 }
 
 func generateTestcases(testcases []byte, folder string) error {
-	var data []map[string]interface{}
+
+	var data map[string]interface{}
+
 	err := json.Unmarshal(testcases, &data)
 	if err != nil {
 		return fmt.Errorf("Error decoding JSON: %s", err)
 	}
-	for _, obj := range data {
+
+	tc := data["testCases"].([]interface{})
+
+	for _, t := range tc {
+		obj := t.(map[string]interface{})
 		jsonData, err := json.Marshal(obj)
 		if err != nil {
 			return fmt.Errorf("Error encoding JSON: %s", err)
@@ -417,7 +424,7 @@ func generateTestcases(testcases []byte, folder string) error {
 			return err
 		}
 		if err = apiclient.WriteByteArrayToFile(
-			path.Join(folder, "testcases", name+".json"),
+			path.Join(folder, "testcases", name+jsonExt),
 			false,
 			jsonData); err != nil {
 			return err
