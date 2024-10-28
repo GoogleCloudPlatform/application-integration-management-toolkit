@@ -44,18 +44,23 @@ var PublishVerCmd = &cobra.Command{
 	RunE: func(cmd *cobra.Command, args []string) (err error) {
 		version := cmd.Flag("ver").Value.String()
 		name := cmd.Flag("name").Value.String()
+		configVarsJson := cmd.Flag("config-vars-json").Value.String()
 		configVarsFile := cmd.Flag("config-vars").Value.String()
 		var contents []byte
 
-		if configVarsFile != "" {
-			if _, err := os.Stat(configVarsFile); os.IsNotExist(err) {
-				return err
-			}
+		if configVarsJson == "" {
+			if configVarsFile != "" {
+				if _, err := os.Stat(configVarsFile); os.IsNotExist(err) {
+					return err
+				}
 
-			contents, err = os.ReadFile(configVarsFile)
-			if err != nil {
-				return err
+				contents, err = os.ReadFile(configVarsFile)
+				if err != nil {
+					return err
+				}
 			}
+		} else {
+			contents = []byte(configVarsJson)
 		}
 
 		if version != "" {
@@ -70,7 +75,7 @@ var PublishVerCmd = &cobra.Command{
 }
 
 func init() {
-	var name, version, configVars string
+	var name, version, configVars, configVarsJson string
 
 	PublishVerCmd.Flags().StringVarP(&name, "name", "n",
 		"", "Integration flow name")
@@ -82,6 +87,8 @@ func init() {
 		"", "Integration flow snapshot number")
 	PublishVerCmd.Flags().StringVarP(&configVars, "config-vars", "",
 		"", "Path to file containing config variables")
+	PublishVerCmd.Flags().StringVarP(&configVarsJson, "config-vars-json", "cf",
+		"", "Json string containing the config variables if both Json string and file is present Json string will only be used.")
 
 	_ = PublishVerCmd.MarkFlagRequired("name")
 }
