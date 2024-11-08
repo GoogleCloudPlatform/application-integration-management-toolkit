@@ -87,7 +87,7 @@ func init() {
 		"", "Integration flow snapshot number")
 	PublishVerCmd.Flags().StringVarP(&configVars, "config-vars", "",
 		"", "Path to file containing config variables")
-	PublishVerCmd.Flags().StringVarP(&configVarsJson, "config-vars-json", "cf",
+	PublishVerCmd.Flags().StringVarP(&configVarsJson, "config-vars-json", "",
 		"", "Json string containing the config variables if both Json string and file is present Json string will only be used.")
 
 	_ = PublishVerCmd.MarkFlagRequired("name")
