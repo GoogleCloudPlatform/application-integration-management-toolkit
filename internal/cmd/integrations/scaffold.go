@@ -164,6 +164,26 @@ var ScaffoldCmd = &cobra.Command{
 			}
 		}
 
+		// split code
+		if splitCode {
+			jsMap, err := integrations.GetJavaScript(integrationBody)
+			if err != nil {
+				return err
+			}
+			if len(jsMap) > 0 {
+				clilog.Info.Printf("Found JavaScript files in the integration; generating separate files\n")
+				for taskId, taskContent := range jsMap {
+					if err = apiclient.WriteByteArrayToFile(
+						path.Join(baseFolder, "src", "javascript_"+string(taskId)+".js"),
+						false,
+						[]byte(taskContent)); err != nil {
+						return err
+					}
+				}
+			}
+		}
+
+		// auth config
 		authConfigUuids, err := integrations.GetAuthConfigs(integrationBody)
 		if err != nil {
 			return err
@@ -330,8 +350,8 @@ var ScaffoldCmd = &cobra.Command{
 }
 
 var (
-	cloudBuild, cloudDeploy, skipConnectors, skipAuthconfigs, useUnderscore bool
-	env                                                                     string
+	cloudBuild, cloudDeploy, skipConnectors, skipAuthconfigs, useUnderscore, splitCode bool
+	env                                                                                string
 )
 
 func init() {
@@ -359,6 +379,8 @@ func init() {
 		false, "Exclude authconfigs from scaffold")
 	ScaffoldCmd.Flags().BoolVarP(&useUnderscore, "use-underscore", "",
 		false, "Use underscore as a file splitter; default is __")
+	ScaffoldCmd.Flags().BoolVarP(&splitCode, "split-code", "",
+		false, "Slit JavaScript code files as separate files")
 
 	_ = ScaffoldCmd.MarkFlagRequired("name")
 }

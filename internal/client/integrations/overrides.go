@@ -601,3 +601,17 @@ func getConnectionStringFromConnectionName(connectionName string, iconfigParam [
 	}
 	return name, nil
 }
+
+func GetJavaScript(content []byte) (jsMap map[string]string, err error) {
+	jsMap = make(map[string]string)
+	iversion := integrationVersion{}
+	if err = json.Unmarshal(content, &iversion); err != nil {
+		return nil, err
+	}
+	for _, task := range iversion.TaskConfigs {
+		if task.Task == "JavaScriptTask" {
+			jsMap[task.TaskId] = *task.Parameters["script"].Value.StringValue
+		}
+	}
+	return jsMap, nil
+}
