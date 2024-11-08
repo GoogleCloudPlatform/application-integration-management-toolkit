@@ -14,8 +14,8 @@
 
 #Usage: https://github.com/sigstore/cosign#dockerfile
 
-FROM gcr.io/projectsigstore/cosign:latest as cosign
+FROM gcr.io/projectsigstore/cosign:latest@sha256:b03690aa52bfe94054187142fba24dc54137650682810633901767d8a3e15b31 AS cosign
 
 
-FROM gcr.io/distroless/static-debian11:debug
+FROM gcr.io/distroless/static-debian11:debug-nonroot@sha256:55716e80a7d4320ce9bc2dc8636fc193b418638041b817cf3306696bd0f975d1
 COPY --from=cosign /ko-app/cosign /usr/bin
