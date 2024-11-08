@@ -16,10 +16,11 @@
 name: integrationcli Github Pages Pipeline
 
 on:
-  push:
+  #push:
     # Publish semver tags as releases.
-    tags:
-      - v[0-9].[0-9]+.[0-9]
+  #  tags:
+  #    - v[0-9].[0-9]+.[0-9]
+  workflow_dispatch:
 
 jobs:
   publish-gh-pages:
@@ -27,15 +28,20 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v3
-      - uses: actions/setup-go@v3
+        uses: actions/checkout@1e31de5234b9f8995739874a8ce0492dc87873e2 #v4
+      - uses: actions/setup-go@0c52d547c9bc32b1aa3301fd7a9cb496313a4491 #v5
         with:
           go-version-file: './go.mod'
           check-latest: true
       - name: Push GH Pages
         run: |
-          git config --global user.name "integrationcli Publish Action"
-          git config --global user.email "13950006+srinandan@users.noreply.github.com"
+          SHORT_SHA=$(git rev-parse --short $GITHUB_SHA)
+          git config pull.rebase false
+          git config --global user.name "$(git log -n 1 --pretty=format:%an)"
+          git config --global user.email "$(git log -n 1 --pretty=format:%ae)"
+
+          git pull origin main --allow-unrelated-histories
+          git checkout -b docs_$SHORT_SHA
 
           GOBIN=/tmp/ go install github.com/google/go-licenses@v1.0.0
           /tmp/go-licenses csv ./cmd/integrationcli > third-party-licenses.txt || echo "Ignore warnings"
@@ -47,4 +53,4 @@ jobs:
           go run docs/docs.go
           git add --all
           git commit -m "Update GH Pages - $GITHUB_SHA" || echo "No Changes in docs"
-          git push origin HEAD:refs/heads/main
+          git push origin docs_$SHORT_SHA

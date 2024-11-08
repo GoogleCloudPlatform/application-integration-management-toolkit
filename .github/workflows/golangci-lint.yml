@@ -13,6 +13,7 @@
 # limitations under the License.
 
 name: golangci-lint
+permissions: read-all
 on:
   push:
     branches:
@@ -20,20 +21,19 @@ on:
   pull_request:
     branches:
       - '**'
-permissions:
-  contents: read
+
 jobs:
   golangci:
     name: lint
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/setup-go@v4
+      - uses: actions/setup-go@0c52d547c9bc32b1aa3301fd7a9cb496313a4491 #v5
         with:
           go-version: '1.20'
           cache: false
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@1e31de5234b9f8995739874a8ce0492dc87873e2 #v4
       - name: golangci-lint
-        uses: golangci/golangci-lint-action@v3
+        uses: golangci/golangci-lint-action@971e284b6050e8a5849b72094c50ab08da042db8 #v6.1.1
         with:
           version: latest
           args: --timeout=4m
