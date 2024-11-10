@@ -564,6 +564,19 @@ func processIntegration(overridesFile string, integrationFolder string,
 		if err != nil {
 			return err
 		}
+		// check for javascript files
+		jsMap, err := processJavaScript(integrationFolder)
+		if err != nil {
+			return err
+		}
+
+		if len(jsMap) > 0 {
+			integrationBytes, err = integrations.SetJavaScript(integrationBytes, jsMap)
+			if err != nil {
+				return err
+			}
+		}
+
 		clilog.Info.Printf("Create integration %s\n", getFilenameWithoutExtension(integrationNames[0]))
 		respBody, err := integrations.CreateVersion(getFilenameWithoutExtension(integrationNames[0]),
 			integrationBytes, overridesBytes, "", userLabel, grantPermission)
@@ -596,4 +609,36 @@ func processIntegration(overridesFile string, integrationFolder string,
 	}
 	clilog.Warning.Printf("No integration files were found\n")
 	return nil
+}
+
+func processJavaScript(integrationFolder string) (jsMap map[string]string, err error) {
+	jsMap = make(map[string]string)
+	rJavaScriptFiles := regexp.MustCompile(`javascript_\d{1,2}.js`)
+	var javascriptNames []string
+
+	_ = filepath.Walk(integrationFolder, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+		if !info.IsDir() {
+			javascriptFile := filepath.Base(path)
+			if rJavaScriptFiles.MatchString(javascriptFile) {
+				clilog.Info.Printf("Found JavaScript file for integration: %s\n", javascriptFile)
+				javascriptNames = append(javascriptNames, javascriptFile)
+			}
+		}
+		return nil
+	})
+
+	if len(javascriptNames) > 0 {
+		for _, javascriptName := range javascriptNames {
+			javascriptBytes, err := utils.ReadFile(path.Join(integrationFolder, javascriptName))
+			if err != nil {
+				return nil, err
+			}
+			jsMap[strings.ReplaceAll(getFilenameWithoutExtension(javascriptName), "javascript_", "")] =
+				strings.ReplaceAll(string(javascriptBytes), "\n", "\\n")
+		}
+	}
+	return jsMap, nil
 }
