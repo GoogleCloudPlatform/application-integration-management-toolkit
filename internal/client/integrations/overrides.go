@@ -79,7 +79,7 @@ type connectionparams struct {
 }
 
 const (
-	pubsubTrigger = "cloud_pubsub_external_trigger/projects/cloud-crm-eventbus-cpsexternal/subscriptions/"
+	pubsubTrigger = "cloud_pubsub_external_trigger/projects/%s/subscriptions/%s_%s"
 	apiTrigger    = "api_trigger/"
 )
 
@@ -103,7 +103,7 @@ func mergeOverrides(eversion integrationVersionExternal, o overrides, grantPermi
 					if triggerOverride.ProjectId == nil || triggerOverride.TopicName == nil {
 						return eversion, fmt.Errorf("projectid and topicName are mandatory in the overrides")
 					}
-					trigger.TriggerId = pubsubTrigger + *triggerOverride.ProjectId + "_" + *triggerOverride.TopicName
+					trigger.TriggerId = fmt.Sprintf(pubsubTrigger, *triggerOverride.ProjectId, *triggerOverride.ProjectId, *triggerOverride.TopicName)
 					trigger.Properties["Subscription name"] = *triggerOverride.ProjectId + "_" + *triggerOverride.TopicName
 					trigger.Properties["IP Project name"] = *triggerOverride.ProjectId
 
