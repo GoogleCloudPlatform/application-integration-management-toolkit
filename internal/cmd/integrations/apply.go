@@ -532,6 +532,9 @@ func processIntegration(overridesFile string, integrationFolder string,
 	var integrationNames []string
 	var overridesBytes []byte
 
+	javascriptFolder := path.Join(integrationFolder, "javascript")
+	jsonnetFolder := path.Join(integrationFolder, "datatransformer")
+
 	if _, err = os.Stat(overridesFile); err == nil {
 		overridesBytes, err = utils.ReadFile(overridesFile)
 		if err != nil {
@@ -564,14 +567,14 @@ func processIntegration(overridesFile string, integrationFolder string,
 		if err != nil {
 			return err
 		}
-		// check for javascript files
-		jsMap, err := processJavaScript(integrationFolder)
+		// check for code files
+		jsMap, err := processCodeFolders(javascriptFolder, jsonnetFolder)
 		if err != nil {
 			return err
 		}
 
 		if len(jsMap) > 0 {
-			integrationBytes, err = integrations.SetJavaScript(integrationBytes, jsMap)
+			integrationBytes, err = integrations.SetCode(integrationBytes, jsMap)
 			if err != nil {
 				return err
 			}
@@ -611,12 +614,13 @@ func processIntegration(overridesFile string, integrationFolder string,
 	return nil
 }
 
-func processJavaScript(integrationFolder string) (jsMap map[string]string, err error) {
-	jsMap = make(map[string]string)
+func processCodeFolders(javascriptFolder string, jsonnetFolder string) (jsMap map[string]map[string]string, err error) {
+	jsMap = make(map[string]map[string]string)
 	rJavaScriptFiles := regexp.MustCompile(`javascript_\d{1,2}.js`)
-	var javascriptNames []string
+	rJsonnetFiles := regexp.MustCompile(`datatransformer_\d{1,2}.jsonnet`)
+	var javascriptNames, jsonnetNames []string
 
-	_ = filepath.Walk(integrationFolder, func(path string, info os.FileInfo, err error) error {
+	_ = filepath.Walk(javascriptFolder, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			return err
 		}
@@ -632,13 +636,39 @@ func processJavaScript(integrationFolder string) (jsMap map[string]string, err e
 
 	if len(javascriptNames) > 0 {
 		for _, javascriptName := range javascriptNames {
-			javascriptBytes, err := utils.ReadFile(path.Join(integrationFolder, javascriptName))
+			javascriptBytes, err := utils.ReadFile(path.Join(javascriptFolder, javascriptName))
 			if err != nil {
 				return nil, err
 			}
-			jsMap[strings.ReplaceAll(getFilenameWithoutExtension(javascriptName), "javascript_", "")] =
+			jsMap["JavaScriptTask"][strings.ReplaceAll(getFilenameWithoutExtension(javascriptName), "javascript_", "")] =
 				strings.ReplaceAll(string(javascriptBytes), "\n", "\\n")
 		}
 	}
+
+	_ = filepath.Walk(jsonnetFolder, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+		if !info.IsDir() {
+			jsonnetFile := filepath.Base(path)
+			if rJsonnetFiles.MatchString(jsonnetFile) {
+				clilog.Info.Printf("Found Jsonnet file for integration: %s\n", jsonnetFile)
+				jsonnetNames = append(jsonnetNames, jsonnetFile)
+			}
+		}
+		return nil
+	})
+
+	if len(jsonnetNames) > 0 {
+		for _, jsonnetName := range jsonnetNames {
+			jsonnetBytes, err := utils.ReadFile(path.Join(javascriptFolder, jsonnetName))
+			if err != nil {
+				return nil, err
+			}
+			jsMap["JsonnetMapperTask"][strings.ReplaceAll(getFilenameWithoutExtension(jsonnetName), "datatransformer_", "")] =
+				strings.ReplaceAll(string(jsonnetBytes), "\n", "\\n")
+		}
+	}
+
 	return jsMap, nil
 }

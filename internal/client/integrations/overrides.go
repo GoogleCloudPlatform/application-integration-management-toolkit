@@ -602,30 +602,36 @@ func getConnectionStringFromConnectionName(connectionName string, iconfigParam [
 	return name, nil
 }
 
-func GetJavaScript(content []byte) (jsMap map[string]string, err error) {
-	jsMap = make(map[string]string)
+func ExtractCode(content []byte) (jsMap map[string]map[string]string, err error) {
+	jsMap = make(map[string]map[string]string)
 	iversion := integrationVersion{}
 	if err = json.Unmarshal(content, &iversion); err != nil {
 		return nil, err
 	}
 	for _, task := range iversion.TaskConfigs {
 		if task.Task == "JavaScriptTask" {
-			jsMap[task.TaskId] = *task.Parameters["script"].Value.StringValue
+			jsMap[task.Task][task.TaskId] = *task.Parameters["script"].Value.StringValue
+		} else if task.Task == "JsonnetMapperTask" {
+			jsMap[task.Task][task.TaskId] = *task.Parameters["template"].Value.StringValue
 		}
 	}
 	return jsMap, nil
 }
 
-func SetJavaScript(content []byte, jsMap map[string]string) (integrationBytes []byte, err error) {
+func SetCode(content []byte, jsMap map[string]map[string]string) (integrationBytes []byte, err error) {
 	iversion := integrationVersion{}
 	if err = json.Unmarshal(content, &iversion); err != nil {
 		return nil, err
 	}
 	for _, task := range iversion.TaskConfigs {
+		content := jsMap[task.Task][task.TaskId]
 		if task.Task == "JavaScriptTask" {
-			javaScriptContent := jsMap[task.TaskId]
-			if javaScriptContent != "" {
-				*task.Parameters["script"].Value.StringValue = strings.ReplaceAll(javaScriptContent, "\\n", "\n")
+			if content != "" {
+				*task.Parameters["script"].Value.StringValue = strings.ReplaceAll(content, "\\n", "\n")
+			}
+		} else if task.Task == "JsonnetMapperTask" {
+			if content != "" {
+				*task.Parameters["template"].Value.StringValue = strings.ReplaceAll(content, "\\n", "\n")
 			}
 		}
 	}

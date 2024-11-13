@@ -164,17 +164,28 @@ var ScaffoldCmd = &cobra.Command{
 			}
 		}
 
-		// split code
-		if splitCode {
-			jsMap, err := integrations.GetJavaScript(integrationBody)
+		// extract code
+		if extractCode {
+			jsMap, err := integrations.ExtractCode(integrationBody)
 			if err != nil {
 				return err
 			}
-			if len(jsMap) > 0 {
+			if len(jsMap["JavaScriptTask"]) > 0 {
 				clilog.Info.Printf("Found JavaScript files in the integration; generating separate files\n")
-				for taskId, taskContent := range jsMap {
+				for taskId, taskContent := range jsMap["JavaScriptTask"] {
 					if err = apiclient.WriteByteArrayToFile(
-						path.Join(baseFolder, "src", "javascript_"+string(taskId)+".js"),
+						path.Join(baseFolder, "src", "javascript", "javascript_"+string(taskId)+".js"),
+						false,
+						[]byte(taskContent)); err != nil {
+						return err
+					}
+				}
+			}
+			if len(jsMap["JsonnetMapperTask"]) > 0 {
+				clilog.Info.Printf("Found Jsonnet files in the integration; generating separate files\n")
+				for taskId, taskContent := range jsMap["JsonnetMapperTask"] {
+					if err = apiclient.WriteByteArrayToFile(
+						path.Join(baseFolder, "src", "datatransformer", "datatransformer_"+string(taskId)+".jsonnet"),
 						false,
 						[]byte(taskContent)); err != nil {
 						return err
@@ -350,8 +361,8 @@ var ScaffoldCmd = &cobra.Command{
 }
 
 var (
-	cloudBuild, cloudDeploy, skipConnectors, skipAuthconfigs, useUnderscore, splitCode bool
-	env                                                                                string
+	cloudBuild, cloudDeploy, skipConnectors, skipAuthconfigs, useUnderscore, extractCode bool
+	env                                                                                  string
 )
 
 func init() {
@@ -379,8 +390,8 @@ func init() {
 		false, "Exclude authconfigs from scaffold")
 	ScaffoldCmd.Flags().BoolVarP(&useUnderscore, "use-underscore", "",
 		false, "Use underscore as a file splitter; default is __")
-	ScaffoldCmd.Flags().BoolVarP(&splitCode, "split-code", "",
-		false, "Slit JavaScript code files as separate files")
+	ScaffoldCmd.Flags().BoolVarP(&extractCode, "extract-code", "x",
+		false, "Extract JavaScript and Jsonnet code as separate files")
 
 	_ = ScaffoldCmd.MarkFlagRequired("name")
 }
