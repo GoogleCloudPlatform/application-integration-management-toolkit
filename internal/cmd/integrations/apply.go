@@ -616,6 +616,8 @@ func processIntegration(overridesFile string, integrationFolder string,
 
 func processCodeFolders(javascriptFolder string, jsonnetFolder string) (codeMap map[string]map[string]string, err error) {
 	codeMap = make(map[string]map[string]string)
+	codeMap["JavaScriptTask"] = make(map[string]string)
+	codeMap["JsonnetMapperTask"] = make(map[string]string)
 	rJavaScriptFiles := regexp.MustCompile(`javascript_\d{1,2}.js`)
 	rJsonnetFiles := regexp.MustCompile(`datatransformer_\d{1,2}.jsonnet`)
 	var javascriptNames, jsonnetNames []string
