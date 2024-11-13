@@ -193,7 +193,7 @@ var ScaffoldCmd = &cobra.Command{
 				clilog.Info.Printf("Found Jsonnet files in the integration; generating separate files\n")
 				for taskId, taskContent := range codeMap["JsonnetMapperTask"] {
 					if err = apiclient.WriteByteArrayToFile(
-						path.Join(baseFolder, "src", "datatransformer", "datatransformer_"+string(taskId)+".jsonnet"),
+						path.Join(jsonnetFolder, "datatransformer_"+string(taskId)+".jsonnet"),
 						false,
 						[]byte(taskContent)); err != nil {
 						return err
