@@ -663,7 +663,7 @@ func processCodeFolders(javascriptFolder string, jsonnetFolder string) (codeMap 
 
 	if len(jsonnetNames) > 0 {
 		for _, jsonnetName := range jsonnetNames {
-			jsonnetBytes, err := utils.ReadFile(path.Join(javascriptFolder, jsonnetName))
+			jsonnetBytes, err := utils.ReadFile(path.Join(jsonnetFolder, jsonnetName))
 			if err != nil {
 				return nil, err
 			}
