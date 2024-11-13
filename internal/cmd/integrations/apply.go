@@ -568,13 +568,13 @@ func processIntegration(overridesFile string, integrationFolder string,
 			return err
 		}
 		// check for code files
-		jsMap, err := processCodeFolders(javascriptFolder, jsonnetFolder)
+		codeMap, err := processCodeFolders(javascriptFolder, jsonnetFolder)
 		if err != nil {
 			return err
 		}
 
-		if len(jsMap) > 0 {
-			integrationBytes, err = integrations.SetCode(integrationBytes, jsMap)
+		if len(codeMap) > 0 {
+			integrationBytes, err = integrations.SetCode(integrationBytes, codeMap)
 			if err != nil {
 				return err
 			}
@@ -614,8 +614,8 @@ func processIntegration(overridesFile string, integrationFolder string,
 	return nil
 }
 
-func processCodeFolders(javascriptFolder string, jsonnetFolder string) (jsMap map[string]map[string]string, err error) {
-	jsMap = make(map[string]map[string]string)
+func processCodeFolders(javascriptFolder string, jsonnetFolder string) (codeMap map[string]map[string]string, err error) {
+	codeMap = make(map[string]map[string]string)
 	rJavaScriptFiles := regexp.MustCompile(`javascript_\d{1,2}.js`)
 	rJsonnetFiles := regexp.MustCompile(`datatransformer_\d{1,2}.jsonnet`)
 	var javascriptNames, jsonnetNames []string
@@ -640,7 +640,7 @@ func processCodeFolders(javascriptFolder string, jsonnetFolder string) (jsMap ma
 			if err != nil {
 				return nil, err
 			}
-			jsMap["JavaScriptTask"][strings.ReplaceAll(getFilenameWithoutExtension(javascriptName), "javascript_", "")] =
+			codeMap["JavaScriptTask"][strings.ReplaceAll(getFilenameWithoutExtension(javascriptName), "javascript_", "")] =
 				strings.ReplaceAll(string(javascriptBytes), "\n", "\\n")
 		}
 	}
@@ -665,10 +665,10 @@ func processCodeFolders(javascriptFolder string, jsonnetFolder string) (jsMap ma
 			if err != nil {
 				return nil, err
 			}
-			jsMap["JsonnetMapperTask"][strings.ReplaceAll(getFilenameWithoutExtension(jsonnetName), "datatransformer_", "")] =
+			codeMap["JsonnetMapperTask"][strings.ReplaceAll(getFilenameWithoutExtension(jsonnetName), "datatransformer_", "")] =
 				strings.ReplaceAll(string(jsonnetBytes), "\n", "\\n")
 		}
 	}
 
-	return jsMap, nil
+	return codeMap, nil
 }

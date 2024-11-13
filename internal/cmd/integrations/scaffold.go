@@ -166,24 +166,32 @@ var ScaffoldCmd = &cobra.Command{
 
 		// extract code
 		if extractCode {
-			jsMap, err := integrations.ExtractCode(integrationBody)
+			codeMap, err := integrations.ExtractCode(integrationBody)
 			if err != nil {
 				return err
 			}
-			if len(jsMap["JavaScriptTask"]) > 0 {
+			if len(codeMap["JavaScriptTask"]) > 0 {
+				javascriptFolder := path.Join(baseFolder, "src", "javascript")
+				if err = generateFolder(javascriptFolder); err != nil {
+					return err
+				}
 				clilog.Info.Printf("Found JavaScript files in the integration; generating separate files\n")
-				for taskId, taskContent := range jsMap["JavaScriptTask"] {
+				for taskId, taskContent := range codeMap["JavaScriptTask"] {
 					if err = apiclient.WriteByteArrayToFile(
-						path.Join(baseFolder, "src", "javascript", "javascript_"+string(taskId)+".js"),
+						path.Join(javascriptFolder, "javascript_"+string(taskId)+".js"),
 						false,
 						[]byte(taskContent)); err != nil {
 						return err
 					}
 				}
 			}
-			if len(jsMap["JsonnetMapperTask"]) > 0 {
+			if len(codeMap["JsonnetMapperTask"]) > 0 {
+				jsonnetFolder := path.Join(baseFolder, "src", "datatransformer")
+				if err = generateFolder(jsonnetFolder); err != nil {
+					return err
+				}
 				clilog.Info.Printf("Found Jsonnet files in the integration; generating separate files\n")
-				for taskId, taskContent := range jsMap["JsonnetMapperTask"] {
+				for taskId, taskContent := range codeMap["JsonnetMapperTask"] {
 					if err = apiclient.WriteByteArrayToFile(
 						path.Join(baseFolder, "src", "datatransformer", "datatransformer_"+string(taskId)+".jsonnet"),
 						false,
