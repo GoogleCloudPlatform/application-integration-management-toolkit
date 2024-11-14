@@ -19,7 +19,7 @@ FROM mcr.microsoft.com/devcontainers/go:1.23-bookworm@@sha256:2e00578e7c526e76eb
 COPY --from=cosign /ko-app/cosign /usr/bin
 
 #v1.1.1
-RUN go install github.com/google/addlicense@@dc31ac9ffcca99c9457226366135701794b128c0
+RUN go install github.com/google/addlicense@dc31ac9ffcca99c9457226366135701794b128c0
 
 # v1.6.0
 RUN go install github.com/google/go-licenses@5348b744d0983d85713295ea08a20cca1654a45e
@@ -27,7 +27,7 @@ RUN go install github.com/google/go-licenses@5348b744d0983d85713295ea08a20cca165
 # v0.7.0
 RUN go install mvdan.cc/gofumpt@86bffd62437a3c437c0b84d5d5ab244824e762fc
 
-RUN curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin v1.60.2
+RUN curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/bff93a148ad87c64fafaa00f01701e0b4f26fd09/install.sh | sh -s -- -b $(go env GOPATH)/bin v1.60.2
 
 RUN echo 'deb [trusted=yes] https://repo.goreleaser.com/apt/ /' | sudo tee /etc/apt/sources.list.d/goreleaser.list
 RUN sudo apt update
