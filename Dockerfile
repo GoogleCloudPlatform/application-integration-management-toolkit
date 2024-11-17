@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM golang:1.21 as builder
+FROM golang:1.23.2@sha256:a7f2fc9834049c1f5df787690026a53738e55fc097cd8a4a93faa3e06c67ee32 AS builder
 
 ARG TAG
 ARG COMMIT
@@ -29,10 +29,10 @@ RUN go mod download
 RUN date +%FT%H:%I:%M+%Z > /tmp/date
 RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -trimpath -buildvcs=true -a -gcflags='all="-l"' -ldflags='-s -w -extldflags "-static" -X main.version='${TAG}' -X main.commit='${COMMIT}' -X main.date='$(cat /tmp/date) -o /go/bin/integrationcli /go/src/integrationcli/cmd/integrationcli/integrationcli.go
 
-FROM us-docker.pkg.dev/appintegration-toolkit/internal/jq:latest as jq
+FROM us-docker.pkg.dev/appintegration-toolkit/internal/jq:latest@sha256:d3a1c8a88f9223eab96bda760efab08290d274249581d2db6db010cbe20c232b AS jq
 
 # use debug because it includes busybox
-FROM gcr.io/distroless/static-debian11:debug-nonroot
+FROM gcr.io/distroless/static-debian11:debug-nonroot@sha256:55716e80a7d4320ce9bc2dc8636fc193b418638041b817cf3306696bd0f975d1
 LABEL org.opencontainers.image.url='https://github.com/GoogleCloudPlatform/application-integration-management-toolkit' \
     org.opencontainers.image.documentation='https://github.com/GoogleCloudPlatform/application-integration-management-toolkit' \
     org.opencontainers.image.source='https://github.com/GoogleCloudPlatform/application-integration-management-toolkit' \

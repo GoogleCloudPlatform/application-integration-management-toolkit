@@ -49,7 +49,7 @@ func init() {
 
 	ReplayExecCmd.Flags().StringVarP(&name, "name", "n",
 		"", "Integration flow name")
-	ReplayExecCmd.Flags().StringVarP(&replayReason, "replay-reason", "r",
+	ReplayExecCmd.Flags().StringVarP(&replayReason, "replay-reason", "",
 		"", "Replay Reason")
 	ReplayExecCmd.Flags().StringVarP(&executionID, "execution-id", "e",
 		"", "Execution ID")

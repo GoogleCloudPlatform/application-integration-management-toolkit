@@ -79,7 +79,7 @@ type connectionparams struct {
 }
 
 const (
-	pubsubTrigger = "cloud_pubsub_external_trigger/projects/cloud-crm-eventbus-cpsexternal/subscriptions/"
+	pubsubTrigger = "cloud_pubsub_external_trigger/projects/%s/subscriptions/%s_%s"
 	apiTrigger    = "api_trigger/"
 )
 
@@ -103,7 +103,7 @@ func mergeOverrides(eversion integrationVersionExternal, o overrides, grantPermi
 					if triggerOverride.ProjectId == nil || triggerOverride.TopicName == nil {
 						return eversion, fmt.Errorf("projectid and topicName are mandatory in the overrides")
 					}
-					trigger.TriggerId = pubsubTrigger + *triggerOverride.ProjectId + "_" + *triggerOverride.TopicName
+					trigger.TriggerId = fmt.Sprintf(pubsubTrigger, *triggerOverride.ProjectId, *triggerOverride.ProjectId, *triggerOverride.TopicName)
 					trigger.Properties["Subscription name"] = *triggerOverride.ProjectId + "_" + *triggerOverride.TopicName
 					trigger.Properties["IP Project name"] = *triggerOverride.ProjectId
 
@@ -600,4 +600,42 @@ func getConnectionStringFromConnectionName(connectionName string, iconfigParam [
 		return "", errors.New("Connection Name is not valid. Connection name should be in the format: projects/{projectId}/locations/{locationId}/connections/{connectionId}")
 	}
 	return name, nil
+}
+
+func ExtractCode(content []byte) (codeMap map[string]map[string]string, err error) {
+	codeMap = make(map[string]map[string]string)
+	codeMap["JavaScriptTask"] = make(map[string]string)
+	codeMap["JsonnetMapperTask"] = make(map[string]string)
+	iversion := integrationVersion{}
+	if err = json.Unmarshal(content, &iversion); err != nil {
+		return nil, err
+	}
+	for _, task := range iversion.TaskConfigs {
+		if task.Task == "JavaScriptTask" {
+			codeMap[task.Task][task.TaskId] = *task.Parameters["script"].Value.StringValue
+		} else if task.Task == "JsonnetMapperTask" {
+			codeMap[task.Task][task.TaskId] = *task.Parameters["template"].Value.StringValue
+		}
+	}
+	return codeMap, nil
+}
+
+func SetCode(content []byte, codeMap map[string]map[string]string) (integrationBytes []byte, err error) {
+	iversion := integrationVersion{}
+	if err = json.Unmarshal(content, &iversion); err != nil {
+		return nil, err
+	}
+	for _, task := range iversion.TaskConfigs {
+		content := codeMap[task.Task][task.TaskId]
+		if task.Task == "JavaScriptTask" {
+			if content != "" {
+				*task.Parameters["script"].Value.StringValue = strings.ReplaceAll(content, "\\n", "\n")
+			}
+		} else if task.Task == "JsonnetMapperTask" {
+			if content != "" {
+				*task.Parameters["template"].Value.StringValue = strings.ReplaceAll(content, "\\n", "\n")
+			}
+		}
+	}
+	return json.Marshal(iversion)
 }

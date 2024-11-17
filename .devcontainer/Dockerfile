@@ -12,19 +12,22 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM gcr.io/projectsigstore/cosign:latest as cosign
+FROM gcr.io/projectsigstore/cosign:latest@sha256:b03690aa52bfe94054187142fba24dc54137650682810633901767d8a3e15b31 AS cosign
 
-FROM mcr.microsoft.com/devcontainers/go:1-1.22-bookworm
+FROM mcr.microsoft.com/devcontainers/go:1.23-bookworm@@sha256:2e00578e7c526e76ebd51597260928d8542d27c17ffe6390d79200638c51a3e6
 
 COPY --from=cosign /ko-app/cosign /usr/bin
 
-RUN go install github.com/google/addlicense@latest
+#v1.1.1
+RUN go install github.com/google/addlicense@dc31ac9ffcca99c9457226366135701794b128c0
 
-RUN go install github.com/google/go-licenses@latest
+# v1.6.0
+RUN go install github.com/google/go-licenses@5348b744d0983d85713295ea08a20cca1654a45e
 
-RUN go install mvdan.cc/gofumpt@latest
+# v0.7.0
+RUN go install mvdan.cc/gofumpt@86bffd62437a3c437c0b84d5d5ab244824e762fc
 
-RUN curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin v1.60.2
+RUN curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/bff93a148ad87c64fafaa00f01701e0b4f26fd09/install.sh | sh -s -- -b $(go env GOPATH)/bin v1.60.2
 
 RUN echo 'deb [trusted=yes] https://repo.goreleaser.com/apt/ /' | sudo tee /etc/apt/sources.list.d/goreleaser.list
 RUN sudo apt update
