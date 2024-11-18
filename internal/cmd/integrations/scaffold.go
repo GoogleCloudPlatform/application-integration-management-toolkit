@@ -27,7 +27,7 @@ import (
 	"internal/cmd/utils"
 	"os"
 	"path"
-	"path/filepath"
+	"regexp"
 
 	"github.com/spf13/cobra"
 )
@@ -94,7 +94,7 @@ var ScaffoldCmd = &cobra.Command{
 			if overridesBody, err = integrations.Get(name, version, false, false, true); err != nil {
 				return err
 			}
-			if testCasesBody, err = integrations.ListTestCases(name, version); err != nil {
+			if testCasesBody, err = integrations.ListTestCases(name, version, false); err != nil {
 				return err
 			}
 		} else if userLabel != "" {
@@ -104,7 +104,7 @@ var ScaffoldCmd = &cobra.Command{
 			if overridesBody, err = integrations.GetByUserlabel(name, userLabel, false, false, true); err != nil {
 				return err
 			}
-			if testCasesBody, err = integrations.ListTestCasesByUserlabel(name, userLabel); err != nil {
+			if testCasesBody, err = integrations.ListTestCasesByUserlabel(name, userLabel, false); err != nil {
 				return err
 			}
 		} else if snapshot != "" {
@@ -114,7 +114,7 @@ var ScaffoldCmd = &cobra.Command{
 			if overridesBody, err = integrations.GetBySnapshot(name, snapshot, false, false, true); err != nil {
 				return err
 			}
-			if testCasesBody, err = integrations.ListTestCasesBySnapshot(name, snapshot); err != nil {
+			if testCasesBody, err = integrations.ListTestCasesBySnapshot(name, snapshot, false); err != nil {
 				return err
 			}
 		}
@@ -136,12 +136,12 @@ var ScaffoldCmd = &cobra.Command{
 			return err
 		}
 
-		if len(testCasesBody) > 0 {
+		if len(testCasesBody) > 3 {
 			clilog.Info.Printf("Found test cases in the integration, storing the test cases file\n")
-			if err = generateFolder(path.Join(folder, "testcases")); err != nil {
+			if err = generateFolder(path.Join(baseFolder, "tests")); err != nil {
 				return err
 			}
-			if err = generateTestcases(testCasesBody, folder); err != nil {
+			if err = generateTestcases(testCasesBody, baseFolder); err != nil {
 				return err
 			}
 		}
@@ -441,22 +441,19 @@ func getName(authConfigResp []byte) string {
 
 func generateTestcases(testcases []byte, folder string) error {
 
-	var data map[string]interface{}
+	var data []map[string]interface{}
 
 	err := json.Unmarshal(testcases, &data)
 	if err != nil {
 		return fmt.Errorf("Error decoding JSON: %s", err)
 	}
 
-	tc := data["testCases"].([]interface{})
-
-	for _, t := range tc {
-		obj := t.(map[string]interface{})
-		jsonData, err := json.Marshal(obj)
+	for _, t := range data {
+		jsonData, err := json.Marshal(t)
 		if err != nil {
 			return fmt.Errorf("Error encoding JSON: %s", err)
 		}
-		name, err := getTestCaseName(obj)
+		name, err := getTestCaseName(t)
 		if err != nil {
 			return fmt.Errorf("unable to get name: %v", err)
 		}
@@ -465,7 +462,7 @@ func generateTestcases(testcases []byte, folder string) error {
 			return err
 		}
 		if err = apiclient.WriteByteArrayToFile(
-			path.Join(folder, "testcases", name+jsonExt),
+			path.Join(folder, "tests", name+jsonExt),
 			false,
 			jsonData); err != nil {
 			return err
@@ -475,8 +472,13 @@ func generateTestcases(testcases []byte, folder string) error {
 }
 
 func getTestCaseName(jsonData map[string]interface{}) (string, error) {
-	if name, ok := jsonData["name"].(string); ok && name != "" {
-		return filepath.Base(name), nil
+	if name, ok := jsonData["displayName"].(string); ok && name != "" {
+		return removeNonAlphanumeric(name), nil
 	}
 	return "", fmt.Errorf("name not found")
+}
+
+func removeNonAlphanumeric(str string) string {
+	reg, _ := regexp.Compile("[^a-zA-Z0-9]+")
+	return reg.ReplaceAllString(str, "")
 }

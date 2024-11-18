@@ -15,6 +15,7 @@
 package integrations
 
 import (
+	"errors"
 	"internal/apiclient"
 	"internal/client/integrations"
 
@@ -29,21 +30,36 @@ var ListTestCaseCmd = &cobra.Command{
 	Args: func(cmd *cobra.Command, args []string) (err error) {
 		cmdProject := cmd.Flag("proj")
 		cmdRegion := cmd.Flag("reg")
+		version := cmd.Flag("ver").Value.String()
 
 		if err = apiclient.SetRegion(cmdRegion.Value.String()); err != nil {
 			return err
 		}
-
+		if userLabel == "" && version == "" && snapshot == "" {
+			return errors.New("at least one of userLabel, version or snapshot must be passed")
+		}
+		if err = validate(version); err != nil {
+			return err
+		}
 		return apiclient.SetProjectID(cmdProject.Value.String())
 	},
 	RunE: func(cmd *cobra.Command, args []string) (err error) {
 		version := cmd.Flag("ver").Value.String()
 		name := cmd.Flag("name").Value.String()
 
-		_, err = integrations.ListTestCases(name, version)
+		if version != "" {
+			_, err = integrations.ListTestCases(name, version, full)
+		} else if userLabel != "" {
+			_, err = integrations.ListTestCasesByUserlabel(name, userLabel, full)
+		} else if snapshot != "" {
+			_, err = integrations.ListTestCasesBySnapshot(name, snapshot, full)
+		}
+
 		return err
 	},
 }
+
+var full bool
 
 func init() {
 	var name, version string
@@ -52,7 +68,12 @@ func init() {
 		"", "Integration flow name")
 	ListTestCaseCmd.Flags().StringVarP(&version, "ver", "v",
 		"", "Integration flow version")
+	ListTestCaseCmd.Flags().StringVarP(&userLabel, "user-label", "u",
+		"", "Integration flow user label")
+	ListTestCaseCmd.Flags().StringVarP(&snapshot, "snapshot", "s",
+		"", "Integration flow snapshot number")
+	ListTestCaseCmd.Flags().BoolVarP(&full, "full", "",
+		false, "Full test case response")
 
 	_ = ListTestCaseCmd.MarkFlagRequired("name")
-	_ = ListTestCaseCmd.MarkFlagRequired("ver")
 }
