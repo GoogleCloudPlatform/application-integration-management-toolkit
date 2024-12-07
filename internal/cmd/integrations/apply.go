@@ -590,6 +590,13 @@ func processIntegration(overridesFile string, integrationFolder string,
 		if err != nil {
 			return err
 		}
+
+		// create  test cases for integration
+		if err = processTestCases(integrationFolder, getFilenameWithoutExtension(integrationNames[0]), version); err != nil {
+			return err
+		}
+
+		// publish the integration
 		clilog.Info.Printf("Publish integration %s with version %s\n",
 			getFilenameWithoutExtension(integrationNames[0]), version)
 		// read any config variables
@@ -673,4 +680,38 @@ func processCodeFolders(javascriptFolder string, jsonnetFolder string) (codeMap 
 	}
 
 	return codeMap, nil
+}
+
+func processTestCases(testCasesFolder string, integrationName string, version string) (err error) {
+	rJSONFiles := regexp.MustCompile(`(\S*)\.json`)
+
+	var testCaseFiles []string
+
+	_ = filepath.Walk(testCasesFolder, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+		if !info.IsDir() {
+			testCaseFile := filepath.Base(path)
+			if rJSONFiles.MatchString(testCaseFile) {
+				clilog.Info.Printf("Found test case file %s for integration: %s\n", testCaseFile, integrationName)
+				testCaseFiles = append(testCaseFiles, testCaseFile)
+			}
+		}
+		return nil
+	})
+
+	if len(testCaseFiles) > 0 {
+		for _, testCaseFile := range testCaseFiles {
+			testCaseBytes, err := utils.ReadFile(path.Join(testCasesFolder, testCaseFile))
+			if err != nil {
+				return err
+			}
+			_, err = integrations.CreateTestCase(integrationName, version, string(testCaseBytes))
+			if err != nil {
+				return err
+			}
+		}
+	}
+	return nil
 }
