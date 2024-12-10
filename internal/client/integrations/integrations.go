@@ -190,6 +190,7 @@ type taskconfig struct {
 	SuccessPolicy                *successPolicy            `json:"successPolicy,omitempty"`
 	TaskTemplate                 string                    `json:"taskTemplate,omitempty"`
 	FailurePolicy                *failurePolicy            `json:"failurePolicy,omitempty"`
+	ConditionalFailurePolicies   *conditionalFailurePolicy `json:"conditionalFailurePolicies,omitempty"`
 	SynchronousCallFailurePolicy *failurePolicy            `json:"synchronousCallFailurePolicy,omitempty"`
 	ErrorCatcherId               string                    `json:"errorCatcherId,omitempty"`
 	ExternalTaskType             string                    `json:"externalTaskType,omitempty"`
@@ -244,6 +245,7 @@ type failurePolicy struct {
 	RetryStrategy string `json:"retryStrategy,omitempty"`
 	MaxRetries    int    `json:"maxRetries,omitempty"`
 	IntervalTime  string `json:"intervalTime,omitempty"`
+	Condition     string `json:"condition,omitempty"`
 }
 
 type cloudSchedulerConfig struct {
@@ -258,6 +260,11 @@ type integrationConnection struct {
 	Region           string
 	Version          string
 	CustomConnection bool
+}
+
+type conditionalFailurePolicy struct {
+	FailurePolicies      []failurePolicy `json:"failurePolicies,omitempty"`
+	DefaultFailurePolicy *failurePolicy  `json:"defaultFailurePolicy,omitempty"`
 }
 
 // CreateVersion
