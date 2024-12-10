@@ -190,7 +190,7 @@ type taskconfig struct {
 	SuccessPolicy                *successPolicy            `json:"successPolicy,omitempty"`
 	TaskTemplate                 string                    `json:"taskTemplate,omitempty"`
 	FailurePolicy                *failurePolicy            `json:"failurePolicy,omitempty"`
-	ConditionalFailurePolicies   *conditionalFailurePolicy `json:"conditonalFailurePolicies,omitempty"`
+	ConditionalFailurePolicies   *conditionalFailurePolicy `json:"conditionalFailurePolicies,omitempty"`
 	SynchronousCallFailurePolicy *failurePolicy            `json:"synchronousCallFailurePolicy,omitempty"`
 	ErrorCatcherId               string                    `json:"errorCatcherId,omitempty"`
 	ExternalTaskType             string                    `json:"externalTaskType,omitempty"`
