@@ -527,7 +527,7 @@ func processSfdcChannels(sfdcchannelsFolder string) (err error) {
 func processIntegration(overridesFile string, integrationFolder string,
 	configVarsFolder string, pipeline string, grantPermission bool,
 ) (err error) {
-	rJSONFiles := regexp.MustCompile(`(\S*)\.json`)
+	rJSONFiles := regexp.MustCompile(`(\S*)\.json$`)
 
 	var integrationNames []string
 	var overridesBytes []byte
