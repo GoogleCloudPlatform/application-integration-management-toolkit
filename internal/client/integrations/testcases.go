@@ -22,8 +22,10 @@ import (
 )
 
 type testCase struct {
+	Name                      string              `json:"name,omitempty"`
 	Description               string              `json:"description,omitempty"`
 	DisplayName               string              `json:"displayName,omitempty"`
+	TriggerId                 string              `json:"triggerId,omitempty"`
 	TestTaskConfigs           []testTaskConfig    `json:"testTaskConfigs,omitempty"`
 	DatabasePersistencePolicy *string             `json:"databasePersistencePolicy,omitempty"`
 	TriggerConfig             triggerconfig       `json:"triggerConfig,omitempty"`
