@@ -48,4 +48,5 @@ func init() {
 	Cmd.AddCommand(DelCmd)
 	Cmd.AddCommand(ScaffoldCmd)
 	Cmd.AddCommand(ApplyCmd)
+	Cmd.AddCommand(TestCasesCmd)
 }
