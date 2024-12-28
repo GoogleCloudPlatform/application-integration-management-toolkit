@@ -2,7 +2,7 @@ module github.com/GoogleCloudPlatform/application-integration-management-toolkit
 
 go 1.23.2
 
-require internal/apiclient v1.0.0 // indirect
+require internal/apiclient v1.0.0
 
 replace internal/apiclient => ./internal/apiclient
 
@@ -80,7 +80,7 @@ require (
 	go.opentelemetry.io/otel/sdk/metric v1.31.0 // indirect
 	go.opentelemetry.io/otel/trace v1.31.0 // indirect
 	golang.org/x/crypto v0.31.0 // indirect
-	golang.org/x/net v0.31.0 // indirect
+	golang.org/x/net v0.33.0 // indirect
 	golang.org/x/oauth2 v0.24.0 // indirect
 	golang.org/x/sync v0.10.0 // indirect
 	golang.org/x/sys v0.28.0 // indirect
