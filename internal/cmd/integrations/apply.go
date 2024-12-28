@@ -646,8 +646,7 @@ func processCodeFolders(javascriptFolder string, jsonnetFolder string) (codeMap 
 			if err != nil {
 				return nil, err
 			}
-			codeMap["JavaScriptTask"][strings.ReplaceAll(getFilenameWithoutExtension(javascriptName), "javascript_", "")] =
-				strings.ReplaceAll(string(javascriptBytes), "\n", "\\n")
+			codeMap["JavaScriptTask"][strings.ReplaceAll(getFilenameWithoutExtension(javascriptName), "javascript_", "")] = strings.ReplaceAll(string(javascriptBytes), "\n", "\\n")
 		}
 	}
 
@@ -671,8 +670,7 @@ func processCodeFolders(javascriptFolder string, jsonnetFolder string) (codeMap 
 			if err != nil {
 				return nil, err
 			}
-			codeMap["JsonnetMapperTask"][strings.ReplaceAll(getFilenameWithoutExtension(jsonnetName), "datatransformer_", "")] =
-				strings.ReplaceAll(string(jsonnetBytes), "\n", "\\n")
+			codeMap["JsonnetMapperTask"][strings.ReplaceAll(getFilenameWithoutExtension(jsonnetName), "datatransformer_", "")] = strings.ReplaceAll(string(jsonnetBytes), "\n", "\\n")
 		}
 	}
 

@@ -15,6 +15,8 @@
 package main
 
 import (
+	"internal/cmd/authconfigs"
+	"internal/cmd/connectors"
 	"io"
 	"log"
 	"os"
@@ -22,8 +24,7 @@ import (
 	"strings"
 
 	cmd "internal/cmd"
-	"internal/cmd/authconfigs"
-	"internal/cmd/connectors"
+
 	integrations "internal/cmd/integrations"
 
 	"github.com/spf13/cobra/doc"
