@@ -22,6 +22,8 @@ import (
 	"strings"
 
 	cmd "internal/cmd"
+	"internal/cmd/authconfigs"
+	"internal/cmd/connectors"
 	integrations "internal/cmd/integrations"
 
 	"github.com/spf13/cobra/doc"
@@ -42,6 +44,7 @@ Set up integrationcli with preferences: ` + getSingleLine("integrationcli prefs 
 | integrations | ` + getSingleLine(integrations.GetExample(0)) + `|
 | integrations | ` + getSingleLine(integrations.GetExample(1)) + `|
 | integrations | ` + getSingleLine(integrations.GetExample(2)) + `|
+| integrations | ` + getSingleLine(integrations.GetExample(13)) + `|
 | integrations | ` + getSingleLine(integrations.GetExample(3)) + `|
 | integrations | ` + getSingleLine(integrations.GetExample(4)) + `|
 | integrations | ` + getSingleLine(integrations.GetExample(5)) + `|
@@ -52,6 +55,11 @@ Set up integrationcli with preferences: ` + getSingleLine("integrationcli prefs 
 | integrations | ` + getSingleLine(integrations.GetExample(10)) + `|
 | integrations | ` + getSingleLine(integrations.GetExample(11)) + `|
 | integrations | ` + getSingleLine(integrations.GetExample(12)) + `|
+| authconfigs | ` + getSingleLine(authconfigs.GetExample(0)) + `|
+| authconfigs | ` + getSingleLine(authconfigs.GetExample(1)) + `|
+| authconfigs | ` + getSingleLine(authconfigs.GetExample(2)) + `|
+| authconfigs | ` + getSingleLine(authconfigs.GetExample(3)) + `|
+| connectors | ` + getSingleLine(connectors.GetExample(0)) + `|
 
 
 NOTE: This file is auto-generated during a release. Do not modify.`

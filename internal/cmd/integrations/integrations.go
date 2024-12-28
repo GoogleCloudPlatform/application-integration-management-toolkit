@@ -41,6 +41,7 @@ var examples = []string{
 	`integrationcli integrations apply -f . --env=dev --default-token`,
 	`integrationcli integrations apply -f . --grant-permission=true --default-token`,
 	`integrationcli integrations apply -f . --skip-connectors=true --default-token`,
+	`integrationcli integrations create -n $name -f samples/sample.json --basic=true --default-token`,
 }
 
 func init() {

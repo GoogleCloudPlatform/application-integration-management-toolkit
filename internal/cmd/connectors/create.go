@@ -68,6 +68,7 @@ var CreateCmd = &cobra.Command{
 
 		return err
 	},
+	Example: `Create a PubSub connectors and grant the Service Account permissions: ` + GetExample(0),
 }
 
 var connectionFile, serviceAccountName, serviceAccountProject, encryptionKey string

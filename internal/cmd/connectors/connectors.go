@@ -25,6 +25,10 @@ var Cmd = &cobra.Command{
 	Long:  "Manage connections for Integration Connectors",
 }
 
+var examples = []string{
+	`integrationcli connectors create -n $name -g=true -f samples/pub_sub_connection.json -sa=connectors --wat=true --default-token`,
+}
+
 func init() {
 	var region, project string
 
@@ -47,4 +51,8 @@ func init() {
 	Cmd.AddCommand(ManagedZonesCmd)
 	Cmd.AddCommand(CustomCmd)
 	Cmd.AddCommand(EventSubCmd)
+}
+
+func GetExample(i int) string {
+	return examples[i]
 }
