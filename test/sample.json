@@ -147,6 +147,10 @@
 			"isTransient": true,
 			"producer": "1_1"
 		}
-	]
+	],
+	"cloudLoggingDetails": {
+		"cloudLoggingSeverity": "INFO",
+		"enableCloudLogging": true
+	},
+	"databasePersistencePolicy": "DATABASE_PERSISTENCE_DISABLED"
 }
-
