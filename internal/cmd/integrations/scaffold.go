@@ -366,6 +366,10 @@ var ScaffoldCmd = &cobra.Command{
 
 		return err
 	},
+	Example: `Generate scaffold for dev env using snapshot: ` + GetExample(5) + `
+Generate scaffold for integration, but skip connectors: ` + GetExample(6) + `
+Generate scaffold for integration and produce cloud build config: ` + GetExample(7) + `
+Generate scaffold for integration and produce cloud deploy config: ` + GetExample(8),
 }
 
 var (
