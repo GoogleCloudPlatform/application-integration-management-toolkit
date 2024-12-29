@@ -42,6 +42,10 @@ var examples = []string{
 	`integrationcli integrations apply -f . --grant-permission=true --default-token`,
 	`integrationcli integrations apply -f . --skip-connectors=true --default-token`,
 	`integrationcli integrations create -n $name -f samples/sample.json --basic=true --default-token`,
+	`integrationcli integrations versions publish -n $name --default-token`,
+	`integrationcli integrations versions publish -n $name -s $snapshot --default-token`,
+	`integrationcli integrations versions unpublish -n $name --default-token`,
+	`integrationcli integrations versions unpublish -n $name -u $userLabel --default-token`,
 }
 
 func init() {

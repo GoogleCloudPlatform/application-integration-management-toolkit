@@ -74,6 +74,8 @@ var UnPublishVerCmd = &cobra.Command{
 		}
 		return err
 	},
+	Example: `Unpublishes an integration vesion with the highest snapshot in SNAPHOST state: ` + GetExample(16) + `
+Unpublishes an integration version that matches user supplied user label: ` + GetExample(17),
 }
 
 func init() {

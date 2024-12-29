@@ -97,6 +97,8 @@ var PublishVerCmd = &cobra.Command{
 		}
 		return err
 	},
+	Example: `Publishes an integration vesion with the highest snapshot in SNAPHOST state: ` + GetExample(14) + `
+Publishes an integration version that matches user supplied snapshot number: ` + GetExample(15),
 }
 
 var latest bool
