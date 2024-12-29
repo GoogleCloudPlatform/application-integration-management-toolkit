@@ -27,6 +27,7 @@ import (
 	"internal/cmd/utils"
 	"os"
 	"path"
+	"regexp"
 
 	"github.com/spf13/cobra"
 )
@@ -53,9 +54,8 @@ var ScaffoldCmd = &cobra.Command{
 		return apiclient.SetProjectID(cmdProject.Value.String())
 	},
 	RunE: func(cmd *cobra.Command, args []string) (err error) {
-		const jsonExt = ".json"
 		var fileSplitter string
-		var integrationBody, overridesBody []byte
+		var integrationBody, overridesBody, testCasesBody []byte
 		version := cmd.Flag("ver").Value.String()
 		name := cmd.Flag("name").Value.String()
 
@@ -94,6 +94,9 @@ var ScaffoldCmd = &cobra.Command{
 			if overridesBody, err = integrations.Get(name, version, false, false, true); err != nil {
 				return err
 			}
+			if testCasesBody, err = integrations.ListTestCases(name, version, false); err != nil {
+				return err
+			}
 		} else if userLabel != "" {
 			if integrationBody, err = integrations.GetByUserlabel(name, userLabel, false, true, false); err != nil {
 				return err
@@ -101,11 +104,17 @@ var ScaffoldCmd = &cobra.Command{
 			if overridesBody, err = integrations.GetByUserlabel(name, userLabel, false, false, true); err != nil {
 				return err
 			}
+			if testCasesBody, err = integrations.ListTestCasesByUserlabel(name, userLabel, false); err != nil {
+				return err
+			}
 		} else if snapshot != "" {
 			if integrationBody, err = integrations.GetBySnapshot(name, snapshot, false, true, false); err != nil {
 				return err
 			}
 			if overridesBody, err = integrations.GetBySnapshot(name, snapshot, false, false, true); err != nil {
+				return err
+			}
+			if testCasesBody, err = integrations.ListTestCasesBySnapshot(name, snapshot, false); err != nil {
 				return err
 			}
 		}
@@ -125,6 +134,16 @@ var ScaffoldCmd = &cobra.Command{
 			false,
 			integrationBody); err != nil {
 			return err
+		}
+
+		if len(testCasesBody) > 3 {
+			clilog.Info.Printf("Found test cases in the integration, storing the test cases file\n")
+			if err = generateFolder(path.Join(baseFolder, "tests")); err != nil {
+				return err
+			}
+			if err = generateTestcases(testCasesBody, baseFolder); err != nil {
+				return err
+			}
 		}
 
 		// write integration overrides
@@ -377,6 +396,8 @@ var (
 	env                                                                                  string
 )
 
+const jsonExt = ".json"
+
 func init() {
 	var name, version string
 
@@ -420,4 +441,48 @@ func getName(authConfigResp []byte) string {
 	var m map[string]string
 	_ = json.Unmarshal(authConfigResp, &m)
 	return m["displayName"]
+}
+
+func generateTestcases(testcases []byte, folder string) error {
+
+	var data []map[string]interface{}
+
+	err := json.Unmarshal(testcases, &data)
+	if err != nil {
+		return fmt.Errorf("Error decoding JSON: %s", err)
+	}
+
+	for _, t := range data {
+		jsonData, err := json.Marshal(t)
+		if err != nil {
+			return fmt.Errorf("Error encoding JSON: %s", err)
+		}
+		name, err := getTestCaseName(t)
+		if err != nil {
+			return fmt.Errorf("unable to get name: %v", err)
+		}
+		jsonData, err = apiclient.PrettifyJson(jsonData)
+		if err != nil {
+			return err
+		}
+		if err = apiclient.WriteByteArrayToFile(
+			path.Join(folder, "tests", name+jsonExt),
+			false,
+			jsonData); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func getTestCaseName(jsonData map[string]interface{}) (string, error) {
+	if name, ok := jsonData["displayName"].(string); ok && name != "" {
+		return removeNonAlphanumeric(name), nil
+	}
+	return "", fmt.Errorf("name not found")
+}
+
+func removeNonAlphanumeric(str string) string {
+	reg, _ := regexp.Compile("[^a-zA-Z0-9]+")
+	return reg.ReplaceAllString(str, "")
 }
