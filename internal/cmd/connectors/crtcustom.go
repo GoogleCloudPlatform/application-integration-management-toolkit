@@ -50,12 +50,14 @@ var CrtCustomCmd = &cobra.Command{
 
 		return err
 	},
+	Example: `Create a custom connector for OPEN_API type: ` + GetExample(3),
 }
 
 var labels map[string]string
+var connType ConnectorType
 
 func init() {
-	var name, description, displayName, connType string
+	var name, description, displayName string
 
 	CrtCustomCmd.Flags().StringVarP(&name, "name", "n",
 		"", "Connection name")
@@ -63,8 +65,8 @@ func init() {
 		"", "Custom Connection display name")
 	CrtCustomCmd.Flags().StringVarP(&description, "description", "",
 		"", "Custom Connection description")
-	CrtCustomCmd.Flags().StringVarP(&connType, "type", "",
-		"", "Custom Connection type")
+	CrtCustomCmd.Flags().Var(&connType, "type",
+		"Custom Connection type must be set to OPEN_API or PROTO")
 	CrtCustomCmd.Flags().StringToStringVarP(&labels, "labels", "l",
 		map[string]string{}, "Custom Connection labels")
 

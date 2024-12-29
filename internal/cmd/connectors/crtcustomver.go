@@ -53,6 +53,7 @@ var CrtCustomVerCmd = &cobra.Command{
 		_, err = connections.CreateCustomVersion(name, id, content, serviceAccountName, serviceAccountProject)
 		return err
 	},
+	Example: `Create a custom connection version: ` + GetExample(2),
 }
 
 func init() {
