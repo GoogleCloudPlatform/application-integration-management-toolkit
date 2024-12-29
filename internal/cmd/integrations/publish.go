@@ -15,9 +15,12 @@
 package integrations
 
 import (
+	"encoding/json"
 	"errors"
+	"fmt"
 	"internal/apiclient"
 	"internal/client/integrations"
+	"internal/clilog"
 	"os"
 
 	"github.com/spf13/cobra"
@@ -47,6 +50,7 @@ var PublishVerCmd = &cobra.Command{
 		configVarsJson := cmd.Flag("config-vars-json").Value.String()
 		configVarsFile := cmd.Flag("config-vars").Value.String()
 		var contents []byte
+		var info string
 
 		if configVarsJson == "" {
 			if configVarsFile != "" {
@@ -63,16 +67,39 @@ var PublishVerCmd = &cobra.Command{
 			contents = []byte(configVarsJson)
 		}
 
-		if version != "" {
+		if latest {
+			apiclient.DisableCmdPrintHttpResponse()
+			// list integration versions, order by state=SNAPSHOT, page size = 1 and return basic info
+			respBody, err := integrations.ListVersions(name, 1, "", "state=SNAPSHOT",
+				"snapshot_number", false, false, true)
+			if err != nil {
+				return fmt.Errorf("unable to list versions: %v", err)
+			}
+			version, err = getIntegrationVersion(respBody)
+			if err != nil {
+				return err
+			}
+			apiclient.EnableCmdPrintHttpResponse()
 			_, err = integrations.Publish(name, version, contents)
+			info = "version " + version
+		} else if version != "" {
+			_, err = integrations.Publish(name, version, contents)
+			info = "version " + version
 		} else if userLabel != "" {
 			_, err = integrations.PublishUserLabel(name, userLabel, contents)
+			info = "user label " + userLabel
 		} else if snapshot != "" {
 			_, err = integrations.PublishSnapshot(name, snapshot, contents)
+			info = "snapshot number " + snapshot
+		}
+		if err == nil {
+			clilog.Info.Printf("Integration %s %s published successfully\n", name, info)
 		}
 		return err
 	},
 }
+
+var latest bool
 
 func init() {
 	var name, version, configVars, configVarsJson string
@@ -89,20 +116,41 @@ func init() {
 		"", "Path to file containing config variables")
 	PublishVerCmd.Flags().StringVarP(&configVarsJson, "config-vars-json", "",
 		"", "Json string containing the config variables if both Json string and file is present Json string will only be used.")
+	PublishVerCmd.Flags().BoolVarP(&latest, "latest", "",
+		true, "Publishes the integeration version with the highest snapshot number in SNAPSHOT state; default is true")
 
 	_ = PublishVerCmd.MarkFlagRequired("name")
 }
 
 func validate(version string) (err error) {
 	switch {
-	case version == "" && userLabel == "" && snapshot == "":
-		return errors.New("must pass oneOf version, snapshot or user-label")
-	case version != "" && (userLabel != "" || snapshot != ""):
-		return errors.New("must pass oneOf version, snapshot or user-label")
-	case userLabel != "" && (version != "" || snapshot != ""):
-		return errors.New("must pass oneOf version, snapshot or user-label")
-	case snapshot != "" && (userLabel != "" || version != ""):
-		return errors.New("must pass oneOf version, snapshot or user-label")
+	case !latest && (version == "" && userLabel == "" && snapshot == ""):
+		return errors.New("must pass oneOf version, snapshot or user-label or set latest to true")
+	case !latest && (version != "" && (userLabel != "" || snapshot != "")):
+		return errors.New("must pass oneOf version, snapshot or user-label or set latest to true")
+	case !latest && (userLabel != "" && (version != "" || snapshot != "")):
+		return errors.New("must pass oneOf version, snapshot or user-label or set latest to true")
+	case !latest && (snapshot != "" && (userLabel != "" || version != "")):
+		return errors.New("must pass oneOf version, snapshot or user-label or set latest to true")
+	case latest && (version != "" || userLabel != "" || snapshot != ""):
+		return errors.New("latest cannot be combined with version, snapshot or user-label")
 	}
 	return nil
+}
+
+func getIntegrationVersion(respBody []byte) (string, error) {
+	var data map[string]interface{}
+	err := json.Unmarshal(respBody, &data)
+	if err != nil {
+		return "", err
+	}
+	if data["integrationVersions"] == nil {
+		return "", fmt.Errorf("no integration versions were found")
+	}
+	integrationVersions := data["integrationVersions"].([]interface{})
+	firstIntegrationVersion := integrationVersions[0].(map[string]interface{})
+	if firstIntegrationVersion["version"].(string) == "" {
+		return "", fmt.Errorf("unable to extract version id from integration")
+	}
+	return firstIntegrationVersion["version"].(string), nil
 }
