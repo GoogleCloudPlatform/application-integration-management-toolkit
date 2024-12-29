@@ -92,6 +92,10 @@ var CreateCmd = &cobra.Command{
 		_, err = authconfigs.Create(content)
 		return err
 	},
+	Example: `Create a new user name auth config: ` + GetExample(0) + `
+Create a new OIDC auth config: ` + GetExample(1) + `
+Create a new auth token auth config: ` + GetExample(2) + `
+Create a new auth config from Cloud KMS Encrypted files: ` + GetExample(3),
 }
 
 var authConfigFile, encryptedFile, encryptionKey string

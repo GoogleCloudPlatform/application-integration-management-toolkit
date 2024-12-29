@@ -25,6 +25,13 @@ var Cmd = &cobra.Command{
 	Long:  "Manage integration auth configurations",
 }
 
+var examples = []string{
+	`integrationcli authconfigs create -f samples/ac_username.json`,
+	`integrationcli authconfigs create -f samples/ac_oidc.json`,
+	`integrationcli authconfigs create -f samples/ac_authtoken.json`,
+	`integrationcli authconfigs create -e samples/b64encoded_ac.txt -k locations/$region/keyRings/$key/cryptoKeys/$cryptokey`,
+}
+
 func init() {
 	var project, region string
 
@@ -40,4 +47,8 @@ func init() {
 	Cmd.AddCommand(ExportCmd)
 	Cmd.AddCommand(CreateCmd)
 	Cmd.AddCommand(PatchCmd)
+}
+
+func GetExample(i int) string {
+	return examples[i]
 }

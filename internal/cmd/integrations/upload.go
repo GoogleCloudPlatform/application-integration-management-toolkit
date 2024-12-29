@@ -60,10 +60,11 @@ func init() {
 	var name string
 
 	UploadCmd.Flags().StringVarP(&name, "name", "n",
-		"", "File containing Integration flow name")
+		"", "Integration flow name")
 	UploadCmd.Flags().StringVarP(&filePath, "file", "f",
-		"", "File containing an Integration flow json in stringified format. "+
-			"To send json, see integrationcli integrations versions patch")
+		"", "File containing an Integration flow json in the following format: \n"+
+			"{\n\t\"content\": The textproto of the IntegrationVersion,\n\t\"fileFormat\": Must be set to YAML or JSON\n}"+
+			"\nFor a sample see ./test/upload.json")
 
 	_ = UploadCmd.MarkFlagRequired("file")
 }
