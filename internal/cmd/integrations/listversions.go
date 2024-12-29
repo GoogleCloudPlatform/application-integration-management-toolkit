@@ -46,6 +46,8 @@ var ListVerCmd = &cobra.Command{
 			false, false, basic)
 		return err
 	},
+	Example: `Return a list of versions with basic information: ` + GetExample(3) + `
+Return the version that is published: ` + GetExample(4),
 }
 
 func init() {

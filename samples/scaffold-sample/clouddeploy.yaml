@@ -1,0 +1,28 @@
+apiVersion: deploy.cloud.google.com/v1
+kind: DeliveryPipeline
+metadata:
+  name: app-integration-pipeline
+serialPipeline:
+  stages:
+  - targetId: sample-env
+---
+
+apiVersion: deploy.cloud.google.com/v1
+kind: Target
+metadata:
+  name: sample-env
+customTarget:
+  customTargetType: app-integration-target
+---
+
+apiVersion: deploy.cloud.google.com/v1
+kind: CustomTargetType
+metadata:
+  name: app-integration-target
+customActions:
+  renderAction: render-app-integration
+  deployAction: deploy-app-integration
+deployParameters:
+  customTarget/Project: $PROJECT_ID
+  customTarget/Location: $REGION
+  customTarget/Env: dev

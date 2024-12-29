@@ -27,6 +27,27 @@ var Cmd = &cobra.Command{
 
 var userLabel, snapshot string
 
+var examples = []string{
+	`integrationcli integrations create -n $name -f samples/sample.json -u $userLabel --default-token`,
+	`integrationcli integrations create -n $name -f samples/sample.json -o samples/sample_overrides.json --default-token`,
+	`integrationcli integrations create -n $name -f samples/sample.json --publish=true --default-token`,
+	`integrationcli integrations versions list -n $integration --basic=true --default-token`,
+	`integrationcli integrations versions list -n $integration --basic=true --filter=state=ACTIVE --default-token`,
+	`integrationcli integrations scaffold -n $integration -s $snapshot -f . --env=dev --default-token`,
+	`integrationcli integrations scaffold -n $integration -s $snapshot -f . --skip-connectors=true --default-token`,
+	`integrationcli integrations scaffold -n $integration -s $snapshot -f . --cloud-build=true --default-token`,
+	`integrationcli integrations scaffold -n $integration -s $snapshot -f . --cloud-deploy=true --default-token`,
+	`integrationcli integrations apply -f . --wait=true --default-token`,
+	`integrationcli integrations apply -f . --env=dev --default-token`,
+	`integrationcli integrations apply -f . --grant-permission=true --default-token`,
+	`integrationcli integrations apply -f . --skip-connectors=true --default-token`,
+	`integrationcli integrations create -n $name -f samples/sample.json --basic=true --default-token`,
+	`integrationcli integrations versions publish -n $name --default-token`,
+	`integrationcli integrations versions publish -n $name -s $snapshot --default-token`,
+	`integrationcli integrations versions unpublish -n $name --default-token`,
+	`integrationcli integrations versions unpublish -n $name -u $userLabel --default-token`,
+}
+
 func init() {
 	var project, region string
 
@@ -48,4 +69,8 @@ func init() {
 	Cmd.AddCommand(DelCmd)
 	Cmd.AddCommand(ScaffoldCmd)
 	Cmd.AddCommand(ApplyCmd)
+}
+
+func GetExample(i int) string {
+	return examples[i]
 }

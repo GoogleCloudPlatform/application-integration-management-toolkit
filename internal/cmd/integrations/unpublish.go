@@ -15,8 +15,10 @@
 package integrations
 
 import (
+	"fmt"
 	"internal/apiclient"
 	"internal/client/integrations"
+	"internal/clilog"
 
 	"github.com/spf13/cobra"
 )
@@ -43,15 +45,37 @@ var UnPublishVerCmd = &cobra.Command{
 		version := cmd.Flag("ver").Value.String()
 		name := cmd.Flag("name").Value.String()
 
-		if version != "" {
+		var info string
+
+		if latest {
+			apiclient.DisableCmdPrintHttpResponse()
+			// list integration versions, order by state=ACTIVE, page size = 1 and return basic info
+			respBody, err := integrations.ListVersions(name, 1, "", "state=ACTIVE",
+				"snapshot_number", false, false, true)
+			if err != nil {
+				return fmt.Errorf("unable to list versions: %v", err)
+			}
+			version, err = getIntegrationVersion(respBody)
+			if err != nil {
+				return err
+			}
+			apiclient.EnableCmdPrintHttpResponse()
+			_, err = integrations.Unpublish(name, version)
+			info = "version " + version
+		} else if version != "" {
 			_, err = integrations.Unpublish(name, version)
 		} else if userLabel != "" {
 			_, err = integrations.UnpublishUserLabel(name, userLabel)
 		} else if snapshot != "" {
 			_, err = integrations.UnpublishSnapshot(name, snapshot)
 		}
+		if err == nil {
+			clilog.Info.Printf("Integration %s %s unpublished successfully\n", name, info)
+		}
 		return err
 	},
+	Example: `Unpublishes an integration vesion with the highest snapshot in SNAPHOST state: ` + GetExample(16) + `
+Unpublishes an integration version that matches user supplied user label: ` + GetExample(17),
 }
 
 func init() {
@@ -65,6 +89,8 @@ func init() {
 		"", "Integration flow user label")
 	UnPublishVerCmd.Flags().StringVarP(&snapshot, "snapshot", "s",
 		"", "Integration flow snapshot number")
+	UnPublishVerCmd.Flags().BoolVarP(&latest, "latest", "",
+		true, "Unpublishes the integeration version with the highest snapshot number in SNAPSHOT state; default is true")
 
 	_ = UnPublishVerCmd.MarkFlagRequired("name")
 }
