@@ -19,6 +19,7 @@ import (
 	"internal/apiclient"
 	"internal/client/integrations"
 	"internal/clilog"
+	"strconv"
 
 	"github.com/spf13/cobra"
 )
@@ -32,20 +33,27 @@ var UnPublishVerCmd = &cobra.Command{
 		cmdProject := cmd.Flag("proj")
 		cmdRegion := cmd.Flag("reg")
 		version := cmd.Flag("ver").Value.String()
+		userLabel := cmd.Flag("user-label").Value.String()
+		snapshot := cmd.Flag("snapshot").Value.String()
+		latest, _ := strconv.ParseBool(cmd.Flag("latest").Value.String())
 
 		if err = apiclient.SetRegion(cmdRegion.Value.String()); err != nil {
 			return err
 		}
-		if err = validate(version); err != nil {
+		if err = validate(version, userLabel, snapshot, latest); err != nil {
 			return err
 		}
 		return apiclient.SetProjectID(cmdProject.Value.String())
 	},
 	RunE: func(cmd *cobra.Command, args []string) (err error) {
 		version := cmd.Flag("ver").Value.String()
+		userLabel := cmd.Flag("user-label").Value.String()
+		snapshot := cmd.Flag("snapshot").Value.String()
 		name := cmd.Flag("name").Value.String()
 
 		var info string
+
+		latest := ignoreLatest(version, userLabel, snapshot)
 
 		if latest {
 			apiclient.DisableCmdPrintHttpResponse()
@@ -79,7 +87,8 @@ Unpublishes an integration version that matches user supplied user label: ` + Ge
 }
 
 func init() {
-	var name, version string
+	var name, userLabel, snapshot, version string
+	var latest bool
 
 	UnPublishVerCmd.Flags().StringVarP(&name, "name", "n",
 		"", "Integration flow name")

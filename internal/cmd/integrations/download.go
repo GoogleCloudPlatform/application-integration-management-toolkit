@@ -15,8 +15,10 @@
 package integrations
 
 import (
+	"fmt"
 	"internal/apiclient"
 	"internal/client/integrations"
+	"strconv"
 
 	"github.com/spf13/cobra"
 )
@@ -30,20 +32,41 @@ var DownloadVerCmd = &cobra.Command{
 		cmdProject := cmd.Flag("proj")
 		cmdRegion := cmd.Flag("reg")
 		version := cmd.Flag("ver").Value.String()
+		userLabel := cmd.Flag("user-label").Value.String()
+		snapshot := cmd.Flag("snapshot").Value.String()
+		latest, _ := strconv.ParseBool(cmd.Flag("latest").Value.String())
 
 		if err = apiclient.SetRegion(cmdRegion.Value.String()); err != nil {
 			return err
 		}
-		if err = validate(version); err != nil {
+		if err = validate(version, userLabel, snapshot, latest); err != nil {
 			return err
 		}
 		return apiclient.SetProjectID(cmdProject.Value.String())
 	},
 	RunE: func(cmd *cobra.Command, args []string) (err error) {
 		version := cmd.Flag("ver").Value.String()
+		userLabel := cmd.Flag("user-label").Value.String()
+		snapshot := cmd.Flag("snapshot").Value.String()
 		name := cmd.Flag("name").Value.String()
 
-		if version != "" {
+		latest := ignoreLatest(version, userLabel, snapshot)
+
+		if latest {
+			apiclient.DisableCmdPrintHttpResponse()
+			// list integration versions, order by state=SNAPSHOT, page size = 1 and return basic info
+			respBody, err := integrations.ListVersions(name, 1, "", "state=SNAPSHOT",
+				"snapshot_number", false, false, true)
+			if err != nil {
+				return fmt.Errorf("unable to list versions: %v", err)
+			}
+			version, err = getIntegrationVersion(respBody)
+			if err != nil {
+				return err
+			}
+			apiclient.EnableCmdPrintHttpResponse()
+			_, err = integrations.Download(name, version)
+		} else if version != "" {
 			_, err = integrations.Download(name, version)
 		} else if userLabel != "" {
 			_, err = integrations.DownloadUserLabel(name, userLabel)
@@ -55,7 +78,8 @@ var DownloadVerCmd = &cobra.Command{
 }
 
 func init() {
-	var name, version string
+	var name, userLabel, snapshot, version string
+	var latest bool
 
 	DownloadVerCmd.Flags().StringVarP(&name, "name", "n",
 		"", "Integration flow name")
@@ -65,6 +89,8 @@ func init() {
 		"", "Integration flow user label")
 	DownloadVerCmd.Flags().StringVarP(&snapshot, "snapshot", "s",
 		"", "Integration flow snapshot number")
+	DownloadVerCmd.Flags().BoolVarP(&latest, "latest", "",
+		true, "Downloads the integeration version with the highest snapshot number in SNAPSHOT state; default is true")
 
 	_ = DownloadVerCmd.MarkFlagRequired("name")
 }

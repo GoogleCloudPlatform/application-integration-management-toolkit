@@ -15,8 +15,10 @@
 package integrations
 
 import (
+	"fmt"
 	"internal/apiclient"
 	"internal/client/integrations"
+	"strconv"
 
 	"github.com/spf13/cobra"
 )
@@ -28,19 +30,41 @@ var ArchiveVerCmd = &cobra.Command{
 	Long:  "Archives an integration flow version",
 	Args: func(cmd *cobra.Command, args []string) (err error) {
 		version := cmd.Flag("ver").Value.String()
+		userLabel := cmd.Flag("user-label").Value.String()
+		snapshot := cmd.Flag("snapshot").Value.String()
+		latest, _ := strconv.ParseBool(cmd.Flag("latest").Value.String())
 
 		if err = apiclient.SetRegion(cmd.Flag("reg").Value.String()); err != nil {
 			return err
 		}
-		if err = validate(version); err != nil {
+		if err = validate(version, userLabel, snapshot, latest); err != nil {
 			return err
 		}
 		return apiclient.SetProjectID(cmd.Flag("proj").Value.String())
 	},
 	RunE: func(cmd *cobra.Command, args []string) (err error) {
 		version := cmd.Flag("ver").Value.String()
+		userLabel := cmd.Flag("user-label").Value.String()
+		snapshot := cmd.Flag("snapshot").Value.String()
 		name := cmd.Flag("name").Value.String()
-		if version != "" {
+
+		latest := ignoreLatest(version, userLabel, snapshot)
+
+		if latest {
+			apiclient.DisableCmdPrintHttpResponse()
+			// list integration versions, order by state=SNAPSHOT, page size = 1 and return basic info
+			respBody, err := integrations.ListVersions(name, 1, "", "state=SNAPSHOT",
+				"snapshot_number", false, false, true)
+			if err != nil {
+				return fmt.Errorf("unable to list versions: %v", err)
+			}
+			version, err = getIntegrationVersion(respBody)
+			if err != nil {
+				return err
+			}
+			apiclient.EnableCmdPrintHttpResponse()
+			_, err = integrations.Archive(name, version)
+		} else if version != "" {
 			_, err = integrations.Archive(name, version)
 		} else if userLabel != "" {
 			_, err = integrations.ArchiveUserLabel(name, userLabel)
@@ -52,7 +76,8 @@ var ArchiveVerCmd = &cobra.Command{
 }
 
 func init() {
-	var name, version string
+	var name, userLabel, snapshot, version string
+	var latest bool
 
 	ArchiveVerCmd.Flags().StringVarP(&name, "name", "n",
 		"", "Integration flow name")
@@ -62,6 +87,8 @@ func init() {
 		"", "Integration flow user label")
 	ArchiveVerCmd.Flags().StringVarP(&snapshot, "snapshot", "s",
 		"", "Integration flow snapshot number")
+	ArchiveVerCmd.Flags().BoolVarP(&latest, "latest", "",
+		true, "Archives the integeration version with the highest snapshot number in SNAPSHOT state; default is true")
 
 	_ = ArchiveVerCmd.MarkFlagRequired("name")
 }
