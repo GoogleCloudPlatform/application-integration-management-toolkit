@@ -25,7 +25,7 @@ var Cmd = &cobra.Command{
 	Long:  "Manage integrations in a GCP project",
 }
 
-var userLabel, snapshot string
+//var userLabel, snapshot string
 
 var examples = []string{
 	`integrationcli integrations create -n $name -f samples/sample.json -u $userLabel --default-token`,

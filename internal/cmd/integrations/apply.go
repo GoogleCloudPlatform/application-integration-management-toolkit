@@ -85,6 +85,7 @@ var ApplyCmd = &cobra.Command{
 
 		createSecret, _ := strconv.ParseBool(cmd.Flag("create-secret").Value.String())
 		grantPermission, _ := strconv.ParseBool(cmd.Flag("grant-permission").Value.String())
+		userLabel := cmd.Flag("user-label").Value.String()
 		wait, _ := strconv.ParseBool(cmd.Flag("wait").Value.String())
 
 		integrationFolder := path.Join(srcFolder, "src")
@@ -137,7 +138,7 @@ var ApplyCmd = &cobra.Command{
 		}
 
 		if err = processIntegration(overridesFile, integrationFolder,
-			configVarsFolder, pipeline, grantPermission); err != nil {
+			configVarsFolder, pipeline, userLabel, grantPermission); err != nil {
 			return err
 		}
 
@@ -152,6 +153,7 @@ Apply scaffold configuration, but skip connectors: ` + GetExample(12),
 var serviceAccountName, serviceAccountProject, encryptionKey, pipeline, release, outputGCSPath string
 
 func init() {
+	var userLabel string
 	grantPermission, createSecret, wait := false, false, false
 
 	ApplyCmd.Flags().StringVarP(&folder, "folder", "f",
@@ -529,7 +531,7 @@ func processSfdcChannels(sfdcchannelsFolder string) (err error) {
 }
 
 func processIntegration(overridesFile string, integrationFolder string,
-	configVarsFolder string, pipeline string, grantPermission bool,
+	configVarsFolder string, pipeline string, userLabel string, grantPermission bool,
 ) (err error) {
 	rJSONFiles := regexp.MustCompile(`(\S*)\.json$`)
 

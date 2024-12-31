@@ -53,6 +53,8 @@ var CreateCmd = &cobra.Command{
 		var overridesContent, contents []byte
 
 		name := cmd.Flag("name").Value.String()
+		userLabel := cmd.Flag("user-label").Value.String()
+		snapshot := cmd.Flag("snapshot").Value.String()
 		configVarsJson := cmd.Flag("config-vars-json").Value.String()
 		configVarsFile := cmd.Flag("config-vars").Value.String()
 
@@ -127,7 +129,7 @@ var (
 )
 
 func init() {
-	var name, configVars, configVarsJson string
+	var name, userLabel, snapshot, configVars, configVarsJson string
 
 	CreateCmd.Flags().StringVarP(&name, "name", "n",
 		"", "Integration flow name")

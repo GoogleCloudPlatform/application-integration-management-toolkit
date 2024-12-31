@@ -32,6 +32,8 @@ var GetVerCmd = &cobra.Command{
 		cmdProject := cmd.Flag("proj")
 		cmdRegion := cmd.Flag("reg")
 		version := cmd.Flag("ver").Value.String()
+		userLabel := cmd.Flag("user-label").Value.String()
+		snapshot := cmd.Flag("snapshot").Value.String()
 
 		if err = apiclient.SetRegion(cmdRegion.Value.String()); err != nil {
 			return err
@@ -68,6 +70,8 @@ var GetVerCmd = &cobra.Command{
 		overrides, _ := strconv.ParseBool(cmd.Flag("overrides").Value.String())
 		basic, _ := strconv.ParseBool(cmd.Flag("basic").Value.String())
 		configVar, _ := strconv.ParseBool(cmd.Flag("config-vars").Value.String())
+		userLabel := cmd.Flag("user-label").Value.String()
+		snapshot := cmd.Flag("snapshot").Value.String()
 
 		if configVar {
 			apiclient.DisableCmdPrintHttpResponse()
@@ -100,7 +104,7 @@ var GetVerCmd = &cobra.Command{
 }
 
 func init() {
-	var name, version string
+	var name, userLabel, snapshot, version string
 	minimal, overrides, basic, configVar := false, false, false, false
 
 	GetVerCmd.Flags().StringVarP(&name, "name", "n",

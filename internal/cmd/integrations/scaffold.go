@@ -40,6 +40,8 @@ var ScaffoldCmd = &cobra.Command{
 		cmdProject := cmd.Flag("proj")
 		cmdRegion := cmd.Flag("reg")
 		version := cmd.Flag("ver").Value.String()
+		userLabel := cmd.Flag("user-label").Value.String()
+		snapshot := cmd.Flag("snapshot").Value.String()
 
 		if err = apiclient.SetRegion(cmdRegion.Value.String()); err != nil {
 			return err
@@ -47,7 +49,7 @@ var ScaffoldCmd = &cobra.Command{
 		if userLabel == "" && version == "" && snapshot == "" {
 			return errors.New("at least one of userLabel, version or snapshot must be passed")
 		}
-		if err = validate(version); err != nil {
+		if err = validate(version, userLabel, snapshot, false); err != nil {
 			return err
 		}
 		return apiclient.SetProjectID(cmdProject.Value.String())
@@ -57,6 +59,8 @@ var ScaffoldCmd = &cobra.Command{
 		var fileSplitter string
 		var integrationBody, overridesBody []byte
 		version := cmd.Flag("ver").Value.String()
+		userLabel := cmd.Flag("user-label").Value.String()
+		snapshot := cmd.Flag("snapshot").Value.String()
 		name := cmd.Flag("name").Value.String()
 
 		apiclient.DisableCmdPrintHttpResponse()
@@ -378,7 +382,7 @@ var (
 )
 
 func init() {
-	var name, version string
+	var name, userLabel, snapshot, version string
 
 	ScaffoldCmd.Flags().StringVarP(&name, "name", "n",
 		"", "Integration flow name")

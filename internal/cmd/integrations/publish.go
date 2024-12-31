@@ -22,6 +22,7 @@ import (
 	"internal/client/integrations"
 	"internal/clilog"
 	"os"
+	"strconv"
 
 	"github.com/spf13/cobra"
 )
@@ -35,20 +36,26 @@ var PublishVerCmd = &cobra.Command{
 		cmdProject := cmd.Flag("proj")
 		cmdRegion := cmd.Flag("reg")
 		version := cmd.Flag("ver").Value.String()
+		userLabel := cmd.Flag("user-label").Value.String()
+		snapshot := cmd.Flag("snapshot").Value.String()
+		latest, _ := strconv.ParseBool(cmd.Flag("latest").Value.String())
 
 		if err = apiclient.SetRegion(cmdRegion.Value.String()); err != nil {
 			return err
 		}
-		if err = validate(version); err != nil {
+		if err = validate(version, userLabel, snapshot, latest); err != nil {
 			return err
 		}
 		return apiclient.SetProjectID(cmdProject.Value.String())
 	},
 	RunE: func(cmd *cobra.Command, args []string) (err error) {
 		version := cmd.Flag("ver").Value.String()
+		userLabel := cmd.Flag("user-label").Value.String()
+		snapshot := cmd.Flag("snapshot").Value.String()
 		name := cmd.Flag("name").Value.String()
 		configVarsJson := cmd.Flag("config-vars-json").Value.String()
 		configVarsFile := cmd.Flag("config-vars").Value.String()
+
 		var contents []byte
 		var info string
 
@@ -66,6 +73,8 @@ var PublishVerCmd = &cobra.Command{
 		} else {
 			contents = []byte(configVarsJson)
 		}
+
+		latest := ignoreLatest(version, userLabel, snapshot)
 
 		if latest {
 			apiclient.DisableCmdPrintHttpResponse()
@@ -97,14 +106,13 @@ var PublishVerCmd = &cobra.Command{
 		}
 		return err
 	},
-	Example: `Publishes an integration vesion with the highest snapshot in SNAPHOST state: ` + GetExample(14) + `
+	Example: `Publishes an integration vesion with the highest snapshot in SNAPSHOT state: ` + GetExample(14) + `
 Publishes an integration version that matches user supplied snapshot number: ` + GetExample(15),
 }
 
-var latest bool
-
 func init() {
-	var name, version, configVars, configVarsJson string
+	var name, version, userLabel, snapshot, configVars, configVarsJson string
+	var latest bool
 
 	PublishVerCmd.Flags().StringVarP(&name, "name", "n",
 		"", "Integration flow name")
@@ -124,20 +132,25 @@ func init() {
 	_ = PublishVerCmd.MarkFlagRequired("name")
 }
 
-func validate(version string) (err error) {
+func validate(version string, userLabel string, snapshot string, latest bool) (err error) {
 	switch {
 	case !latest && (version == "" && userLabel == "" && snapshot == ""):
-		return errors.New("must pass oneOf version, snapshot or user-label or set latest to true")
+		return errors.New("must pass oneOf version, snapshot or user-label")
 	case !latest && (version != "" && (userLabel != "" || snapshot != "")):
-		return errors.New("must pass oneOf version, snapshot or user-label or set latest to true")
+		return errors.New("must pass oneOf version, snapshot or user-label")
 	case !latest && (userLabel != "" && (version != "" || snapshot != "")):
-		return errors.New("must pass oneOf version, snapshot or user-label or set latest to true")
+		return errors.New("must pass oneOf version, snapshot or user-label")
 	case !latest && (snapshot != "" && (userLabel != "" || version != "")):
-		return errors.New("must pass oneOf version, snapshot or user-label or set latest to true")
-	case latest && (version != "" || userLabel != "" || snapshot != ""):
-		return errors.New("latest cannot be combined with version, snapshot or user-label")
+		return errors.New("must pass oneOf version, snapshot or user-label")
 	}
 	return nil
+}
+
+func ignoreLatest(version string, userLabel string, snapshot string) (latest bool) {
+	if version != "" || userLabel != "" || snapshot != "" {
+		return false
+	}
+	return true
 }
 
 func getIntegrationVersion(respBody []byte) (string, error) {

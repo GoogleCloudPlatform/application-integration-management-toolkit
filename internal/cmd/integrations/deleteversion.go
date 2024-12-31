@@ -31,6 +31,8 @@ var DelVerCmd = &cobra.Command{
 		project := cmd.Flag("proj").Value.String()
 		region := cmd.Flag("reg").Value.String()
 		version := cmd.Flag("ver").Value.String()
+		userLabel := cmd.Flag("user-label").Value.String()
+		snapshot := cmd.Flag("snapshot").Value.String()
 
 		if err = apiclient.SetRegion(region); err != nil {
 			return err
@@ -51,6 +53,8 @@ var DelVerCmd = &cobra.Command{
 	},
 	RunE: func(cmd *cobra.Command, args []string) (err error) {
 		version := cmd.Flag("ver").Value.String()
+		userLabel := cmd.Flag("user-label").Value.String()
+		snapshot := cmd.Flag("snapshot").Value.String()
 		name := cmd.Flag("name").Value.String()
 
 		if version != "" {
@@ -65,7 +69,7 @@ var DelVerCmd = &cobra.Command{
 }
 
 func init() {
-	var name, version string
+	var name, userLabel, snapshot, version string
 
 	DelVerCmd.Flags().StringVarP(&name, "name", "n",
 		"", "Integration flow name")
