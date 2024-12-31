@@ -63,6 +63,7 @@ func init() {
 	Cmd.AddCommand(ManagedZonesCmd)
 	Cmd.AddCommand(CustomCmd)
 	Cmd.AddCommand(EventSubCmd)
+	Cmd.AddCommand(RepairCmd)
 }
 
 func GetExample(i int) string {
