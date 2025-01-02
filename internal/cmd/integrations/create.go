@@ -22,6 +22,8 @@ import (
 	"os"
 	"strings"
 
+	"internal/cmd/utils"
+
 	"github.com/spf13/cobra"
 )
 
@@ -52,11 +54,11 @@ var CreateCmd = &cobra.Command{
 	RunE: func(cmd *cobra.Command, args []string) (err error) {
 		var overridesContent, contents []byte
 
-		name := cmd.Flag("name").Value.String()
-		userLabel := cmd.Flag("user-label").Value.String()
-		snapshot := cmd.Flag("snapshot").Value.String()
-		configVarsJson := cmd.Flag("config-vars-json").Value.String()
-		configVarsFile := cmd.Flag("config-vars").Value.String()
+		name := utils.GetStringParam(cmd.Flag("name"))
+		userLabel := utils.GetStringParam(cmd.Flag("user-label"))
+		snapshot := utils.GetStringParam(cmd.Flag("snapshot"))
+		configVarsJson := utils.GetStringParam(cmd.Flag("config-vars-json"))
+		configVarsFile := utils.GetStringParam(cmd.Flag("config-vars"))
 
 		if configVarsJson == "" {
 			if configVarsFile != "" {

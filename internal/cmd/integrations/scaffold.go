@@ -58,10 +58,10 @@ var ScaffoldCmd = &cobra.Command{
 		const jsonExt = ".json"
 		var fileSplitter string
 		var integrationBody, overridesBody []byte
-		version := cmd.Flag("ver").Value.String()
-		userLabel := cmd.Flag("user-label").Value.String()
-		snapshot := cmd.Flag("snapshot").Value.String()
-		name := cmd.Flag("name").Value.String()
+		version := utils.GetStringParam(cmd.Flag("ver"))
+		userLabel := utils.GetStringParam(cmd.Flag("user-label"))
+		snapshot := utils.GetStringParam(cmd.Flag("snapshot"))
+		name := utils.GetStringParam(cmd.Flag("name"))
 
 		apiclient.DisableCmdPrintHttpResponse()
 

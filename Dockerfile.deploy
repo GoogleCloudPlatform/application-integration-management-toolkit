@@ -52,6 +52,7 @@ RUN adduser -D $USER \
     && chmod 0440 /etc/sudoers.d/$USER
 
 COPY --from=jq /jq /usr/local/bin/jq
+COPY --chown=nonroot:nonroot integrationcli-action /usr/local/bin/integrationcli-action
 COPY LICENSE.txt /
 COPY third-party-licenses.txt /
 COPY --from=builder /go/bin/integrationcli /usr/local/bin/integrationcli

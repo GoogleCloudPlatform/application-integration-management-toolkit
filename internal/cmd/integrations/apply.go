@@ -83,10 +83,10 @@ var ApplyCmd = &cobra.Command{
 			return fmt.Errorf("problem with supplied path, %w", err)
 		}
 
-		createSecret, _ := strconv.ParseBool(cmd.Flag("create-secret").Value.String())
-		grantPermission, _ := strconv.ParseBool(cmd.Flag("grant-permission").Value.String())
-		userLabel := cmd.Flag("user-label").Value.String()
-		wait, _ := strconv.ParseBool(cmd.Flag("wait").Value.String())
+		createSecret, _ := strconv.ParseBool(utils.GetStringParam(cmd.Flag("create-secret")))
+		grantPermission, _ := strconv.ParseBool(utils.GetStringParam(cmd.Flag("grant-permission")))
+		userLabel := utils.GetStringParam(cmd.Flag("user-label"))
+		wait, _ := strconv.ParseBool(utils.GetStringParam(cmd.Flag("wait")))
 
 		integrationFolder := path.Join(srcFolder, "src")
 		authconfigFolder := path.Join(folder, "authconfigs")
