@@ -53,8 +53,10 @@ var CrtCustomCmd = &cobra.Command{
 	Example: `Create a custom connector for OPEN_API type: ` + GetExample(3),
 }
 
-var labels map[string]string
-var connType ConnectorType
+var (
+	labels   map[string]string
+	connType ConnectorType
+)
 
 func init() {
 	var name, description, displayName string
