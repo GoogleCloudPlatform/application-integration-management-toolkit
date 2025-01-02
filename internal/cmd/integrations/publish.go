@@ -38,8 +38,13 @@ var PublishVerCmd = &cobra.Command{
 		version := cmd.Flag("ver").Value.String()
 		userLabel := cmd.Flag("user-label").Value.String()
 		snapshot := cmd.Flag("snapshot").Value.String()
+		configVarsJson := cmd.Flag("config-vars-json").Value.String()
+		configVarsFile := cmd.Flag("config-vars").Value.String()
 		latest, _ := strconv.ParseBool(cmd.Flag("latest").Value.String())
 
+		if configVarsFile != "" && configVarsJson != "" {
+			return fmt.Errorf("cannot use config-vars and config-vars-json flags together")
+		}
 		if err = apiclient.SetRegion(cmdRegion.Value.String()); err != nil {
 			return err
 		}
@@ -59,18 +64,18 @@ var PublishVerCmd = &cobra.Command{
 		var contents []byte
 		var info string
 
-		if configVarsJson == "" {
-			if configVarsFile != "" {
-				if _, err := os.Stat(configVarsFile); os.IsNotExist(err) {
-					return err
-				}
-
-				contents, err = os.ReadFile(configVarsFile)
-				if err != nil {
-					return err
-				}
+		if configVarsFile != "" {
+			if _, err := os.Stat(configVarsFile); os.IsNotExist(err) {
+				return err
 			}
-		} else {
+
+			contents, err = os.ReadFile(configVarsFile)
+			if err != nil {
+				return err
+			}
+		}
+
+		if configVarsJson != "" {
 			contents = []byte(configVarsJson)
 		}
 
@@ -125,7 +130,7 @@ func init() {
 	PublishVerCmd.Flags().StringVarP(&configVars, "config-vars", "",
 		"", "Path to file containing config variables")
 	PublishVerCmd.Flags().StringVarP(&configVarsJson, "config-vars-json", "",
-		"", "Json string containing the config variables if both Json string and file is present Json string will only be used.")
+		"", "JSON string containing the config variables.")
 	PublishVerCmd.Flags().BoolVarP(&latest, "latest", "",
 		true, "Publishes the integeration version with the highest snapshot number in SNAPSHOT state; default is true")
 
