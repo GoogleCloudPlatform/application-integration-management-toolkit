@@ -1,0 +1,66 @@
+# Copyright 2025 Google LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+# this github action publishes a new integration version
+# it also includes any overrides present in overrides.json and config-vars files.
+# this sample is using the example in samples/scaffold-example
+
+name: integrationcli-github-action
+permissions: read-all
+
+# Controls when the workflow will run
+on: push
+
+env:
+  ENVIRONMENT: 'dev'
+  PROJECT_ID: ${{ vars.PROJECT_ID }}
+  REGION: ${{ vars.REGION }}
+  WORKLOAD_IDENTITY_PROVIDER_NAME: ${{ vars.PROVIDER_NAME }}
+  SERVICE_ACCOUNT: ${{ vars.SERVICE_ACCOUNT }}
+
+jobs:
+
+  integrationcli:
+
+    permissions:
+      contents: 'read'
+      idtoken: 'write'
+
+    name: Apply integration version
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@1e31de5234b9f8995739874a8ce0492dc87873e2 #v4
+
+      - name: Authenticate Google Cloud
+        id: 'gcp-auth'
+        uses: google-github-actions/auth@6fc4af4b145ae7821d527454aa9bd537d1f2dc5f #v2.1.7
+        with:
+          workload_identity_provider: '${{ env.WORKLOAD_IDENTITY_PROVIDER_NAME }}'
+          service_account: '${{ env.SERVICE_ACCOUNT }}'
+          token_format: 'access_token'
+
+      - name: Calculate variables
+        id: 'calc-vars'
+        run: |
+          echo "SHORT_SHA=$(git rev-parse --short $GITHUB_SHA)" >> $GITHUB_OUTPUT
+          echo "INTEGRATION_FILE=$(find src -name '*.json')" >> $GITHUB_OUTPUT
+          echo "INTEGRATION_NAME=$(basename $INTEGRATION_FILE .json)" >> $GITHUB_OUTPUT
+
+      - name: Create and Publish Integration
+        id: 'publish-integration'
+        uses: docker://us-docker.pkg.dev/appintegration-toolkit/images/integrationcli:v0.79.0 #pin to version of choice
+        with:
+          args: integrations apply --name=${{ steps.calc-vars.outputs.INTEGRATION_NAME }} --env=${{ vars.ENVIRONMENT}} --folder=. --userlabel=${{ steps.calc-vars.outputs.SHORT_SHA }} --wait=true --token ${{ steps.gcp-auth.outputs.access_token }}
