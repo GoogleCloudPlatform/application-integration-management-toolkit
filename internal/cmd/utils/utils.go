@@ -18,6 +18,8 @@ import (
 	"fmt"
 	"io"
 	"os"
+
+	"github.com/spf13/pflag"
 )
 
 const (
@@ -183,4 +185,12 @@ func ReadFile(filePath string) (byteValue []byte, err error) {
 		return nil, err
 	}
 	return byteValue, err
+}
+
+func GetStringParam(flag *pflag.Flag) (param string) {
+	param = ""
+	if flag != nil {
+		param = flag.Value.String()
+	}
+	return param
 }

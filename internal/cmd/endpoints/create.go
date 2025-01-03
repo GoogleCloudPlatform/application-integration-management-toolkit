@@ -19,6 +19,7 @@ import (
 	"internal/apiclient"
 	"internal/client/connections"
 	"internal/clilog"
+	"internal/cmd/utils"
 	"regexp"
 	"strconv"
 
@@ -32,8 +33,8 @@ var CreateCmd = &cobra.Command{
 	Short: "Create an endpoint attachments in the region",
 	Long:  "Create an endpoint attachments in the region",
 	Args: func(cmd *cobra.Command, args []string) (err error) {
-		project := cmd.Flag("proj").Value.String()
-		region := cmd.Flag("reg").Value.String()
+		project := utils.GetStringParam(cmd.Flag("proj"))
+		region := utils.GetStringParam(cmd.Flag("reg"))
 
 		if err = apiclient.SetRegion(region); err != nil {
 			return err
@@ -44,10 +45,12 @@ var CreateCmd = &cobra.Command{
 		return apiclient.SetProjectID(project)
 	},
 	RunE: func(cmd *cobra.Command, args []string) (err error) {
-		name := cmd.Flag("name").Value.String()
-		serviceAttachment := cmd.Flag("service-attachment").Value.String()
-		description := cmd.Flag("description").Value.String()
-		wait, _ := strconv.ParseBool(cmd.Flag("wait").Value.String())
+		cmd.SilenceUsage = true
+
+		name := utils.GetStringParam(cmd.Flag("name"))
+		serviceAttachment := utils.GetStringParam(cmd.Flag("service-attachment"))
+		description := utils.GetStringParam(cmd.Flag("description"))
+		wait, _ := strconv.ParseBool(utils.GetStringParam(cmd.Flag("wait")))
 
 		re := regexp.MustCompile(`projects\/([a-zA-Z0-9_-]+)\/regions` +
 			`\/([a-zA-Z0-9_-]+)\/serviceAttachments\/([a-zA-Z0-9_-]+)`)

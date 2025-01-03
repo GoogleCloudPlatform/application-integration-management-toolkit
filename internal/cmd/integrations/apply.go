@@ -46,7 +46,7 @@ var ApplyCmd = &cobra.Command{
 		cmdProject := cmd.Flag("proj")
 		cmdRegion := cmd.Flag("reg")
 
-		if err = apiclient.SetRegion(cmdRegion.Value.String()); err != nil {
+		if err = apiclient.SetRegion(utils.GetStringParam(cmdRegion)); err != nil {
 			return err
 		}
 		if folder == "" && (pipeline == "" || release == "" || outputGCSPath == "") {
@@ -63,9 +63,11 @@ var ApplyCmd = &cobra.Command{
 		cmd.Flags().VisitAll(func(f *pflag.Flag) {
 			clilog.Debug.Printf("%s: %s\n", f.Name, f.Value)
 		})
-		return apiclient.SetProjectID(cmdProject.Value.String())
+		return apiclient.SetProjectID(utils.GetStringParam(cmdProject))
 	},
 	RunE: func(cmd *cobra.Command, args []string) (err error) {
+		cmd.SilenceUsage = true
+
 		var skaffoldConfigUri string
 
 		if folder == "" {
@@ -87,10 +89,10 @@ var ApplyCmd = &cobra.Command{
 			return fmt.Errorf("problem with supplied path, %w", err)
 		}
 
-		createSecret, _ := strconv.ParseBool(cmd.Flag("create-secret").Value.String())
-		grantPermission, _ := strconv.ParseBool(cmd.Flag("grant-permission").Value.String())
-		userLabel := cmd.Flag("user-label").Value.String()
-		wait, _ := strconv.ParseBool(cmd.Flag("wait").Value.String())
+		createSecret, _ := strconv.ParseBool(utils.GetStringParam(cmd.Flag("create-secret")))
+		grantPermission, _ := strconv.ParseBool(utils.GetStringParam(cmd.Flag("grant-permission")))
+		userLabel := utils.GetStringParam(cmd.Flag("user-label"))
+		wait, _ := strconv.ParseBool(utils.GetStringParam(cmd.Flag("wait")))
 
 		integrationFolder := path.Join(srcFolder, "src")
 		authconfigFolder := path.Join(folder, "authconfigs")

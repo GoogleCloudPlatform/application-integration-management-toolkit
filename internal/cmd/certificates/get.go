@@ -19,6 +19,7 @@ import (
 	"internal/apiclient"
 	"internal/client/certificates"
 	"internal/clilog"
+	"internal/cmd/utils"
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
@@ -30,10 +31,10 @@ var GetCmd = &cobra.Command{
 	Short: "Get certificate details from a region",
 	Long:  "Get certificate details from a region",
 	Args: func(cmd *cobra.Command, args []string) (err error) {
-		project := cmd.Flag("proj").Value.String()
-		region := cmd.Flag("reg").Value.String()
-		name := cmd.Flag("name").Value.String()
-		id := cmd.Flag("id").Value.String()
+		project := utils.GetStringParam(cmd.Flag("proj"))
+		region := utils.GetStringParam(cmd.Flag("reg"))
+		name := utils.GetStringParam(cmd.Flag("name"))
+		id := utils.GetStringParam(cmd.Flag("id"))
 
 		if err = apiclient.SetRegion(region); err != nil {
 			return err
@@ -50,8 +51,10 @@ var GetCmd = &cobra.Command{
 		return apiclient.SetProjectID(project)
 	},
 	RunE: func(cmd *cobra.Command, args []string) (err error) {
-		name := cmd.Flag("name").Value.String()
-		id := cmd.Flag("id").Value.String()
+		cmd.SilenceUsage = true
+
+		name := utils.GetStringParam(cmd.Flag("name"))
+		id := utils.GetStringParam(cmd.Flag("id"))
 
 		if name != "" {
 			apiclient.DisableCmdPrintHttpResponse()

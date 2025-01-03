@@ -18,6 +18,7 @@ import (
 	"internal/apiclient"
 	"internal/client/certificates"
 	"internal/clilog"
+	"internal/cmd/utils"
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
@@ -29,8 +30,8 @@ var ListCmd = &cobra.Command{
 	Short: "List all certificates in the region",
 	Long:  "List all certificates in the region",
 	Args: func(cmd *cobra.Command, args []string) (err error) {
-		project := cmd.Flag("proj").Value.String()
-		region := cmd.Flag("reg").Value.String()
+		project := utils.GetStringParam(cmd.Flag("proj"))
+		region := utils.GetStringParam(cmd.Flag("reg"))
 
 		if err = apiclient.SetRegion(region); err != nil {
 			return err
@@ -41,8 +42,10 @@ var ListCmd = &cobra.Command{
 		return apiclient.SetProjectID(project)
 	},
 	RunE: func(cmd *cobra.Command, args []string) (err error) {
-		pageToken := cmd.Flag("pageToken").Value.String()
-		filter := cmd.Flag("filter").Value.String()
+		cmd.SilenceUsage = true
+
+		pageToken := utils.GetStringParam(cmd.Flag("pageToken"))
+		filter := utils.GetStringParam(cmd.Flag("filter"))
 		_, err = certificates.List(pageSize, pageToken, filter)
 		return
 	},

@@ -19,6 +19,7 @@ import (
 	"internal/apiclient"
 	"internal/client/connections"
 	"internal/clilog"
+	"internal/cmd/utils"
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
@@ -33,23 +34,25 @@ var CrtCustomCmd = &cobra.Command{
 		cmdProject := cmd.Flag("proj")
 		cmdRegion := cmd.Flag("reg")
 
-		if err = apiclient.SetRegion(cmdRegion.Value.String()); err != nil {
+		if err = apiclient.SetRegion(utils.GetStringParam(cmdRegion)); err != nil {
 			return err
 		}
-		connType := cmd.Flag("type").Value.String()
+		connType := utils.GetStringParam(cmd.Flag("type"))
 		if connType != "OPEN_API" && connType != "PROTO" {
 			return fmt.Errorf("connection type must be OPEN_API or PROTO")
 		}
 		cmd.Flags().VisitAll(func(f *pflag.Flag) {
 			clilog.Debug.Printf("%s: %s\n", f.Name, f.Value)
 		})
-		return apiclient.SetProjectID(cmdProject.Value.String())
+		return apiclient.SetProjectID(utils.GetStringParam(cmdProject))
 	},
 	RunE: func(cmd *cobra.Command, args []string) (err error) {
-		name := cmd.Flag("name").Value.String()
-		description := cmd.Flag("description").Value.String()
-		displayName := cmd.Flag("display-name").Value.String()
-		connType := cmd.Flag("type").Value.String()
+		cmd.SilenceUsage = true
+
+		name := utils.GetStringParam(cmd.Flag("name"))
+		description := utils.GetStringParam(cmd.Flag("description"))
+		displayName := utils.GetStringParam(cmd.Flag("display-name"))
+		connType := utils.GetStringParam(cmd.Flag("type"))
 
 		_, err = connections.CreateCustom(name, description, displayName, connType, labels)
 

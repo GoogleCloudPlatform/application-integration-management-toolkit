@@ -65,6 +65,8 @@ Set up integrationcli with preferences: ` + getSingleLine("integrationcli prefs 
 | authconfigs | ` + getSingleLine(authconfigs.GetExample(2)) + `|
 | authconfigs | ` + getSingleLine(authconfigs.GetExample(3)) + `|
 | connectors | ` + getSingleLine(connectors.GetExample(0)) + `|
+| GitHub Actions | See samples [here](../samples/workflows) |
+
 
 
 NOTE: This file is auto-generated during a release. Do not modify.`

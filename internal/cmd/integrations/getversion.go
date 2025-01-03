@@ -20,6 +20,7 @@ import (
 	"internal/apiclient"
 	"internal/client/integrations"
 	"internal/clilog"
+	"internal/cmd/utils"
 	"strconv"
 
 	"github.com/spf13/cobra"
@@ -32,23 +33,23 @@ var GetVerCmd = &cobra.Command{
 	Short: "Get an integration flow version",
 	Long:  "Get an integration flow version",
 	Args: func(cmd *cobra.Command, args []string) (err error) {
-		cmdProject := cmd.Flag("proj")
-		cmdRegion := cmd.Flag("reg")
-		version := cmd.Flag("ver").Value.String()
-		userLabel := cmd.Flag("user-label").Value.String()
-		snapshot := cmd.Flag("snapshot").Value.String()
-		latest, _ := strconv.ParseBool(cmd.Flag("latest").Value.String())
+		cmdProject := utils.GetStringParam(cmd.Flag("proj"))
+		cmdRegion := utils.GetStringParam(cmd.Flag("reg"))
+		version := utils.GetStringParam(cmd.Flag("ver"))
+		userLabel := utils.GetStringParam(cmd.Flag("user-label"))
+		snapshot := utils.GetStringParam(cmd.Flag("snapshot"))
+		latest, _ := strconv.ParseBool(utils.GetStringParam(cmd.Flag("latest")))
 
-		if err = apiclient.SetRegion(cmdRegion.Value.String()); err != nil {
+		if err = apiclient.SetRegion(cmdRegion); err != nil {
 			return err
 		} else if err = validate(version, userLabel, snapshot, latest); err != nil {
 			return err
 		}
 
-		minimal, _ := strconv.ParseBool(cmd.Flag("minimal").Value.String())
-		overrides, _ := strconv.ParseBool(cmd.Flag("overrides").Value.String())
-		basic, _ := strconv.ParseBool(cmd.Flag("basic").Value.String())
-		configVar, _ := strconv.ParseBool(cmd.Flag("config-vars").Value.String())
+		minimal, _ := strconv.ParseBool(utils.GetStringParam(cmd.Flag("minimal")))
+		overrides, _ := strconv.ParseBool(utils.GetStringParam(cmd.Flag("overrides")))
+		basic, _ := strconv.ParseBool(utils.GetStringParam(cmd.Flag("basic")))
+		configVar, _ := strconv.ParseBool(utils.GetStringParam(cmd.Flag("config-vars")))
 
 		if configVar && (overrides || minimal || basic) {
 			return errors.New("config-vars cannot be combined with overrides, minimal or basic")
@@ -59,18 +60,20 @@ var GetVerCmd = &cobra.Command{
 		cmd.Flags().VisitAll(func(f *pflag.Flag) {
 			clilog.Debug.Printf("%s: %s\n", f.Name, f.Value)
 		})
-		return apiclient.SetProjectID(cmdProject.Value.String())
+		return apiclient.SetProjectID(cmdProject)
 	},
 	RunE: func(cmd *cobra.Command, args []string) (err error) {
+		cmd.SilenceUsage = true
+
 		var integrationBody, respBody, listBody []byte
-		version := cmd.Flag("ver").Value.String()
-		name := cmd.Flag("name").Value.String()
-		minimal, _ := strconv.ParseBool(cmd.Flag("minimal").Value.String())
-		overrides, _ := strconv.ParseBool(cmd.Flag("overrides").Value.String())
-		basic, _ := strconv.ParseBool(cmd.Flag("basic").Value.String())
-		configVar, _ := strconv.ParseBool(cmd.Flag("config-vars").Value.String())
-		userLabel := cmd.Flag("user-label").Value.String()
-		snapshot := cmd.Flag("snapshot").Value.String()
+		version := utils.GetStringParam(cmd.Flag("ver"))
+		name := utils.GetStringParam(cmd.Flag("name"))
+		minimal, _ := strconv.ParseBool(utils.GetStringParam(cmd.Flag("minimal")))
+		overrides, _ := strconv.ParseBool(utils.GetStringParam(cmd.Flag("overrides")))
+		basic, _ := strconv.ParseBool(utils.GetStringParam(cmd.Flag("basic")))
+		configVar, _ := strconv.ParseBool(utils.GetStringParam(cmd.Flag("config-vars")))
+		userLabel := utils.GetStringParam(cmd.Flag("user-label"))
+		snapshot := utils.GetStringParam(cmd.Flag("snapshot"))
 
 		if configVar {
 			apiclient.DisableCmdPrintHttpResponse()
