@@ -35,7 +35,7 @@ var UpdateNodeCountCmd = &cobra.Command{
 		cmdProject := cmd.Flag("proj")
 		cmdRegion := cmd.Flag("reg")
 
-		if err = apiclient.SetRegion(cmdRegion.Value.String()); err != nil {
+		if err = apiclient.SetRegion(utils.GetStringParam(cmdRegion)); err != nil {
 			return err
 		}
 		if min == -1 && max == -1 {
@@ -50,7 +50,7 @@ var UpdateNodeCountCmd = &cobra.Command{
 		cmd.Flags().VisitAll(func(f *pflag.Flag) {
 			clilog.Debug.Printf("%s: %s\n", f.Name, f.Value)
 		})
-		return apiclient.SetProjectID(cmdProject.Value.String())
+		return apiclient.SetProjectID(utils.GetStringParam(cmdProject))
 	},
 	RunE: func(cmd *cobra.Command, args []string) (err error) {
 		nodeConfig := []string{}

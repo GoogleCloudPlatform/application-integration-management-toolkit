@@ -38,7 +38,7 @@ var GetVerCmd = &cobra.Command{
 		version := utils.GetStringParam(cmd.Flag("ver"))
 		userLabel := utils.GetStringParam(cmd.Flag("user-label"))
 		snapshot := utils.GetStringParam(cmd.Flag("snapshot"))
-		latest, _ := strconv.ParseBool(cmd.Flag("latest").Value.String())
+		latest, _ := strconv.ParseBool(utils.GetStringParam(cmd.Flag("latest")))
 
 		if err = apiclient.SetRegion(cmdRegion); err != nil {
 			return err
@@ -46,10 +46,10 @@ var GetVerCmd = &cobra.Command{
 			return err
 		}
 
-		minimal, _ := strconv.ParseBool(cmd.Flag("minimal").Value.String())
-		overrides, _ := strconv.ParseBool(cmd.Flag("overrides").Value.String())
-		basic, _ := strconv.ParseBool(cmd.Flag("basic").Value.String())
-		configVar, _ := strconv.ParseBool(cmd.Flag("config-vars").Value.String())
+		minimal, _ := strconv.ParseBool(utils.GetStringParam(cmd.Flag("minimal")))
+		overrides, _ := strconv.ParseBool(utils.GetStringParam(cmd.Flag("overrides")))
+		basic, _ := strconv.ParseBool(utils.GetStringParam(cmd.Flag("basic")))
+		configVar, _ := strconv.ParseBool(utils.GetStringParam(cmd.Flag("config-vars")))
 
 		if configVar && (overrides || minimal || basic) {
 			return errors.New("config-vars cannot be combined with overrides, minimal or basic")
@@ -66,10 +66,10 @@ var GetVerCmd = &cobra.Command{
 		var integrationBody, respBody, listBody []byte
 		version := utils.GetStringParam(cmd.Flag("ver"))
 		name := utils.GetStringParam(cmd.Flag("name"))
-		minimal, _ := strconv.ParseBool(cmd.Flag("minimal").Value.String())
-		overrides, _ := strconv.ParseBool(cmd.Flag("overrides").Value.String())
-		basic, _ := strconv.ParseBool(cmd.Flag("basic").Value.String())
-		configVar, _ := strconv.ParseBool(cmd.Flag("config-vars").Value.String())
+		minimal, _ := strconv.ParseBool(utils.GetStringParam(cmd.Flag("minimal")))
+		overrides, _ := strconv.ParseBool(utils.GetStringParam(cmd.Flag("overrides")))
+		basic, _ := strconv.ParseBool(utils.GetStringParam(cmd.Flag("basic")))
+		configVar, _ := strconv.ParseBool(utils.GetStringParam(cmd.Flag("config-vars")))
 		userLabel := utils.GetStringParam(cmd.Flag("user-label"))
 		snapshot := utils.GetStringParam(cmd.Flag("snapshot"))
 

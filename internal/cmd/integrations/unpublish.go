@@ -37,9 +37,9 @@ var UnPublishVerCmd = &cobra.Command{
 		version := utils.GetStringParam(cmd.Flag("ver"))
 		userLabel := utils.GetStringParam(cmd.Flag("user-label"))
 		snapshot := utils.GetStringParam(cmd.Flag("snapshot"))
-		latest, _ := strconv.ParseBool(cmd.Flag("latest").Value.String())
+		latest, _ := strconv.ParseBool(utils.GetStringParam(cmd.Flag("latest")))
 
-		if err = apiclient.SetRegion(cmdRegion.Value.String()); err != nil {
+		if err = apiclient.SetRegion(utils.GetStringParam(cmdRegion)); err != nil {
 			return err
 		}
 		if err = validate(version, userLabel, snapshot, latest); err != nil {
@@ -48,7 +48,7 @@ var UnPublishVerCmd = &cobra.Command{
 		cmd.Flags().VisitAll(func(f *pflag.Flag) {
 			clilog.Debug.Printf("%s: %s\n", f.Name, f.Value)
 		})
-		return apiclient.SetProjectID(cmdProject.Value.String())
+		return apiclient.SetProjectID(utils.GetStringParam(cmdProject))
 	},
 	RunE: func(cmd *cobra.Command, args []string) (err error) {
 		version := utils.GetStringParam(cmd.Flag("ver"))

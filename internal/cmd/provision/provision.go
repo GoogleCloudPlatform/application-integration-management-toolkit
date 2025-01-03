@@ -32,10 +32,10 @@ var Cmd = &cobra.Command{
 	Args: func(cmd *cobra.Command, args []string) (err error) {
 		cmdProject := cmd.Flag("proj")
 		cmdRegion := cmd.Flag("reg")
-		if err = apiclient.SetRegion(cmdRegion.Value.String()); err != nil {
+		if err = apiclient.SetRegion(utils.GetStringParam(cmdRegion)); err != nil {
 			return err
 		}
-		return apiclient.SetProjectID(cmdProject.Value.String())
+		return apiclient.SetProjectID(utils.GetStringParam(cmdProject))
 	},
 	RunE: func(cmd *cobra.Command, args []string) (err error) {
 		cloudKMS := utils.GetStringParam(cmd.Flag("cloudkms"))

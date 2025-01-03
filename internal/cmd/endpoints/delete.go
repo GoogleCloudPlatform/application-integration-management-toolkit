@@ -42,7 +42,7 @@ var DelCmd = &cobra.Command{
 		return apiclient.SetProjectID(project)
 	},
 	RunE: func(cmd *cobra.Command, args []string) (err error) {
-		name := cmd.Flag("name").Value.String()
+		name := utils.GetStringParam(cmd.Flag("name"))
 
 		_, err = connections.DeleteEndpoint(name)
 		return

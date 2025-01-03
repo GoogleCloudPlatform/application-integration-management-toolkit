@@ -18,6 +18,7 @@ import (
 	"internal/apiclient"
 	"internal/client/integrations"
 	"internal/clilog"
+	"internal/cmd/utils"
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
@@ -32,16 +33,16 @@ var LiftSuspCmd = &cobra.Command{
 		cmdProject := cmd.Flag("proj")
 		cmdRegion := cmd.Flag("reg")
 
-		if err = apiclient.SetRegion(cmdRegion.Value.String()); err != nil {
+		if err = apiclient.SetRegion(utils.GetStringParam(cmdRegion)); err != nil {
 			return err
 		}
 		cmd.Flags().VisitAll(func(f *pflag.Flag) {
 			clilog.Debug.Printf("%s: %s\n", f.Name, f.Value)
 		})
-		return apiclient.SetProjectID(cmdProject.Value.String())
+		return apiclient.SetProjectID(utils.GetStringParam(cmdProject))
 	},
 	RunE: func(cmd *cobra.Command, args []string) (err error) {
-		name := cmd.Flag("name").Value.String()
+		name := utils.GetStringParam(cmd.Flag("name"))
 		_, err = integrations.Lift(name, execution, suspension, result)
 		return err
 	},

@@ -47,13 +47,13 @@ var CreateCmd = &cobra.Command{
 			return fmt.Errorf("cannot use config-vars and config-vars-json flags when publish is false")
 		}
 
-		if err = apiclient.SetRegion(cmdRegion.Value.String()); err != nil {
+		if err = apiclient.SetRegion(utils.GetStringParam(cmdRegion)); err != nil {
 			return err
 		}
 		cmd.Flags().VisitAll(func(f *pflag.Flag) {
 			clilog.Debug.Printf("%s: %s\n", f.Name, f.Value)
 		})
-		return apiclient.SetProjectID(cmdProject.Value.String())
+		return apiclient.SetProjectID(utils.GetStringParam(cmdProject))
 	},
 	RunE: func(cmd *cobra.Command, args []string) (err error) {
 		var overridesContent, contents []byte

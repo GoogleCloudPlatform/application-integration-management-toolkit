@@ -43,8 +43,8 @@ var GetCmd = &cobra.Command{
 		return apiclient.SetProjectID(project)
 	},
 	RunE: func(cmd *cobra.Command, args []string) (err error) {
-		name := cmd.Flag("name").Value.String()
-		overrides, _ := strconv.ParseBool(cmd.Flag("overrides").Value.String())
+		name := utils.GetStringParam(cmd.Flag("name"))
+		overrides, _ := strconv.ParseBool(utils.GetStringParam(cmd.Flag("overrides")))
 
 		_, err = connections.GetEndpoint(name, overrides)
 		return err

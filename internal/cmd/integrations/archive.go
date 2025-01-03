@@ -35,7 +35,7 @@ var ArchiveVerCmd = &cobra.Command{
 		version := utils.GetStringParam(cmd.Flag("ver"))
 		userLabel := utils.GetStringParam(cmd.Flag("user-label"))
 		snapshot := utils.GetStringParam(cmd.Flag("snapshot"))
-		latest, _ := strconv.ParseBool(cmd.Flag("latest").Value.String())
+		latest, _ := strconv.ParseBool(utils.GetStringParam(cmd.Flag("latest")))
 
 		if err = apiclient.SetRegion(utils.GetStringParam(cmd.Flag("reg"))); err != nil {
 			return err

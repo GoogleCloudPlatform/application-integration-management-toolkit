@@ -54,7 +54,7 @@ var GetCmd = &cobra.Command{
 	RunE: func(cmd *cobra.Command, args []string) (err error) {
 		name := utils.GetStringParam(cmd.Flag("name"))
 		id := utils.GetStringParam(cmd.Flag("id"))
-		minimal, _ := strconv.ParseBool(cmd.Flag("minimal").Value.String())
+		minimal, _ := strconv.ParseBool(utils.GetStringParam(cmd.Flag("minimal")))
 
 		if name != "" {
 			apiclient.DisableCmdPrintHttpResponse()

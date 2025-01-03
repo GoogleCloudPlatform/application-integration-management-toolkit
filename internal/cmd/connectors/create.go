@@ -37,18 +37,18 @@ var CreateCmd = &cobra.Command{
 		cmdProject := cmd.Flag("proj")
 		cmdRegion := cmd.Flag("reg")
 
-		if err = apiclient.SetRegion(cmdRegion.Value.String()); err != nil {
+		if err = apiclient.SetRegion(utils.GetStringParam(cmdRegion)); err != nil {
 			return err
 		}
 		cmd.Flags().VisitAll(func(f *pflag.Flag) {
 			clilog.Debug.Printf("%s: %s\n", f.Name, f.Value)
 		})
-		return apiclient.SetProjectID(cmdProject.Value.String())
+		return apiclient.SetProjectID(utils.GetStringParam(cmdProject))
 	},
 	RunE: func(cmd *cobra.Command, args []string) (err error) {
-		createSecret, _ := strconv.ParseBool(cmd.Flag("create-secret").Value.String())
-		grantPermission, _ := strconv.ParseBool(cmd.Flag("grant-permission").Value.String())
-		wait, _ := strconv.ParseBool(cmd.Flag("wait").Value.String())
+		createSecret, _ := strconv.ParseBool(utils.GetStringParam(cmd.Flag("create-secret")))
+		grantPermission, _ := strconv.ParseBool(utils.GetStringParam(cmd.Flag("grant-permission")))
+		wait, _ := strconv.ParseBool(utils.GetStringParam(cmd.Flag("wait")))
 		name := utils.GetStringParam(cmd.Flag("name"))
 
 		if _, err = os.Stat(connectionFile); err != nil {

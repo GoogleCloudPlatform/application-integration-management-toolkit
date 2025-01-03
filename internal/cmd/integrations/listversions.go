@@ -18,6 +18,7 @@ import (
 	"internal/apiclient"
 	"internal/client/integrations"
 	"internal/clilog"
+	"internal/cmd/utils"
 	"strconv"
 
 	"github.com/spf13/cobra"
@@ -33,21 +34,21 @@ var ListVerCmd = &cobra.Command{
 		cmdProject := cmd.Flag("proj")
 		cmdRegion := cmd.Flag("reg")
 
-		if err = apiclient.SetRegion(cmdRegion.Value.String()); err != nil {
+		if err = apiclient.SetRegion(utils.GetStringParam(cmdRegion)); err != nil {
 			return err
 		}
 		cmd.Flags().VisitAll(func(f *pflag.Flag) {
 			clilog.Debug.Printf("%s: %s\n", f.Name, f.Value)
 		})
-		return apiclient.SetProjectID(cmdProject.Value.String())
+		return apiclient.SetProjectID(utils.GetStringParam(cmdProject))
 	},
 	RunE: func(cmd *cobra.Command, args []string) (err error) {
-		name := cmd.Flag("name").Value.String()
-		basic, _ := strconv.ParseBool(cmd.Flag("basic").Value.String())
+		name := utils.GetStringParam(cmd.Flag("name"))
+		basic, _ := strconv.ParseBool(utils.GetStringParam(cmd.Flag("basic")))
 		_, err = integrations.ListVersions(name, pageSize,
-			cmd.Flag("pageToken").Value.String(),
-			cmd.Flag("filter").Value.String(),
-			cmd.Flag("orderBy").Value.String(),
+			utils.GetStringParam(cmd.Flag("pageToken")),
+			utils.GetStringParam(cmd.Flag("filter")),
+			utils.GetStringParam(cmd.Flag("orderBy")),
 			false, false, basic)
 		return err
 	},

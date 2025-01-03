@@ -48,7 +48,7 @@ var CreateCmd = &cobra.Command{
 		name := utils.GetStringParam(cmd.Flag("name"))
 		serviceAttachment := utils.GetStringParam(cmd.Flag("service-attachment"))
 		description := utils.GetStringParam(cmd.Flag("description"))
-		wait, _ := strconv.ParseBool(cmd.Flag("wait").Value.String())
+		wait, _ := strconv.ParseBool(utils.GetStringParam(cmd.Flag("wait")))
 
 		re := regexp.MustCompile(`projects\/([a-zA-Z0-9_-]+)\/regions` +
 			`\/([a-zA-Z0-9_-]+)\/serviceAttachments\/([a-zA-Z0-9_-]+)`)
