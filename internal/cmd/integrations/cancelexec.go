@@ -17,8 +17,11 @@ package integrations
 import (
 	"internal/apiclient"
 	"internal/client/integrations"
+	"internal/clilog"
+	"internal/cmd/utils"
 
 	"github.com/spf13/cobra"
+	"github.com/spf13/pflag"
 )
 
 // CancelExecCmd to list executions of an integration version
@@ -33,12 +36,15 @@ var CancelExecCmd = &cobra.Command{
 		if err = apiclient.SetRegion(cmdRegion.Value.String()); err != nil {
 			return err
 		}
+		cmd.Flags().VisitAll(func(f *pflag.Flag) {
+			clilog.Debug.Printf("%s: %s\n", f.Name, f.Value)
+		})
 		return apiclient.SetProjectID(cmdProject.Value.String())
 	},
 	RunE: func(cmd *cobra.Command, args []string) (err error) {
-		name := cmd.Flag("name").Value.String()
-		executionID := cmd.Flag("execution-id").Value.String()
-		cancelReason := cmd.Flag("cancel-reason").Value.String()
+		name := utils.GetStringParam(cmd.Flag("name"))
+		executionID := utils.GetStringParam(cmd.Flag("execution-id"))
+		cancelReason := utils.GetStringParam(cmd.Flag("cancel-reason"))
 		_, err = integrations.Cancel(name, executionID, cancelReason)
 		return err
 	},

@@ -17,8 +17,11 @@ package connectors
 import (
 	"internal/apiclient"
 	"internal/client/connections"
+	"internal/clilog"
+	"internal/cmd/utils"
 
 	"github.com/spf13/cobra"
+	"github.com/spf13/pflag"
 )
 
 // DelEventSubCmd to get connection
@@ -33,11 +36,14 @@ var DelEventSubCmd = &cobra.Command{
 		if err = apiclient.SetRegion(cmdRegion.Value.String()); err != nil {
 			return err
 		}
+		cmd.Flags().VisitAll(func(f *pflag.Flag) {
+			clilog.Debug.Printf("%s: %s\n", f.Name, f.Value)
+		})
 		return apiclient.SetProjectID(cmdProject.Value.String())
 	},
 	RunE: func(cmd *cobra.Command, args []string) (err error) {
-		name := cmd.Flag("name").Value.String()
-		conn := cmd.Flag("conn").Value.String()
+		name := utils.GetStringParam(cmd.Flag("name"))
+		conn := utils.GetStringParam(cmd.Flag("conn"))
 		_, err = connections.DeleteEventSubscription(name, conn)
 		return err
 	},

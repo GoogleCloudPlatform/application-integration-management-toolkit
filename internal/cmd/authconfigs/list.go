@@ -17,8 +17,11 @@ package authconfigs
 import (
 	"internal/apiclient"
 	"internal/client/authconfigs"
+	"internal/clilog"
+	"internal/cmd/utils"
 
 	"github.com/spf13/cobra"
+	"github.com/spf13/pflag"
 )
 
 // ListCmd to list Integrations
@@ -27,17 +30,20 @@ var ListCmd = &cobra.Command{
 	Short: "List all integration flows in the region",
 	Long:  "List all integration flows in the region",
 	Args: func(cmd *cobra.Command, args []string) (err error) {
-		project := cmd.Flag("proj").Value.String()
-		region := cmd.Flag("reg").Value.String()
+		project := utils.GetStringParam(cmd.Flag("proj"))
+		region := utils.GetStringParam(cmd.Flag("reg"))
 
 		if err = apiclient.SetRegion(region); err != nil {
 			return err
 		}
+		cmd.Flags().VisitAll(func(f *pflag.Flag) {
+			clilog.Debug.Printf("%s: %s\n", f.Name, f.Value)
+		})
 		return apiclient.SetProjectID(project)
 	},
 	RunE: func(cmd *cobra.Command, args []string) (err error) {
-		pageToken := cmd.Flag("pageToken").Value.String()
-		filter := cmd.Flag("filter").Value.String()
+		pageToken := utils.GetStringParam(cmd.Flag("pageToken"))
+		filter := utils.GetStringParam(cmd.Flag("filter"))
 
 		_, err = authconfigs.List(pageSize, pageToken, filter)
 		return err

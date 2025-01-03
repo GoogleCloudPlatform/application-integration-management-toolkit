@@ -19,12 +19,13 @@ import (
 	"fmt"
 	"internal/apiclient"
 	"internal/client/integrations"
+	"internal/clilog"
+	"internal/cmd/utils"
 	"os"
 	"strings"
 
-	"internal/cmd/utils"
-
 	"github.com/spf13/cobra"
+	"github.com/spf13/pflag"
 )
 
 // CreateCmd to list Integrations
@@ -35,8 +36,8 @@ var CreateCmd = &cobra.Command{
 	Args: func(cmd *cobra.Command, args []string) (err error) {
 		cmdProject := cmd.Flag("proj")
 		cmdRegion := cmd.Flag("reg")
-		configVarsJson := cmd.Flag("config-vars-json").Value.String()
-		configVarsFile := cmd.Flag("config-vars").Value.String()
+		configVarsJson := utils.GetStringParam(cmd.Flag("config-vars-json"))
+		configVarsFile := utils.GetStringParam(cmd.Flag("config-vars"))
 
 		if basic && publish {
 			return fmt.Errorf("cannot combine basic and publish flags")
@@ -49,6 +50,9 @@ var CreateCmd = &cobra.Command{
 		if err = apiclient.SetRegion(cmdRegion.Value.String()); err != nil {
 			return err
 		}
+		cmd.Flags().VisitAll(func(f *pflag.Flag) {
+			clilog.Debug.Printf("%s: %s\n", f.Name, f.Value)
+		})
 		return apiclient.SetProjectID(cmdProject.Value.String())
 	},
 	RunE: func(cmd *cobra.Command, args []string) (err error) {

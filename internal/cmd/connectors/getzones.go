@@ -17,9 +17,12 @@ package connectors
 import (
 	"internal/apiclient"
 	"internal/client/connections"
+	"internal/clilog"
+	"internal/cmd/utils"
 	"strconv"
 
 	"github.com/spf13/cobra"
+	"github.com/spf13/pflag"
 )
 
 // GetManagedZonesCmd to list Connections
@@ -34,10 +37,13 @@ var GetManagedZonesCmd = &cobra.Command{
 		if err = apiclient.SetRegion(cmdRegion.Value.String()); err != nil {
 			return err
 		}
+		cmd.Flags().VisitAll(func(f *pflag.Flag) {
+			clilog.Debug.Printf("%s: %s\n", f.Name, f.Value)
+		})
 		return apiclient.SetProjectID(cmdProject.Value.String())
 	},
 	RunE: func(cmd *cobra.Command, args []string) (err error) {
-		name := cmd.Flag("name").Value.String()
+		name := utils.GetStringParam(cmd.Flag("name"))
 		overrides, _ := strconv.ParseBool(cmd.Flag("overrides").Value.String())
 
 		_, err = connections.GetZone(name, overrides)

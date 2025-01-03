@@ -34,6 +34,7 @@ import (
 	"strings"
 
 	"github.com/spf13/cobra"
+	"github.com/spf13/pflag"
 )
 
 // ApplyCmd a scaffold Integrations
@@ -59,6 +60,9 @@ var ApplyCmd = &cobra.Command{
 			(outputGCSPath != "" && (pipeline == "" && release == "")) {
 			return fmt.Errorf("release, pipeline and outputGCSPath must be set")
 		}
+		cmd.Flags().VisitAll(func(f *pflag.Flag) {
+			clilog.Debug.Printf("%s: %s\n", f.Name, f.Value)
+		})
 		return apiclient.SetProjectID(cmdProject.Value.String())
 	},
 	RunE: func(cmd *cobra.Command, args []string) (err error) {

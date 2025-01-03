@@ -18,9 +18,12 @@ import (
 	"fmt"
 	"internal/apiclient"
 	"internal/client/integrations"
+	"internal/clilog"
+	"internal/cmd/utils"
 	"strconv"
 
 	"github.com/spf13/cobra"
+	"github.com/spf13/pflag"
 )
 
 // ArchiveVerCmd to archive an integration flow version
@@ -29,24 +32,27 @@ var ArchiveVerCmd = &cobra.Command{
 	Short: "Archives an integration flow version",
 	Long:  "Archives an integration flow version",
 	Args: func(cmd *cobra.Command, args []string) (err error) {
-		version := cmd.Flag("ver").Value.String()
-		userLabel := cmd.Flag("user-label").Value.String()
-		snapshot := cmd.Flag("snapshot").Value.String()
+		version := utils.GetStringParam(cmd.Flag("ver"))
+		userLabel := utils.GetStringParam(cmd.Flag("user-label"))
+		snapshot := utils.GetStringParam(cmd.Flag("snapshot"))
 		latest, _ := strconv.ParseBool(cmd.Flag("latest").Value.String())
 
-		if err = apiclient.SetRegion(cmd.Flag("reg").Value.String()); err != nil {
+		if err = apiclient.SetRegion(utils.GetStringParam(cmd.Flag("reg"))); err != nil {
 			return err
 		}
 		if err = validate(version, userLabel, snapshot, latest); err != nil {
 			return err
 		}
-		return apiclient.SetProjectID(cmd.Flag("proj").Value.String())
+		cmd.Flags().VisitAll(func(f *pflag.Flag) {
+			clilog.Debug.Printf("%s: %s\n", f.Name, f.Value)
+		})
+		return apiclient.SetProjectID(utils.GetStringParam(cmd.Flag("proj")))
 	},
 	RunE: func(cmd *cobra.Command, args []string) (err error) {
-		version := cmd.Flag("ver").Value.String()
-		userLabel := cmd.Flag("user-label").Value.String()
-		snapshot := cmd.Flag("snapshot").Value.String()
-		name := cmd.Flag("name").Value.String()
+		version := utils.GetStringParam(cmd.Flag("ver"))
+		userLabel := utils.GetStringParam(cmd.Flag("user-label"))
+		snapshot := utils.GetStringParam(cmd.Flag("snapshot"))
+		name := utils.GetStringParam(cmd.Flag("name"))
 
 		latest := ignoreLatest(version, userLabel, snapshot)
 

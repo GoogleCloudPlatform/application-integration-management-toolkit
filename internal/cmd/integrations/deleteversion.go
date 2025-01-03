@@ -18,8 +18,11 @@ import (
 	"errors"
 	"internal/apiclient"
 	"internal/client/integrations"
+	"internal/clilog"
+	"internal/cmd/utils"
 
 	"github.com/spf13/cobra"
+	"github.com/spf13/pflag"
 )
 
 // DelVerCmd to delete integration flow version
@@ -28,11 +31,11 @@ var DelVerCmd = &cobra.Command{
 	Short: "Delete an integration flow version",
 	Long:  "Delete an integration flow version",
 	Args: func(cmd *cobra.Command, args []string) (err error) {
-		project := cmd.Flag("proj").Value.String()
-		region := cmd.Flag("reg").Value.String()
-		version := cmd.Flag("ver").Value.String()
-		userLabel := cmd.Flag("user-label").Value.String()
-		snapshot := cmd.Flag("snapshot").Value.String()
+		project := utils.GetStringParam(cmd.Flag("proj"))
+		region := utils.GetStringParam(cmd.Flag("reg"))
+		version := utils.GetStringParam(cmd.Flag("ver"))
+		userLabel := utils.GetStringParam(cmd.Flag("user-label"))
+		snapshot := utils.GetStringParam(cmd.Flag("snapshot"))
 
 		if err = apiclient.SetRegion(region); err != nil {
 			return err
@@ -49,13 +52,16 @@ var DelVerCmd = &cobra.Command{
 		if version != "" && (snapshot != "" || userLabel != "") {
 			return errors.New("version cannot be combined with snapshot or version")
 		}
+		cmd.Flags().VisitAll(func(f *pflag.Flag) {
+			clilog.Debug.Printf("%s: %s\n", f.Name, f.Value)
+		})
 		return apiclient.SetProjectID(project)
 	},
 	RunE: func(cmd *cobra.Command, args []string) (err error) {
-		version := cmd.Flag("ver").Value.String()
-		userLabel := cmd.Flag("user-label").Value.String()
-		snapshot := cmd.Flag("snapshot").Value.String()
-		name := cmd.Flag("name").Value.String()
+		version := utils.GetStringParam(cmd.Flag("ver"))
+		userLabel := utils.GetStringParam(cmd.Flag("user-label"))
+		snapshot := utils.GetStringParam(cmd.Flag("snapshot"))
+		name := utils.GetStringParam(cmd.Flag("name"))
 
 		if version != "" {
 			_, err = integrations.DeleteVersion(name, version)

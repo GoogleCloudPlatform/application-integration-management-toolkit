@@ -18,11 +18,14 @@ import (
 	"fmt"
 	"internal/apiclient"
 	"internal/client/connections"
+	"internal/clilog"
+	"internal/cmd/utils"
 	"os"
 	"regexp"
 	"strconv"
 
 	"github.com/spf13/cobra"
+	"github.com/spf13/pflag"
 )
 
 // CreateCmd to create a new connection
@@ -37,13 +40,16 @@ var CreateCmd = &cobra.Command{
 		if err = apiclient.SetRegion(cmdRegion.Value.String()); err != nil {
 			return err
 		}
+		cmd.Flags().VisitAll(func(f *pflag.Flag) {
+			clilog.Debug.Printf("%s: %s\n", f.Name, f.Value)
+		})
 		return apiclient.SetProjectID(cmdProject.Value.String())
 	},
 	RunE: func(cmd *cobra.Command, args []string) (err error) {
 		createSecret, _ := strconv.ParseBool(cmd.Flag("create-secret").Value.String())
 		grantPermission, _ := strconv.ParseBool(cmd.Flag("grant-permission").Value.String())
 		wait, _ := strconv.ParseBool(cmd.Flag("wait").Value.String())
-		name := cmd.Flag("name").Value.String()
+		name := utils.GetStringParam(cmd.Flag("name"))
 
 		if _, err = os.Stat(connectionFile); err != nil {
 			return fmt.Errorf("unable to open file %w", err)

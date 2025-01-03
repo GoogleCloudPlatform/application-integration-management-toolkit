@@ -17,9 +17,12 @@ package integrations
 import (
 	"internal/apiclient"
 	"internal/client/integrations"
+	"internal/clilog"
+	"internal/cmd/utils"
 	"os"
 
 	"github.com/spf13/cobra"
+	"github.com/spf13/pflag"
 )
 
 // PatchVerCmd to get integration flow
@@ -34,11 +37,14 @@ var PatchVerCmd = &cobra.Command{
 		if err = apiclient.SetRegion(cmdRegion.Value.String()); err != nil {
 			return err
 		}
+		cmd.Flags().VisitAll(func(f *pflag.Flag) {
+			clilog.Debug.Printf("%s: %s\n", f.Name, f.Value)
+		})
 		return apiclient.SetProjectID(cmdProject.Value.String())
 	},
 	RunE: func(cmd *cobra.Command, args []string) (err error) {
-		version := cmd.Flag("ver").Value.String()
-		name := cmd.Flag("name").Value.String()
+		version := utils.GetStringParam(cmd.Flag("ver"))
+		name := utils.GetStringParam(cmd.Flag("name"))
 
 		if _, err := os.Stat(integrationFile); os.IsNotExist(err) {
 			return err

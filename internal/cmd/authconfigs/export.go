@@ -17,8 +17,11 @@ package authconfigs
 import (
 	"internal/apiclient"
 	"internal/client/authconfigs"
+	"internal/clilog"
+	"internal/cmd/utils"
 
 	"github.com/spf13/cobra"
+	"github.com/spf13/pflag"
 )
 
 // ExportCmd to export integrations
@@ -27,16 +30,19 @@ var ExportCmd = &cobra.Command{
 	Short: "Export authconfigs in a region to a folder",
 	Long:  "Export authconfigs in a region to a folder",
 	Args: func(cmd *cobra.Command, args []string) (err error) {
-		project := cmd.Flag("proj").Value.String()
-		region := cmd.Flag("reg").Value.String()
+		project := utils.GetStringParam(cmd.Flag("proj"))
+		region := utils.GetStringParam(cmd.Flag("reg"))
 
 		if err = apiclient.SetRegion(region); err != nil {
 			return err
 		}
+		cmd.Flags().VisitAll(func(f *pflag.Flag) {
+			clilog.Debug.Printf("%s: %s\n", f.Name, f.Value)
+		})
 		return apiclient.SetProjectID(project)
 	},
 	RunE: func(cmd *cobra.Command, args []string) (err error) {
-		folder := cmd.Flag("folder").Value.String()
+		folder := utils.GetStringParam(cmd.Flag("folder"))
 		if err = apiclient.FolderExists(folder); err != nil {
 			return err
 		}

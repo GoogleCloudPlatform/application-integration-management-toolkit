@@ -18,9 +18,12 @@ import (
 	"fmt"
 	"internal/apiclient"
 	"internal/client/connections"
+	"internal/clilog"
+	"internal/cmd/utils"
 	"os"
 
 	"github.com/spf13/cobra"
+	"github.com/spf13/pflag"
 )
 
 // CrtEventSubCmd to create a new connection
@@ -35,12 +38,15 @@ var CrtEventSubCmd = &cobra.Command{
 		if err = apiclient.SetRegion(cmdRegion.Value.String()); err != nil {
 			return err
 		}
+		cmd.Flags().VisitAll(func(f *pflag.Flag) {
+			clilog.Debug.Printf("%s: %s\n", f.Name, f.Value)
+		})
 		return apiclient.SetProjectID(cmdProject.Value.String())
 	},
 	RunE: func(cmd *cobra.Command, args []string) (err error) {
-		name := cmd.Flag("name").Value.String()
-		id := cmd.Flag("id").Value.String()
-		eventsubFile := cmd.Flag("file").Value.String()
+		name := utils.GetStringParam(cmd.Flag("name"))
+		id := utils.GetStringParam(cmd.Flag("id"))
+		eventsubFile := utils.GetStringParam(cmd.Flag("file"))
 
 		if _, err = os.Stat(eventsubFile); err != nil {
 			return fmt.Errorf("unable to open file %w", err)

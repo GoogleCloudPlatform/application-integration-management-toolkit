@@ -17,9 +17,12 @@ package connectors
 import (
 	"internal/apiclient"
 	"internal/client/connections"
+	"internal/clilog"
+	"internal/cmd/utils"
 	"strconv"
 
 	"github.com/spf13/cobra"
+	"github.com/spf13/pflag"
 )
 
 // RepairCmd to repair events of a connection
@@ -34,10 +37,13 @@ var RepairCmd = &cobra.Command{
 		if err = apiclient.SetRegion(cmdRegion.Value.String()); err != nil {
 			return err
 		}
+		cmd.Flags().VisitAll(func(f *pflag.Flag) {
+			clilog.Debug.Printf("%s: %s\n", f.Name, f.Value)
+		})
 		return apiclient.SetProjectID(cmdProject.Value.String())
 	},
 	RunE: func(cmd *cobra.Command, args []string) (err error) {
-		name := cmd.Flag("name").Value.String()
+		name := utils.GetStringParam(cmd.Flag("name"))
 		wait, _ := strconv.ParseBool(cmd.Flag("wait").Value.String())
 
 		err = connections.RepairEvent(name, wait)

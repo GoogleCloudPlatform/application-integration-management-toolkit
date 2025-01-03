@@ -27,8 +27,10 @@ import (
 	"internal/cmd/utils"
 	"os"
 	"path"
+	"strconv"
 
 	"github.com/spf13/cobra"
+	"github.com/spf13/pflag"
 )
 
 // ScaffoldCmd to publish an integration flow version
@@ -37,27 +39,27 @@ var ScaffoldCmd = &cobra.Command{
 	Short: "Create a scaffolding for the integration flow",
 	Long:  "Create a scaffolding for the integration flow and dependencies",
 	Args: func(cmd *cobra.Command, args []string) (err error) {
-		cmdProject := cmd.Flag("proj")
-		cmdRegion := cmd.Flag("reg")
-		version := cmd.Flag("ver").Value.String()
-		userLabel := cmd.Flag("user-label").Value.String()
-		snapshot := cmd.Flag("snapshot").Value.String()
+		cmdProject := utils.GetStringParam(cmd.Flag("proj"))
+		cmdRegion := utils.GetStringParam(cmd.Flag("reg"))
+		version := utils.GetStringParam(cmd.Flag("ver"))
+		userLabel := utils.GetStringParam(cmd.Flag("user-label"))
+		snapshot := utils.GetStringParam(cmd.Flag("snapshot"))
+		latest, _ := strconv.ParseBool(cmd.Flag("latest").Value.String())
 
-		if err = apiclient.SetRegion(cmdRegion.Value.String()); err != nil {
+		if err = apiclient.SetRegion(cmdRegion); err != nil {
+			return err
+		} else if err = validate(version, userLabel, snapshot, latest); err != nil {
 			return err
 		}
-		if userLabel == "" && version == "" && snapshot == "" {
-			return errors.New("at least one of userLabel, version or snapshot must be passed")
-		}
-		if err = validate(version, userLabel, snapshot, false); err != nil {
-			return err
-		}
-		return apiclient.SetProjectID(cmdProject.Value.String())
+		cmd.Flags().VisitAll(func(f *pflag.Flag) {
+			clilog.Debug.Printf("%s: %s\n", f.Name, f.Value)
+		})
+		return apiclient.SetProjectID(cmdProject)
 	},
 	RunE: func(cmd *cobra.Command, args []string) (err error) {
 		const jsonExt = ".json"
 		var fileSplitter string
-		var integrationBody, overridesBody []byte
+		var integrationBody, overridesBody, listBody []byte
 		version := utils.GetStringParam(cmd.Flag("ver"))
 		userLabel := utils.GetStringParam(cmd.Flag("user-label"))
 		snapshot := utils.GetStringParam(cmd.Flag("snapshot"))
@@ -89,6 +91,32 @@ var ScaffoldCmd = &cobra.Command{
 			}
 		}
 
+		latest := ignoreLatest(version, userLabel, snapshot)
+
+		if latest {
+			// list integration versions, order by state=ACTIVE, page size = 1 and return basic info
+			if listBody, err = integrations.ListVersions(name, 1, "", "state=ACTIVE",
+				"snapshot_number", false, false, true); err != nil {
+				return fmt.Errorf("unable to list versions: %v", err)
+			}
+			if string(listBody) != "{}" {
+				if version, err = getIntegrationVersion(listBody); err != nil {
+					return err
+				}
+			} else {
+				// list integration versions, order by state=SNAPSHOT, page size = 1 and return basic info
+				if listBody, err = integrations.ListVersions(name, 1, "", "state=SNAPSHOT",
+					"snapshot_number", false, false, true); err != nil {
+					return fmt.Errorf("unable to list versions: %v", err)
+				}
+				if string(listBody) != "{}" {
+					if version, err = getIntegrationVersion(listBody); err != nil {
+						return err
+					}
+				}
+			}
+		}
+
 		// Get
 
 		if version != "" {
@@ -112,6 +140,8 @@ var ScaffoldCmd = &cobra.Command{
 			if overridesBody, err = integrations.GetBySnapshot(name, snapshot, false, false, true); err != nil {
 				return err
 			}
+		} else {
+			return errors.New("latest version not found. Must pass oneOf version, snapshot or user-label or fix the integration name")
 		}
 
 		clilog.Info.Printf("Storing the Integration: %s\n", name)
@@ -383,6 +413,7 @@ var (
 
 func init() {
 	var name, userLabel, snapshot, version string
+	var latest bool
 
 	ScaffoldCmd.Flags().StringVarP(&name, "name", "n",
 		"", "Integration flow name")
@@ -408,6 +439,8 @@ func init() {
 		false, "Use underscore as a file splitter; default is __")
 	ScaffoldCmd.Flags().BoolVarP(&extractCode, "extract-code", "x",
 		false, "Extract JavaScript and Jsonnet code as separate files")
+	ScaffoldCmd.Flags().BoolVarP(&latest, "latest", "",
+		true, "Scaffolds the integeration version in ACTIVE state, if not found the highest snapshot in SNAPSHOT state; default is true")
 
 	_ = ScaffoldCmd.MarkFlagRequired("name")
 }

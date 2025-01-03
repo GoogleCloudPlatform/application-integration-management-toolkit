@@ -18,8 +18,11 @@ import (
 	"fmt"
 	"internal/apiclient"
 	"internal/client/connections"
+	"internal/clilog"
+	"internal/cmd/utils"
 
 	"github.com/spf13/cobra"
+	"github.com/spf13/pflag"
 )
 
 // CrtCustomCmd to create a new connection
@@ -34,17 +37,20 @@ var CrtCustomCmd = &cobra.Command{
 		if err = apiclient.SetRegion(cmdRegion.Value.String()); err != nil {
 			return err
 		}
-		connType := cmd.Flag("type").Value.String()
+		connType := utils.GetStringParam(cmd.Flag("type"))
 		if connType != "OPEN_API" && connType != "PROTO" {
 			return fmt.Errorf("connection type must be OPEN_API or PROTO")
 		}
+		cmd.Flags().VisitAll(func(f *pflag.Flag) {
+			clilog.Debug.Printf("%s: %s\n", f.Name, f.Value)
+		})
 		return apiclient.SetProjectID(cmdProject.Value.String())
 	},
 	RunE: func(cmd *cobra.Command, args []string) (err error) {
-		name := cmd.Flag("name").Value.String()
-		description := cmd.Flag("description").Value.String()
-		displayName := cmd.Flag("display-name").Value.String()
-		connType := cmd.Flag("type").Value.String()
+		name := utils.GetStringParam(cmd.Flag("name"))
+		description := utils.GetStringParam(cmd.Flag("description"))
+		displayName := utils.GetStringParam(cmd.Flag("display-name"))
+		connType := utils.GetStringParam(cmd.Flag("type"))
 
 		_, err = connections.CreateCustom(name, description, displayName, connType, labels)
 
@@ -53,8 +59,10 @@ var CrtCustomCmd = &cobra.Command{
 	Example: `Create a custom connector for OPEN_API type: ` + GetExample(3),
 }
 
-var labels map[string]string
-var connType ConnectorType
+var (
+	labels   map[string]string
+	connType ConnectorType
+)
 
 func init() {
 	var name, description, displayName string

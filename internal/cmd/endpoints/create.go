@@ -18,10 +18,13 @@ import (
 	"fmt"
 	"internal/apiclient"
 	"internal/client/connections"
+	"internal/clilog"
+	"internal/cmd/utils"
 	"regexp"
 	"strconv"
 
 	"github.com/spf13/cobra"
+	"github.com/spf13/pflag"
 )
 
 // CreateCmd to get endpoint attachments
@@ -30,18 +33,21 @@ var CreateCmd = &cobra.Command{
 	Short: "Create an endpoint attachments in the region",
 	Long:  "Create an endpoint attachments in the region",
 	Args: func(cmd *cobra.Command, args []string) (err error) {
-		project := cmd.Flag("proj").Value.String()
-		region := cmd.Flag("reg").Value.String()
+		project := utils.GetStringParam(cmd.Flag("proj"))
+		region := utils.GetStringParam(cmd.Flag("reg"))
 
 		if err = apiclient.SetRegion(region); err != nil {
 			return err
 		}
+		cmd.Flags().VisitAll(func(f *pflag.Flag) {
+			clilog.Debug.Printf("%s: %s\n", f.Name, f.Value)
+		})
 		return apiclient.SetProjectID(project)
 	},
 	RunE: func(cmd *cobra.Command, args []string) (err error) {
-		name := cmd.Flag("name").Value.String()
-		serviceAttachment := cmd.Flag("service-attachment").Value.String()
-		description := cmd.Flag("description").Value.String()
+		name := utils.GetStringParam(cmd.Flag("name"))
+		serviceAttachment := utils.GetStringParam(cmd.Flag("service-attachment"))
+		description := utils.GetStringParam(cmd.Flag("description"))
 		wait, _ := strconv.ParseBool(cmd.Flag("wait").Value.String())
 
 		re := regexp.MustCompile(`projects\/([a-zA-Z0-9_-]+)\/regions` +

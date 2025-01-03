@@ -17,9 +17,12 @@ package sfdcchannels
 import (
 	"internal/apiclient"
 	"internal/client/sfdc"
+	"internal/clilog"
+	"internal/cmd/utils"
 	"strconv"
 
 	"github.com/spf13/cobra"
+	"github.com/spf13/pflag"
 )
 
 // GetCmd to get integration flow
@@ -34,12 +37,15 @@ var GetCmd = &cobra.Command{
 		if err = apiclient.SetRegion(cmdRegion.Value.String()); err != nil {
 			return err
 		}
+		cmd.Flags().VisitAll(func(f *pflag.Flag) {
+			clilog.Debug.Printf("%s: %s\n", f.Name, f.Value)
+		})
 		return apiclient.SetProjectID(cmdProject.Value.String())
 	},
 	RunE: func(cmd *cobra.Command, args []string) (err error) {
-		instance := cmd.Flag("instance").Value.String()
-		name := cmd.Flag("name").Value.String()
-		id := cmd.Flag("id").Value.String()
+		instance := utils.GetStringParam(cmd.Flag("instance"))
+		name := utils.GetStringParam(cmd.Flag("name"))
+		id := utils.GetStringParam(cmd.Flag("id"))
 		minimal, _ := strconv.ParseBool(cmd.Flag("minimal").Value.String())
 
 		if name != "" {
