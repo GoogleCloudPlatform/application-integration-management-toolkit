@@ -19,9 +19,11 @@ import (
 	"fmt"
 	"internal/apiclient"
 	"internal/client/integrations"
+	"internal/clilog"
 	"strconv"
 
 	"github.com/spf13/cobra"
+	"github.com/spf13/pflag"
 )
 
 // GetVerCmd to get integration flow
@@ -50,8 +52,13 @@ var GetVerCmd = &cobra.Command{
 
 		if configVar && (overrides || minimal || basic) {
 			return errors.New("config-vars cannot be combined with overrides, minimal or basic")
+		} else if err = validate(version, userLabel, snapshot, latest); err != nil {
+			return err
 		}
 
+		cmd.Flags().VisitAll(func(f *pflag.Flag) {
+			clilog.Debug.Printf("%s: %s\n", f.Name, f.Value)
+		})
 		return apiclient.SetProjectID(cmdProject.Value.String())
 	},
 	RunE: func(cmd *cobra.Command, args []string) (err error) {

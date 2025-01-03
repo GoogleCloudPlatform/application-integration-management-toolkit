@@ -22,6 +22,7 @@ import (
 	"strconv"
 
 	"github.com/spf13/cobra"
+	"github.com/spf13/pflag"
 )
 
 // UnPublishVerCmd to publish an integration flow version
@@ -43,6 +44,9 @@ var UnPublishVerCmd = &cobra.Command{
 		if err = validate(version, userLabel, snapshot, latest); err != nil {
 			return err
 		}
+		cmd.Flags().VisitAll(func(f *pflag.Flag) {
+			clilog.Debug.Printf("%s: %s\n", f.Name, f.Value)
+		})
 		return apiclient.SetProjectID(cmdProject.Value.String())
 	},
 	RunE: func(cmd *cobra.Command, args []string) (err error) {
