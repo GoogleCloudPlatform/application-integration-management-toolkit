@@ -18,9 +18,11 @@ import (
 	"fmt"
 	"internal/apiclient"
 	"internal/client/connections"
+	"internal/clilog"
 	"strconv"
 
 	"github.com/spf13/cobra"
+	"github.com/spf13/pflag"
 )
 
 // GetCmd to get connection
@@ -38,6 +40,9 @@ var GetCmd = &cobra.Command{
 		if view != "BASIC" && view != "FULL" {
 			return fmt.Errorf("view must be BASIC or FULL")
 		}
+		cmd.Flags().VisitAll(func(f *pflag.Flag) {
+			clilog.Debug.Printf("%s: %s\n", f.Name, f.Value)
+		})
 		return apiclient.SetProjectID(cmdProject.Value.String())
 	},
 	RunE: func(cmd *cobra.Command, args []string) (err error) {

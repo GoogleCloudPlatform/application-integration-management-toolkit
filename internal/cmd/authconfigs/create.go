@@ -19,12 +19,14 @@ import (
 	"fmt"
 	"internal/apiclient"
 	"internal/client/authconfigs"
+	"internal/clilog"
 	"internal/cloudkms"
 	"os"
 	"path"
 	"regexp"
 
 	"github.com/spf13/cobra"
+	"github.com/spf13/pflag"
 )
 
 // CreateCmd to create authconfigs
@@ -47,7 +49,9 @@ var CreateCmd = &cobra.Command{
 		if (encryptedFile != "" && encryptionKey == "") || (encryptedFile == "" && encryptionKey != "") {
 			return errors.New("encrypted-file and encryption-keyid must both be set")
 		}
-
+		cmd.Flags().VisitAll(func(f *pflag.Flag) {
+			clilog.Debug.Printf("%s: %s\n", f.Name, f.Value)
+		})
 		return apiclient.SetProjectID(project)
 	},
 	RunE: func(cmd *cobra.Command, args []string) (err error) {

@@ -18,9 +18,11 @@ import (
 	"fmt"
 	"internal/apiclient"
 	"internal/client/integrations"
+	"internal/clilog"
 	"strconv"
 
 	"github.com/spf13/cobra"
+	"github.com/spf13/pflag"
 )
 
 // ArchiveVerCmd to archive an integration flow version
@@ -40,6 +42,9 @@ var ArchiveVerCmd = &cobra.Command{
 		if err = validate(version, userLabel, snapshot, latest); err != nil {
 			return err
 		}
+		cmd.Flags().VisitAll(func(f *pflag.Flag) {
+			clilog.Debug.Printf("%s: %s\n", f.Name, f.Value)
+		})
 		return apiclient.SetProjectID(cmd.Flag("proj").Value.String())
 	},
 	RunE: func(cmd *cobra.Command, args []string) (err error) {

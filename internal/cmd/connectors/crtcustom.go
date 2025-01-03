@@ -18,8 +18,10 @@ import (
 	"fmt"
 	"internal/apiclient"
 	"internal/client/connections"
+	"internal/clilog"
 
 	"github.com/spf13/cobra"
+	"github.com/spf13/pflag"
 )
 
 // CrtCustomCmd to create a new connection
@@ -38,6 +40,9 @@ var CrtCustomCmd = &cobra.Command{
 		if connType != "OPEN_API" && connType != "PROTO" {
 			return fmt.Errorf("connection type must be OPEN_API or PROTO")
 		}
+		cmd.Flags().VisitAll(func(f *pflag.Flag) {
+			clilog.Debug.Printf("%s: %s\n", f.Name, f.Value)
+		})
 		return apiclient.SetProjectID(cmdProject.Value.String())
 	},
 	RunE: func(cmd *cobra.Command, args []string) (err error) {
@@ -53,8 +58,10 @@ var CrtCustomCmd = &cobra.Command{
 	Example: `Create a custom connector for OPEN_API type: ` + GetExample(3),
 }
 
-var labels map[string]string
-var connType ConnectorType
+var (
+	labels   map[string]string
+	connType ConnectorType
+)
 
 func init() {
 	var name, description, displayName string

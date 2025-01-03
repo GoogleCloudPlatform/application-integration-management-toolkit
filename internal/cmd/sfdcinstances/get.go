@@ -18,9 +18,11 @@ import (
 	"errors"
 	"internal/apiclient"
 	"internal/client/sfdc"
+	"internal/clilog"
 	"strconv"
 
 	"github.com/spf13/cobra"
+	"github.com/spf13/pflag"
 )
 
 // GetCmd to get integration flow
@@ -43,6 +45,9 @@ var GetCmd = &cobra.Command{
 		if id != "" && name != "" {
 			return errors.New("id and name both cannot be set")
 		}
+		cmd.Flags().VisitAll(func(f *pflag.Flag) {
+			clilog.Debug.Printf("%s: %s\n", f.Name, f.Value)
+		})
 		return apiclient.SetProjectID(project)
 	},
 	RunE: func(cmd *cobra.Command, args []string) (err error) {

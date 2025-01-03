@@ -19,10 +19,12 @@ import (
 	"fmt"
 	"internal/apiclient"
 	"internal/client/integrations"
+	"internal/clilog"
 	"os"
 
 	"github.com/google/uuid"
 	"github.com/spf13/cobra"
+	"github.com/spf13/pflag"
 )
 
 // ExecuteCmd an Integration
@@ -40,6 +42,9 @@ var ExecuteCmd = &cobra.Command{
 		if executionFile != "" && triggerID != "" {
 			return errors.New("cannot pass trigger id and execution file")
 		}
+		cmd.Flags().VisitAll(func(f *pflag.Flag) {
+			clilog.Debug.Printf("%s: %s\n", f.Name, f.Value)
+		})
 		return apiclient.SetProjectID(cmdProject.Value.String())
 	},
 	RunE: func(cmd *cobra.Command, args []string) (err error) {

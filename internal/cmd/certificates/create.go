@@ -18,9 +18,11 @@ import (
 	"errors"
 	"internal/apiclient"
 	"internal/client/certificates"
+	"internal/clilog"
 	"os"
 
 	"github.com/spf13/cobra"
+	"github.com/spf13/pflag"
 )
 
 // CreateCmd to create authconfigs
@@ -41,7 +43,9 @@ var CreateCmd = &cobra.Command{
 		if passphrase != "" && privateKeyFile == "" {
 			return errors.New("private key must be used with passphrase")
 		}
-
+		cmd.Flags().VisitAll(func(f *pflag.Flag) {
+			clilog.Debug.Printf("%s: %s\n", f.Name, f.Value)
+		})
 		return apiclient.SetProjectID(project)
 	},
 	RunE: func(cmd *cobra.Command, args []string) (err error) {

@@ -18,9 +18,11 @@ import (
 	"errors"
 	"internal/apiclient"
 	"internal/client/integrations"
+	"internal/clilog"
 	"strconv"
 
 	"github.com/spf13/cobra"
+	"github.com/spf13/pflag"
 )
 
 // GetVerCmd to get integration flow
@@ -60,6 +62,9 @@ var GetVerCmd = &cobra.Command{
 		if version != "" && (snapshot != "" || userLabel != "") {
 			return errors.New("version cannot be combined with snapshot or version")
 		}
+		cmd.Flags().VisitAll(func(f *pflag.Flag) {
+			clilog.Debug.Printf("%s: %s\n", f.Name, f.Value)
+		})
 		return apiclient.SetProjectID(cmdProject.Value.String())
 	},
 	RunE: func(cmd *cobra.Command, args []string) (err error) {
