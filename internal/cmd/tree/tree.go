@@ -27,6 +27,8 @@ var Cmd = &cobra.Command{
 	Long:  "Prints integrationcli command Tree",
 	RunE: func(cmd *cobra.Command, args []string) (err error) {
 		cmd.SilenceUsage = true
+
+		cmd.SilenceUsage = true
 		printCommand(cmd.Parent().Root(), 0, true)
 		return
 	},

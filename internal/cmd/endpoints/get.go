@@ -43,6 +43,8 @@ var GetCmd = &cobra.Command{
 		return apiclient.SetProjectID(project)
 	},
 	RunE: func(cmd *cobra.Command, args []string) (err error) {
+		cmd.SilenceUsage = true
+
 		name := utils.GetStringParam(cmd.Flag("name"))
 		overrides, _ := strconv.ParseBool(utils.GetStringParam(cmd.Flag("overrides")))
 

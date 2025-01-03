@@ -43,6 +43,8 @@ var CreateManagedZonesCmd = &cobra.Command{
 		return apiclient.SetProjectID(utils.GetStringParam(cmdProject))
 	},
 	RunE: func(cmd *cobra.Command, args []string) (err error) {
+		cmd.SilenceUsage = true
+
 		description := utils.GetStringParam(cmd.Flag("description"))
 		targetProject := utils.GetStringParam(cmd.Flag("target-project"))
 		targetVPC := utils.GetStringParam(cmd.Flag("target-vpc"))

@@ -42,6 +42,8 @@ var ListEventSubCmd = &cobra.Command{
 		return apiclient.SetProjectID(utils.GetStringParam(cmdProject))
 	},
 	RunE: func(cmd *cobra.Command, args []string) (err error) {
+		cmd.SilenceUsage = true
+
 		name := utils.GetStringParam(cmd.Flag("name"))
 		_, err = connections.ListEventSubscriptions(name, pageSize,
 			utils.GetStringParam(cmd.Flag("pageToken")), utils.GetStringParam(cmd.Flag("filter")),

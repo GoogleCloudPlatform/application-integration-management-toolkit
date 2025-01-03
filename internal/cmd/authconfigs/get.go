@@ -53,6 +53,8 @@ var GetCmd = &cobra.Command{
 		return apiclient.SetProjectID(project)
 	},
 	RunE: func(cmd *cobra.Command, args []string) (err error) {
+		cmd.SilenceUsage = true
+
 		name := utils.GetStringParam(cmd.Flag("name"))
 		id := utils.GetStringParam(cmd.Flag("id"))
 		minimal, _ := strconv.ParseBool(utils.GetStringParam(cmd.Flag("minimal")))

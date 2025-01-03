@@ -42,6 +42,8 @@ var DelCmd = &cobra.Command{
 		return apiclient.SetProjectID(utils.GetStringParam(cmdProject))
 	},
 	RunE: func(cmd *cobra.Command, args []string) (err error) {
+		cmd.SilenceUsage = true
+
 		name := utils.GetStringParam(cmd.Flag("name"))
 		_, err = integrations.Delete(name)
 		return err

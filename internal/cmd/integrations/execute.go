@@ -49,6 +49,8 @@ var ExecuteCmd = &cobra.Command{
 		return apiclient.SetProjectID(utils.GetStringParam(cmdProject))
 	},
 	RunE: func(cmd *cobra.Command, args []string) (err error) {
+		cmd.SilenceUsage = true
+
 		var content []byte
 		name := utils.GetStringParam(cmd.Flag("name"))
 		requestID := utils.GetStringParam(cmd.Flag("request-id"))

@@ -42,6 +42,8 @@ var ExportCmd = &cobra.Command{
 		return apiclient.SetProjectID(project)
 	},
 	RunE: func(cmd *cobra.Command, args []string) (err error) {
+		cmd.SilenceUsage = true
+
 		folder := utils.GetStringParam(cmd.Flag("folder"))
 		if err = apiclient.FolderExists(folder); err != nil {
 			return err

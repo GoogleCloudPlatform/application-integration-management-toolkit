@@ -42,6 +42,8 @@ var ImportCmd = &cobra.Command{
 		return apiclient.SetProjectID(utils.GetStringParam(cmdProject))
 	},
 	RunE: func(cmd *cobra.Command, args []string) (err error) {
+		cmd.SilenceUsage = true
+
 		const maxConnections = 4
 		if err = apiclient.FolderExists(folder); err != nil {
 			return err

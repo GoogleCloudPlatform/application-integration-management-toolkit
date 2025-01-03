@@ -40,6 +40,8 @@ var SetRoleCmd = &cobra.Command{
 		return apiclient.SetProjectID(utils.GetStringParam(cmd.Flag("proj")))
 	},
 	RunE: func(cmd *cobra.Command, args []string) (err error) {
+		cmd.SilenceUsage = true
+
 		name := utils.GetStringParam(cmd.Flag("name"))
 		role := utils.GetStringParam(cmd.Flag("role"))
 		memberName := utils.GetStringParam(cmd.Flag("member"))

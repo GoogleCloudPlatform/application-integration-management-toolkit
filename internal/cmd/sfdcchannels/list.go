@@ -42,6 +42,8 @@ var ListCmd = &cobra.Command{
 		return apiclient.SetProjectID(project)
 	},
 	RunE: func(cmd *cobra.Command, args []string) (err error) {
+		cmd.SilenceUsage = true
+
 		instance := utils.GetStringParam(cmd.Flag("instance"))
 		_, err = sfdc.ListChannels(instance)
 		return

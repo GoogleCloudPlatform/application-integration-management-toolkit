@@ -38,6 +38,8 @@ var Cmd = &cobra.Command{
 		return apiclient.SetProjectID(utils.GetStringParam(cmdProject))
 	},
 	RunE: func(cmd *cobra.Command, args []string) (err error) {
+		cmd.SilenceUsage = true
+
 		cloudKMS := utils.GetStringParam(cmd.Flag("cloudkms"))
 		serviceAccount := utils.GetStringParam(cmd.Flag("service-account"))
 

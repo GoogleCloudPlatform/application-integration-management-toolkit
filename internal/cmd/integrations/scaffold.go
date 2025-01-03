@@ -57,6 +57,8 @@ var ScaffoldCmd = &cobra.Command{
 		return apiclient.SetProjectID(cmdProject)
 	},
 	RunE: func(cmd *cobra.Command, args []string) (err error) {
+		cmd.SilenceUsage = true
+
 		const jsonExt = ".json"
 		var fileSplitter string
 		var integrationBody, overridesBody, listBody []byte

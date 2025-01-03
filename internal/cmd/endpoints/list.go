@@ -42,6 +42,8 @@ var ListCmd = &cobra.Command{
 		return apiclient.SetProjectID(project)
 	},
 	RunE: func(cmd *cobra.Command, args []string) (err error) {
+		cmd.SilenceUsage = true
+
 		pageToken := utils.GetStringParam(cmd.Flag("pageToken"))
 		filter := utils.GetStringParam(cmd.Flag("filter"))
 

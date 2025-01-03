@@ -46,6 +46,8 @@ var CreateCmd = &cobra.Command{
 		return apiclient.SetProjectID(utils.GetStringParam(cmdProject))
 	},
 	RunE: func(cmd *cobra.Command, args []string) (err error) {
+		cmd.SilenceUsage = true
+
 		createSecret, _ := strconv.ParseBool(utils.GetStringParam(cmd.Flag("create-secret")))
 		grantPermission, _ := strconv.ParseBool(utils.GetStringParam(cmd.Flag("grant-permission")))
 		wait, _ := strconv.ParseBool(utils.GetStringParam(cmd.Flag("wait")))

@@ -53,6 +53,8 @@ var UpdateNodeCountCmd = &cobra.Command{
 		return apiclient.SetProjectID(utils.GetStringParam(cmdProject))
 	},
 	RunE: func(cmd *cobra.Command, args []string) (err error) {
+		cmd.SilenceUsage = true
+
 		nodeConfig := []string{}
 		var nodeCount string
 		name := utils.GetStringParam(cmd.Flag("name"))

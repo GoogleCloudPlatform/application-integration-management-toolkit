@@ -42,6 +42,8 @@ var ReplayExecCmd = &cobra.Command{
 		return apiclient.SetProjectID(utils.GetStringParam(cmdProject))
 	},
 	RunE: func(cmd *cobra.Command, args []string) (err error) {
+		cmd.SilenceUsage = true
+
 		name := utils.GetStringParam(cmd.Flag("name"))
 		executionID := utils.GetStringParam(cmd.Flag("execution-id"))
 		replayReason := utils.GetStringParam(cmd.Flag("replay-reason"))

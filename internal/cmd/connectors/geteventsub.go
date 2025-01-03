@@ -42,6 +42,8 @@ var GetEventSubCmd = &cobra.Command{
 		return apiclient.SetProjectID(utils.GetStringParam(cmdProject))
 	},
 	RunE: func(cmd *cobra.Command, args []string) (err error) {
+		cmd.SilenceUsage = true
+
 		name := utils.GetStringParam(cmd.Flag("name"))
 		conn := utils.GetStringParam(cmd.Flag("conn"))
 		_, err = connections.GetEventSubscription(name, conn, overrides)

@@ -42,6 +42,8 @@ var CancelExecCmd = &cobra.Command{
 		return apiclient.SetProjectID(utils.GetStringParam(cmdProject))
 	},
 	RunE: func(cmd *cobra.Command, args []string) (err error) {
+		cmd.SilenceUsage = true
+
 		name := utils.GetStringParam(cmd.Flag("name"))
 		executionID := utils.GetStringParam(cmd.Flag("execution-id"))
 		cancelReason := utils.GetStringParam(cmd.Flag("cancel-reason"))

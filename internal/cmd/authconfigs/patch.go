@@ -43,6 +43,8 @@ var PatchCmd = &cobra.Command{
 		return apiclient.SetProjectID(utils.GetStringParam(cmdProject))
 	},
 	RunE: func(cmd *cobra.Command, args []string) (err error) {
+		cmd.SilenceUsage = true
+
 		name := utils.GetStringParam(cmd.Flag("name"))
 
 		if _, err := os.Stat(authConfigFile); os.IsNotExist(err) {

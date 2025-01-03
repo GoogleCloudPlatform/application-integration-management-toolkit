@@ -44,6 +44,8 @@ var CrtEventSubCmd = &cobra.Command{
 		return apiclient.SetProjectID(utils.GetStringParam(cmdProject))
 	},
 	RunE: func(cmd *cobra.Command, args []string) (err error) {
+		cmd.SilenceUsage = true
+
 		name := utils.GetStringParam(cmd.Flag("name"))
 		id := utils.GetStringParam(cmd.Flag("id"))
 		eventsubFile := utils.GetStringParam(cmd.Flag("file"))
