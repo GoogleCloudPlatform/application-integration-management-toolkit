@@ -64,18 +64,18 @@ var PublishVerCmd = &cobra.Command{
 		var contents []byte
 		var info string
 
-		if configVarsJson == "" {
-			if configVarsFile != "" {
-				if _, err := os.Stat(configVarsFile); os.IsNotExist(err) {
-					return err
-				}
-
-				contents, err = os.ReadFile(configVarsFile)
-				if err != nil {
-					return err
-				}
+		if configVarsFile != "" {
+			if _, err := os.Stat(configVarsFile); os.IsNotExist(err) {
+				return err
 			}
-		} else {
+
+			contents, err = os.ReadFile(configVarsFile)
+			if err != nil {
+				return err
+			}
+		}
+
+		if configVarsJson != "" {
 			contents = []byte(configVarsJson)
 		}
 
@@ -130,7 +130,7 @@ func init() {
 	PublishVerCmd.Flags().StringVarP(&configVars, "config-vars", "",
 		"", "Path to file containing config variables")
 	PublishVerCmd.Flags().StringVarP(&configVarsJson, "config-vars-json", "",
-		"", "Json string containing the config variables if both Json string and file is present Json string will only be used.")
+		"", "JSON string containing the config variables.")
 	PublishVerCmd.Flags().BoolVarP(&latest, "latest", "",
 		true, "Publishes the integeration version with the highest snapshot number in SNAPSHOT state; default is true")
 

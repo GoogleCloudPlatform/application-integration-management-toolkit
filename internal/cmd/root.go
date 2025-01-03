@@ -30,6 +30,7 @@ import (
 	"internal/cmd/sfdcchannels"
 	"internal/cmd/sfdcinstances"
 	"internal/cmd/token"
+	"internal/cmd/tree"
 	"internal/cmd/utils"
 	"io"
 	"net/http"
@@ -157,6 +158,7 @@ func init() {
 	RootCmd.AddCommand(sfdcchannels.Cmd)
 	RootCmd.AddCommand(endpoints.Cmd)
 	RootCmd.AddCommand(provision.Cmd)
+	RootCmd.AddCommand(tree.Cmd)
 }
 
 func initConfig() {

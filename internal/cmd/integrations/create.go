@@ -42,7 +42,9 @@ var CreateCmd = &cobra.Command{
 		if basic && publish {
 			return fmt.Errorf("cannot combine basic and publish flags")
 		}
-
+		if configVarsFile != "" && configVarsJson != "" {
+			return fmt.Errorf("cannot use config-vars and config-vars-json flags together")
+		}
 		if !publish && (configVarsFile != "" || configVarsJson != "") {
 			return fmt.Errorf("cannot use config-vars and config-vars-json flags when publish is false")
 		}
@@ -64,20 +66,21 @@ var CreateCmd = &cobra.Command{
 		configVarsJson := utils.GetStringParam(cmd.Flag("config-vars-json"))
 		configVarsFile := utils.GetStringParam(cmd.Flag("config-vars"))
 
-		if configVarsJson == "" {
-			if configVarsFile != "" {
-				if _, err := os.Stat(configVarsFile); os.IsNotExist(err) {
-					return err
-				}
-
-				contents, err = os.ReadFile(configVarsFile)
-				if err != nil {
-					return err
-				}
+		if configVarsFile != "" {
+			if _, err := os.Stat(configVarsFile); os.IsNotExist(err) {
+				return err
 			}
-		} else {
+
+			contents, err = os.ReadFile(configVarsFile)
+			if err != nil {
+				return err
+			}
+		}
+
+		if configVarsJson != "" {
 			contents = []byte(configVarsJson)
 		}
+
 		if _, err := os.Stat(integrationFile); os.IsNotExist(err) {
 			return err
 		}
@@ -156,7 +159,7 @@ func init() {
 	CreateCmd.Flags().StringVarP(&configVars, "config-vars", "",
 		"", "Path to file containing config variables")
 	CreateCmd.Flags().StringVarP(&configVarsJson, "config-vars-json", "",
-		"", "Json string containing the config variables if both Json string and file is present Json string will only be used.")
+		"", "JSON string containing the config variables")
 
 	_ = CreateCmd.MarkFlagRequired("name")
 	_ = CreateCmd.MarkFlagRequired("file")
