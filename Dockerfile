@@ -41,7 +41,6 @@ LABEL org.opencontainers.image.url='https://github.com/GoogleCloudPlatform/appli
     org.opencontainers.image.description='This is a tool to interact with Application Integration APIs'
 COPY --from=builder /go/bin/integrationcli /usr/local/bin/integrationcli
 COPY --from=jq /jq /usr/local/bin/jq
-COPY --chown=nonroot:nonroot integrationcmd /usr/local/bin/integrationcmd
 COPY LICENSE.txt /
 COPY third-party-licenses.txt /
 
