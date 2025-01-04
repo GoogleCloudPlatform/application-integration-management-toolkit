@@ -197,7 +197,7 @@ jobs:
 
     permissions:
       contents: 'read'
-      idtoken: 'write'
+      id-token: 'write'
 
     name: Apply integration version
     runs-on: ubuntu-latest
@@ -219,14 +219,12 @@ jobs:
         id: 'calc-vars'
         run: |
           echo "SHORT_SHA=$(git rev-parse --short $GITHUB_SHA)" >> $GITHUB_OUTPUT
-          echo "INTEGRATION_FILE=$(find src -name '*.json')" >> $GITHUB_OUTPUT
-          echo "INTEGRATION_NAME=$(basename $INTEGRATION_FILE .json)" >> $GITHUB_OUTPUT
 
       - name: Create and Publish Integration
         id: 'publish-integration'
         uses: docker://us-docker.pkg.dev/appintegration-toolkit/images/integrationcli:v0.79.0 #pin to version of choice
         with:
-          args: integrations apply --name=${{ steps.calc-vars.outputs.INTEGRATION_NAME }} --env=${{ vars.ENVIRONMENT}} --folder=. --userlabel=${{ steps.calc-vars.outputs.SHORT_SHA }} --wait=true --token ${{ steps.gcp-auth.outputs.access_token }}`
+          args: integrations apply --env=${{ env.ENVIRONMENT}} --folder=. --userlabel=${{ steps.calc-vars.outputs.SHORT_SHA }} --wait=true --proj=${{ env.PROJECT_ID }} --reg=${{ env.REGION }} --token ${{ steps.gcp-auth.outputs.access_token }}`
 
 func GetCloudDeployYaml(integrationName string, env string) string {
 	if env == "" {
