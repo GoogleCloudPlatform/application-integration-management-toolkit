@@ -66,6 +66,7 @@ var ScaffoldCmd = &cobra.Command{
 		userLabel := utils.GetStringParam(cmd.Flag("user-label"))
 		snapshot := utils.GetStringParam(cmd.Flag("snapshot"))
 		name := utils.GetStringParam(cmd.Flag("name"))
+		githubAction, _ := strconv.ParseBool(utils.GetStringParam(cmd.Flag("github-action")))
 
 		apiclient.DisableCmdPrintHttpResponse()
 
@@ -400,6 +401,16 @@ var ScaffoldCmd = &cobra.Command{
 			}
 		}
 
+		if githubAction {
+			clilog.Info.Printf("Storing Github Action\n")
+			if err = apiclient.WriteByteArrayToFile(
+				path.Join(baseFolder, name+".yaml"),
+				false,
+				[]byte(utils.GetGithubAction(env))); err != nil {
+				return err
+			}
+		}
+
 		return err
 	},
 	Example: `Generate scaffold for dev env using snapshot: ` + GetExample(5) + `
@@ -415,7 +426,7 @@ var (
 
 func init() {
 	var name, userLabel, snapshot, version string
-	var latest bool
+	var latest, githubAction bool
 
 	ScaffoldCmd.Flags().StringVarP(&name, "name", "n",
 		"", "Integration flow name")
@@ -429,6 +440,8 @@ func init() {
 		false, "Generate cloud build file; default is false")
 	ScaffoldCmd.Flags().BoolVarP(&cloudDeploy, "cloud-deploy", "",
 		false, "Generate cloud deploy files; default is false")
+	ScaffoldCmd.Flags().BoolVarP(&githubAction, "github-action", "",
+		false, "Generate Github Action to apply integration; default is false")
 	ScaffoldCmd.Flags().StringVarP(&folder, "folder", "f",
 		"", "Folder to generate the scaffolding")
 	ScaffoldCmd.Flags().StringVarP(&env, "env", "e",
@@ -440,7 +453,7 @@ func init() {
 	ScaffoldCmd.Flags().BoolVarP(&useUnderscore, "use-underscore", "",
 		false, "Use underscore as a file splitter; default is __")
 	ScaffoldCmd.Flags().BoolVarP(&extractCode, "extract-code", "x",
-		false, "Extract JavaScript and Jsonnet code as separate files")
+		false, "Extract JavaScript and Jsonnet code as separate files; default is false")
 	ScaffoldCmd.Flags().BoolVarP(&latest, "latest", "",
 		true, "Scaffolds the integeration version in ACTIVE state, if not found the highest snapshot in SNAPSHOT state; default is true")
 
