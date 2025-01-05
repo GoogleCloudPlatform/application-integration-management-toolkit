@@ -140,24 +140,21 @@ customActions:
 - name: render-app-integration
   containers:
   - name: render
-    image: gcr.io/google.com/cloudsdktool/google-cloud-cli@sha256:66e2681aa3099b4e517e4cdcdefff8f2aa45d305007124ccdc09686f6712d018
-    command: ['/bin/bash']
-    args:
-      - '-c'
-      - |-
-        echo "Sample manifest rendered content" > manifest.txt
-        gsutil cp manifest.txt $CLOUD_DEPLOY_OUTPUT_GCS_PATH/manifest.txt
-        echo {\"resultStatus\": \"SUCCEEDED\", \"manifestFile\": \"$CLOUD_DEPLOY_OUTPUT_GCS_PATH/manifest.txt\"} > results.json
-        gsutil cp results.json $CLOUD_DEPLOY_OUTPUT_GCS_PATH/results.json
-- name: deploy-app-integration
-  containers:
-  - name: deploy
-    image: us-docker.pkg.dev/appintegration-toolkit/images/integrationcli-deploy:latest
+    image: us-docker.pkg.dev/appintegration-toolkit/images/integrationcli:latest
     command: ['sh']
     args:
       - '-c'
       - |-
-        integrationcli integrations apply --env=dev --reg=$CLOUD_DEPLOY_LOCATION --proj=$CLOUD_DEPLOY_PROJECT --pipeline=$CLOUD_DEPLOY_DELIVERY_PIPELINE --release=$CLOUD_DEPLOY_RELEASE --target=$CLOUD_DEPLOY_TARGET --metadata-token`
+        integrationcli render --output-gcs-path=$CLOUD_DEPLOY_OUTPUT_GCS_PATH
+- name: deploy-app-integration
+  containers:
+  - name: deploy
+    image: us-docker.pkg.dev/appintegration-toolkit/images/integrationcli:latest
+    command: ['sh']
+    args:
+      - '-c'
+      - |-
+        integrationcli integrations apply --env=dev --reg=$CLOUD_DEPLOY_LOCATION --proj=$CLOUD_DEPLOY_PROJECT --pipeline=$CLOUD_DEPLOY_DELIVERY_PIPELINE --release=$CLOUD_DEPLOY_RELEASE --output-gcs-path=$CLOUD_DEPLOY_TARGET --metadata-token`
 
 const githubActionApply = `# Copyright 2025 Google LLC
 #
@@ -264,14 +261,22 @@ func GetStringParam(flag *pflag.Flag) (param string) {
 
 func GetGithubAction(environment string) string {
 	var githubAction string
-	bi, ok := debug.ReadBuildInfo()
 	if environment != "" {
 		githubAction = strings.ReplaceAll(githubActionApply, "'dev'", "'"+environment+"'")
 	} else {
 		githubAction = githubActionApply
 	}
-	if ok && bi.Main.Version != "" {
-		githubAction = strings.ReplaceAll(githubAction, "v0.79.0", bi.Main.Version)
+	v := GetCLIVersion()
+	if v != "" {
+		githubAction = strings.ReplaceAll(githubAction, "v0.79.0", v)
 	}
 	return githubAction
+}
+
+func GetCLIVersion() string {
+	bi, ok := debug.ReadBuildInfo()
+	if ok && bi.Main.Version != "" {
+		return bi.Main.Version
+	}
+	return "latest"
 }
