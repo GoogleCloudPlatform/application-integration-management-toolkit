@@ -396,7 +396,7 @@ var ScaffoldCmd = &cobra.Command{
 			if err = apiclient.WriteByteArrayToFile(
 				path.Join(baseFolder, "skaffold.yaml"),
 				false,
-				[]byte(utils.GetSkaffoldYaml())); err != nil {
+				[]byte(utils.GetSkaffoldYaml(name))); err != nil {
 				return err
 			}
 		}
@@ -406,7 +406,7 @@ var ScaffoldCmd = &cobra.Command{
 			if err = apiclient.WriteByteArrayToFile(
 				path.Join(baseFolder, name+".yaml"),
 				false,
-				[]byte(utils.GetGithubAction(env))); err != nil {
+				[]byte(utils.GetGithubAction(env, name))); err != nil {
 				return err
 			}
 		}

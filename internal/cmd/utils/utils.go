@@ -137,7 +137,7 @@ var skaffold = `# Copyright 2024 Google LLC
 apiVersion: skaffold/v4beta7
 kind: Config
 customActions:
-- name: render-app-integration
+- name: render-%s-integration
   containers:
   - name: render
     image: us-docker.pkg.dev/appintegration-toolkit/images/integrationcli:latest
@@ -146,7 +146,7 @@ customActions:
       - '-c'
       - |-
         integrationcli render --output-gcs-path=$CLOUD_DEPLOY_OUTPUT_GCS_PATH
-- name: deploy-app-integration
+- name: deploy-%s-integration
   containers:
   - name: deploy
     image: us-docker.pkg.dev/appintegration-toolkit/images/integrationcli:latest
@@ -156,7 +156,7 @@ customActions:
       - |-
         integrationcli integrations apply --env=dev --reg=$CLOUD_DEPLOY_LOCATION --proj=$CLOUD_DEPLOY_PROJECT --pipeline=$CLOUD_DEPLOY_DELIVERY_PIPELINE --release=$CLOUD_DEPLOY_OUTPUT_GCS_PATH --output-gcs-path=$CLOUD_DEPLOY_TARGET --metadata-token`
 
-const githubActionApply = `# Copyright 2025 Google LLC
+var githubActionApply = `# Copyright 2025 Google LLC
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -174,7 +174,7 @@ const githubActionApply = `# Copyright 2025 Google LLC
 # it also includes any overrides present in overrides.json and config-vars files.
 # this sample is using the example in samples/scaffold-example
 
-name: integrationcli-github-action
+name: apply-%s-action
 permissions: read-all
 
 # Controls when the workflow will run
@@ -229,8 +229,8 @@ func GetCloudDeployYaml(integrationName string, env string) string {
 	return fmt.Sprintf(cloudDeploy, integrationName, env, env, integrationName, integrationName)
 }
 
-func GetSkaffoldYaml() string {
-	return skaffold
+func GetSkaffoldYaml(integrationName string) string {
+	return fmt.Sprintf(skaffold, integrationName, integrationName)
 }
 
 func GetCloudBuildYaml() string {
@@ -259,7 +259,7 @@ func GetStringParam(flag *pflag.Flag) (param string) {
 	return param
 }
 
-func GetGithubAction(environment string) string {
+func GetGithubAction(environment string, integrationName string) string {
 	var githubAction string
 	if environment != "" {
 		githubAction = strings.ReplaceAll(githubActionApply, "'dev'", "'"+environment+"'")
@@ -270,7 +270,7 @@ func GetGithubAction(environment string) string {
 	if v != "" {
 		githubAction = strings.ReplaceAll(githubAction, "v0.79.0", v)
 	}
-	return githubAction
+	return fmt.Sprintf(githubAction, integrationName)
 }
 
 func GetCLIVersion() string {
