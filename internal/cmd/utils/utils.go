@@ -154,7 +154,7 @@ customActions:
     args:
       - '-c'
       - |-
-        integrationcli integrations apply --env=dev --reg=$CLOUD_DEPLOY_LOCATION --proj=$CLOUD_DEPLOY_PROJECT --pipeline=$CLOUD_DEPLOY_DELIVERY_PIPELINE --release=$CLOUD_DEPLOY_RELEASE --output-gcs-path=$CLOUD_DEPLOY_TARGET --metadata-token`
+        integrationcli integrations apply --env=dev --reg=$CLOUD_DEPLOY_LOCATION --proj=$CLOUD_DEPLOY_PROJECT --pipeline=$CLOUD_DEPLOY_DELIVERY_PIPELINE --release=$CLOUD_DEPLOY_OUTPUT_GCS_PATH --output-gcs-path=$CLOUD_DEPLOY_TARGET --metadata-token`
 
 const githubActionApply = `# Copyright 2025 Google LLC
 #
