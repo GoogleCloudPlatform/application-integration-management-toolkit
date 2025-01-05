@@ -27,6 +27,7 @@ import (
 	"internal/cmd/integrations"
 	"internal/cmd/preferences"
 	"internal/cmd/provision"
+	"internal/cmd/render"
 	"internal/cmd/sfdcchannels"
 	"internal/cmd/sfdcinstances"
 	"internal/cmd/token"
@@ -159,6 +160,7 @@ func init() {
 	RootCmd.AddCommand(endpoints.Cmd)
 	RootCmd.AddCommand(provision.Cmd)
 	RootCmd.AddCommand(tree.Cmd)
+	RootCmd.AddCommand(render.Cmd)
 }
 
 func initConfig() {
