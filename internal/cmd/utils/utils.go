@@ -109,13 +109,13 @@ kind: Target
 metadata:
   name: %s-env
 customTarget:
-  customTargetType: appint-%s-%s-target
+  customTargetType: appint-%s-target
 ---
 
 apiVersion: deploy.cloud.google.com/v1
 kind: CustomTargetType
 metadata:
-  name: appint-%s-%s-target
+  name: appint-%s-target
 customActions:
   renderAction: render-app-integration
   deployAction: deploy-app-integration`
@@ -226,7 +226,7 @@ func GetCloudDeployYaml(integrationName string, env string) string {
 	if env == "" {
 		env = "dev"
 	}
-	return fmt.Sprintf(cloudDeploy, integrationName, env, env, integrationName, env, integrationName, env)
+	return fmt.Sprintf(cloudDeploy, integrationName, env, env, integrationName, integrationName)
 }
 
 func GetSkaffoldYaml(integrationName string) string {
