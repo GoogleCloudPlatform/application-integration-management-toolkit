@@ -44,7 +44,7 @@ const cloudBuild = `# Copyright 2023 Google LLC
 # limitations under the License.
 
 #to manually trigger from gcloud
-# gcloud builds submit --config=deploy.yaml --project=project-name --region=us-west1
+# gcloud builds submit --config=cloudbuild.yaml --project=project-name --region=us-west1
 
 steps:
 - id: 'Apply Integration scaffolding configuration'
@@ -57,10 +57,9 @@ steps:
     - -u
     - ${SHORT_SHA}
     - --wait=${_WAIT}
-    - --reg=${_LOCATION}
+    - --reg=${LOCATION}
     - --proj=${PROJECT_ID}
     - --metadata-token
-    - $(cat /tmp/cmd)
     # uncomment these as necessary
     #- --g=${_GRANT_PERMISSIONS}
     #- --create-secret=${_CREATE_SECRET}
