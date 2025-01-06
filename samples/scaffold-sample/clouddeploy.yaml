@@ -27,6 +27,8 @@ metadata:
   name: dev-env
 customTarget:
   customTargetType: appint-sample-target
+deployParameters:
+  APP_INTEGRATION_PROJECT_ID: "sample-project"
 ---
 
 apiVersion: deploy.cloud.google.com/v1

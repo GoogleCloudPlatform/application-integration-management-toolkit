@@ -16,6 +16,7 @@ package utils
 
 import (
 	"fmt"
+	"internal/apiclient"
 	"io"
 	"os"
 	"runtime/debug"
@@ -110,6 +111,8 @@ metadata:
   name: %s-env
 customTarget:
   customTargetType: appint-%s-target
+deployParameters:
+  APP_INTEGRATION_PROJECT_ID: "%s"
 ---
 
 apiVersion: deploy.cloud.google.com/v1
@@ -154,7 +157,7 @@ customActions:
     args:
       - '-c'
       - |-
-        integrationcli integrations apply --env=dev --reg=$CLOUD_DEPLOY_LOCATION --proj=$CLOUD_DEPLOY_PROJECT --pipeline=$CLOUD_DEPLOY_DELIVERY_PIPELINE --release=$CLOUD_DEPLOY_OUTPUT_GCS_PATH --output-gcs-path=$CLOUD_DEPLOY_TARGET --metadata-token`
+        integrationcli integrations apply --env=dev --reg=$CLOUD_DEPLOY_LOCATION --proj=$APP_INTEGRATION_PROJECT_ID --pipeline=$CLOUD_DEPLOY_DELIVERY_PIPELINE --release=$CLOUD_DEPLOY_OUTPUT_GCS_PATH --output-gcs-path=$CLOUD_DEPLOY_TARGET --metadata-token`
 
 var githubActionApply = `# Copyright 2025 Google LLC
 #
@@ -226,7 +229,7 @@ func GetCloudDeployYaml(integrationName string, env string) string {
 	if env == "" {
 		env = "dev"
 	}
-	return fmt.Sprintf(cloudDeploy, integrationName, env, env, integrationName, integrationName)
+	return fmt.Sprintf(cloudDeploy, integrationName, env, env, integrationName, apiclient.GetProjectID(), integrationName)
 }
 
 func GetSkaffoldYaml(integrationName string) string {
