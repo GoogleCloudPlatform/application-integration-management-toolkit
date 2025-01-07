@@ -28,6 +28,7 @@ RUN go mod tidy
 RUN go mod download
 RUN date +%FT%H:%I:%M+%Z > /tmp/date
 RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -trimpath -buildvcs=true -a -gcflags='all="-l"' -ldflags='-s -w -extldflags "-static" -X main.version='${TAG}' -X main.commit='${COMMIT}' -X main.date='$(cat /tmp/date) -o /go/bin/integrationcli /go/src/integrationcli/cmd/integrationcli/integrationcli.go
+RUN /go/bin/integrationcli prefs set --nocheck=true
 
 FROM us-docker.pkg.dev/appintegration-toolkit/internal/jq:latest@sha256:d3a1c8a88f9223eab96bda760efab08290d274249581d2db6db010cbe20c232b AS jq
 
@@ -40,6 +41,7 @@ LABEL org.opencontainers.image.url='https://github.com/GoogleCloudPlatform/appli
     org.opencontainers.image.licenses='Apache-2.0' \
     org.opencontainers.image.description='This is a tool to interact with Application Integration APIs'
 COPY --from=builder /go/bin/integrationcli /usr/local/bin/integrationcli
+COPY --from=builder --chown=nonroot:nonroot /root/.integrationcli/config.json /home/nonroot/.integrationcli/config.json
 COPY --from=jq /jq /usr/local/bin/jq
 COPY LICENSE.txt /
 COPY third-party-licenses.txt /
