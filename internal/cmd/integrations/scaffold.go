@@ -144,7 +144,7 @@ var ScaffoldCmd = &cobra.Command{
 				return err
 			}
 		} else {
-			return errors.New("latest version not found. Must pass oneOf version, snapshot or user-label or fix the integration name")
+			return errors.New("latest version not found. 1) The integration may be in DRAFT state. Pass a snapshot number. 2) An invalid integration name was set. 3) Latest flag was combined with version, snapshot or user-label")
 		}
 
 		clilog.Info.Printf("Storing the Integration: %s\n", name)
