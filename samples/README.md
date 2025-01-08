@@ -29,6 +29,8 @@ Set up integrationcli with preferences: `integrationcli prefs set -p $project -r
 | authconfigs | `integrationcli authconfigs create -f samples/ac_authtoken.json`|
 | authconfigs | `integrationcli authconfigs create -e samples/b64encoded_ac.txt -k locations/$region/keyRings/$key/cryptoKeys/$cryptokey`|
 | connectors | `integrationcli connectors create -n $name -g=true -f samples/pub_sub_connection.json -sa=connectors --wait=true --default-token`|
+| GitHub Actions | See samples [here](../samples/workflows) |
+
 
 
 NOTE: This file is auto-generated during a release. Do not modify.
