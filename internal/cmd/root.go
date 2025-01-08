@@ -27,10 +27,12 @@ import (
 	"internal/cmd/integrations"
 	"internal/cmd/preferences"
 	"internal/cmd/provision"
+	"internal/cmd/render"
 	"internal/cmd/sfdcchannels"
 	"internal/cmd/sfdcinstances"
 	"internal/cmd/token"
 	"internal/cmd/tree"
+	"internal/cmd/utils"
 	"io"
 	"net/http"
 	"os"
@@ -45,8 +47,8 @@ var RootCmd = &cobra.Command{
 	Short: "Utility to work with GCP App Integration & Connectors",
 	Long:  "This command lets you interact with GCP Application Integration and Integration Connector APIs.",
 	PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
-		cmdServiceAccount := cmd.Flag("account").Value.String()
-		cmdToken := cmd.Flag("token").Value.String()
+		cmdServiceAccount := utils.GetStringParam(cmd.Flag("account"))
+		cmdToken := utils.GetStringParam(cmd.Flag("token"))
 
 		if metadataToken && defaultToken {
 			return fmt.Errorf("metadata-token and default-token cannot be used together")
@@ -158,6 +160,7 @@ func init() {
 	RootCmd.AddCommand(endpoints.Cmd)
 	RootCmd.AddCommand(provision.Cmd)
 	RootCmd.AddCommand(tree.Cmd)
+	RootCmd.AddCommand(render.Cmd)
 }
 
 func initConfig() {

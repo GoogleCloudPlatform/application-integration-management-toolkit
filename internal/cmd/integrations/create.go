@@ -20,6 +20,7 @@ import (
 	"internal/apiclient"
 	"internal/client/integrations"
 	"internal/clilog"
+	"internal/cmd/utils"
 	"os"
 	"strings"
 
@@ -35,8 +36,8 @@ var CreateCmd = &cobra.Command{
 	Args: func(cmd *cobra.Command, args []string) (err error) {
 		cmdProject := cmd.Flag("proj")
 		cmdRegion := cmd.Flag("reg")
-		configVarsJson := cmd.Flag("config-vars-json").Value.String()
-		configVarsFile := cmd.Flag("config-vars").Value.String()
+		configVarsJson := utils.GetStringParam(cmd.Flag("config-vars-json"))
+		configVarsFile := utils.GetStringParam(cmd.Flag("config-vars"))
 
 		if basic && publish {
 			return fmt.Errorf("cannot combine basic and publish flags")
@@ -48,22 +49,24 @@ var CreateCmd = &cobra.Command{
 			return fmt.Errorf("cannot use config-vars and config-vars-json flags when publish is false")
 		}
 
-		if err = apiclient.SetRegion(cmdRegion.Value.String()); err != nil {
+		if err = apiclient.SetRegion(utils.GetStringParam(cmdRegion)); err != nil {
 			return err
 		}
 		cmd.Flags().VisitAll(func(f *pflag.Flag) {
 			clilog.Debug.Printf("%s: %s\n", f.Name, f.Value)
 		})
-		return apiclient.SetProjectID(cmdProject.Value.String())
+		return apiclient.SetProjectID(utils.GetStringParam(cmdProject))
 	},
 	RunE: func(cmd *cobra.Command, args []string) (err error) {
+		cmd.SilenceUsage = true
+
 		var overridesContent, contents []byte
 
-		name := cmd.Flag("name").Value.String()
-		userLabel := cmd.Flag("user-label").Value.String()
-		snapshot := cmd.Flag("snapshot").Value.String()
-		configVarsJson := cmd.Flag("config-vars-json").Value.String()
-		configVarsFile := cmd.Flag("config-vars").Value.String()
+		name := utils.GetStringParam(cmd.Flag("name"))
+		userLabel := utils.GetStringParam(cmd.Flag("user-label"))
+		snapshot := utils.GetStringParam(cmd.Flag("snapshot"))
+		configVarsJson := utils.GetStringParam(cmd.Flag("config-vars-json"))
+		configVarsFile := utils.GetStringParam(cmd.Flag("config-vars"))
 
 		if configVarsFile != "" {
 			if _, err := os.Stat(configVarsFile); os.IsNotExist(err) {

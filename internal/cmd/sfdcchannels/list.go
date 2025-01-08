@@ -18,6 +18,7 @@ import (
 	"internal/apiclient"
 	"internal/client/sfdc"
 	"internal/clilog"
+	"internal/cmd/utils"
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
@@ -29,8 +30,8 @@ var ListCmd = &cobra.Command{
 	Short: "List sfdcchannels in Application Integration",
 	Long:  "List sfdcchannels in Application Integration",
 	Args: func(cmd *cobra.Command, args []string) (err error) {
-		project := cmd.Flag("proj").Value.String()
-		region := cmd.Flag("reg").Value.String()
+		project := utils.GetStringParam(cmd.Flag("proj"))
+		region := utils.GetStringParam(cmd.Flag("reg"))
 
 		if err = apiclient.SetRegion(region); err != nil {
 			return err
@@ -41,7 +42,9 @@ var ListCmd = &cobra.Command{
 		return apiclient.SetProjectID(project)
 	},
 	RunE: func(cmd *cobra.Command, args []string) (err error) {
-		instance := cmd.Flag("instance").Value.String()
+		cmd.SilenceUsage = true
+
+		instance := utils.GetStringParam(cmd.Flag("instance"))
 		_, err = sfdc.ListChannels(instance)
 		return
 	},

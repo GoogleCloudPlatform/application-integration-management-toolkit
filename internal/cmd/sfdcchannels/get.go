@@ -18,6 +18,7 @@ import (
 	"internal/apiclient"
 	"internal/client/sfdc"
 	"internal/clilog"
+	"internal/cmd/utils"
 	"strconv"
 
 	"github.com/spf13/cobra"
@@ -33,19 +34,21 @@ var GetCmd = &cobra.Command{
 		cmdProject := cmd.Flag("proj")
 		cmdRegion := cmd.Flag("reg")
 
-		if err = apiclient.SetRegion(cmdRegion.Value.String()); err != nil {
+		if err = apiclient.SetRegion(utils.GetStringParam(cmdRegion)); err != nil {
 			return err
 		}
 		cmd.Flags().VisitAll(func(f *pflag.Flag) {
 			clilog.Debug.Printf("%s: %s\n", f.Name, f.Value)
 		})
-		return apiclient.SetProjectID(cmdProject.Value.String())
+		return apiclient.SetProjectID(utils.GetStringParam(cmdProject))
 	},
 	RunE: func(cmd *cobra.Command, args []string) (err error) {
-		instance := cmd.Flag("instance").Value.String()
-		name := cmd.Flag("name").Value.String()
-		id := cmd.Flag("id").Value.String()
-		minimal, _ := strconv.ParseBool(cmd.Flag("minimal").Value.String())
+		cmd.SilenceUsage = true
+
+		instance := utils.GetStringParam(cmd.Flag("instance"))
+		name := utils.GetStringParam(cmd.Flag("name"))
+		id := utils.GetStringParam(cmd.Flag("id"))
+		minimal, _ := strconv.ParseBool(utils.GetStringParam(cmd.Flag("minimal")))
 
 		if name != "" {
 			apiclient.DisableCmdPrintHttpResponse()

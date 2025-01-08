@@ -21,6 +21,7 @@ import (
 	"internal/apiclient"
 	"internal/client/integrations"
 	"internal/clilog"
+	"internal/cmd/utils"
 	"os"
 	"strconv"
 
@@ -36,17 +37,12 @@ var PublishVerCmd = &cobra.Command{
 	Args: func(cmd *cobra.Command, args []string) (err error) {
 		cmdProject := cmd.Flag("proj")
 		cmdRegion := cmd.Flag("reg")
-		version := cmd.Flag("ver").Value.String()
-		userLabel := cmd.Flag("user-label").Value.String()
-		snapshot := cmd.Flag("snapshot").Value.String()
-		configVarsJson := cmd.Flag("config-vars-json").Value.String()
-		configVarsFile := cmd.Flag("config-vars").Value.String()
-		latest, _ := strconv.ParseBool(cmd.Flag("latest").Value.String())
+		version := utils.GetStringParam(cmd.Flag("ver"))
+		userLabel := utils.GetStringParam(cmd.Flag("user-label"))
+		snapshot := utils.GetStringParam(cmd.Flag("snapshot"))
+		latest, _ := strconv.ParseBool(utils.GetStringParam(cmd.Flag("latest")))
 
-		if configVarsFile != "" && configVarsJson != "" {
-			return fmt.Errorf("cannot use config-vars and config-vars-json flags together")
-		}
-		if err = apiclient.SetRegion(cmdRegion.Value.String()); err != nil {
+		if err = apiclient.SetRegion(utils.GetStringParam(cmdRegion)); err != nil {
 			return err
 		}
 		if err = validate(version, userLabel, snapshot, latest); err != nil {
@@ -55,15 +51,17 @@ var PublishVerCmd = &cobra.Command{
 		cmd.Flags().VisitAll(func(f *pflag.Flag) {
 			clilog.Debug.Printf("%s: %s\n", f.Name, f.Value)
 		})
-		return apiclient.SetProjectID(cmdProject.Value.String())
+		return apiclient.SetProjectID(utils.GetStringParam(cmdProject))
 	},
 	RunE: func(cmd *cobra.Command, args []string) (err error) {
-		version := cmd.Flag("ver").Value.String()
-		userLabel := cmd.Flag("user-label").Value.String()
-		snapshot := cmd.Flag("snapshot").Value.String()
-		name := cmd.Flag("name").Value.String()
-		configVarsJson := cmd.Flag("config-vars-json").Value.String()
-		configVarsFile := cmd.Flag("config-vars").Value.String()
+		cmd.SilenceUsage = true
+
+		version := utils.GetStringParam(cmd.Flag("ver"))
+		userLabel := utils.GetStringParam(cmd.Flag("user-label"))
+		snapshot := utils.GetStringParam(cmd.Flag("snapshot"))
+		name := utils.GetStringParam(cmd.Flag("name"))
+		configVarsJson := utils.GetStringParam(cmd.Flag("config-vars-json"))
+		configVarsFile := utils.GetStringParam(cmd.Flag("config-vars"))
 
 		var contents []byte
 		var info string

@@ -18,6 +18,7 @@ import (
 	"internal/apiclient"
 	"internal/client/certificates"
 	"internal/clilog"
+	"internal/cmd/utils"
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
@@ -29,8 +30,8 @@ var DelCmd = &cobra.Command{
 	Short: "Delete a certificate from a region",
 	Long:  "Delete a certificate from a region",
 	Args: func(cmd *cobra.Command, args []string) (err error) {
-		project := cmd.Flag("proj").Value.String()
-		region := cmd.Flag("reg").Value.String()
+		project := utils.GetStringParam(cmd.Flag("proj"))
+		region := utils.GetStringParam(cmd.Flag("reg"))
 
 		if err = apiclient.SetRegion(region); err != nil {
 			return err
@@ -41,7 +42,9 @@ var DelCmd = &cobra.Command{
 		return apiclient.SetProjectID(project)
 	},
 	RunE: func(cmd *cobra.Command, args []string) (err error) {
-		name := cmd.Flag("name").Value.String()
+		cmd.SilenceUsage = true
+
+		name := utils.GetStringParam(cmd.Flag("name"))
 		_, err = certificates.Delete(name)
 		return
 	},

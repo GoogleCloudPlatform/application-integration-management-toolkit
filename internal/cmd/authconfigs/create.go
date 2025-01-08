@@ -21,6 +21,7 @@ import (
 	"internal/client/authconfigs"
 	"internal/clilog"
 	"internal/cloudkms"
+	"internal/cmd/utils"
 	"os"
 	"path"
 	"regexp"
@@ -35,8 +36,8 @@ var CreateCmd = &cobra.Command{
 	Short: "Create an authconfig",
 	Long:  "Create an authconfig",
 	Args: func(cmd *cobra.Command, args []string) (err error) {
-		project := cmd.Flag("proj").Value.String()
-		region := cmd.Flag("reg").Value.String()
+		project := utils.GetStringParam(cmd.Flag("proj"))
+		region := utils.GetStringParam(cmd.Flag("reg"))
 
 		if err = apiclient.SetRegion(region); err != nil {
 			return err
@@ -55,6 +56,8 @@ var CreateCmd = &cobra.Command{
 		return apiclient.SetProjectID(project)
 	},
 	RunE: func(cmd *cobra.Command, args []string) (err error) {
+		cmd.SilenceUsage = true
+
 		var content []byte
 
 		if authConfigFile != "" {

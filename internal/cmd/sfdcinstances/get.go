@@ -19,6 +19,7 @@ import (
 	"internal/apiclient"
 	"internal/client/sfdc"
 	"internal/clilog"
+	"internal/cmd/utils"
 	"strconv"
 
 	"github.com/spf13/cobra"
@@ -31,10 +32,10 @@ var GetCmd = &cobra.Command{
 	Short: "Get an sfdcinstance in Application Integration",
 	Long:  "Get an sfdcinstance in Application Integration",
 	Args: func(cmd *cobra.Command, args []string) (err error) {
-		project := cmd.Flag("proj").Value.String()
-		region := cmd.Flag("reg").Value.String()
-		name := cmd.Flag("name").Value.String()
-		id := cmd.Flag("id").Value.String()
+		project := utils.GetStringParam(cmd.Flag("proj"))
+		region := utils.GetStringParam(cmd.Flag("reg"))
+		name := utils.GetStringParam(cmd.Flag("name"))
+		id := utils.GetStringParam(cmd.Flag("id"))
 
 		if err = apiclient.SetRegion(region); err != nil {
 			return err
@@ -51,9 +52,11 @@ var GetCmd = &cobra.Command{
 		return apiclient.SetProjectID(project)
 	},
 	RunE: func(cmd *cobra.Command, args []string) (err error) {
-		name := cmd.Flag("name").Value.String()
-		id := cmd.Flag("id").Value.String()
-		minimal, _ := strconv.ParseBool(cmd.Flag("minimal").Value.String())
+		cmd.SilenceUsage = true
+
+		name := utils.GetStringParam(cmd.Flag("name"))
+		id := utils.GetStringParam(cmd.Flag("id"))
+		minimal, _ := strconv.ParseBool(utils.GetStringParam(cmd.Flag("minimal")))
 
 		if name != "" {
 			apiclient.DisableCmdPrintHttpResponse()

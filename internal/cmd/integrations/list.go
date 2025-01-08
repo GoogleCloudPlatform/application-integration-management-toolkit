@@ -18,6 +18,7 @@ import (
 	"internal/apiclient"
 	"internal/client/integrations"
 	"internal/clilog"
+	"internal/cmd/utils"
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
@@ -31,19 +32,21 @@ var ListCmd = &cobra.Command{
 	Args: func(cmd *cobra.Command, args []string) (err error) {
 		cmdProject := cmd.Flag("proj")
 		cmdRegion := cmd.Flag("reg")
-		if err = apiclient.SetRegion(cmdRegion.Value.String()); err != nil {
+		if err = apiclient.SetRegion(utils.GetStringParam(cmdRegion)); err != nil {
 			return err
 		}
 		cmd.Flags().VisitAll(func(f *pflag.Flag) {
 			clilog.Debug.Printf("%s: %s\n", f.Name, f.Value)
 		})
-		return apiclient.SetProjectID(cmdProject.Value.String())
+		return apiclient.SetProjectID(utils.GetStringParam(cmdProject))
 	},
 	RunE: func(cmd *cobra.Command, args []string) (err error) {
+		cmd.SilenceUsage = true
+
 		_, err = integrations.List(pageSize,
-			cmd.Flag("pageToken").Value.String(),
-			cmd.Flag("filter").Value.String(),
-			cmd.Flag("orderBy").Value.String())
+			utils.GetStringParam(cmd.Flag("pageToken")),
+			utils.GetStringParam(cmd.Flag("filter")),
+			utils.GetStringParam(cmd.Flag("orderBy")))
 		return err
 	},
 }

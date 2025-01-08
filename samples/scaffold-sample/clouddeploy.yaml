@@ -19,16 +19,48 @@ metadata:
 serialPipeline:
   stages:
   - targetId: dev-env
+  - targetId: staging-env
 ---
-
 apiVersion: deploy.cloud.google.com/v1
 kind: Target
 metadata:
   name: dev-env
 customTarget:
   customTargetType: appint-sample-target
+deployParameters:
+  APP_INTEGRATION_PROJECT_ID: "dev-integration-project"
+#executionConfigs:
+#- usages:
+#  - DEPLOY
+#  privatePool:
+#    workerPool: "projects/p123/locations/us-central1/workerPools/wp123"
+#    serviceAccount: "[name]@[project_name].iam.gserviceaccount.com"
+#- usages:
+#  - RENDER
+#  - PREDEPLOY
+#  - VERIFY
+#  - POSTDEPLOY
 ---
-
+apiVersion: deploy.cloud.google.com/v1
+kind: Target
+metadata:
+  name: staging-env
+customTarget:
+  customTargetType: appint-sample-target
+deployParameters:
+  APP_INTEGRATION_PROJECT_ID: "staging-integration-project"
+#executionConfigs:
+#- usages:
+#  - DEPLOY
+#  privatePool:
+#    workerPool: "projects/p123/locations/us-central1/workerPools/wp123"
+#    serviceAccount: "[name]@[project_name].iam.gserviceaccount.com"
+#- usages:
+#  - RENDER
+#  - PREDEPLOY
+#  - VERIFY
+#  - POSTDEPLOY
+---
 apiVersion: deploy.cloud.google.com/v1
 kind: CustomTargetType
 metadata:

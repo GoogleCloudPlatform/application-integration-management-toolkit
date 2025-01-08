@@ -39,14 +39,14 @@ var ScaffoldCmd = &cobra.Command{
 	Short: "Create a scaffolding for the integration flow",
 	Long:  "Create a scaffolding for the integration flow and dependencies",
 	Args: func(cmd *cobra.Command, args []string) (err error) {
-		cmdProject := cmd.Flag("proj")
-		cmdRegion := cmd.Flag("reg")
-		version := cmd.Flag("ver").Value.String()
-		userLabel := cmd.Flag("user-label").Value.String()
-		snapshot := cmd.Flag("snapshot").Value.String()
-		latest, _ := strconv.ParseBool(cmd.Flag("latest").Value.String())
+		cmdProject := utils.GetStringParam(cmd.Flag("proj"))
+		cmdRegion := utils.GetStringParam(cmd.Flag("reg"))
+		version := utils.GetStringParam(cmd.Flag("ver"))
+		userLabel := utils.GetStringParam(cmd.Flag("user-label"))
+		snapshot := utils.GetStringParam(cmd.Flag("snapshot"))
+		latest, _ := strconv.ParseBool(utils.GetStringParam(cmd.Flag("latest")))
 
-		if err = apiclient.SetRegion(cmdRegion.Value.String()); err != nil {
+		if err = apiclient.SetRegion(cmdRegion); err != nil {
 			return err
 		} else if err = validate(version, userLabel, snapshot, latest); err != nil {
 			return err
@@ -54,16 +54,19 @@ var ScaffoldCmd = &cobra.Command{
 		cmd.Flags().VisitAll(func(f *pflag.Flag) {
 			clilog.Debug.Printf("%s: %s\n", f.Name, f.Value)
 		})
-		return apiclient.SetProjectID(cmdProject.Value.String())
+		return apiclient.SetProjectID(cmdProject)
 	},
 	RunE: func(cmd *cobra.Command, args []string) (err error) {
+		cmd.SilenceUsage = true
+
 		const jsonExt = ".json"
 		var fileSplitter string
 		var integrationBody, overridesBody, listBody []byte
-		version := cmd.Flag("ver").Value.String()
-		userLabel := cmd.Flag("user-label").Value.String()
-		snapshot := cmd.Flag("snapshot").Value.String()
-		name := cmd.Flag("name").Value.String()
+		version := utils.GetStringParam(cmd.Flag("ver"))
+		userLabel := utils.GetStringParam(cmd.Flag("user-label"))
+		snapshot := utils.GetStringParam(cmd.Flag("snapshot"))
+		name := utils.GetStringParam(cmd.Flag("name"))
+		githubAction, _ := strconv.ParseBool(utils.GetStringParam(cmd.Flag("github-action")))
 
 		apiclient.DisableCmdPrintHttpResponse()
 
@@ -141,7 +144,7 @@ var ScaffoldCmd = &cobra.Command{
 				return err
 			}
 		} else {
-			return errors.New("latest version not found. Must pass oneOf version, snapshot or user-label or fix the integration name")
+			return errors.New("latest version not found. 1) The integration may be in DRAFT state. Pass a snapshot number. 2) An invalid integration name was set. 3) Latest flag was combined with version, snapshot or user-label")
 		}
 
 		clilog.Info.Printf("Storing the Integration: %s\n", name)
@@ -393,7 +396,17 @@ var ScaffoldCmd = &cobra.Command{
 			if err = apiclient.WriteByteArrayToFile(
 				path.Join(baseFolder, "skaffold.yaml"),
 				false,
-				[]byte(utils.GetSkaffoldYaml())); err != nil {
+				[]byte(utils.GetSkaffoldYaml(name))); err != nil {
+				return err
+			}
+		}
+
+		if githubAction {
+			clilog.Info.Printf("Storing Github Action\n")
+			if err = apiclient.WriteByteArrayToFile(
+				path.Join(baseFolder, name+".yaml"),
+				false,
+				[]byte(utils.GetGithubAction(env, name))); err != nil {
 				return err
 			}
 		}
@@ -413,7 +426,7 @@ var (
 
 func init() {
 	var name, userLabel, snapshot, version string
-	var latest bool
+	var latest, githubAction bool
 
 	ScaffoldCmd.Flags().StringVarP(&name, "name", "n",
 		"", "Integration flow name")
@@ -427,6 +440,8 @@ func init() {
 		false, "Generate cloud build file; default is false")
 	ScaffoldCmd.Flags().BoolVarP(&cloudDeploy, "cloud-deploy", "",
 		false, "Generate cloud deploy files; default is false")
+	ScaffoldCmd.Flags().BoolVarP(&githubAction, "github-action", "",
+		false, "Generate Github Action to apply integration; default is false")
 	ScaffoldCmd.Flags().StringVarP(&folder, "folder", "f",
 		"", "Folder to generate the scaffolding")
 	ScaffoldCmd.Flags().StringVarP(&env, "env", "e",
@@ -438,7 +453,7 @@ func init() {
 	ScaffoldCmd.Flags().BoolVarP(&useUnderscore, "use-underscore", "",
 		false, "Use underscore as a file splitter; default is __")
 	ScaffoldCmd.Flags().BoolVarP(&extractCode, "extract-code", "x",
-		false, "Extract JavaScript and Jsonnet code as separate files")
+		false, "Extract JavaScript and Jsonnet code as separate files; default is false")
 	ScaffoldCmd.Flags().BoolVarP(&latest, "latest", "",
 		true, "Scaffolds the integeration version in ACTIVE state, if not found the highest snapshot in SNAPSHOT state; default is true")
 
