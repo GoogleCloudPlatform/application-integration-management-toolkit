@@ -100,6 +100,16 @@ var GetVerCmd = &cobra.Command{
 					if version, err = getIntegrationVersion(listBody); err != nil {
 						return err
 					}
+				} else {
+					if listBody, err = integrations.ListVersions(name, 1, "", "state=DRAFT",
+						"snapshot_number", false, false, true); err != nil {
+						return fmt.Errorf("unable to list versions: %v", err)
+					}
+					if string(listBody) != "{}" {
+						if version, err = getIntegrationVersion(listBody); err != nil {
+							return err
+						}
+					}
 				}
 			}
 		}
@@ -155,7 +165,7 @@ func init() {
 	GetVerCmd.Flags().BoolVarP(&configVar, "config-vars", "",
 		false, "Returns config variables for the integration")
 	GetVerCmd.Flags().BoolVarP(&latest, "latest", "",
-		true, "Get the integeration version in ACTIVE state, if not found the highest snapshot in SNAPSHOT state; default is true")
+		true, "Get the version with the highest snapshot number in SNAPSHOT state. If none found, selects the highest snapshot in DRAFT state; default is true")
 
 	_ = GetVerCmd.MarkFlagRequired("name")
 }

@@ -58,15 +58,22 @@ var DownloadVerCmd = &cobra.Command{
 		snapshot := utils.GetStringParam(cmd.Flag("snapshot"))
 		name := utils.GetStringParam(cmd.Flag("name"))
 
+		var respBody []byte
+
 		latest := ignoreLatest(version, userLabel, snapshot)
 
 		if latest {
 			apiclient.DisableCmdPrintHttpResponse()
 			// list integration versions, order by state=SNAPSHOT, page size = 1 and return basic info
-			respBody, err := integrations.ListVersions(name, 1, "", "state=SNAPSHOT",
-				"snapshot_number", false, false, true)
-			if err != nil {
+			if respBody, err = integrations.ListVersions(name, 1, "", "state=SNAPSHOT",
+				"snapshot_number", false, false, true); err != nil {
 				return fmt.Errorf("unable to list versions: %v", err)
+			}
+			if string(respBody) == "{}" {
+				if respBody, err = integrations.ListVersions(name, 1, "", "state=DRAFT",
+					"snapshot_number", false, false, true); err != nil {
+					return fmt.Errorf("unable to list versions: %v", err)
+				}
 			}
 			version, err = getIntegrationVersion(respBody)
 			if err != nil {
@@ -98,7 +105,7 @@ func init() {
 	DownloadVerCmd.Flags().StringVarP(&snapshot, "snapshot", "s",
 		"", "Integration flow snapshot number")
 	DownloadVerCmd.Flags().BoolVarP(&latest, "latest", "",
-		true, "Downloads the integeration version with the highest snapshot number in SNAPSHOT state; default is true")
+		true, "Downloads the version with the highest snapshot number in SNAPSHOT state. If none found, selects the highest snapshot in DRAFT state; default is true")
 
 	_ = DownloadVerCmd.MarkFlagRequired("name")
 }

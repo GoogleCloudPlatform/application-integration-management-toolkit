@@ -116,6 +116,16 @@ var ScaffoldCmd = &cobra.Command{
 					if version, err = getIntegrationVersion(listBody); err != nil {
 						return err
 					}
+				} else {
+					if listBody, err = integrations.ListVersions(name, 1, "", "state=DRAFT",
+						"snapshot_number", false, false, true); err != nil {
+						return fmt.Errorf("unable to list versions: %v", err)
+					}
+					if string(listBody) != "{}" {
+						if version, err = getIntegrationVersion(listBody); err != nil {
+							return err
+						}
+					}
 				}
 			}
 		}
@@ -455,7 +465,7 @@ func init() {
 	ScaffoldCmd.Flags().BoolVarP(&extractCode, "extract-code", "x",
 		false, "Extract JavaScript and Jsonnet code as separate files; default is false")
 	ScaffoldCmd.Flags().BoolVarP(&latest, "latest", "",
-		true, "Scaffolds the integeration version in ACTIVE state, if not found the highest snapshot in SNAPSHOT state; default is true")
+		true, "Scaffolds the version with the highest snapshot number in SNAPSHOT state. If none found, selects the highest snapshot in DRAFT state; default is true")
 
 	_ = ScaffoldCmd.MarkFlagRequired("name")
 }
