@@ -58,11 +58,17 @@ var SetCmd = &cobra.Command{
 			}
 		}
 
+		if basic {
+			if err = apiclient.SetBasic(basic); err != nil {
+				return err
+			}
+		}
+
 		return nil
 	},
 }
 
-var nocheck bool
+var nocheck, basic bool
 
 func init() {
 	var project, region, proxyURL string
@@ -82,4 +88,7 @@ func init() {
 
 	SetCmd.Flags().Var(&api, "api", "Sets the control plane API. Must be one of prod, "+
 		"staging or autopush; default is prod")
+
+	SetCmd.Flags().BoolVarP(&basic, "basic", "",
+		false, "For supported commands, return basic information")
 }
