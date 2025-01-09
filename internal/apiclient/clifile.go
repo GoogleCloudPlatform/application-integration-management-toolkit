@@ -37,7 +37,6 @@ type integrationCLI struct {
 	ProxyUrl  string `json:"proxyUrl,omitempty"`
 	Nocheck   bool   `json:"nocheck,omitempty" default:"false"`
 	Api       API    `json:"api,omitempty" default:"prod"`
-	Basic     bool   `json:"basic,omitempty" default:"false"`
 }
 
 func readPreferencesFile() (cliPref *integrationCLI, err error) {
@@ -130,29 +129,6 @@ func SetNoCheck(nocheck bool) (err error) {
 
 	cliPref, err := readPreferencesFile()
 	cliPref.Nocheck = nocheck
-
-	data, err := json.Marshal(&cliPref)
-	if err != nil {
-		clilog.Debug.Printf("Error marshalling: %v\n", err)
-		return err
-	}
-	clilog.Debug.Println("Writing ", string(data))
-	return writePerferencesFile(data)
-}
-
-func GetBasic() bool {
-	cliPref, err := readPreferencesFile()
-	if err != nil {
-		return false
-	}
-	return cliPref.Basic
-}
-
-func SetBasic(basic bool) (err error) {
-	clilog.Debug.Println("Basic set to: ", basic)
-
-	cliPref, err := readPreferencesFile()
-	cliPref.Basic = basic
 
 	data, err := json.Marshal(&cliPref)
 	if err != nil {
