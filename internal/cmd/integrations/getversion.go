@@ -16,7 +16,6 @@ package integrations
 
 import (
 	"errors"
-	"fmt"
 	"internal/apiclient"
 	"internal/client/integrations"
 	"internal/clilog"
@@ -65,7 +64,7 @@ var GetVerCmd = &cobra.Command{
 	RunE: func(cmd *cobra.Command, args []string) (err error) {
 		cmd.SilenceUsage = true
 
-		var integrationBody, respBody, listBody []byte
+		var integrationBody, respBody []byte
 		version := utils.GetStringParam(cmd.Flag("ver"))
 		name := utils.GetStringParam(cmd.Flag("name"))
 		minimal, _ := strconv.ParseBool(utils.GetStringParam(cmd.Flag("minimal")))
@@ -81,26 +80,8 @@ var GetVerCmd = &cobra.Command{
 
 		latest := ignoreLatest(version, userLabel, snapshot)
 		if latest {
-			// list integration versions, order by state=ACTIVE, page size = 1 and return basic info
-			if listBody, err = integrations.ListVersions(name, 1, "", "state=ACTIVE",
-				"snapshot_number", false, false, true); err != nil {
-				return fmt.Errorf("unable to list versions: %v", err)
-			}
-			if string(listBody) != "{}" {
-				if version, err = getIntegrationVersion(listBody); err != nil {
-					return err
-				}
-			} else {
-				// list integration versions, order by state=SNAPSHOT, page size = 1 and return basic info
-				if listBody, err = integrations.ListVersions(name, 1, "", "state=SNAPSHOT",
-					"snapshot_number", false, false, true); err != nil {
-					return fmt.Errorf("unable to list versions: %v", err)
-				}
-				if string(listBody) != "{}" {
-					if version, err = getIntegrationVersion(listBody); err != nil {
-						return err
-					}
-				}
+			if version, err = getLatestVersion(name); err != nil {
+				return err
 			}
 		}
 

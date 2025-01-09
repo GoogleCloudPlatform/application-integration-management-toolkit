@@ -15,6 +15,10 @@
 package integrations
 
 import (
+	"fmt"
+	"internal/apiclient"
+	"internal/client/integrations"
+
 	"github.com/spf13/cobra"
 )
 
@@ -72,4 +76,34 @@ func init() {
 
 func GetExample(i int) string {
 	return examples[i]
+}
+
+func getLatestVersion(name string) (version string, err error) {
+	var listBody []byte
+
+	apiclient.DisableCmdPrintHttpResponse()
+	defer apiclient.EnableCmdPrintHttpResponse()
+
+	// list integration versions, order by state=ACTIVE, page size = 1 and return basic info
+	if listBody, err = integrations.ListVersions(name, 1, "", "state=ACTIVE",
+		"snapshot_number", false, false, true); err != nil {
+		return "", fmt.Errorf("unable to list versions: %v", err)
+	}
+	if string(listBody) != "{}" {
+		if version, err = getIntegrationVersion(listBody); err != nil {
+			return "", err
+		}
+	} else {
+		// list integration versions, order by state=SNAPSHOT, page size = 1 and return basic info
+		if listBody, err = integrations.ListVersions(name, 1, "", "state=SNAPSHOT",
+			"snapshot_number", false, false, true); err != nil {
+			return "", fmt.Errorf("unable to list versions: %v", err)
+		}
+		if string(listBody) != "{}" {
+			if version, err = getIntegrationVersion(listBody); err != nil {
+				return "", err
+			}
+		}
+	}
+	return version, nil
 }

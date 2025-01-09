@@ -61,7 +61,7 @@ var ScaffoldCmd = &cobra.Command{
 
 		const jsonExt = ".json"
 		var fileSplitter string
-		var integrationBody, overridesBody, listBody []byte
+		var integrationBody, overridesBody []byte
 		version := utils.GetStringParam(cmd.Flag("ver"))
 		userLabel := utils.GetStringParam(cmd.Flag("user-label"))
 		snapshot := utils.GetStringParam(cmd.Flag("snapshot"))
@@ -97,26 +97,8 @@ var ScaffoldCmd = &cobra.Command{
 		latest := ignoreLatest(version, userLabel, snapshot)
 
 		if latest {
-			// list integration versions, order by state=ACTIVE, page size = 1 and return basic info
-			if listBody, err = integrations.ListVersions(name, 1, "", "state=ACTIVE",
-				"snapshot_number", false, false, true); err != nil {
-				return fmt.Errorf("unable to list versions: %v", err)
-			}
-			if string(listBody) != "{}" {
-				if version, err = getIntegrationVersion(listBody); err != nil {
-					return err
-				}
-			} else {
-				// list integration versions, order by state=SNAPSHOT, page size = 1 and return basic info
-				if listBody, err = integrations.ListVersions(name, 1, "", "state=SNAPSHOT",
-					"snapshot_number", false, false, true); err != nil {
-					return fmt.Errorf("unable to list versions: %v", err)
-				}
-				if string(listBody) != "{}" {
-					if version, err = getIntegrationVersion(listBody); err != nil {
-						return err
-					}
-				}
+			if version, err = getLatestVersion(name); err != nil {
+				return err
 			}
 		}
 
