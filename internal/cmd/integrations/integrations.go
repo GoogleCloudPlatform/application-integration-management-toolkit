@@ -103,6 +103,16 @@ func getLatestVersion(name string) (version string, err error) {
 			if version, err = getIntegrationVersion(listBody); err != nil {
 				return "", err
 			}
+		} else {
+			if listBody, err = integrations.ListVersions(name, 1, "", "state=DRAFT",
+				"snapshot_number", false, false, true); err != nil {
+				return "", fmt.Errorf("unable to list versions: %v", err)
+			}
+			if string(listBody) != "{}" {
+				if version, err = getIntegrationVersion(listBody); err != nil {
+					return "", err
+				}
+			}
 		}
 	}
 	return version, nil

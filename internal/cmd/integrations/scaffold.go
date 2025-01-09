@@ -437,7 +437,7 @@ func init() {
 	ScaffoldCmd.Flags().BoolVarP(&extractCode, "extract-code", "x",
 		false, "Extract JavaScript and Jsonnet code as separate files; default is false")
 	ScaffoldCmd.Flags().BoolVarP(&latest, "latest", "",
-		true, "Scaffolds the integeration version in ACTIVE state, if not found the highest snapshot in SNAPSHOT state; default is true")
+		true, "Scaffolds the version with the highest snapshot number in SNAPSHOT state. If none found, selects the highest snapshot in DRAFT state; default is true")
 
 	_ = ScaffoldCmd.MarkFlagRequired("name")
 }
