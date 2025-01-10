@@ -70,6 +70,12 @@ var UnPublishVerCmd = &cobra.Command{
 			if err != nil {
 				return fmt.Errorf("unable to list versions: %v", err)
 			}
+			if string(respBody) == "{}" {
+				if respBody, err = integrations.ListVersions(name, 1, "", "state=DRAFT",
+					"snapshot_number", false, false, true); err != nil {
+					return fmt.Errorf("unable to list versions: %v", err)
+				}
+			}
 			version, err = getIntegrationVersion(respBody)
 			if err != nil {
 				return err
