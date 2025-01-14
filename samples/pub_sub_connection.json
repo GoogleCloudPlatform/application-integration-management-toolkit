@@ -1,0 +1,17 @@
+{
+    "description": "This is a sample",
+    "connectorDetails": {
+        "name": "pubsub",
+        "version": 1
+    },
+    "configVariables": [
+        {
+            "key": "project_id",
+            "stringValue": "$PROJECT_ID$"
+        },
+        {
+            "key": "topic_id",
+            "stringValue": "mytopic"
+        }
+    ]
+}

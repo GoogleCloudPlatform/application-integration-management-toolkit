@@ -18,9 +18,12 @@ import (
 	"errors"
 	"internal/apiclient"
 	"internal/client/integrations"
+	"internal/clilog"
+	"internal/cmd/utils"
 	"strconv"
 
 	"github.com/spf13/cobra"
+	"github.com/spf13/pflag"
 )
 
 // GetVerCmd to get integration flow
@@ -29,57 +32,69 @@ var GetVerCmd = &cobra.Command{
 	Short: "Get an integration flow version",
 	Long:  "Get an integration flow version",
 	Args: func(cmd *cobra.Command, args []string) (err error) {
-		cmdProject := cmd.Flag("proj")
-		cmdRegion := cmd.Flag("reg")
-		version := cmd.Flag("ver").Value.String()
+		cmdProject := utils.GetStringParam(cmd.Flag("proj"))
+		cmdRegion := utils.GetStringParam(cmd.Flag("reg"))
+		version := utils.GetStringParam(cmd.Flag("ver"))
+		userLabel := utils.GetStringParam(cmd.Flag("user-label"))
+		snapshot := utils.GetStringParam(cmd.Flag("snapshot"))
+		latest, _ := strconv.ParseBool(utils.GetStringParam(cmd.Flag("latest")))
 
-		if err = apiclient.SetRegion(cmdRegion.Value.String()); err != nil {
+		if err = apiclient.SetRegion(cmdRegion); err != nil {
+			return err
+		} else if err = validate(version, userLabel, snapshot, latest); err != nil {
 			return err
 		}
 
-		minimal, _ := strconv.ParseBool(cmd.Flag("minimal").Value.String())
-		overrides, _ := strconv.ParseBool(cmd.Flag("overrides").Value.String())
-		basic, _ := strconv.ParseBool(cmd.Flag("basic").Value.String())
-		configVar, _ := strconv.ParseBool(cmd.Flag("config-vars").Value.String())
+		minimal, _ := strconv.ParseBool(utils.GetStringParam(cmd.Flag("minimal")))
+		overrides, _ := strconv.ParseBool(utils.GetStringParam(cmd.Flag("overrides")))
+		basic, _ := strconv.ParseBool(utils.GetStringParam(cmd.Flag("basic")))
+		configVar, _ := strconv.ParseBool(utils.GetStringParam(cmd.Flag("config-vars")))
 
 		if configVar && (overrides || minimal || basic) {
 			return errors.New("config-vars cannot be combined with overrides, minimal or basic")
+		} else if err = validate(version, userLabel, snapshot, latest); err != nil {
+			return err
 		}
 
-		if snapshot == "" && userLabel == "" && version == "" {
-			return errors.New("at least one of snapshot, userLabel and version must be supplied")
-		}
-		if snapshot != "" && (userLabel != "" || version != "") {
-			return errors.New("snapshot cannot be combined with userLabel or version")
-		}
-		if userLabel != "" && (snapshot != "" || version != "") {
-			return errors.New("userLabel cannot be combined with snapshot or version")
-		}
-		if version != "" && (snapshot != "" || userLabel != "") {
-			return errors.New("version cannot be combined with snapshot or version")
-		}
-		return apiclient.SetProjectID(cmdProject.Value.String())
+		cmd.Flags().VisitAll(func(f *pflag.Flag) {
+			clilog.Debug.Printf("%s: %s\n", f.Name, f.Value)
+		})
+		return apiclient.SetProjectID(cmdProject)
 	},
 	RunE: func(cmd *cobra.Command, args []string) (err error) {
+		cmd.SilenceUsage = true
+
 		var integrationBody, respBody []byte
-		version := cmd.Flag("ver").Value.String()
-		name := cmd.Flag("name").Value.String()
-		minimal, _ := strconv.ParseBool(cmd.Flag("minimal").Value.String())
-		overrides, _ := strconv.ParseBool(cmd.Flag("overrides").Value.String())
-		basic, _ := strconv.ParseBool(cmd.Flag("basic").Value.String())
-		configVar, _ := strconv.ParseBool(cmd.Flag("config-vars").Value.String())
+		version := utils.GetStringParam(cmd.Flag("ver"))
+		name := utils.GetStringParam(cmd.Flag("name"))
+		minimal, _ := strconv.ParseBool(utils.GetStringParam(cmd.Flag("minimal")))
+		overrides, _ := strconv.ParseBool(utils.GetStringParam(cmd.Flag("overrides")))
+		basic, _ := strconv.ParseBool(utils.GetStringParam(cmd.Flag("basic")))
+		configVar, _ := strconv.ParseBool(utils.GetStringParam(cmd.Flag("config-vars")))
+		userLabel := utils.GetStringParam(cmd.Flag("user-label"))
+		snapshot := utils.GetStringParam(cmd.Flag("snapshot"))
 
 		if configVar {
 			apiclient.DisableCmdPrintHttpResponse()
+		}
+
+		latest := ignoreLatest(version, userLabel, snapshot)
+		if latest {
+			if version, err = getLatestVersion(name); err != nil {
+				return err
+			}
 		}
 
 		if version != "" {
 			integrationBody, err = integrations.Get(name, version, basic, minimal, overrides)
 		} else if snapshot != "" {
 			integrationBody, err = integrations.GetBySnapshot(name, snapshot, basic, minimal, overrides)
-		} else {
+		} else if userLabel != "" {
 			integrationBody, err = integrations.GetByUserlabel(name, userLabel, basic, minimal, overrides)
+		} else {
+			return errors.New("latest version not found. Must pass oneOf version, snapshot or user-label or fix the integration name")
 		}
+
 		if err != nil {
 			return err
 		}
@@ -100,8 +115,9 @@ var GetVerCmd = &cobra.Command{
 }
 
 func init() {
-	var name, version string
+	var name, userLabel, snapshot, version string
 	minimal, overrides, basic, configVar := false, false, false, false
+	latest := true
 
 	GetVerCmd.Flags().StringVarP(&name, "name", "n",
 		"", "Integration flow name")
@@ -119,5 +135,8 @@ func init() {
 		false, "fields of the Integration to be returned; default is false")
 	GetVerCmd.Flags().BoolVarP(&configVar, "config-vars", "",
 		false, "Returns config variables for the integration")
+	GetVerCmd.Flags().BoolVarP(&latest, "latest", "",
+		true, "Get the version with the highest snapshot number in SNAPSHOT state. If none found, selects the highest snapshot in DRAFT state; default is true")
+
 	_ = GetVerCmd.MarkFlagRequired("name")
 }

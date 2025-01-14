@@ -17,8 +17,11 @@ package integrations
 import (
 	"internal/apiclient"
 	"internal/client/integrations"
+	"internal/clilog"
+	"internal/cmd/utils"
 
 	"github.com/spf13/cobra"
+	"github.com/spf13/pflag"
 )
 
 // ReplayExecCmd to list executions of an integration version
@@ -30,15 +33,20 @@ var ReplayExecCmd = &cobra.Command{
 		cmdProject := cmd.Flag("proj")
 		cmdRegion := cmd.Flag("reg")
 
-		if err = apiclient.SetRegion(cmdRegion.Value.String()); err != nil {
+		if err = apiclient.SetRegion(utils.GetStringParam(cmdRegion)); err != nil {
 			return err
 		}
-		return apiclient.SetProjectID(cmdProject.Value.String())
+		cmd.Flags().VisitAll(func(f *pflag.Flag) {
+			clilog.Debug.Printf("%s: %s\n", f.Name, f.Value)
+		})
+		return apiclient.SetProjectID(utils.GetStringParam(cmdProject))
 	},
 	RunE: func(cmd *cobra.Command, args []string) (err error) {
-		name := cmd.Flag("name").Value.String()
-		executionID := cmd.Flag("execution-id").Value.String()
-		replayReason := cmd.Flag("replay-reason").Value.String()
+		cmd.SilenceUsage = true
+
+		name := utils.GetStringParam(cmd.Flag("name"))
+		executionID := utils.GetStringParam(cmd.Flag("execution-id"))
+		replayReason := utils.GetStringParam(cmd.Flag("replay-reason"))
 		_, err = integrations.Replay(name, executionID, replayReason)
 		return err
 	},

@@ -28,8 +28,10 @@ import (
 	"os"
 	"path"
 	"regexp"
+	"strconv"
 
 	"github.com/spf13/cobra"
+	"github.com/spf13/pflag"
 )
 
 // ScaffoldCmd to publish an integration flow version
@@ -38,26 +40,34 @@ var ScaffoldCmd = &cobra.Command{
 	Short: "Create a scaffolding for the integration flow",
 	Long:  "Create a scaffolding for the integration flow and dependencies",
 	Args: func(cmd *cobra.Command, args []string) (err error) {
-		cmdProject := cmd.Flag("proj")
-		cmdRegion := cmd.Flag("reg")
-		version := cmd.Flag("ver").Value.String()
+		cmdProject := utils.GetStringParam(cmd.Flag("proj"))
+		cmdRegion := utils.GetStringParam(cmd.Flag("reg"))
+		version := utils.GetStringParam(cmd.Flag("ver"))
+		userLabel := utils.GetStringParam(cmd.Flag("user-label"))
+		snapshot := utils.GetStringParam(cmd.Flag("snapshot"))
+		latest, _ := strconv.ParseBool(utils.GetStringParam(cmd.Flag("latest")))
 
-		if err = apiclient.SetRegion(cmdRegion.Value.String()); err != nil {
+		if err = apiclient.SetRegion(cmdRegion); err != nil {
+			return err
+		} else if err = validate(version, userLabel, snapshot, latest); err != nil {
 			return err
 		}
-		if userLabel == "" && version == "" && snapshot == "" {
-			return errors.New("at least one of userLabel, version or snapshot must be passed")
-		}
-		if err = validate(version); err != nil {
-			return err
-		}
-		return apiclient.SetProjectID(cmdProject.Value.String())
+		cmd.Flags().VisitAll(func(f *pflag.Flag) {
+			clilog.Debug.Printf("%s: %s\n", f.Name, f.Value)
+		})
+		return apiclient.SetProjectID(cmdProject)
 	},
 	RunE: func(cmd *cobra.Command, args []string) (err error) {
+		cmd.SilenceUsage = true
+
+		const jsonExt = ".json"
 		var fileSplitter string
 		var integrationBody, overridesBody, testCasesBody []byte
-		version := cmd.Flag("ver").Value.String()
-		name := cmd.Flag("name").Value.String()
+		version := utils.GetStringParam(cmd.Flag("ver"))
+		userLabel := utils.GetStringParam(cmd.Flag("user-label"))
+		snapshot := utils.GetStringParam(cmd.Flag("snapshot"))
+		name := utils.GetStringParam(cmd.Flag("name"))
+		githubAction, _ := strconv.ParseBool(utils.GetStringParam(cmd.Flag("github-action")))
 
 		apiclient.DisableCmdPrintHttpResponse()
 
@@ -81,6 +91,14 @@ var ScaffoldCmd = &cobra.Command{
 		if env != "" {
 			folder = path.Join(folder, env)
 			if err = generateFolder(folder); err != nil {
+				return err
+			}
+		}
+
+		latest := ignoreLatest(version, userLabel, snapshot)
+
+		if latest {
+			if version, err = getLatestVersion(name); err != nil {
 				return err
 			}
 		}
@@ -117,6 +135,8 @@ var ScaffoldCmd = &cobra.Command{
 			if testCasesBody, err = integrations.ListTestCasesBySnapshot(name, snapshot, false); err != nil {
 				return err
 			}
+		} else {
+			return errors.New("latest version not found. 1) The integration may be in DRAFT state. Pass a snapshot number. 2) An invalid integration name was set. 3) Latest flag was combined with version, snapshot or user-label")
 		}
 
 		clilog.Info.Printf("Storing the Integration: %s\n", name)
@@ -378,13 +398,27 @@ var ScaffoldCmd = &cobra.Command{
 			if err = apiclient.WriteByteArrayToFile(
 				path.Join(baseFolder, "skaffold.yaml"),
 				false,
-				[]byte(utils.GetSkaffoldYaml())); err != nil {
+				[]byte(utils.GetSkaffoldYaml(name))); err != nil {
+				return err
+			}
+		}
+
+		if githubAction {
+			clilog.Info.Printf("Storing Github Action\n")
+			if err = apiclient.WriteByteArrayToFile(
+				path.Join(baseFolder, name+".yaml"),
+				false,
+				[]byte(utils.GetGithubAction(env, name))); err != nil {
 				return err
 			}
 		}
 
 		return err
 	},
+	Example: `Generate scaffold for dev env using snapshot: ` + GetExample(5) + `
+Generate scaffold for integration, but skip connectors: ` + GetExample(6) + `
+Generate scaffold for integration and produce cloud build config: ` + GetExample(7) + `
+Generate scaffold for integration and produce cloud deploy config: ` + GetExample(8) + `\n See samples/scaffold-sample for more details`,
 }
 
 var (
@@ -395,7 +429,8 @@ var (
 const jsonExt = ".json"
 
 func init() {
-	var name, version string
+	var name, userLabel, snapshot, version string
+	var latest, githubAction bool
 
 	ScaffoldCmd.Flags().StringVarP(&name, "name", "n",
 		"", "Integration flow name")
@@ -409,6 +444,8 @@ func init() {
 		false, "Generate cloud build file; default is false")
 	ScaffoldCmd.Flags().BoolVarP(&cloudDeploy, "cloud-deploy", "",
 		false, "Generate cloud deploy files; default is false")
+	ScaffoldCmd.Flags().BoolVarP(&githubAction, "github-action", "",
+		false, "Generate Github Action to apply integration; default is false")
 	ScaffoldCmd.Flags().StringVarP(&folder, "folder", "f",
 		"", "Folder to generate the scaffolding")
 	ScaffoldCmd.Flags().StringVarP(&env, "env", "e",
@@ -420,7 +457,9 @@ func init() {
 	ScaffoldCmd.Flags().BoolVarP(&useUnderscore, "use-underscore", "",
 		false, "Use underscore as a file splitter; default is __")
 	ScaffoldCmd.Flags().BoolVarP(&extractCode, "extract-code", "x",
-		false, "Extract JavaScript and Jsonnet code as separate files")
+		false, "Extract JavaScript and Jsonnet code as separate files; default is false")
+	ScaffoldCmd.Flags().BoolVarP(&latest, "latest", "",
+		true, "Scaffolds the version with the highest snapshot number in SNAPSHOT state. If none found, selects the highest snapshot in DRAFT state; default is true")
 
 	_ = ScaffoldCmd.MarkFlagRequired("name")
 }

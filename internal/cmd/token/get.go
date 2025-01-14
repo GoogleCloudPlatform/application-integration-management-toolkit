@@ -17,6 +17,7 @@ package token
 import (
 	"internal/apiclient"
 	"internal/clilog"
+	"internal/cmd/utils"
 
 	"github.com/spf13/cobra"
 )
@@ -27,8 +28,7 @@ var GetCmd = &cobra.Command{
 	Short: "Generate a new access token",
 	Long:  "Generate a new access token",
 	Args: func(cmd *cobra.Command, args []string) error {
-		cmdAccount := cmd.Flag("account")
-		apiclient.SetServiceAccount(cmdAccount.Value.String())
+		apiclient.SetServiceAccount(utils.GetStringParam(cmd.Flag("account")))
 		return nil
 	},
 	RunE: func(cmd *cobra.Command, args []string) error {

@@ -15,10 +15,15 @@
 package integrations
 
 import (
+	"fmt"
 	"internal/apiclient"
 	"internal/client/integrations"
+	"internal/clilog"
+	"internal/cmd/utils"
+	"strconv"
 
 	"github.com/spf13/cobra"
+	"github.com/spf13/pflag"
 )
 
 // ArchiveVerCmd to archive an integration flow version
@@ -27,20 +32,53 @@ var ArchiveVerCmd = &cobra.Command{
 	Short: "Archives an integration flow version",
 	Long:  "Archives an integration flow version",
 	Args: func(cmd *cobra.Command, args []string) (err error) {
-		version := cmd.Flag("ver").Value.String()
+		version := utils.GetStringParam(cmd.Flag("ver"))
+		userLabel := utils.GetStringParam(cmd.Flag("user-label"))
+		snapshot := utils.GetStringParam(cmd.Flag("snapshot"))
+		latest, _ := strconv.ParseBool(utils.GetStringParam(cmd.Flag("latest")))
 
-		if err = apiclient.SetRegion(cmd.Flag("reg").Value.String()); err != nil {
+		if err = apiclient.SetRegion(utils.GetStringParam(cmd.Flag("reg"))); err != nil {
 			return err
 		}
-		if err = validate(version); err != nil {
+		if err = validate(version, userLabel, snapshot, latest); err != nil {
 			return err
 		}
-		return apiclient.SetProjectID(cmd.Flag("proj").Value.String())
+		cmd.Flags().VisitAll(func(f *pflag.Flag) {
+			clilog.Debug.Printf("%s: %s\n", f.Name, f.Value)
+		})
+		return apiclient.SetProjectID(utils.GetStringParam(cmd.Flag("proj")))
 	},
 	RunE: func(cmd *cobra.Command, args []string) (err error) {
-		version := cmd.Flag("ver").Value.String()
-		name := cmd.Flag("name").Value.String()
-		if version != "" {
+		cmd.SilenceUsage = true
+
+		version := utils.GetStringParam(cmd.Flag("ver"))
+		userLabel := utils.GetStringParam(cmd.Flag("user-label"))
+		snapshot := utils.GetStringParam(cmd.Flag("snapshot"))
+		name := utils.GetStringParam(cmd.Flag("name"))
+
+		latest := ignoreLatest(version, userLabel, snapshot)
+
+		if latest {
+			apiclient.DisableCmdPrintHttpResponse()
+			// list integration versions, order by state=SNAPSHOT, page size = 1 and return basic info
+			respBody, err := integrations.ListVersions(name, 1, "", "state=SNAPSHOT",
+				"snapshot_number", false, false, true)
+			if err != nil {
+				return fmt.Errorf("unable to list versions: %v", err)
+			}
+			if string(respBody) == "{}" {
+				if respBody, err = integrations.ListVersions(name, 1, "", "state=DRAFT",
+					"snapshot_number", false, false, true); err != nil {
+					return fmt.Errorf("unable to list versions: %v", err)
+				}
+			}
+			version, err = getIntegrationVersion(respBody)
+			if err != nil {
+				return err
+			}
+			apiclient.EnableCmdPrintHttpResponse()
+			_, err = integrations.Archive(name, version)
+		} else if version != "" {
 			_, err = integrations.Archive(name, version)
 		} else if userLabel != "" {
 			_, err = integrations.ArchiveUserLabel(name, userLabel)
@@ -52,7 +90,8 @@ var ArchiveVerCmd = &cobra.Command{
 }
 
 func init() {
-	var name, version string
+	var name, userLabel, snapshot, version string
+	var latest bool
 
 	ArchiveVerCmd.Flags().StringVarP(&name, "name", "n",
 		"", "Integration flow name")
@@ -62,6 +101,8 @@ func init() {
 		"", "Integration flow user label")
 	ArchiveVerCmd.Flags().StringVarP(&snapshot, "snapshot", "s",
 		"", "Integration flow snapshot number")
+	ArchiveVerCmd.Flags().BoolVarP(&latest, "latest", "",
+		true, "Archives the integeration version with the highest snapshot number in SNAPSHOT state; default is true")
 
 	_ = ArchiveVerCmd.MarkFlagRequired("name")
 }

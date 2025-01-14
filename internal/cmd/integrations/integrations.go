@@ -15,6 +15,10 @@
 package integrations
 
 import (
+	"fmt"
+	"internal/apiclient"
+	"internal/client/integrations"
+
 	"github.com/spf13/cobra"
 )
 
@@ -25,7 +29,27 @@ var Cmd = &cobra.Command{
 	Long:  "Manage integrations in a GCP project",
 }
 
-var userLabel, snapshot string
+// var userLabel, snapshot string
+var examples = []string{
+	`integrationcli integrations create -n $name -f samples/sample.json -u $userLabel --default-token`,
+	`integrationcli integrations create -n $name -f samples/sample.json -o samples/sample_overrides.json --default-token`,
+	`integrationcli integrations create -n $name -f samples/sample.json --publish=true --default-token`,
+	`integrationcli integrations versions list -n $integration --basic=true --default-token`,
+	`integrationcli integrations versions list -n $integration --basic=true --filter=state=ACTIVE --default-token`,
+	`integrationcli integrations scaffold -n $integration -s $snapshot -f . --env=dev --default-token`,
+	`integrationcli integrations scaffold -n $integration -s $snapshot -f . --skip-connectors=true --default-token`,
+	`integrationcli integrations scaffold -n $integration -s $snapshot -f . --cloud-build=true --default-token`,
+	`integrationcli integrations scaffold -n $integration -s $snapshot -f . --cloud-deploy=true --default-token`,
+	`integrationcli integrations apply -f . --wait=true --default-token`,
+	`integrationcli integrations apply -f . --env=dev --default-token`,
+	`integrationcli integrations apply -f . --grant-permission=true --default-token`,
+	`integrationcli integrations apply -f . --skip-connectors=true --default-token`,
+	`integrationcli integrations create -n $name -f samples/sample.json --basic=true --default-token`,
+	`integrationcli integrations versions publish -n $name --default-token`,
+	`integrationcli integrations versions publish -n $name -s $snapshot --default-token`,
+	`integrationcli integrations versions unpublish -n $name --default-token`,
+	`integrationcli integrations versions unpublish -n $name -u $userLabel --default-token`,
+}
 
 func init() {
 	var project, region string
@@ -49,4 +73,48 @@ func init() {
 	Cmd.AddCommand(ScaffoldCmd)
 	Cmd.AddCommand(ApplyCmd)
 	Cmd.AddCommand(TestCasesCmd)
+}
+
+func GetExample(i int) string {
+	return examples[i]
+}
+
+func getLatestVersion(name string) (version string, err error) {
+	var listBody []byte
+
+	apiclient.DisableCmdPrintHttpResponse()
+	defer apiclient.EnableCmdPrintHttpResponse()
+
+	// list integration versions, order by state=ACTIVE, page size = 1 and return basic info
+	if listBody, err = integrations.ListVersions(name, 1, "", "state=ACTIVE",
+		"snapshot_number", false, false, true); err != nil {
+		return "", fmt.Errorf("unable to list versions: %v", err)
+	}
+	if string(listBody) != "{}" {
+		if version, err = getIntegrationVersion(listBody); err != nil {
+			return "", err
+		}
+	} else {
+		// list integration versions, order by state=SNAPSHOT, page size = 1 and return basic info
+		if listBody, err = integrations.ListVersions(name, 1, "", "state=SNAPSHOT",
+			"snapshot_number", false, false, true); err != nil {
+			return "", fmt.Errorf("unable to list versions: %v", err)
+		}
+		if string(listBody) != "{}" {
+			if version, err = getIntegrationVersion(listBody); err != nil {
+				return "", err
+			}
+		} else {
+			if listBody, err = integrations.ListVersions(name, 1, "", "state=DRAFT",
+				"snapshot_number", false, false, true); err != nil {
+				return "", fmt.Errorf("unable to list versions: %v", err)
+			}
+			if string(listBody) != "{}" {
+				if version, err = getIntegrationVersion(listBody); err != nil {
+					return "", err
+				}
+			}
+		}
+	}
+	return version, nil
 }

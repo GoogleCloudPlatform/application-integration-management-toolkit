@@ -16,6 +16,7 @@ package preferences
 
 import (
 	"internal/apiclient"
+	"internal/cmd/utils"
 
 	"github.com/spf13/cobra"
 )
@@ -26,10 +27,12 @@ var SetCmd = &cobra.Command{
 	Short: "Set default preferences for integrationcli",
 	Long:  "Set default preferences for integrationcli",
 	RunE: func(cmd *cobra.Command, args []string) (err error) {
-		project := cmd.Flag("proj").Value.String()
-		region := cmd.Flag("reg").Value.String()
-		proxyURL := cmd.Flag("proxy").Value.String()
-		api := cmd.Flag("api").Value.String()
+		cmd.SilenceUsage = true
+
+		project := utils.GetStringParam(cmd.Flag("proj"))
+		region := utils.GetStringParam(cmd.Flag("reg"))
+		proxyURL := utils.GetStringParam(cmd.Flag("proxy"))
+		api := utils.GetStringParam(cmd.Flag("api"))
 
 		if err = apiclient.WriteDefaultProject(project); err != nil {
 			return err

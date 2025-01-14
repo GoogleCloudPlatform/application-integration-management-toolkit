@@ -19,12 +19,15 @@ import (
 	"fmt"
 	"internal/apiclient"
 	"internal/client/authconfigs"
+	"internal/clilog"
 	"internal/cloudkms"
+	"internal/cmd/utils"
 	"os"
 	"path"
 	"regexp"
 
 	"github.com/spf13/cobra"
+	"github.com/spf13/pflag"
 )
 
 // CreateCmd to create authconfigs
@@ -33,8 +36,8 @@ var CreateCmd = &cobra.Command{
 	Short: "Create an authconfig",
 	Long:  "Create an authconfig",
 	Args: func(cmd *cobra.Command, args []string) (err error) {
-		project := cmd.Flag("proj").Value.String()
-		region := cmd.Flag("reg").Value.String()
+		project := utils.GetStringParam(cmd.Flag("proj"))
+		region := utils.GetStringParam(cmd.Flag("reg"))
 
 		if err = apiclient.SetRegion(region); err != nil {
 			return err
@@ -47,10 +50,14 @@ var CreateCmd = &cobra.Command{
 		if (encryptedFile != "" && encryptionKey == "") || (encryptedFile == "" && encryptionKey != "") {
 			return errors.New("encrypted-file and encryption-keyid must both be set")
 		}
-
+		cmd.Flags().VisitAll(func(f *pflag.Flag) {
+			clilog.Debug.Printf("%s: %s\n", f.Name, f.Value)
+		})
 		return apiclient.SetProjectID(project)
 	},
 	RunE: func(cmd *cobra.Command, args []string) (err error) {
+		cmd.SilenceUsage = true
+
 		var content []byte
 
 		if authConfigFile != "" {
@@ -92,6 +99,10 @@ var CreateCmd = &cobra.Command{
 		_, err = authconfigs.Create(content)
 		return err
 	},
+	Example: `Create a new user name auth config: ` + GetExample(0) + `
+Create a new OIDC auth config: ` + GetExample(1) + `
+Create a new auth token auth config: ` + GetExample(2) + `
+Create a new auth config from Cloud KMS Encrypted files: ` + GetExample(3),
 }
 
 var authConfigFile, encryptedFile, encryptionKey string

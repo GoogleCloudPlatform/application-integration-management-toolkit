@@ -1086,6 +1086,54 @@ func Export(folder string) (err error) {
 	return nil
 }
 
+func RepairEvent(name string, wait bool) (err error) {
+	u, _ := url.Parse(apiclient.GetBaseConnectorURL())
+	u.Path = path.Join(u.Path, name)
+	operationsBytes, err := apiclient.HttpClient(u.String(), "")
+	if err != nil {
+		return err
+	}
+	if wait {
+		apiclient.ClientPrintHttpResponse.Set(false)
+		defer apiclient.ClientPrintHttpResponse.Set(apiclient.GetCmdPrintHttpResponseSetting())
+
+		o := operation{}
+		if err = json.Unmarshal(operationsBytes, &o); err != nil {
+			return err
+		}
+
+		operationId := filepath.Base(o.Name)
+		clilog.Info.Printf("Checking connection repair status for %s in %d seconds\n", operationId, interval)
+
+		stop := apiclient.Every(interval*time.Second, func(time.Time) bool {
+			var respBody []byte
+
+			if respBody, err = GetOperation(operationId); err != nil {
+				return false
+			}
+
+			if err = json.Unmarshal(respBody, &o); err != nil {
+				return false
+			}
+
+			if o.Done {
+				if o.Error != nil {
+					clilog.Error.Printf("Connection completed with error: %s\n", o.Error.Message)
+				} else {
+					clilog.Info.Println("Connection repair completed successfully!")
+				}
+				return false
+			} else {
+				clilog.Info.Printf("Connection repair status is: %t. Waiting %d seconds.\n", o.Done, interval)
+				return true
+			}
+		})
+
+		<-stop
+	}
+	return err
+}
+
 func getConnectorName(version string) string {
 	return strings.Split(version, "/")[7]
 }

@@ -34,6 +34,7 @@ import (
 	"strings"
 
 	"github.com/spf13/cobra"
+	"github.com/spf13/pflag"
 )
 
 // ApplyCmd a scaffold Integrations
@@ -45,7 +46,7 @@ var ApplyCmd = &cobra.Command{
 		cmdProject := cmd.Flag("proj")
 		cmdRegion := cmd.Flag("reg")
 
-		if err = apiclient.SetRegion(cmdRegion.Value.String()); err != nil {
+		if err = apiclient.SetRegion(utils.GetStringParam(cmdRegion)); err != nil {
 			return err
 		}
 		if folder == "" && (pipeline == "" || release == "" || outputGCSPath == "") {
@@ -59,9 +60,14 @@ var ApplyCmd = &cobra.Command{
 			(outputGCSPath != "" && (pipeline == "" && release == "")) {
 			return fmt.Errorf("release, pipeline and outputGCSPath must be set")
 		}
-		return apiclient.SetProjectID(cmdProject.Value.String())
+		cmd.Flags().VisitAll(func(f *pflag.Flag) {
+			clilog.Debug.Printf("%s: %s\n", f.Name, f.Value)
+		})
+		return apiclient.SetProjectID(utils.GetStringParam(cmdProject))
 	},
 	RunE: func(cmd *cobra.Command, args []string) (err error) {
+		cmd.SilenceUsage = true
+
 		var skaffoldConfigUri string
 
 		if folder == "" {
@@ -83,9 +89,10 @@ var ApplyCmd = &cobra.Command{
 			return fmt.Errorf("problem with supplied path, %w", err)
 		}
 
-		createSecret, _ := strconv.ParseBool(cmd.Flag("create-secret").Value.String())
-		grantPermission, _ := strconv.ParseBool(cmd.Flag("grant-permission").Value.String())
-		wait, _ := strconv.ParseBool(cmd.Flag("wait").Value.String())
+		createSecret, _ := strconv.ParseBool(utils.GetStringParam(cmd.Flag("create-secret")))
+		grantPermission, _ := strconv.ParseBool(utils.GetStringParam(cmd.Flag("grant-permission")))
+		userLabel := utils.GetStringParam(cmd.Flag("user-label"))
+		wait, _ := strconv.ParseBool(utils.GetStringParam(cmd.Flag("wait")))
 
 		integrationFolder := path.Join(srcFolder, "src")
 		authconfigFolder := path.Join(folder, "authconfigs")
@@ -137,17 +144,22 @@ var ApplyCmd = &cobra.Command{
 		}
 
 		if err = processIntegration(overridesFile, integrationFolder,
-			configVarsFolder, pipeline, grantPermission); err != nil {
+			configVarsFolder, pipeline, userLabel, grantPermission); err != nil {
 			return err
 		}
 
 		return err
 	},
+	Example: `Apply scaffold configuration and wait for connectors: ` + GetExample(9) + `
+Apply scaffold configuration for a specific environment: ` + GetExample(10) + `
+Apply scaffold configuration and grant permissions to the service account: ` + GetExample(11) + `
+Apply scaffold configuration, but skip connectors: ` + GetExample(12),
 }
 
 var serviceAccountName, serviceAccountProject, encryptionKey, pipeline, release, outputGCSPath string
 
 func init() {
+	var userLabel string
 	grantPermission, createSecret, wait := false, false, false
 
 	ApplyCmd.Flags().StringVarP(&folder, "folder", "f",
@@ -525,9 +537,9 @@ func processSfdcChannels(sfdcchannelsFolder string) (err error) {
 }
 
 func processIntegration(overridesFile string, integrationFolder string,
-	configVarsFolder string, pipeline string, grantPermission bool,
+	configVarsFolder string, pipeline string, userLabel string, grantPermission bool,
 ) (err error) {
-	rJSONFiles := regexp.MustCompile(`(\S*)\.json`)
+	rJSONFiles := regexp.MustCompile(`(\S*)\.json$`)
 
 	var integrationNames []string
 	var overridesBytes []byte
@@ -582,7 +594,7 @@ func processIntegration(overridesFile string, integrationFolder string,
 
 		clilog.Info.Printf("Create integration %s\n", getFilenameWithoutExtension(integrationNames[0]))
 		respBody, err := integrations.CreateVersion(getFilenameWithoutExtension(integrationNames[0]),
-			integrationBytes, overridesBytes, "", userLabel, grantPermission)
+			integrationBytes, overridesBytes, "", userLabel, grantPermission, false)
 		if err != nil {
 			return err
 		}
@@ -649,8 +661,7 @@ func processCodeFolders(javascriptFolder string, jsonnetFolder string) (codeMap 
 			if err != nil {
 				return nil, err
 			}
-			codeMap["JavaScriptTask"][strings.ReplaceAll(getFilenameWithoutExtension(javascriptName), "javascript_", "")] =
-				strings.ReplaceAll(string(javascriptBytes), "\n", "\\n")
+			codeMap["JavaScriptTask"][strings.ReplaceAll(getFilenameWithoutExtension(javascriptName), "javascript_", "")] = strings.ReplaceAll(string(javascriptBytes), "\n", "\\n")
 		}
 	}
 
@@ -674,8 +685,7 @@ func processCodeFolders(javascriptFolder string, jsonnetFolder string) (codeMap 
 			if err != nil {
 				return nil, err
 			}
-			codeMap["JsonnetMapperTask"][strings.ReplaceAll(getFilenameWithoutExtension(jsonnetName), "datatransformer_", "")] =
-				strings.ReplaceAll(string(jsonnetBytes), "\n", "\\n")
+			codeMap["JsonnetMapperTask"][strings.ReplaceAll(getFilenameWithoutExtension(jsonnetName), "datatransformer_", "")] = strings.ReplaceAll(string(jsonnetBytes), "\n", "\\n")
 		}
 	}
 

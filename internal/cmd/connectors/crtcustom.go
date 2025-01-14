@@ -18,8 +18,11 @@ import (
 	"fmt"
 	"internal/apiclient"
 	"internal/client/connections"
+	"internal/clilog"
+	"internal/cmd/utils"
 
 	"github.com/spf13/cobra"
+	"github.com/spf13/pflag"
 )
 
 // CrtCustomCmd to create a new connection
@@ -31,31 +34,40 @@ var CrtCustomCmd = &cobra.Command{
 		cmdProject := cmd.Flag("proj")
 		cmdRegion := cmd.Flag("reg")
 
-		if err = apiclient.SetRegion(cmdRegion.Value.String()); err != nil {
+		if err = apiclient.SetRegion(utils.GetStringParam(cmdRegion)); err != nil {
 			return err
 		}
-		connType := cmd.Flag("type").Value.String()
+		connType := utils.GetStringParam(cmd.Flag("type"))
 		if connType != "OPEN_API" && connType != "PROTO" {
 			return fmt.Errorf("connection type must be OPEN_API or PROTO")
 		}
-		return apiclient.SetProjectID(cmdProject.Value.String())
+		cmd.Flags().VisitAll(func(f *pflag.Flag) {
+			clilog.Debug.Printf("%s: %s\n", f.Name, f.Value)
+		})
+		return apiclient.SetProjectID(utils.GetStringParam(cmdProject))
 	},
 	RunE: func(cmd *cobra.Command, args []string) (err error) {
-		name := cmd.Flag("name").Value.String()
-		description := cmd.Flag("description").Value.String()
-		displayName := cmd.Flag("display-name").Value.String()
-		connType := cmd.Flag("type").Value.String()
+		cmd.SilenceUsage = true
+
+		name := utils.GetStringParam(cmd.Flag("name"))
+		description := utils.GetStringParam(cmd.Flag("description"))
+		displayName := utils.GetStringParam(cmd.Flag("display-name"))
+		connType := utils.GetStringParam(cmd.Flag("type"))
 
 		_, err = connections.CreateCustom(name, description, displayName, connType, labels)
 
 		return err
 	},
+	Example: `Create a custom connector for OPEN_API type: ` + GetExample(3),
 }
 
-var labels map[string]string
+var (
+	labels   map[string]string
+	connType ConnectorType
+)
 
 func init() {
-	var name, description, displayName, connType string
+	var name, description, displayName string
 
 	CrtCustomCmd.Flags().StringVarP(&name, "name", "n",
 		"", "Connection name")
@@ -63,8 +75,8 @@ func init() {
 		"", "Custom Connection display name")
 	CrtCustomCmd.Flags().StringVarP(&description, "description", "",
 		"", "Custom Connection description")
-	CrtCustomCmd.Flags().StringVarP(&connType, "type", "",
-		"", "Custom Connection type")
+	CrtCustomCmd.Flags().Var(&connType, "type",
+		"Custom Connection type must be set to OPEN_API or PROTO")
 	CrtCustomCmd.Flags().StringToStringVarP(&labels, "labels", "l",
 		map[string]string{}, "Custom Connection labels")
 

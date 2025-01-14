@@ -18,8 +18,11 @@ import (
 	"fmt"
 	"internal/apiclient"
 	"internal/client/connections"
+	"internal/clilog"
+	"internal/cmd/utils"
 
 	"github.com/spf13/cobra"
+	"github.com/spf13/pflag"
 )
 
 // SetRoleCmd to set admin role
@@ -28,16 +31,21 @@ var SetRoleCmd = &cobra.Command{
 	Short: "Set Connection IAM policy on a Connection",
 	Long:  "Set Connection IAM policy on a Connection",
 	Args: func(cmd *cobra.Command, args []string) (err error) {
-		if err = apiclient.SetRegion(cmd.Flag("reg").Value.String()); err != nil {
+		if err = apiclient.SetRegion(utils.GetStringParam(cmd.Flag("reg"))); err != nil {
 			return err
 		}
-		return apiclient.SetProjectID(cmd.Flag("proj").Value.String())
+		cmd.Flags().VisitAll(func(f *pflag.Flag) {
+			clilog.Debug.Printf("%s: %s\n", f.Name, f.Value)
+		})
+		return apiclient.SetProjectID(utils.GetStringParam(cmd.Flag("proj")))
 	},
 	RunE: func(cmd *cobra.Command, args []string) (err error) {
-		name := cmd.Flag("name").Value.String()
-		role := cmd.Flag("role").Value.String()
-		memberName := cmd.Flag("member").Value.String()
-		memberType := cmd.Flag("member-type").Value.String()
+		cmd.SilenceUsage = true
+
+		name := utils.GetStringParam(cmd.Flag("name"))
+		role := utils.GetStringParam(cmd.Flag("role"))
+		memberName := utils.GetStringParam(cmd.Flag("member"))
+		memberType := utils.GetStringParam(cmd.Flag("member-type"))
 		return connections.SetIAM(name, memberName, role, memberType)
 	},
 }

@@ -15,11 +15,17 @@
 package integrations
 
 import (
+	"encoding/json"
+	"fmt"
 	"internal/apiclient"
 	"internal/client/integrations"
+	"internal/clilog"
+	"internal/cmd/utils"
 	"os"
+	"strings"
 
 	"github.com/spf13/cobra"
+	"github.com/spf13/pflag"
 )
 
 // CreateCmd to list Integrations
@@ -30,15 +36,52 @@ var CreateCmd = &cobra.Command{
 	Args: func(cmd *cobra.Command, args []string) (err error) {
 		cmdProject := cmd.Flag("proj")
 		cmdRegion := cmd.Flag("reg")
+		configVarsJson := utils.GetStringParam(cmd.Flag("config-vars-json"))
+		configVarsFile := utils.GetStringParam(cmd.Flag("config-vars"))
 
-		if err = apiclient.SetRegion(cmdRegion.Value.String()); err != nil {
+		if basic && publish {
+			return fmt.Errorf("cannot combine basic and publish flags")
+		}
+		if configVarsFile != "" && configVarsJson != "" {
+			return fmt.Errorf("cannot use config-vars and config-vars-json flags together")
+		}
+		if !publish && (configVarsFile != "" || configVarsJson != "") {
+			return fmt.Errorf("cannot use config-vars and config-vars-json flags when publish is false")
+		}
+
+		if err = apiclient.SetRegion(utils.GetStringParam(cmdRegion)); err != nil {
 			return err
 		}
-		return apiclient.SetProjectID(cmdProject.Value.String())
+		cmd.Flags().VisitAll(func(f *pflag.Flag) {
+			clilog.Debug.Printf("%s: %s\n", f.Name, f.Value)
+		})
+		return apiclient.SetProjectID(utils.GetStringParam(cmdProject))
 	},
 	RunE: func(cmd *cobra.Command, args []string) (err error) {
-		var overridesContent []byte
-		name := cmd.Flag("name").Value.String()
+		cmd.SilenceUsage = true
+
+		var overridesContent, contents []byte
+
+		name := utils.GetStringParam(cmd.Flag("name"))
+		userLabel := utils.GetStringParam(cmd.Flag("user-label"))
+		snapshot := utils.GetStringParam(cmd.Flag("snapshot"))
+		configVarsJson := utils.GetStringParam(cmd.Flag("config-vars-json"))
+		configVarsFile := utils.GetStringParam(cmd.Flag("config-vars"))
+
+		if configVarsFile != "" {
+			if _, err := os.Stat(configVarsFile); os.IsNotExist(err) {
+				return err
+			}
+
+			contents, err = os.ReadFile(configVarsFile)
+			if err != nil {
+				return err
+			}
+		}
+
+		if configVarsJson != "" {
+			contents = []byte(configVarsJson)
+		}
 
 		if _, err := os.Stat(integrationFile); os.IsNotExist(err) {
 			return err
@@ -60,18 +103,44 @@ var CreateCmd = &cobra.Command{
 			}
 		}
 
-		_, err = integrations.CreateVersion(name, content, overridesContent, snapshot, userLabel, grantPermission)
+		if publish {
+			apiclient.DisableCmdPrintHttpResponse()
+		}
+		respBody, err := integrations.CreateVersion(name, content, overridesContent, snapshot,
+			userLabel, grantPermission, basic)
+		if err != nil {
+			return err
+		}
+
+		if publish {
+			apiclient.EnableCmdPrintHttpResponse()
+			var integrationMap map[string]interface{}
+			err = json.Unmarshal(respBody, &integrationMap)
+			if err != nil {
+				return err
+			}
+			version := integrationMap["name"].(string)[strings.LastIndex(integrationMap["name"].(string), "/")+1:]
+			if version != "" {
+				_, err = integrations.Publish(name, version, contents)
+			} else {
+				return fmt.Errorf("unable to extract version id from integration")
+			}
+		}
 		return err
 	},
+	Example: `Create a new Inegration Version with a user label: ` + GetExample(0) + `
+Create a new Inegration Version with overrides: ` + GetExample(1) + `
+Create a new Inegration Version and publish it: ` + GetExample(2) + `,
+Create a new Inegration Version and return a basic response: ` + GetExample(13),
 }
 
 var (
-	integrationFile, overridesFile string
-	grantPermission                bool
+	integrationFile, overridesFile  string
+	grantPermission, publish, basic bool
 )
 
 func init() {
-	var name string
+	var name, userLabel, snapshot, configVars, configVarsJson string
 
 	CreateCmd.Flags().StringVarP(&name, "name", "n",
 		"", "Integration flow name")
@@ -85,6 +154,14 @@ func init() {
 		"", "Integration version userlabel")
 	CreateCmd.Flags().BoolVarP(&grantPermission, "grant-permission", "g",
 		false, "Grant the service account permission for integration triggers; default is false")
+	CreateCmd.Flags().BoolVarP(&publish, "publish", "",
+		false, "Publish the integration after successful creation; default is false")
+	CreateCmd.Flags().BoolVarP(&basic, "basic", "",
+		false, "Returns version and snapshot only in the response; default is false")
+	CreateCmd.Flags().StringVarP(&configVars, "config-vars", "",
+		"", "Path to file containing config variables")
+	CreateCmd.Flags().StringVarP(&configVarsJson, "config-vars-json", "",
+		"", "JSON string containing the config variables")
 
 	_ = CreateCmd.MarkFlagRequired("name")
 	_ = CreateCmd.MarkFlagRequired("file")

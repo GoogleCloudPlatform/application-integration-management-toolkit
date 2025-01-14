@@ -15,6 +15,8 @@
 package connectors
 
 import (
+	"fmt"
+
 	"github.com/spf13/cobra"
 )
 
@@ -24,6 +26,20 @@ var Cmd = &cobra.Command{
 	Short: "Manage connections for Integration Connectors",
 	Long:  "Manage connections for Integration Connectors",
 }
+
+var examples = []string{
+	`integrationcli connectors create -n $name -g=true -f samples/pub_sub_connection.json -sa=connectors --wait=true --default-token`,
+	`integrationcli connectors create -n $name -f samples/gcs_connection.json -sa=connectors --wait=true --default-token`,
+	`integrationcli connectors custom versions create --id $version -n $name -f samples/custom-connection.json --sa=connectors --default-token`,
+	`integrationcli connectors custom create -n $name -d $dispName --type OPEN_API --default-token`,
+}
+
+type ConnectorType string
+
+const (
+	OPEN_API ConnectorType = "OPEN_API"
+	PROTO    ConnectorType = "PROTO"
+)
 
 func init() {
 	var region, project string
@@ -47,4 +63,27 @@ func init() {
 	Cmd.AddCommand(ManagedZonesCmd)
 	Cmd.AddCommand(CustomCmd)
 	Cmd.AddCommand(EventSubCmd)
+	Cmd.AddCommand(RepairCmd)
+}
+
+func GetExample(i int) string {
+	return examples[i]
+}
+
+func (c *ConnectorType) String() string {
+	return string(*c)
+}
+
+func (c *ConnectorType) Set(r string) error {
+	switch r {
+	case "OPEN_API", "PROTO":
+		*c = ConnectorType(r)
+	default:
+		return fmt.Errorf("must be %s or %s", OPEN_API, PROTO)
+	}
+	return nil
+}
+
+func (c *ConnectorType) Type() string {
+	return "ConnectorType"
 }

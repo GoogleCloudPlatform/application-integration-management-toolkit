@@ -13,6 +13,7 @@ dist/
 .github/
 docs/
 test/
+samples/
 
 README.md
 CONTRIBUTING.md

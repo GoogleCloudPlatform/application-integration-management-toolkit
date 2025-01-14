@@ -274,6 +274,10 @@ base64 ./test/enc_password.txt > ./test/b64_enc_password.txt # on MacOS, use bas
 
 Please refer to this [article](https://www.googlecloudcommunity.com/gc/Cloud-Product-Articles/CI-CD-for-Application-Integration/ta-p/722811) in Google Cloud Community for how to perform CICD in Application Integration with `integrationcli`
 
+## Samples
+
+Please see [here](./samples/README.md)
+
 ## How do I verify the binary?
 
 All artifacts are signed by [cosign](https://github.com/sigstore/cosign). We recommend verifying any artifact before using them.

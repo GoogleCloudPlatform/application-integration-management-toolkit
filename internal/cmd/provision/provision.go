@@ -18,6 +18,7 @@ import (
 	"fmt"
 	"internal/apiclient"
 	"internal/client/provision"
+	"internal/cmd/utils"
 	"regexp"
 
 	"github.com/spf13/cobra"
@@ -31,14 +32,16 @@ var Cmd = &cobra.Command{
 	Args: func(cmd *cobra.Command, args []string) (err error) {
 		cmdProject := cmd.Flag("proj")
 		cmdRegion := cmd.Flag("reg")
-		if err = apiclient.SetRegion(cmdRegion.Value.String()); err != nil {
+		if err = apiclient.SetRegion(utils.GetStringParam(cmdRegion)); err != nil {
 			return err
 		}
-		return apiclient.SetProjectID(cmdProject.Value.String())
+		return apiclient.SetProjectID(utils.GetStringParam(cmdProject))
 	},
 	RunE: func(cmd *cobra.Command, args []string) (err error) {
-		cloudKMS := cmd.Flag("cloudkms").Value.String()
-		serviceAccount := cmd.Flag("service-account").Value.String()
+		cmd.SilenceUsage = true
+
+		cloudKMS := utils.GetStringParam(cmd.Flag("cloudkms"))
+		serviceAccount := utils.GetStringParam(cmd.Flag("service-account"))
 
 		if cloudKMS != "" {
 			re := regexp.MustCompile(`projects\/([a-zA-Z0-9_-]+)\/locations\/([a-zA-Z0-9_-]+)\/` +

@@ -265,6 +265,57 @@ func WriteResultsFile(deployOutputGCS string, status string) (err error) {
 	contents := fmt.Sprintf("{\"resultStatus\": \"%s\"}", status)
 	filename := "results.json"
 
+	err = writeGCSFile(deployOutputGCS, filename, contents)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func parseGCSURI(gcsURI string) (bucketName, objectPath string, err error) {
+	// Parse the GCS URL
+	parsedURL, err := url.Parse(gcsURI)
+	if err != nil {
+		return "", "", fmt.Errorf("Error parsing GCS URL:", err)
+	}
+	if parsedURL.Scheme != "gs" {
+		return "", "", fmt.Errorf("Invalid GCS URL scheme. Should be 'gs://'")
+	}
+	// Remove the protocol prefix
+	uri := strings.TrimPrefix(gcsURI, `gs://`)
+
+	// Split based on the first '/'
+	parts := strings.SplitN(uri, "/", 2)
+
+	// Check for proper URI format
+	if len(parts) != 2 {
+		return "", "", fmt.Errorf("Invalid GCS URI format")
+	}
+	return parts[0], parts[1], nil
+}
+
+func WriteManifest(deployOutputGCS string, version string) (err error) {
+	manifestFile := "manifest.txt"
+	resultsFile := "results.json"
+
+	manifestContents := "integrationcli manifest rendered content using version " + version
+	// do not use path.Join. This will caseu gs:// to be written as gs:/ and failed the release.
+	resultContents := fmt.Sprintf(`{"resultStatus": "SUCCEEDED", "manifestFile": "%s"}`, deployOutputGCS+"/"+manifestFile)
+
+	err = writeGCSFile(deployOutputGCS, manifestFile, manifestContents)
+	if err != nil {
+		return err
+	}
+
+	err = writeGCSFile(deployOutputGCS, resultsFile, resultContents)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func writeGCSFile(deployOutputGCS string, fileName string, contents string) (err error) {
 	ctx := context.Background()
 	client, err := storage.NewClient(ctx)
 	if err != nil {
@@ -274,7 +325,7 @@ func WriteResultsFile(deployOutputGCS string, status string) (err error) {
 
 	// Extract bucket name and object path from GCS URI
 	bucketName, objectPath, err := parseGCSURI(deployOutputGCS)
-	objectName := path.Join(objectPath, filename)
+	objectName := path.Join(objectPath, fileName)
 
 	bucket := client.Bucket(bucketName)
 	object := bucket.Object(objectName)
@@ -291,26 +342,4 @@ func WriteResultsFile(deployOutputGCS string, status string) (err error) {
 	}
 
 	return nil
-}
-
-func parseGCSURI(gcsURI string) (bucketName, objectPath string, err error) {
-	// Parse the GCS URL
-	parsedURL, err := url.Parse(gcsURI)
-	if err != nil {
-		return "", "", fmt.Errorf("Error parsing GCS URL:", err)
-	}
-	if parsedURL.Scheme != "gs" {
-		return "", "", fmt.Errorf("Invalid GCS URL scheme. Should be 'gs://'")
-	}
-	// Remove the protocol prefix
-	uri := strings.TrimPrefix(gcsURI, "gs://")
-
-	// Split based on the first '/'
-	parts := strings.SplitN(uri, "/", 2)
-
-	// Check for proper URI format
-	if len(parts) != 2 {
-		return "", "", fmt.Errorf("Invalid GCS URI format")
-	}
-	return parts[0], parts[1], nil
 }

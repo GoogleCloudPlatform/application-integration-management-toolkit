@@ -17,9 +17,12 @@ package connectors
 import (
 	"internal/apiclient"
 	"internal/client/connections"
+	"internal/clilog"
+	"internal/cmd/utils"
 	"strings"
 
 	"github.com/spf13/cobra"
+	"github.com/spf13/pflag"
 )
 
 // CreateManagedZonesCmd to list Connections
@@ -31,16 +34,21 @@ var CreateManagedZonesCmd = &cobra.Command{
 		cmdProject := cmd.Flag("proj")
 		cmdRegion := cmd.Flag("reg")
 
-		if err = apiclient.SetRegion(cmdRegion.Value.String()); err != nil {
+		if err = apiclient.SetRegion(utils.GetStringParam(cmdRegion)); err != nil {
 			return err
 		}
-		return apiclient.SetProjectID(cmdProject.Value.String())
+		cmd.Flags().VisitAll(func(f *pflag.Flag) {
+			clilog.Debug.Printf("%s: %s\n", f.Name, f.Value)
+		})
+		return apiclient.SetProjectID(utils.GetStringParam(cmdProject))
 	},
 	RunE: func(cmd *cobra.Command, args []string) (err error) {
-		description := cmd.Flag("description").Value.String()
-		targetProject := cmd.Flag("target-project").Value.String()
-		targetVPC := cmd.Flag("target-vpc").Value.String()
-		dns := cmd.Flag("dns").Value.String()
+		cmd.SilenceUsage = true
+
+		description := utils.GetStringParam(cmd.Flag("description"))
+		targetProject := utils.GetStringParam(cmd.Flag("target-project"))
+		targetVPC := utils.GetStringParam(cmd.Flag("target-vpc"))
+		dns := utils.GetStringParam(cmd.Flag("dns"))
 
 		zone := []string{}
 		zone = append(zone, "\"dns\":\""+dns+"\"")
@@ -52,7 +60,7 @@ var CreateManagedZonesCmd = &cobra.Command{
 
 		payload := "{" + strings.Join(zone, ",") + "}"
 
-		_, err = connections.CreateZone(cmd.Flag("name").Value.String(),
+		_, err = connections.CreateZone(utils.GetStringParam(cmd.Flag("name")),
 			[]byte(payload))
 		return err
 	},

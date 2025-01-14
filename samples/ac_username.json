@@ -1,0 +1,12 @@
+{
+  "displayName": "authconfig-sample",
+  "description": "this is a sample auth config",
+  "visibility": "CLIENT_VISIBLE",
+  "decryptedCredential": {
+    "credentialType": "USERNAME_AND_PASSWORD",
+    "usernameAndPassword": {
+      "username": "test",
+      "password": "test"
+    }
+  }
+}

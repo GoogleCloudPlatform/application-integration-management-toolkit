@@ -32,6 +32,8 @@ var CrtTestCaseCmd = &cobra.Command{
 		cmdProject := cmd.Flag("proj")
 		cmdRegion := cmd.Flag("reg")
 		version := cmd.Flag("ver").Value.String()
+		userLabel := cmd.Flag("user-label").Value.String()
+		snapshot := cmd.Flag("snapshot").Value.String()
 
 		if err = apiclient.SetRegion(cmdRegion.Value.String()); err != nil {
 			return err
@@ -39,7 +41,7 @@ var CrtTestCaseCmd = &cobra.Command{
 		if userLabel == "" && version == "" && snapshot == "" {
 			return errors.New("at least one of userLabel, version or snapshot must be passed")
 		}
-		if err = validate(version); err != nil {
+		if err = validate(version, userLabel, snapshot, false); err != nil {
 			return err
 		}
 		if err = apiclient.SetRegion(cmdRegion.Value.String()); err != nil {
@@ -52,6 +54,8 @@ var CrtTestCaseCmd = &cobra.Command{
 		version := cmd.Flag("ver").Value.String()
 		name := cmd.Flag("name").Value.String()
 		contentPath := cmd.Flag("test-case-path").Value.String()
+		userLabel := cmd.Flag("user-label").Value.String()
+		snapshot := cmd.Flag("snapshot").Value.String()
 
 		if _, err := os.Stat(contentPath); os.IsNotExist(err) {
 			return err
@@ -75,7 +79,7 @@ var CrtTestCaseCmd = &cobra.Command{
 }
 
 func init() {
-	var name, version, contentPath string
+	var name, version, contentPath, userLabel, snapshot string
 
 	CrtTestCaseCmd.Flags().StringVarP(&name, "name", "n",
 		"", "Integration flow name")

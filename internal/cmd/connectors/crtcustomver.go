@@ -18,9 +18,12 @@ import (
 	"fmt"
 	"internal/apiclient"
 	"internal/client/connections"
+	"internal/clilog"
+	"internal/cmd/utils"
 	"os"
 
 	"github.com/spf13/cobra"
+	"github.com/spf13/pflag"
 )
 
 // CrtCustomVerCmd to create a new connection
@@ -32,15 +35,20 @@ var CrtCustomVerCmd = &cobra.Command{
 		cmdProject := cmd.Flag("proj")
 		cmdRegion := cmd.Flag("reg")
 
-		if err = apiclient.SetRegion(cmdRegion.Value.String()); err != nil {
+		if err = apiclient.SetRegion(utils.GetStringParam(cmdRegion)); err != nil {
 			return err
 		}
-		return apiclient.SetProjectID(cmdProject.Value.String())
+		cmd.Flags().VisitAll(func(f *pflag.Flag) {
+			clilog.Debug.Printf("%s: %s\n", f.Name, f.Value)
+		})
+		return apiclient.SetProjectID(utils.GetStringParam(cmdProject))
 	},
 	RunE: func(cmd *cobra.Command, args []string) (err error) {
-		name := cmd.Flag("name").Value.String()
-		id := cmd.Flag("id").Value.String()
-		connectionFile := cmd.Flag("file").Value.String()
+		cmd.SilenceUsage = true
+
+		name := utils.GetStringParam(cmd.Flag("name"))
+		id := utils.GetStringParam(cmd.Flag("id"))
+		connectionFile := utils.GetStringParam(cmd.Flag("file"))
 
 		if _, err = os.Stat(connectionFile); err != nil {
 			return fmt.Errorf("unable to open file %w", err)
@@ -53,6 +61,7 @@ var CrtCustomVerCmd = &cobra.Command{
 		_, err = connections.CreateCustomVersion(name, id, content, serviceAccountName, serviceAccountProject)
 		return err
 	},
+	Example: `Create a custom connection version: ` + GetExample(2),
 }
 
 func init() {

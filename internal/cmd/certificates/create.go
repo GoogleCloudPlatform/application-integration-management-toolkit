@@ -18,9 +18,12 @@ import (
 	"errors"
 	"internal/apiclient"
 	"internal/client/certificates"
+	"internal/clilog"
+	"internal/cmd/utils"
 	"os"
 
 	"github.com/spf13/cobra"
+	"github.com/spf13/pflag"
 )
 
 // CreateCmd to create authconfigs
@@ -29,10 +32,10 @@ var CreateCmd = &cobra.Command{
 	Short: "Create a certificate entity in Application integration",
 	Long:  "Create a certificate entity in Application integration",
 	Args: func(cmd *cobra.Command, args []string) (err error) {
-		project := cmd.Flag("proj").Value.String()
-		region := cmd.Flag("reg").Value.String()
-		privateKeyFile := cmd.Flag("private-key").Value.String()
-		passphrase := cmd.Flag("passphrase").Value.String()
+		project := utils.GetStringParam(cmd.Flag("proj"))
+		region := utils.GetStringParam(cmd.Flag("reg"))
+		privateKeyFile := utils.GetStringParam(cmd.Flag("private-key"))
+		passphrase := utils.GetStringParam(cmd.Flag("passphrase"))
 
 		if err = apiclient.SetRegion(region); err != nil {
 			return err
@@ -41,16 +44,20 @@ var CreateCmd = &cobra.Command{
 		if passphrase != "" && privateKeyFile == "" {
 			return errors.New("private key must be used with passphrase")
 		}
-
+		cmd.Flags().VisitAll(func(f *pflag.Flag) {
+			clilog.Debug.Printf("%s: %s\n", f.Name, f.Value)
+		})
 		return apiclient.SetProjectID(project)
 	},
 	RunE: func(cmd *cobra.Command, args []string) (err error) {
+		cmd.SilenceUsage = true
+
 		var sslCertContent, privateKeyCertContent []byte
-		name := cmd.Flag("name").Value.String()
-		description := cmd.Flag("description").Value.String()
-		sslCertificateFile := cmd.Flag("cert-file").Value.String()
-		privateKeyFile := cmd.Flag("private-key").Value.String()
-		passphrase := cmd.Flag("passphrase").Value.String()
+		name := utils.GetStringParam(cmd.Flag("name"))
+		description := utils.GetStringParam(cmd.Flag("description"))
+		sslCertificateFile := utils.GetStringParam(cmd.Flag("cert-file"))
+		privateKeyFile := utils.GetStringParam(cmd.Flag("private-key"))
+		passphrase := utils.GetStringParam(cmd.Flag("passphrase"))
 
 		if sslCertificateFile != "" {
 			if _, err := os.Stat(sslCertificateFile); err != nil {

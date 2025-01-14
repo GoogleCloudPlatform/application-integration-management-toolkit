@@ -26,6 +26,8 @@ var GetCmd = &cobra.Command{
 	Short: "Get preferences for integrationcli",
 	Long:  "Get preferences for integrationcli",
 	RunE: func(cmd *cobra.Command, args []string) (err error) {
+		cmd.SilenceUsage = true
+
 		err = apiclient.GetPreferences()
 		return err
 	},

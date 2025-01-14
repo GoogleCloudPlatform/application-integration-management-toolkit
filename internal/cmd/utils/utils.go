@@ -16,8 +16,13 @@ package utils
 
 import (
 	"fmt"
+	"internal/apiclient"
 	"io"
 	"os"
+	"runtime/debug"
+	"strings"
+
+	"github.com/spf13/pflag"
 )
 
 const (
@@ -40,7 +45,7 @@ const cloudBuild = `# Copyright 2023 Google LLC
 # limitations under the License.
 
 #to manually trigger from gcloud
-# gcloud builds submit --config=deploy.yaml --project=project-name --region=us-west1
+# gcloud builds submit --config=cloudbuild.yaml --project=project-name --region=us-west1
 
 steps:
 - id: 'Apply Integration scaffolding configuration'
@@ -53,10 +58,9 @@ steps:
     - -u
     - ${SHORT_SHA}
     - --wait=${_WAIT}
-    - --reg=${_LOCATION}
+    - --reg=${LOCATION}
     - --proj=${PROJECT_ID}
     - --metadata-token
-    - $(cat /tmp/cmd)
     # uncomment these as necessary
     #- --g=${_GRANT_PERMISSIONS}
     #- --create-secret=${_CREATE_SECRET}
@@ -107,6 +111,8 @@ metadata:
   name: %s-env
 customTarget:
   customTargetType: appint-%s-target
+deployParameters:
+  APP_INTEGRATION_PROJECT_ID: "%s"
 ---
 
 apiVersion: deploy.cloud.google.com/v1
@@ -134,37 +140,100 @@ var skaffold = `# Copyright 2024 Google LLC
 apiVersion: skaffold/v4beta7
 kind: Config
 customActions:
-- name: render-app-integration
+- name: render-%s-integration
   containers:
   - name: render
-    image: gcr.io/google.com/cloudsdktool/google-cloud-cli@sha256:66e2681aa3099b4e517e4cdcdefff8f2aa45d305007124ccdc09686f6712d018
-    command: ['/bin/bash']
-    args:
-      - '-c'
-      - |-
-        echo "Sample manifest rendered content" > manifest.txt
-        gsutil cp manifest.txt $CLOUD_DEPLOY_OUTPUT_GCS_PATH/manifest.txt
-        echo {\"resultStatus\": \"SUCCEEDED\", \"manifestFile\": \"$CLOUD_DEPLOY_OUTPUT_GCS_PATH/manifest.txt\"} > results.json
-        gsutil cp results.json $CLOUD_DEPLOY_OUTPUT_GCS_PATH/results.json
-- name: deploy-app-integration
-  containers:
-  - name: deploy
-    image: us-docker.pkg.dev/appintegration-toolkit/images/integrationcli-deploy:latest
+    image: us-docker.pkg.dev/appintegration-toolkit/images/integrationcli:latest
     command: ['sh']
     args:
       - '-c'
       - |-
-        integrationcli integrations apply --env=dev --reg=$CLOUD_DEPLOY_LOCATION --proj=$CLOUD_DEPLOY_PROJECT --pipeline=$CLOUD_DEPLOY_DELIVERY_PIPELINE --release=$CLOUD_DEPLOY_RELEASE --target=$CLOUD_DEPLOY_TARGET --metadata-token`
+        integrationcli render --output-gcs-path=$CLOUD_DEPLOY_OUTPUT_GCS_PATH
+- name: deploy-%s-integration
+  containers:
+  - name: deploy
+    image: us-docker.pkg.dev/appintegration-toolkit/images/integrationcli:latest
+    command: ['sh']
+    args:
+      - '-c'
+      - |-
+        integrationcli integrations apply --env=dev --reg=$CLOUD_DEPLOY_LOCATION --proj=$APP_INTEGRATION_PROJECT_ID --pipeline=$CLOUD_DEPLOY_DELIVERY_PIPELINE --release=$CLOUD_DEPLOY_OUTPUT_GCS_PATH --output-gcs-path=$CLOUD_DEPLOY_TARGET --metadata-token`
+
+var githubActionApply = `# Copyright 2025 Google LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+# this github action publishes a new integration version
+# it also includes any overrides present in overrides.json and config-vars files.
+# this sample is using the example in samples/scaffold-example
+
+name: apply-%s-action
+permissions: read-all
+
+# Controls when the workflow will run
+on: push
+
+env:
+  ENVIRONMENT: 'dev'
+  PROJECT_ID: ${{ vars.PROJECT_ID }}
+  REGION: ${{ vars.REGION }}
+  WORKLOAD_IDENTITY_PROVIDER_NAME: ${{ vars.PROVIDER_NAME }}
+  SERVICE_ACCOUNT: ${{ vars.SERVICE_ACCOUNT }}
+
+jobs:
+
+  integrationcli-action:
+
+    permissions:
+      contents: 'read'
+      id-token: 'write'
+
+    name: Apply integration version
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@1e31de5234b9f8995739874a8ce0492dc87873e2 #v4
+
+      - name: Authenticate Google Cloud
+        id: 'gcp-auth'
+        uses: google-github-actions/auth@6fc4af4b145ae7821d527454aa9bd537d1f2dc5f #v2.1.7
+        with:
+          workload_identity_provider: '${{ env.WORKLOAD_IDENTITY_PROVIDER_NAME }}'
+          service_account: '${{ env.SERVICE_ACCOUNT }}'
+          token_format: 'access_token'
+
+      - name: Calculate variables
+        id: 'calc-vars'
+        run: |
+          echo "SHORT_SHA=$(git rev-parse --short $GITHUB_SHA)" >> $GITHUB_OUTPUT
+
+      - name: Create and Publish Integration
+        id: 'publish-integration'
+        uses: docker://us-docker.pkg.dev/appintegration-toolkit/images/integrationcli:v0.79.0 #pin to version of choice
+        with:
+          args: integrations apply --env=${{ env.ENVIRONMENT}} --folder=. --userlabel=${{ steps.calc-vars.outputs.SHORT_SHA }} --wait=true --proj=${{ env.PROJECT_ID }} --reg=${{ env.REGION }} --token ${{ steps.gcp-auth.outputs.access_token }}`
 
 func GetCloudDeployYaml(integrationName string, env string) string {
 	if env == "" {
 		env = "dev"
 	}
-	return fmt.Sprintf(cloudDeploy, integrationName, env, env, integrationName, integrationName)
+	return fmt.Sprintf(cloudDeploy, integrationName, env, env, integrationName, apiclient.GetProjectID(), integrationName)
 }
 
-func GetSkaffoldYaml() string {
-	return skaffold
+func GetSkaffoldYaml(integrationName string) string {
+	return fmt.Sprintf(skaffold, integrationName, integrationName)
 }
 
 func GetCloudBuildYaml() string {
@@ -183,4 +252,34 @@ func ReadFile(filePath string) (byteValue []byte, err error) {
 		return nil, err
 	}
 	return byteValue, err
+}
+
+func GetStringParam(flag *pflag.Flag) (param string) {
+	param = ""
+	if flag != nil {
+		param = flag.Value.String()
+	}
+	return param
+}
+
+func GetGithubAction(environment string, integrationName string) string {
+	var githubAction string
+	if environment != "" {
+		githubAction = strings.ReplaceAll(githubActionApply, "'dev'", "'"+environment+"'")
+	} else {
+		githubAction = githubActionApply
+	}
+	v := GetCLIVersion()
+	if v != "" {
+		githubAction = strings.ReplaceAll(githubAction, "v0.79.0", v)
+	}
+	return fmt.Sprintf(githubAction, integrationName)
+}
+
+func GetCLIVersion() string {
+	bi, ok := debug.ReadBuildInfo()
+	if ok && bi.Main.Version != "" {
+		return bi.Main.Version
+	}
+	return "latest"
 }
