@@ -144,7 +144,7 @@ var ApplyCmd = &cobra.Command{
 		}
 
 		if err = processIntegration(overridesFile, integrationFolder,
-			configVarsFolder, pipeline, userLabel, grantPermission); err != nil {
+			configVarsFolder, testFolder, pipeline, userLabel, grantPermission); err != nil {
 			return err
 		}
 
@@ -157,6 +157,7 @@ Apply scaffold configuration, but skip connectors: ` + GetExample(12),
 }
 
 var serviceAccountName, serviceAccountProject, encryptionKey, pipeline, release, outputGCSPath string
+var testFolder string
 
 func init() {
 	var userLabel string
@@ -192,6 +193,8 @@ func init() {
 		false, "Skip applying authconfigs configuration; default is false")
 	ApplyCmd.Flags().BoolVarP(&useUnderscore, "use-underscore", "",
 		false, "Use underscore as a file splitter; default is __")
+	ApplyCmd.Flags().StringVarP(&testFolder, "tests-folder", "",
+		"", "Path to a folder containing files for test case execution. File names MUST match display names")
 }
 
 func getFilenameWithoutExtension(filname string) string {
@@ -537,7 +540,7 @@ func processSfdcChannels(sfdcchannelsFolder string) (err error) {
 }
 
 func processIntegration(overridesFile string, integrationFolder string,
-	configVarsFolder string, pipeline string, userLabel string, grantPermission bool,
+	configVarsFolder string, testConfigFolder string, pipeline string, userLabel string, grantPermission bool,
 ) (err error) {
 	rJSONFiles := regexp.MustCompile(`(\S*)\.json$`)
 
@@ -624,6 +627,15 @@ func processIntegration(overridesFile string, integrationFolder string,
 		if err != nil {
 			return err
 		}
+
+		// Execute test cases
+		if testConfigFolder != "" {
+			err = executeAllTestCases(testConfigFolder, getFilenameWithoutExtension(integrationNames[0]), version)
+			if err != nil {
+				return err
+			}
+		}
+
 		if pipeline != "" {
 			err = apiclient.WriteResultsFile(outputGCSPath, "SUCCEEDED")
 		}

@@ -16,9 +16,12 @@ package integrations
 
 import (
 	"encoding/json"
+	"fmt"
 	"internal/apiclient"
 	"net/url"
 	"path"
+	"path/filepath"
+	"strconv"
 )
 
 type testCase struct {
@@ -95,8 +98,25 @@ func GetTestCase(name string, version string, testCaseID string) (respBody []byt
 	return respBody, err
 }
 
-func ListTestCases(name string, version string, full bool) (respBody []byte, err error) {
+func ListTestCases(name string, version string, full bool, filter string,
+	pageSize int, pageToken string, orderBy string) (respBody []byte, err error) {
+
 	u, _ := url.Parse(apiclient.GetBaseIntegrationURL())
+	q := u.Query()
+	if pageSize != -1 {
+		q.Set("pageSize", strconv.Itoa(pageSize))
+	}
+	if pageToken != "" {
+		q.Set("pageToken", pageToken)
+	}
+	if filter != "" {
+		q.Set("filter", filter)
+	}
+	if orderBy != "" {
+		q.Set("orderBy", orderBy)
+	}
+
+	u.RawQuery = q.Encode()
 	u.Path = path.Join(u.Path, "integrations", name, "versions", version, "testCases")
 	respBody, err = apiclient.HttpClient(u.String())
 	if !full {
@@ -112,22 +132,57 @@ func ExecuteTestCase(name string, version string, testCaseID string, content str
 	return respBody, err
 }
 
-func ListTestCasesByUserlabel(name string, userLabel string, full bool) (respBody []byte, err error) {
+func ListTestCasesByUserlabel(name string, userLabel string, full bool, filter string,
+	pageSize int, pageToken string, orderBy string) (respBody []byte, err error) {
 
 	version, err := getTestCaseIntegrationVersion(name, "", userLabel)
 	if err != nil {
 		return nil, err
 	}
-	return ListTestCases(name, version, full)
+	return ListTestCases(name, version, full, filter, pageSize, pageToken, orderBy)
 }
 
-func ListTestCasesBySnapshot(name string, snapshot string, full bool) (respBody []byte, err error) {
+func ListTestCasesBySnapshot(name string, snapshot string, full bool, filter string,
+	pageSize int, pageToken string, orderBy string) (respBody []byte, err error) {
 
 	version, err := getTestCaseIntegrationVersion(name, snapshot, "")
 	if err != nil {
 		return nil, err
 	}
-	return ListTestCases(name, version, full)
+	return ListTestCases(name, version, full, filter, pageSize, pageToken, orderBy)
+}
+
+// FindTestCase
+func FindTestCase(name string, integrationVersion string, displayName string, pageToken string) (version string, err error) {
+	lt := listTestCases{}
+	var respBody []byte
+
+	u, _ := url.Parse(apiclient.GetBaseIntegrationURL())
+	if pageToken != "" {
+		q := u.Query()
+		q.Set("pageToken", pageToken)
+		u.RawQuery = q.Encode()
+	}
+
+	u.Path = path.Join(u.Path, "integrations", name, "versions", integrationVersion, "testCases")
+	if respBody, err = apiclient.HttpClient(u.String()); err != nil {
+		return "", err
+	}
+
+	if err = json.Unmarshal(respBody, &lt); err != nil {
+		return "", err
+	}
+
+	for _, testcase := range lt.TestCases {
+		if testcase.DisplayName == displayName {
+			version = filepath.Base(testcase.Name)
+			return version, nil
+		}
+	}
+	if lt.NextPageToken != "" {
+		return FindTestCase(name, integrationVersion, displayName, lt.NextPageToken)
+	}
+	return "", fmt.Errorf("testCase not found")
 }
 
 func getTestCaseIntegrationVersion(name string, snapshot string, userLabel string) (version string, err error) {

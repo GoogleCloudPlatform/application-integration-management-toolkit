@@ -173,7 +173,11 @@ func getIntegrationVersion(respBody []byte) (string, error) {
 		return "", err
 	}
 	if data["integrationVersions"] == nil {
-		return "", fmt.Errorf("no integration versions were found")
+		if data["version"] == nil {
+			return "", fmt.Errorf("no integration versions were found")
+		} else {
+			return data["version"].(string), nil
+		}
 	}
 	integrationVersions := data["integrationVersions"].([]interface{})
 	firstIntegrationVersion := integrationVersions[0].(map[string]interface{})

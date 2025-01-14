@@ -69,8 +69,6 @@ var ScaffoldCmd = &cobra.Command{
 		name := utils.GetStringParam(cmd.Flag("name"))
 		githubAction, _ := strconv.ParseBool(utils.GetStringParam(cmd.Flag("github-action")))
 
-		apiclient.DisableCmdPrintHttpResponse()
-
 		if useUnderscore {
 			fileSplitter = utils.LegacyFileSplitter
 		} else {
@@ -103,6 +101,8 @@ var ScaffoldCmd = &cobra.Command{
 			}
 		}
 
+		apiclient.DisableCmdPrintHttpResponse()
+
 		// Get
 
 		if version != "" {
@@ -112,7 +112,7 @@ var ScaffoldCmd = &cobra.Command{
 			if overridesBody, err = integrations.Get(name, version, false, false, true); err != nil {
 				return err
 			}
-			if testCasesBody, err = integrations.ListTestCases(name, version, false); err != nil {
+			if testCasesBody, err = integrations.ListTestCases(name, version, false, "", -1, "", ""); err != nil {
 				return err
 			}
 		} else if userLabel != "" {
@@ -122,7 +122,7 @@ var ScaffoldCmd = &cobra.Command{
 			if overridesBody, err = integrations.GetByUserlabel(name, userLabel, false, false, true); err != nil {
 				return err
 			}
-			if testCasesBody, err = integrations.ListTestCasesByUserlabel(name, userLabel, false); err != nil {
+			if testCasesBody, err = integrations.ListTestCasesByUserlabel(name, userLabel, false, "", -1, "", ""); err != nil {
 				return err
 			}
 		} else if snapshot != "" {
@@ -132,7 +132,7 @@ var ScaffoldCmd = &cobra.Command{
 			if overridesBody, err = integrations.GetBySnapshot(name, snapshot, false, false, true); err != nil {
 				return err
 			}
-			if testCasesBody, err = integrations.ListTestCasesBySnapshot(name, snapshot, false); err != nil {
+			if testCasesBody, err = integrations.ListTestCasesBySnapshot(name, snapshot, false, "", -1, "", ""); err != nil {
 				return err
 			}
 		} else {
@@ -158,10 +158,10 @@ var ScaffoldCmd = &cobra.Command{
 
 		if len(testCasesBody) > 3 {
 			clilog.Info.Printf("Found test cases in the integration, storing the test cases file\n")
-			if err = generateFolder(path.Join(baseFolder, "tests")); err != nil {
+			if err = generateFolder(path.Join(folder, "tests")); err != nil {
 				return err
 			}
-			if err = generateTestcases(testCasesBody, baseFolder); err != nil {
+			if err = generateTestcases(testCasesBody, folder); err != nil {
 				return err
 			}
 		}

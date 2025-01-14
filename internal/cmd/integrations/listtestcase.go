@@ -53,13 +53,16 @@ var ListTestCaseCmd = &cobra.Command{
 		name := utils.GetStringParam(cmd.Flag("name"))
 		userLabel := utils.GetStringParam(cmd.Flag("user-label"))
 		snapshot := utils.GetStringParam(cmd.Flag("snapshot"))
+		pageToken := utils.GetStringParam(cmd.Flag("pageToken"))
+		filter := utils.GetStringParam(cmd.Flag("filter"))
+		orderBy := utils.GetStringParam(cmd.Flag("orderBy"))
 
 		if version != "" {
-			_, err = integrations.ListTestCases(name, version, full)
+			_, err = integrations.ListTestCases(name, version, full, filter, pageSize, pageToken, orderBy)
 		} else if userLabel != "" {
-			_, err = integrations.ListTestCasesByUserlabel(name, userLabel, full)
+			_, err = integrations.ListTestCasesByUserlabel(name, userLabel, full, filter, pageSize, pageToken, orderBy)
 		} else if snapshot != "" {
-			_, err = integrations.ListTestCasesBySnapshot(name, snapshot, full)
+			_, err = integrations.ListTestCasesBySnapshot(name, snapshot, full, filter, pageSize, pageToken, orderBy)
 		}
 
 		return err
@@ -69,7 +72,7 @@ var ListTestCaseCmd = &cobra.Command{
 var full bool
 
 func init() {
-	var name, version, userLabel, snapshot string
+	var name, version, userLabel, snapshot, pageToken, filter, orderBy string
 
 	ListTestCaseCmd.Flags().StringVarP(&name, "name", "n",
 		"", "Integration flow name")
@@ -81,6 +84,14 @@ func init() {
 		"", "Integration flow snapshot number")
 	ListTestCaseCmd.Flags().BoolVarP(&full, "full", "",
 		false, "Full test case response")
+	ListTestCaseCmd.Flags().IntVarP(&pageSize, "pageSize", "",
+		-1, "The maximum number of versions to return")
+	ListTestCaseCmd.Flags().StringVarP(&pageToken, "pageToken", "",
+		"", "A page token, received from a previous call")
+	ListTestCaseCmd.Flags().StringVarP(&filter, "filter", "",
+		"", "Filter results")
+	ListTestCaseCmd.Flags().StringVarP(&orderBy, "orderBy", "",
+		"", "The results would be returned in order")
 
 	_ = ListTestCaseCmd.MarkFlagRequired("name")
 }
