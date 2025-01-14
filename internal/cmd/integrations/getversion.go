@@ -41,7 +41,8 @@ var GetVerCmd = &cobra.Command{
 
 		if err = apiclient.SetRegion(cmdRegion); err != nil {
 			return err
-		} else if err = validate(version, userLabel, snapshot, latest); err != nil {
+		}
+		if err = validate(version, userLabel, snapshot, latest); err != nil {
 			return err
 		}
 

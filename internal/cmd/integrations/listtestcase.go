@@ -18,6 +18,7 @@ import (
 	"errors"
 	"internal/apiclient"
 	"internal/client/integrations"
+	"internal/cmd/utils"
 
 	"github.com/spf13/cobra"
 )
@@ -28,13 +29,13 @@ var ListTestCaseCmd = &cobra.Command{
 	Short: "List integration flow version test cases",
 	Long:  "List integration flow version test cases",
 	Args: func(cmd *cobra.Command, args []string) (err error) {
-		cmdProject := cmd.Flag("proj")
-		cmdRegion := cmd.Flag("reg")
-		version := cmd.Flag("ver").Value.String()
-		userLabel := cmd.Flag("user-label").Value.String()
-		snapshot := cmd.Flag("snapshot").Value.String()
+		cmdProject := utils.GetStringParam(cmd.Flag("proj"))
+		cmdRegion := utils.GetStringParam(cmd.Flag("reg"))
+		version := utils.GetStringParam(cmd.Flag("ver"))
+		userLabel := utils.GetStringParam(cmd.Flag("user-label"))
+		snapshot := utils.GetStringParam(cmd.Flag("snapshot"))
 
-		if err = apiclient.SetRegion(cmdRegion.Value.String()); err != nil {
+		if err = apiclient.SetRegion(cmdRegion); err != nil {
 			return err
 		}
 		if userLabel == "" && version == "" && snapshot == "" {
@@ -43,13 +44,15 @@ var ListTestCaseCmd = &cobra.Command{
 		if err = validate(version, userLabel, snapshot, false); err != nil {
 			return err
 		}
-		return apiclient.SetProjectID(cmdProject.Value.String())
+		return apiclient.SetProjectID(cmdProject)
 	},
 	RunE: func(cmd *cobra.Command, args []string) (err error) {
-		version := cmd.Flag("ver").Value.String()
-		name := cmd.Flag("name").Value.String()
-		userLabel := cmd.Flag("user-label").Value.String()
-		snapshot := cmd.Flag("snapshot").Value.String()
+		cmd.SilenceUsage = true
+
+		version := utils.GetStringParam(cmd.Flag("ver"))
+		name := utils.GetStringParam(cmd.Flag("name"))
+		userLabel := utils.GetStringParam(cmd.Flag("user-label"))
+		snapshot := utils.GetStringParam(cmd.Flag("snapshot"))
 
 		if version != "" {
 			_, err = integrations.ListTestCases(name, version, full)

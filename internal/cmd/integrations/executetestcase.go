@@ -17,6 +17,7 @@ package integrations
 import (
 	"internal/apiclient"
 	"internal/client/integrations"
+	"internal/cmd/utils"
 	"os"
 
 	"github.com/spf13/cobra"
@@ -28,20 +29,22 @@ var ExecuteTestCaseCmd = &cobra.Command{
 	Short: "Execute an integration flow version test case",
 	Long:  "Execute an integration flow version test case",
 	Args: func(cmd *cobra.Command, args []string) (err error) {
-		cmdProject := cmd.Flag("proj")
-		cmdRegion := cmd.Flag("reg")
+		cmdProject := utils.GetStringParam(cmd.Flag("proj"))
+		cmdRegion := utils.GetStringParam(cmd.Flag("reg"))
 
-		if err = apiclient.SetRegion(cmdRegion.Value.String()); err != nil {
+		if err = apiclient.SetRegion(cmdRegion); err != nil {
 			return err
 		}
 
-		return apiclient.SetProjectID(cmdProject.Value.String())
+		return apiclient.SetProjectID(cmdProject)
 	},
 	RunE: func(cmd *cobra.Command, args []string) (err error) {
-		version := cmd.Flag("ver").Value.String()
-		name := cmd.Flag("name").Value.String()
-		testCaseID := cmd.Flag("test-case-id").Value.String()
-		inputFile := cmd.Flag("input-file").Value.String()
+		cmd.SilenceUsage = true
+
+		version := utils.GetStringParam(cmd.Flag("ver"))
+		name := utils.GetStringParam(cmd.Flag("name"))
+		testCaseID := utils.GetStringParam(cmd.Flag("test-case-id"))
+		inputFile := utils.GetStringParam(cmd.Flag("input-file"))
 
 		if _, err := os.Stat(inputFile); os.IsNotExist(err) {
 			return err
