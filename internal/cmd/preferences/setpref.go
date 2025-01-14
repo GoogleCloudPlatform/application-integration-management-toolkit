@@ -34,6 +34,12 @@ var SetCmd = &cobra.Command{
 		proxyURL := utils.GetStringParam(cmd.Flag("proxy"))
 		api := utils.GetStringParam(cmd.Flag("api"))
 
+		if utils.GetStringParam(cmd.Flag("basic")) != "" {
+			if err = apiclient.SetBasicInfo(utils.GetStringParam(cmd.Flag("basic"))); err != nil {
+				return err
+			}
+		}
+
 		if err = apiclient.WriteDefaultProject(project); err != nil {
 			return err
 		}
@@ -65,7 +71,7 @@ var SetCmd = &cobra.Command{
 var nocheck bool
 
 func init() {
-	var project, region, proxyURL string
+	var project, region, proxyURL, basicInfo string
 	var api apiclient.API
 
 	SetCmd.Flags().StringVarP(&project, "proj", "p",
@@ -82,4 +88,7 @@ func init() {
 
 	SetCmd.Flags().Var(&api, "api", "Sets the control plane API. Must be one of prod, "+
 		"staging or autopush; default is prod")
+
+	SetCmd.Flags().StringVarP(&basicInfo, "basic", "",
+		"", "Retuens basic information for supported resources")
 }

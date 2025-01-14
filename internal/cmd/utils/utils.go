@@ -20,8 +20,10 @@ import (
 	"io"
 	"os"
 	"runtime/debug"
+	"strconv"
 	"strings"
 
+	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 )
 
@@ -282,4 +284,19 @@ func GetCLIVersion() string {
 		return bi.Main.Version
 	}
 	return "latest"
+}
+
+func GetBasicInfo(cmd *cobra.Command, flag string) bool {
+	var param, pref bool
+
+	basicInfo := GetStringParam(cmd.Flag(flag))
+
+	if basicInfo != "" {
+		param, _ = strconv.ParseBool(basicInfo)
+		return param
+	}
+
+	pref, _ = strconv.ParseBool(apiclient.GetBasicInfo())
+
+	return pref
 }

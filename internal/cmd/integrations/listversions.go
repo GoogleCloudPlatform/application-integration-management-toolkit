@@ -19,7 +19,6 @@ import (
 	"internal/client/integrations"
 	"internal/clilog"
 	"internal/cmd/utils"
-	"strconv"
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
@@ -46,7 +45,7 @@ var ListVerCmd = &cobra.Command{
 		cmd.SilenceUsage = true
 
 		name := utils.GetStringParam(cmd.Flag("name"))
-		basic, _ := strconv.ParseBool(utils.GetStringParam(cmd.Flag("basic")))
+		basic := utils.GetBasicInfo(cmd, "basic")
 		_, err = integrations.ListVersions(name, pageSize,
 			utils.GetStringParam(cmd.Flag("pageToken")),
 			utils.GetStringParam(cmd.Flag("filter")),
@@ -59,8 +58,7 @@ Return the version that is published: ` + GetExample(4),
 }
 
 func init() {
-	var pageToken, filter, orderBy, name string
-	basic := false
+	var pageToken, filter, orderBy, name, basic string
 
 	ListVerCmd.Flags().StringVarP(&name, "name", "n",
 		"", "Integration flow name")
@@ -72,8 +70,8 @@ func init() {
 		"", "Filter results")
 	ListVerCmd.Flags().StringVarP(&orderBy, "orderBy", "",
 		"", "The results would be returned in order")
-	ListVerCmd.Flags().BoolVarP(&basic, "basic", "b",
-		false, "Returns snapshot and version only")
+	ListVerCmd.Flags().StringVarP(&basic, "basic", "b",
+		"", "Returns snapshot and version only; default is false")
 
 	_ = ListVerCmd.MarkFlagRequired("name")
 }
