@@ -22,6 +22,10 @@ Run this script to download & install the latest version (on Linux or Darwin)
 curl -L https://raw.githubusercontent.com/GoogleCloudPlatform/application-integration-management-toolkit/main/downloadLatest.sh | sh -
 ```
 
+## YouTube Overview
+
+[![YouTube Video](https://img.youtube.com/vi/4gcj-iOvLvI/0.jpg)](https://www.youtube.com/watch?v=4gcj-iOvLvI)
+
 ## Getting Started
 
 ### User Tokens
