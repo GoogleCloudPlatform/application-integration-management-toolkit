@@ -65,11 +65,13 @@ var GetVerCmd = &cobra.Command{
 		cmd.SilenceUsage = true
 
 		var integrationBody, respBody []byte
+		var basic bool
+
 		version := utils.GetStringParam(cmd.Flag("ver"))
 		name := utils.GetStringParam(cmd.Flag("name"))
 		minimal, _ := strconv.ParseBool(utils.GetStringParam(cmd.Flag("minimal")))
 		overrides, _ := strconv.ParseBool(utils.GetStringParam(cmd.Flag("overrides")))
-		basic, _ := strconv.ParseBool(utils.GetStringParam(cmd.Flag("basic")))
+		basic = utils.GetBasicInfo(cmd, "basic")
 		configVar, _ := strconv.ParseBool(utils.GetStringParam(cmd.Flag("config-vars")))
 		userLabel := utils.GetStringParam(cmd.Flag("user-label"))
 		snapshot := utils.GetStringParam(cmd.Flag("snapshot"))
@@ -115,8 +117,8 @@ var GetVerCmd = &cobra.Command{
 }
 
 func init() {
-	var name, userLabel, snapshot, version string
-	minimal, overrides, basic, configVar := false, false, false, false
+	var name, userLabel, snapshot, version, basic string
+	minimal, overrides, configVar := false, false, false
 	latest := true
 
 	GetVerCmd.Flags().StringVarP(&name, "name", "n",
@@ -127,8 +129,8 @@ func init() {
 		"", "Integration flow snapshot number")
 	GetVerCmd.Flags().StringVarP(&userLabel, "user-label", "u",
 		"", "Integration flow user label")
-	GetVerCmd.Flags().BoolVarP(&basic, "basic", "b",
-		false, "Returns snapshot and version only")
+	GetVerCmd.Flags().StringVarP(&basic, "basic", "b",
+		"", "Returns snapshot and version only")
 	GetVerCmd.Flags().BoolVarP(&overrides, "overrides", "o",
 		false, "Returns overrides only for integration")
 	GetVerCmd.Flags().BoolVarP(&minimal, "minimal", "",
