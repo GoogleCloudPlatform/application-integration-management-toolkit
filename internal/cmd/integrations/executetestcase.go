@@ -126,7 +126,7 @@ func init() {
 	ExecuteTestCaseCmd.Flags().StringVarP(&testCaseID, "test-case-id", "c",
 		"", "Test Case ID")
 	ExecuteTestCaseCmd.Flags().StringVarP(&inputFile, "input-file", "f",
-		"", "Path to a file containing input parameters")
+		"", "Path to a file containing input parameters. For a sample see ./samples/test-config.json")
 	ExecuteTestCaseCmd.Flags().StringVarP(&inputFolder, "input-folder", "d",
 		"", "Path to a folder containing files for test case execution. File names MUST match display names")
 

@@ -153,7 +153,8 @@ var ApplyCmd = &cobra.Command{
 	Example: `Apply scaffold configuration and wait for connectors: ` + GetExample(9) + `
 Apply scaffold configuration for a specific environment: ` + GetExample(10) + `
 Apply scaffold configuration and grant permissions to the service account: ` + GetExample(11) + `
-Apply scaffold configuration, but skip connectors: ` + GetExample(12),
+Apply scaffold configuration, but skip connectors: ` + GetExample(12) + `
+Apply scaffold configuration and run functional tests: ` + GetExample(18),
 }
 
 var serviceAccountName, serviceAccountProject, encryptionKey, pipeline, release, outputGCSPath string

@@ -56,6 +56,7 @@ var examples = []string{
 	`integrationcli integrations versions publish -n $name -s $snapshot --default-token`,
 	`integrationcli integrations versions unpublish -n $name --default-token`,
 	`integrationcli integrations versions unpublish -n $name -u $userLabel --default-token`,
+	`integrationcli integrations apply -f . --env=dev --tests-folder=./test-configs --default-token`,
 }
 
 func init() {
