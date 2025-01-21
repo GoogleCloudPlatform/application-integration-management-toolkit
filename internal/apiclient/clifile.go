@@ -21,6 +21,7 @@ import (
 	"os"
 	"os/user"
 	"path"
+	"strconv"
 	"time"
 )
 
@@ -37,6 +38,7 @@ type integrationCLI struct {
 	ProxyUrl  string `json:"proxyUrl,omitempty"`
 	Nocheck   bool   `json:"nocheck,omitempty" default:"false"`
 	Api       API    `json:"api,omitempty" default:"prod"`
+	BasicInfo string `json:"basicInfo,omitempty" default:"false"`
 }
 
 func readPreferencesFile() (cliPref *integrationCLI, err error) {
@@ -129,6 +131,35 @@ func SetNoCheck(nocheck bool) (err error) {
 
 	cliPref, err := readPreferencesFile()
 	cliPref.Nocheck = nocheck
+
+	data, err := json.Marshal(&cliPref)
+	if err != nil {
+		clilog.Debug.Printf("Error marshalling: %v\n", err)
+		return err
+	}
+	clilog.Debug.Println("Writing ", string(data))
+	return writePerferencesFile(data)
+}
+
+func GetBasicInfo() string {
+	cliPref, err := readPreferencesFile()
+	if err != nil {
+		return ""
+	}
+	return cliPref.BasicInfo
+}
+
+func SetBasicInfo(basicInfo string) (err error) {
+	clilog.Debug.Println("BasicInfo set to: ", basicInfo)
+
+	if _, err = strconv.ParseBool(basicInfo); err != nil {
+		return err
+	}
+
+	clilog.Debug.Println("BasicInfo set to: ", basicInfo)
+
+	cliPref, err := readPreferencesFile()
+	cliPref.BasicInfo = basicInfo
 
 	data, err := json.Marshal(&cliPref)
 	if err != nil {

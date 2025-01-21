@@ -18,6 +18,13 @@ import (
 	"fmt"
 	"internal/apiclient"
 	"internal/client/integrations"
+	"internal/clilog"
+	"internal/cmd/utils"
+	"os"
+	"path"
+	"path/filepath"
+	"regexp"
+	"strings"
 
 	"github.com/spf13/cobra"
 )
@@ -49,6 +56,7 @@ var examples = []string{
 	`integrationcli integrations versions publish -n $name -s $snapshot --default-token`,
 	`integrationcli integrations versions unpublish -n $name --default-token`,
 	`integrationcli integrations versions unpublish -n $name -u $userLabel --default-token`,
+	`integrationcli integrations apply -f . --env=dev --tests-folder=./test-configs --default-token`,
 }
 
 func init() {
@@ -72,6 +80,7 @@ func init() {
 	Cmd.AddCommand(DelCmd)
 	Cmd.AddCommand(ScaffoldCmd)
 	Cmd.AddCommand(ApplyCmd)
+	Cmd.AddCommand(TestCasesCmd)
 }
 
 func GetExample(i int) string {
@@ -116,4 +125,49 @@ func getLatestVersion(name string) (version string, err error) {
 		}
 	}
 	return version, nil
+}
+
+func executeAllTestCases(inputFolder string, name string, version string) (err error) {
+
+	if stat, err := os.Stat(inputFolder); stat == nil || (err != nil && !stat.IsDir()) {
+		return fmt.Errorf("supplied path is not a folder: %v", err)
+	}
+
+	rJSONFiles := regexp.MustCompile(`(\S*)\.json`)
+	var inputFiles []string
+
+	_ = filepath.Walk(inputFolder, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+		if !info.IsDir() {
+			inputFileName := filepath.Base(path)
+			if rJSONFiles.MatchString(inputFileName) {
+				clilog.Info.Printf("Found test case file %s for integration: %s\n", inputFileName, name)
+				inputFiles = append(inputFiles, inputFileName)
+			}
+		}
+		return nil
+	})
+
+	if len(inputFiles) > 0 {
+		for _, inputFileName := range inputFiles {
+			content, err := utils.ReadFile(path.Join(inputFolder, inputFileName))
+			if err != nil {
+				return err
+			}
+			testDisplayName := strings.TrimSuffix(filepath.Base(inputFileName), filepath.Ext(filepath.Base(inputFileName)))
+			testCaseID, err := integrations.FindTestCase(name, version, testDisplayName, "")
+			if err != nil {
+				return err
+			}
+			_, err = integrations.ExecuteTestCase(name, version, testCaseID, string(content))
+			if err != nil {
+				return err
+			} else {
+				clilog.Info.Printf("Test case %s executed successfully\n", inputFileName)
+			}
+		}
+	}
+	return nil
 }

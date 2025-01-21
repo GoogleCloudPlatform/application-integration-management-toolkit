@@ -32,7 +32,7 @@ func TestCreateVersionNoOverrides(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unable to read authConfig failed: %v", err)
 	}
-	_, err = CreateVersion("name", contents, nil, "", "")
+	_, err = CreateVersion("name", contents, nil, "", "", false, false)
 	if err != nil {
 		t.Fatalf("Create failed: %v", err)
 	}
@@ -50,7 +50,7 @@ func TestCreateVersionOverrides(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unable to read authConfig failed: %v", err)
 	}
-	_, err = CreateVersion("name", contents, overrides, "2", "2")
+	_, err = CreateVersion("name", contents, overrides, "2", "2", false, false)
 	if err != nil {
 		t.Fatalf("Create failed: %v", err)
 	}
