@@ -24,6 +24,7 @@ Set up integrationcli with preferences: `integrationcli prefs set -p $project -r
 | integrations | `integrationcli integrations versions publish -n $name -s $snapshot --default-token`|
 | integrations | `integrationcli integrations versions unpublish -n $name --default-token`|
 | integrations | `integrationcli integrations versions unpublish -n $name -u $userLabel --default-token`|
+| integrations | `integrationcli integrations apply -f . --env=dev --tests-folder=./test-configs --default-token`|
 | authconfigs | `integrationcli authconfigs create -f samples/ac_username.json`|
 | authconfigs | `integrationcli authconfigs create -f samples/ac_oidc.json`|
 | authconfigs | `integrationcli authconfigs create -f samples/ac_authtoken.json`|
