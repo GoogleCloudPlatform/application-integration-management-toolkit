@@ -21,7 +21,6 @@ import (
 	"internal/clilog"
 	"internal/cmd/utils"
 	"path"
-	"strconv"
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
@@ -57,7 +56,7 @@ var GetCmd = &cobra.Command{
 
 		name := utils.GetStringParam(cmd.Flag("name"))
 		id := utils.GetStringParam(cmd.Flag("id"))
-		minimal, _ := strconv.ParseBool(utils.GetStringParam(cmd.Flag("minimal")))
+		minimal := utils.GetBasicInfo(cmd, "minimal")
 
 		if name != "" {
 			apiclient.DisableCmdPrintHttpResponse()
@@ -77,13 +76,12 @@ var GetCmd = &cobra.Command{
 }
 
 func init() {
-	var name, id string
-	minimal := false
+	var name, id, minimal string
 
 	GetCmd.Flags().StringVarP(&id, "id", "i",
 		"", "Authconfig name (uuid)")
 	GetCmd.Flags().StringVarP(&name, "name", "n",
 		"", "Authconfig display name")
-	GetCmd.Flags().BoolVarP(&minimal, "minimal", "",
-		false, "Minimal number of fields returned; default is false")
+	GetCmd.Flags().StringVarP(&minimal, "minimal", "",
+		"", "Minimal number of fields returned; default is false")
 }

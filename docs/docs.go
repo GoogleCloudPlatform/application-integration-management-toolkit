@@ -60,6 +60,7 @@ Set up integrationcli with preferences: ` + getSingleLine("integrationcli prefs 
 | integrations | ` + getSingleLine(integrations.GetExample(15)) + `|
 | integrations | ` + getSingleLine(integrations.GetExample(16)) + `|
 | integrations | ` + getSingleLine(integrations.GetExample(17)) + `|
+| integrations | ` + getSingleLine(integrations.GetExample(18)) + `|
 | authconfigs | ` + getSingleLine(authconfigs.GetExample(0)) + `|
 | authconfigs | ` + getSingleLine(authconfigs.GetExample(1)) + `|
 | authconfigs | ` + getSingleLine(authconfigs.GetExample(2)) + `|

@@ -36,10 +36,12 @@ var CreateCmd = &cobra.Command{
 	Args: func(cmd *cobra.Command, args []string) (err error) {
 		cmdProject := cmd.Flag("proj")
 		cmdRegion := cmd.Flag("reg")
+		basic := cmd.Flag("basic").Value.String()
+
 		configVarsJson := utils.GetStringParam(cmd.Flag("config-vars-json"))
 		configVarsFile := utils.GetStringParam(cmd.Flag("config-vars"))
 
-		if basic && publish {
+		if basic != "" && publish {
 			return fmt.Errorf("cannot combine basic and publish flags")
 		}
 		if configVarsFile != "" && configVarsJson != "" {
@@ -67,6 +69,7 @@ var CreateCmd = &cobra.Command{
 		snapshot := utils.GetStringParam(cmd.Flag("snapshot"))
 		configVarsJson := utils.GetStringParam(cmd.Flag("config-vars-json"))
 		configVarsFile := utils.GetStringParam(cmd.Flag("config-vars"))
+		basic := utils.GetBasicInfo(cmd, "basic")
 
 		if configVarsFile != "" {
 			if _, err := os.Stat(configVarsFile); os.IsNotExist(err) {
@@ -135,12 +138,12 @@ Create a new Inegration Version and return a basic response: ` + GetExample(13),
 }
 
 var (
-	integrationFile, overridesFile  string
-	grantPermission, publish, basic bool
+	integrationFile, overridesFile string
+	grantPermission, publish       bool
 )
 
 func init() {
-	var name, userLabel, snapshot, configVars, configVarsJson string
+	var name, userLabel, snapshot, configVars, configVarsJson, basic string
 
 	CreateCmd.Flags().StringVarP(&name, "name", "n",
 		"", "Integration flow name")
@@ -156,8 +159,8 @@ func init() {
 		false, "Grant the service account permission for integration triggers; default is false")
 	CreateCmd.Flags().BoolVarP(&publish, "publish", "",
 		false, "Publish the integration after successful creation; default is false")
-	CreateCmd.Flags().BoolVarP(&basic, "basic", "",
-		false, "Returns version and snapshot only in the response; default is false")
+	CreateCmd.Flags().StringVarP(&basic, "basic", "",
+		"", "Returns version and snapshot only in the response; default is false")
 	CreateCmd.Flags().StringVarP(&configVars, "config-vars", "",
 		"", "Path to file containing config variables")
 	CreateCmd.Flags().StringVarP(&configVarsJson, "config-vars-json", "",
