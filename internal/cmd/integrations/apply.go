@@ -95,6 +95,7 @@ var ApplyCmd = &cobra.Command{
 		wait, _ := strconv.ParseBool(utils.GetStringParam(cmd.Flag("wait")))
 
 		integrationFolder := path.Join(srcFolder, "src")
+		testsFolder := path.Join(folder, "tests")
 		authconfigFolder := path.Join(folder, "authconfigs")
 		connectorsFolder := path.Join(folder, "connectors")
 		customConnectorsFolder := path.Join(folder, "custom-connectors")
@@ -143,8 +144,8 @@ var ApplyCmd = &cobra.Command{
 			return err
 		}
 
-		if err = processIntegration(overridesFile, integrationFolder,
-			configVarsFolder, testFolder, pipeline, userLabel, grantPermission); err != nil {
+		if err = processIntegration(overridesFile, integrationFolder, testsFolder,
+			configVarsFolder, testsConfigFolder, pipeline, userLabel, grantPermission); err != nil {
 			return err
 		}
 
@@ -158,7 +159,7 @@ Apply scaffold configuration and run functional tests: ` + GetExample(18),
 }
 
 var serviceAccountName, serviceAccountProject, encryptionKey, pipeline, release, outputGCSPath string
-var testFolder string
+var testsConfigFolder string
 
 func init() {
 	var userLabel string
@@ -194,8 +195,8 @@ func init() {
 		false, "Skip applying authconfigs configuration; default is false")
 	ApplyCmd.Flags().BoolVarP(&useUnderscore, "use-underscore", "",
 		false, "Use underscore as a file splitter; default is __")
-	ApplyCmd.Flags().StringVarP(&testFolder, "tests-folder", "",
-		"", "Path to a folder containing files for test case execution. File names MUST match display names")
+	ApplyCmd.Flags().StringVarP(&testsConfigFolder, "tests-folder", "",
+		"", "Path to a folder containing files for test case execution. File names MUST match display names. See ./samples/test-config.json for an example")
 }
 
 func getFilenameWithoutExtension(filname string) string {
@@ -540,7 +541,7 @@ func processSfdcChannels(sfdcchannelsFolder string) (err error) {
 	return nil
 }
 
-func processIntegration(overridesFile string, integrationFolder string,
+func processIntegration(overridesFile string, integrationFolder string, testsFolder string,
 	configVarsFolder string, testConfigFolder string, pipeline string, userLabel string, grantPermission bool,
 ) (err error) {
 	rJSONFiles := regexp.MustCompile(`(\S*)\.json$`)
@@ -608,7 +609,7 @@ func processIntegration(overridesFile string, integrationFolder string,
 		}
 
 		// create  test cases for integration
-		if err = processTestCases(integrationFolder, getFilenameWithoutExtension(integrationNames[0]), version); err != nil {
+		if err = processTestCases(testsFolder, getFilenameWithoutExtension(integrationNames[0]), version); err != nil {
 			return err
 		}
 
