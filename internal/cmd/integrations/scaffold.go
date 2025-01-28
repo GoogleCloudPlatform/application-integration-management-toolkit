@@ -28,6 +28,7 @@ import (
 	"os"
 	"path"
 	"regexp"
+	"slices"
 	"strconv"
 
 	"github.com/spf13/cobra"
@@ -487,6 +488,7 @@ func getName(authConfigResp []byte) string {
 func generateTestcases(testcases []byte, folder string) error {
 
 	var data []map[string]interface{}
+	var testNames []string
 
 	err := json.Unmarshal(testcases, &data)
 	if err != nil {
@@ -502,6 +504,14 @@ func generateTestcases(testcases []byte, folder string) error {
 		if err != nil {
 			return fmt.Errorf("unable to get name: %v", err)
 		}
+
+		//check for duplicates
+		if !slices.Contains(testNames, name) {
+			testNames = append(testNames, name)
+		} else {
+			clilog.Warning.Println("two or more test cases have the same display name. only the most recent one will be used")
+		}
+
 		jsonData, err = apiclient.PrettifyJson(jsonData)
 		if err != nil {
 			return err
