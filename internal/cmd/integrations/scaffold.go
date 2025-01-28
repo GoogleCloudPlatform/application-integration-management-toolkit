@@ -530,6 +530,6 @@ func getTestCaseName(jsonData map[string]interface{}) (string, error) {
 }
 
 func removeNonAlphanumeric(str string) string {
-	reg, _ := regexp.Compile("[^a-zA-Z0-9-]+")
+	reg, _ := regexp.Compile("[^a-zA-Z0-9-_]+")
 	return reg.ReplaceAllString(str, "")
 }
