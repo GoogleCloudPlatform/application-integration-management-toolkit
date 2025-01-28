@@ -93,9 +93,11 @@ var ApplyCmd = &cobra.Command{
 		grantPermission, _ := strconv.ParseBool(utils.GetStringParam(cmd.Flag("grant-permission")))
 		userLabel := utils.GetStringParam(cmd.Flag("user-label"))
 		wait, _ := strconv.ParseBool(utils.GetStringParam(cmd.Flag("wait")))
+		runTests, _ := strconv.ParseBool(utils.GetStringParam(cmd.Flag("run-tests")))
 
 		integrationFolder := path.Join(srcFolder, "src")
 		testsFolder := path.Join(folder, "tests")
+		testsConfigFolder := path.Join(folder, "test-configs")
 		authconfigFolder := path.Join(folder, "authconfigs")
 		connectorsFolder := path.Join(folder, "connectors")
 		customConnectorsFolder := path.Join(folder, "custom-connectors")
@@ -145,7 +147,7 @@ var ApplyCmd = &cobra.Command{
 		}
 
 		if err = processIntegration(overridesFile, integrationFolder, testsFolder,
-			configVarsFolder, testsConfigFolder, pipeline, userLabel, grantPermission); err != nil {
+			configVarsFolder, testsConfigFolder, pipeline, userLabel, grantPermission, runTests); err != nil {
 			return err
 		}
 
@@ -159,11 +161,10 @@ Apply scaffold configuration and run functional tests: ` + GetExample(18),
 }
 
 var serviceAccountName, serviceAccountProject, encryptionKey, pipeline, release, outputGCSPath string
-var testsConfigFolder string
 
 func init() {
 	var userLabel string
-	grantPermission, createSecret, wait := false, false, false
+	grantPermission, createSecret, wait, runTests := false, false, false, false
 
 	ApplyCmd.Flags().StringVarP(&folder, "folder", "f",
 		"", "Folder containing scaffolding configuration")
@@ -195,8 +196,8 @@ func init() {
 		false, "Skip applying authconfigs configuration; default is false")
 	ApplyCmd.Flags().BoolVarP(&useUnderscore, "use-underscore", "",
 		false, "Use underscore as a file splitter; default is __")
-	ApplyCmd.Flags().StringVarP(&testsConfigFolder, "tests-folder", "",
-		"", "Path to a folder containing files for test case execution. File names MUST match display names. See ./samples/test-config.json for an example")
+	ApplyCmd.Flags().BoolVarP(&runTests, "run-tests", "",
+		false, "Runs unit tests from config files in test-configs folder. See ./samples/test-config.json for an example config")
 }
 
 func getFilenameWithoutExtension(filname string) string {
@@ -543,6 +544,7 @@ func processSfdcChannels(sfdcchannelsFolder string) (err error) {
 
 func processIntegration(overridesFile string, integrationFolder string, testsFolder string,
 	configVarsFolder string, testConfigFolder string, pipeline string, userLabel string, grantPermission bool,
+	runTests bool,
 ) (err error) {
 	rJSONFiles := regexp.MustCompile(`(\S*)\.json$`)
 
@@ -631,7 +633,7 @@ func processIntegration(overridesFile string, integrationFolder string, testsFol
 		}
 
 		// Execute test cases
-		if testConfigFolder != "" {
+		if runTests {
 			err = executeAllTestCases(testConfigFolder, getFilenameWithoutExtension(integrationNames[0]), version)
 			if err != nil {
 				return err

@@ -161,6 +161,9 @@ var ScaffoldCmd = &cobra.Command{
 			if err = generateFolder(path.Join(folder, "tests")); err != nil {
 				return err
 			}
+			if err = generateFolder(path.Join(folder, "test-configs")); err != nil {
+				return err
+			}
 			if err = generateTestcases(testCasesBody, folder); err != nil {
 				return err
 			}
@@ -427,6 +430,9 @@ var (
 )
 
 const jsonExt = ".json"
+const emptyTestConfig = `{
+    "inputParameters": {}
+}`
 
 func init() {
 	var name, userLabel, snapshot, version string
@@ -504,6 +510,12 @@ func generateTestcases(testcases []byte, folder string) error {
 			path.Join(folder, "tests", name+jsonExt),
 			false,
 			jsonData); err != nil {
+			return err
+		}
+		if err = apiclient.WriteByteArrayToFile(
+			path.Join(folder, "test-configs", name+jsonExt),
+			false,
+			[]byte(emptyTestConfig)); err != nil {
 			return err
 		}
 	}
