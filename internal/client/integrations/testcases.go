@@ -260,7 +260,6 @@ func getTestCaseIntegrationVersion(name string, snapshot string, userLabel strin
 	version = getVersion(iversion.Name)
 
 	apiclient.ClientPrintHttpResponse.Set(tmp)
-	apiclient.EnableCmdPrintHttpResponse()
 
 	return version, nil
 
