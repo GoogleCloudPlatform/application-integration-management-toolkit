@@ -708,12 +708,12 @@ func processCodeFolders(javascriptFolder string, jsonnetFolder string) (codeMap 
 	return codeMap, nil
 }
 
-func processTestCases(testCasesFolder string, integrationName string, version string) (err error) {
+func processTestCases(testsFolder string, integrationName string, version string) (err error) {
 	rJSONFiles := regexp.MustCompile(`(\S*)\.json`)
 
 	var testCaseFiles []string
 
-	_ = filepath.Walk(testCasesFolder, func(path string, info os.FileInfo, err error) error {
+	_ = filepath.Walk(testsFolder, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			return err
 		}
@@ -728,8 +728,15 @@ func processTestCases(testCasesFolder string, integrationName string, version st
 	})
 
 	if len(testCaseFiles) > 0 {
+
+		// delete any old test cases
+		err = integrations.DeleteAllTestCases(integrationName, version)
+		if err != nil {
+			return err
+		}
+
 		for _, testCaseFile := range testCaseFiles {
-			testCaseBytes, err := utils.ReadFile(path.Join(testCasesFolder, testCaseFile))
+			testCaseBytes, err := utils.ReadFile(path.Join(testsFolder, testCaseFile))
 			if err != nil {
 				return err
 			}

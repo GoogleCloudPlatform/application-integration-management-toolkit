@@ -185,6 +185,53 @@ func FindTestCase(name string, integrationVersion string, displayName string, pa
 	return "", fmt.Errorf("testCase not found")
 }
 
+func ListAllTestCases(name string, version string) (respBody []byte, err error) {
+	l := listTestCases{}
+	for {
+		newltc := listTestCases{}
+		respBody, err = ListTestCases(name, version, true, "", -1, "", "")
+		if err != nil {
+			return nil, err
+		}
+		err = json.Unmarshal(respBody, &newltc)
+		if err != nil {
+			return nil, err
+		}
+
+		l.TestCases = append(l.TestCases, newltc.TestCases...)
+
+		if newltc.NextPageToken == "" {
+			break
+		}
+	}
+
+	respBody, err = json.Marshal(l)
+
+	return respBody, err
+}
+
+func DeleteAllTestCases(name string, version string) (err error) {
+	respBody, err := ListAllTestCases(name, version)
+	if err != nil {
+		return err
+	}
+
+	l := listTestCases{}
+	err = json.Unmarshal(respBody, &l)
+	if err != nil {
+		return err
+	}
+
+	for _, tc := range l.TestCases {
+		_, err = DeleteTestCase(name, version, filepath.Base(tc.Name))
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
 func getTestCaseIntegrationVersion(name string, snapshot string, userLabel string) (version string, err error) {
 
 	var iversionBytes []byte
