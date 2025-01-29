@@ -49,10 +49,10 @@ type testTaskConfig struct {
 }
 
 type assertion struct {
-	AssertionStrategy string         `json:"assertionStrategy,omitempty"`
-	Parameter         eventparameter `json:"parameter,omitempty"`
-	Condition         string         `json:"condition,omitempty"`
-	RetryCount        int            `json:"retryCount,omitempty"`
+	AssertionStrategy string          `json:"assertionStrategy,omitempty"`
+	Parameter         *eventparameter `json:"parameter,omitempty"`
+	Condition         string          `json:"condition,omitempty"`
+	RetryCount        int             `json:"retryCount,omitempty"`
 }
 
 type mockConfig struct {
