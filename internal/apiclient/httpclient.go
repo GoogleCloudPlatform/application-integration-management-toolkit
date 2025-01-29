@@ -123,6 +123,7 @@ func PrettyPrint(body []byte) error {
 
 		clilog.HTTPResponse.Println(prettyJSON.String())
 	}
+	clilog.Debug.Println(string(body))
 	return nil
 }
 
