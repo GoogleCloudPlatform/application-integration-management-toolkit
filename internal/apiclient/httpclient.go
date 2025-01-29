@@ -62,9 +62,11 @@ func HttpClient(params ...string) (respBody []byte, err error) {
 
 	switch paramLen := len(params); paramLen {
 	case 1:
+		clilog.Debug.Println("Method: GET")
 		req, err = http.NewRequestWithContext(ctx, http.MethodGet, params[0], nil)
 	case 2:
 		// some POST functions don't have a body
+		clilog.Debug.Println("Method: POST")
 		if len([]byte(params[1])) > 0 {
 			payload, _ := PrettifyJson([]byte(params[1]))
 			clilog.Debug.Println("Payload: ", string(payload))
@@ -137,14 +139,18 @@ func PrettifyJson(body []byte) (prettyJson []byte, err error) {
 func getRequest(params []string) (req *http.Request, err error) {
 	ctx := context.Background()
 	if params[2] == "DELETE" {
+		clilog.Debug.Println("Method: DELETE")
 		req, err = http.NewRequestWithContext(ctx, http.MethodDelete, params[0], nil)
 	} else if params[2] == "PUT" {
+		clilog.Debug.Println("Method: PUT")
 		clilog.Debug.Println("Payload: ", params[1])
 		req, err = http.NewRequestWithContext(ctx, http.MethodPut, params[0], bytes.NewBuffer([]byte(params[1])))
 	} else if params[2] == "PATCH" {
+		clilog.Debug.Println("Method: PATCH")
 		clilog.Debug.Println("Payload: ", params[1])
 		req, err = http.NewRequestWithContext(ctx, http.MethodPatch, params[0], bytes.NewBuffer([]byte(params[1])))
 	} else if params[2] == "POST" {
+		clilog.Debug.Println("Method: POST")
 		clilog.Debug.Println("Payload: ", params[1])
 		req, err = http.NewRequestWithContext(ctx, http.MethodPost, params[0], bytes.NewBuffer([]byte(params[1])))
 	} else {
