@@ -156,7 +156,7 @@ func AssertTestExecutionResult(testBody []byte) error {
 	if tr.TestExecutionState == "PASSED" {
 		return nil
 	}
-	return fmt.Errorf("test failed %d assertions", len(tr.AssertionResults))
+	return fmt.Errorf("test failed with %d assertions", len(tr.AssertionResults))
 }
 
 func ListTestCasesByUserlabel(name string, userLabel string, full bool, filter string,
