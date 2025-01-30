@@ -61,6 +61,21 @@ type mockConfig struct {
 	FailedExecutions string           `json:"failedExecutions,omitempty"`
 }
 
+type testCaseResponse struct {
+	ExecutionId        string            `json:"executionId,omitempty`
+	OutputParameters   interface{}       `json:"outputParameters,omitempty`
+	AssertionResults   []assertionResult `json:"assertionResults,omitempty`
+	TestExecutionState string            `json:"testExecutionState,omitempty`
+}
+
+type assertionResult struct {
+	TaskNumber     string      `json:"taskNumber,omitempty"`
+	Assertion      interface{} `json:"assertion,omitempty"`
+	TaskName       string      `json:"taskName,omitempty"`
+	Status         string      `json:"status,omitempty"`
+	FailureMessage string      `json:"failureMessage,omitempty"`
+}
+
 func CreateTestCase(name string, version string, content string) (respBody []byte, err error) {
 	u, _ := url.Parse(apiclient.GetBaseIntegrationURL())
 	u.Path = path.Join(u.Path, "integrations", name, "versions", version, "testCases")
@@ -130,6 +145,18 @@ func ExecuteTestCase(name string, version string, testCaseID string, content str
 	u.Path = path.Join(u.Path, "integrations", name, "versions", version, "testCases", testCaseID, ":executeTest")
 	respBody, err = apiclient.HttpClient(u.String(), content)
 	return respBody, err
+}
+
+func AssertTestExecutionResult(testBody []byte) error {
+	tr := testCaseResponse{}
+	err := json.Unmarshal(testBody, &tr)
+	if err != nil {
+		return err
+	}
+	if tr.TestExecutionState == "PASSED" {
+		return nil
+	}
+	return fmt.Errorf("test failed %d assertions", len(tr.AssertionResults))
 }
 
 func ListTestCasesByUserlabel(name string, userLabel string, full bool, filter string,
@@ -236,8 +263,7 @@ func getTestCaseIntegrationVersion(name string, snapshot string, userLabel strin
 
 	var iversionBytes []byte
 
-	tmp := apiclient.GetCmdPrintHttpResponseSetting()
-	apiclient.DisableCmdPrintHttpResponse()
+	apiclient.ClientPrintHttpResponse.Set(false)
 
 	if snapshot != "" {
 		iversionBytes, err = GetBySnapshot(name, snapshot, false, false, false)
@@ -259,7 +285,7 @@ func getTestCaseIntegrationVersion(name string, snapshot string, userLabel strin
 
 	version = getVersion(iversion.Name)
 
-	apiclient.ClientPrintHttpResponse.Set(tmp)
+	apiclient.ClientPrintHttpResponse.Set(apiclient.GetCmdPrintHttpResponseSetting())
 
 	return version, nil
 

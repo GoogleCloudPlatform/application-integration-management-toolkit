@@ -15,7 +15,6 @@
 package integrations
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
 	"internal/apiclient"
@@ -97,7 +96,7 @@ var PublishVerCmd = &cobra.Command{
 					return fmt.Errorf("unable to list versions: %v", err)
 				}
 			}
-			version, err = getIntegrationVersion(respBody)
+			version, err = integrations.GetIntegrationVersion(respBody)
 			if err != nil {
 				return err
 			}
@@ -164,25 +163,4 @@ func ignoreLatest(version string, userLabel string, snapshot string) (latest boo
 		return false
 	}
 	return true
-}
-
-func getIntegrationVersion(respBody []byte) (string, error) {
-	var data map[string]interface{}
-	err := json.Unmarshal(respBody, &data)
-	if err != nil {
-		return "", err
-	}
-	if data["integrationVersions"] == nil {
-		if data["version"] == nil {
-			return "", fmt.Errorf("no integration versions were found")
-		} else {
-			return data["version"].(string), nil
-		}
-	}
-	integrationVersions := data["integrationVersions"].([]interface{})
-	firstIntegrationVersion := integrationVersions[0].(map[string]interface{})
-	if firstIntegrationVersion["version"].(string) == "" {
-		return "", fmt.Errorf("unable to extract version id from integration")
-	}
-	return firstIntegrationVersion["version"].(string), nil
 }

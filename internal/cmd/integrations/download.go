@@ -74,7 +74,7 @@ var DownloadVerCmd = &cobra.Command{
 					return fmt.Errorf("unable to list versions: %v", err)
 				}
 			}
-			version, err = getIntegrationVersion(respBody)
+			version, err = integrations.GetIntegrationVersion(respBody)
 			if err != nil {
 				return err
 			}

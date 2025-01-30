@@ -99,7 +99,7 @@ func getLatestVersion(name string) (version string, err error) {
 		return "", fmt.Errorf("unable to list versions: %v", err)
 	}
 	if string(listBody) != "{}" {
-		if version, err = getIntegrationVersion(listBody); err != nil {
+		if version, err = integrations.GetIntegrationVersion(listBody); err != nil {
 			return "", err
 		}
 	} else {
@@ -109,7 +109,7 @@ func getLatestVersion(name string) (version string, err error) {
 			return "", fmt.Errorf("unable to list versions: %v", err)
 		}
 		if string(listBody) != "{}" {
-			if version, err = getIntegrationVersion(listBody); err != nil {
+			if version, err = integrations.GetIntegrationVersion(listBody); err != nil {
 				return "", err
 			}
 		} else {
@@ -118,7 +118,7 @@ func getLatestVersion(name string) (version string, err error) {
 				return "", fmt.Errorf("unable to list versions: %v", err)
 			}
 			if string(listBody) != "{}" {
-				if version, err = getIntegrationVersion(listBody); err != nil {
+				if version, err = integrations.GetIntegrationVersion(listBody); err != nil {
 					return "", err
 				}
 			}
@@ -157,15 +157,19 @@ func executeAllTestCases(inputFolder string, name string, version string) (err e
 				return err
 			}
 			testDisplayName := strings.TrimSuffix(filepath.Base(inputFileName), filepath.Ext(filepath.Base(inputFileName)))
+			apiclient.ClientPrintHttpResponse.Set(false)
 			testCaseID, err := integrations.FindTestCase(name, version, testDisplayName, "")
+			apiclient.ClientPrintHttpResponse.Set(true)
 			if err != nil {
 				return err
 			}
-			_, err = integrations.ExecuteTestCase(name, version, testCaseID, string(content))
+			testCaseResp, err := integrations.ExecuteTestCase(name, version, testCaseID, string(content))
 			if err != nil {
 				return err
-			} else {
-				clilog.Info.Printf("Test case %s executed successfully\n", inputFileName)
+			}
+			err = integrations.AssertTestExecutionResult(testCaseResp)
+			if err != nil {
+				return err
 			}
 		}
 	}

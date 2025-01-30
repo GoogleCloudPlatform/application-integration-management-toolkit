@@ -18,7 +18,6 @@ import (
 	"errors"
 	"internal/apiclient"
 	"internal/client/integrations"
-	"internal/clilog"
 	"internal/cmd/utils"
 	"os"
 
@@ -68,7 +67,6 @@ var ExecuteTestCaseCmd = &cobra.Command{
 	RunE: func(cmd *cobra.Command, args []string) (err error) {
 		cmd.SilenceUsage = true
 
-		var integrationBody []byte
 		version := utils.GetStringParam(cmd.Flag("ver"))
 		userLabel := utils.GetStringParam(cmd.Flag("user-label"))
 		snapshot := utils.GetStringParam(cmd.Flag("snapshot"))
@@ -77,18 +75,12 @@ var ExecuteTestCaseCmd = &cobra.Command{
 		inputFile := utils.GetStringParam(cmd.Flag("input-file"))
 		inputFolder := utils.GetStringParam(cmd.Flag("input-folder"))
 
-		apiclient.DisableCmdPrintHttpResponse()
-		defer apiclient.EnableCmdPrintHttpResponse()
-
-		if snapshot != "" {
-			integrationBody, err = integrations.GetBySnapshot(name, snapshot, true, false, false)
-		} else if userLabel != "" {
-			integrationBody, err = integrations.GetByUserlabel(name, userLabel, true, false, false)
-		}
-		version, err = getIntegrationVersion(integrationBody)
+		version, err = integrations.GetVersion(name, userLabel, snapshot)
 		if err != nil {
 			return err
 		}
+
+		apiclient.EnableCmdPrintHttpResponse()
 
 		if inputFile != "" {
 			if _, err := os.Stat(inputFile); os.IsNotExist(err) {
@@ -100,9 +92,13 @@ var ExecuteTestCaseCmd = &cobra.Command{
 				return err
 			}
 
-			_, err = integrations.ExecuteTestCase(name, version, testCaseID, string(content))
-			if err == nil {
-				clilog.Info.Printf("Test case %s executed successfully\n", testCaseID)
+			testCaseResp, err := integrations.ExecuteTestCase(name, version, testCaseID, string(content))
+			if err != nil {
+				return err
+			}
+			err = integrations.AssertTestExecutionResult(testCaseResp)
+			if err != nil {
+				return err
 			}
 		}
 		if inputFolder != "" {

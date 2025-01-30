@@ -943,6 +943,49 @@ func GetConnectionsWithRegion(integration []byte) (connections []integrationConn
 	return connections, err
 }
 
+// GetVersion
+func GetVersion(name string, userLabel string, snapshot string) (version string, err error) {
+	var integrationBody []byte
+
+	apiclient.DisableCmdPrintHttpResponse()
+	defer apiclient.EnableCmdPrintHttpResponse()
+
+	if userLabel != "" {
+		integrationBody, err = GetByUserlabel(name, userLabel, true, false, false)
+		if err != nil {
+			return "", err
+		}
+	} else {
+		integrationBody, err = GetBySnapshot(name, snapshot, true, false, false)
+		if err != nil {
+			return "", err
+		}
+	}
+	apiclient.ClientPrintHttpResponse.Set(true)
+	return GetIntegrationVersion(integrationBody)
+}
+
+func GetIntegrationVersion(respBody []byte) (string, error) {
+	var data map[string]interface{}
+	err := json.Unmarshal(respBody, &data)
+	if err != nil {
+		return "", err
+	}
+	if data["integrationVersions"] == nil {
+		if data["version"] == nil {
+			return "", fmt.Errorf("no integration versions were found")
+		} else {
+			return data["version"].(string), nil
+		}
+	}
+	integrationVersions := data["integrationVersions"].([]interface{})
+	firstIntegrationVersion := integrationVersions[0].(map[string]interface{})
+	if firstIntegrationVersion["version"].(string) == "" {
+		return "", fmt.Errorf("unable to extract version id from integration")
+	}
+	return firstIntegrationVersion["version"].(string), nil
+}
+
 // changeState
 func changeState(name string, version string, filter string, configVars []byte, action string) (respBody []byte, err error) {
 	// if a version is sent, use it, else try the filter
