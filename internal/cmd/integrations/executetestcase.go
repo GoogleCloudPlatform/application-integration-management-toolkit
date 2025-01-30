@@ -18,6 +18,7 @@ import (
 	"errors"
 	"internal/apiclient"
 	"internal/client/integrations"
+	"internal/clilog"
 	"internal/cmd/utils"
 	"os"
 
@@ -91,7 +92,7 @@ var ExecuteTestCaseCmd = &cobra.Command{
 			if err != nil {
 				return err
 			}
-
+			clilog.Info.Printf("Executing test cases from file %s for integration: %s\n", inputFile, name)
 			testCaseResp, err := integrations.ExecuteTestCase(name, version, testCaseID, string(content))
 			if err != nil {
 				return err

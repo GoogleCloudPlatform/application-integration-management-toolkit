@@ -163,6 +163,7 @@ func executeAllTestCases(inputFolder string, name string, version string) (err e
 			if err != nil {
 				return err
 			}
+			clilog.Info.Printf("Executing test cases from file %s for integration: %s\n", inputFileName, name)
 			testCaseResp, err := integrations.ExecuteTestCase(name, version, testCaseID, string(content))
 			if err != nil {
 				return err
