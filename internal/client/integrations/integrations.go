@@ -1588,6 +1588,12 @@ func GetInputParameters(integrationBody []byte) (execConfig []byte, err error) {
 				inputParameters = append(inputParameters, fmt.Sprintf("\"%s\": {\"booleanValue\": false}", p.Key))
 			case "JSON_VALUE":
 				inputParameters = append(inputParameters, fmt.Sprintf("\"%s\": {\"jsonValue\": {}}", p.Key))
+			case "DOUBLE_TPYE":
+				inputParameters = append(inputParameters, fmt.Sprintf("\"%s\": {\"doubleValue\": 0.0}", p.Key))
+			case "INT_ARRAY":
+				inputParameters = append(inputParameters, fmt.Sprintf("\"%s\": {\"intArray\": {\"intValues\": [0]}}", p.Key))
+			case "STRING_ARRAY":
+				inputParameters = append(inputParameters, fmt.Sprintf("\"%s\": {\"stringArray\": {\"stringValues\":[\"\"]}}", p.Key))
 			}
 		}
 	}
