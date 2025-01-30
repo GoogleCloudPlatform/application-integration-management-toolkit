@@ -1561,3 +1561,40 @@ func isCustomConnection(connectionVersion eventparameter) bool {
 		return false
 	}
 }
+
+// GetInputParameters
+func GetInputParameters(integrationBody []byte) (execConfig []byte, err error) {
+	iversion := integrationVersionExternal{}
+
+	inputParameters := []string{}
+
+	const emptyTestConfig = `{
+		"inputParameters": {}
+}`
+
+	err = json.Unmarshal(integrationBody, &iversion)
+	if err != nil {
+		return []byte(emptyTestConfig), err
+	}
+
+	for _, p := range iversion.IntegrationParameters {
+		if p.InputOutputType == "IN" {
+			switch p.DataType {
+			case "STRING_VALUE":
+				inputParameters = append(inputParameters, fmt.Sprintf("\"%s\": {\"stringValue\": \"\"}", p.Key))
+			case "INT_VALUE":
+				inputParameters = append(inputParameters, fmt.Sprintf("\"%s\": {\"intValue\": 0}", p.Key))
+			case "BOOLEAN_VALUE":
+				inputParameters = append(inputParameters, fmt.Sprintf("\"%s\": {\"booleanValue\": false}", p.Key))
+			case "JSON_VALUE":
+				inputParameters = append(inputParameters, fmt.Sprintf("\"%s\": {\"jsonValue\": {}}", p.Key))
+			}
+		}
+	}
+
+	if len(inputParameters) == 0 {
+		return []byte(emptyTestConfig), nil
+	}
+
+	return apiclient.PrettifyJson([]byte("{\"inputParameters\": {" + strings.Join(inputParameters, ",") + "}}"))
+}

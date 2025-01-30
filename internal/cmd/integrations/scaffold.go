@@ -165,7 +165,7 @@ var ScaffoldCmd = &cobra.Command{
 			if err = generateFolder(path.Join(folder, "test-configs")); err != nil {
 				return err
 			}
-			if err = generateTestcases(testCasesBody, folder); err != nil {
+			if err = generateTestcases(testCasesBody, integrationBody, folder); err != nil {
 				return err
 			}
 		}
@@ -485,7 +485,7 @@ func getName(authConfigResp []byte) string {
 	return m["displayName"]
 }
 
-func generateTestcases(testcases []byte, folder string) error {
+func generateTestcases(testcases []byte, integrationBody []byte, folder string) error {
 
 	var data []map[string]interface{}
 	var testNames []string
@@ -522,10 +522,11 @@ func generateTestcases(testcases []byte, folder string) error {
 			jsonData); err != nil {
 			return err
 		}
+		testConfig, _ := integrations.GetInputParameters(integrationBody)
 		if err = apiclient.WriteByteArrayToFile(
 			path.Join(folder, "test-configs", name+jsonExt),
 			false,
-			[]byte(emptyTestConfig)); err != nil {
+			testConfig); err != nil {
 			return err
 		}
 	}
