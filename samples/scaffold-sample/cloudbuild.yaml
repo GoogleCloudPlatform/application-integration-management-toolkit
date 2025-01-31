@@ -28,6 +28,7 @@ steps:
     - --wait=${_WAIT}
     - --reg=${_LOCATION}
     - --proj=${PROJECT_ID}
+    - --run-tests=true
     - --metadata-token
     - $(cat /tmp/cmd)
     # uncomment these as necessary

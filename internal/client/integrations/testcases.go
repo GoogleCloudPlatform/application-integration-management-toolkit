@@ -49,16 +49,31 @@ type testTaskConfig struct {
 }
 
 type assertion struct {
-	AssertionStrategy string         `json:"assertionStrategy,omitempty"`
-	Parameter         eventparameter `json:"parameter,omitempty"`
-	Condition         string         `json:"condition,omitempty"`
-	RetryCount        int            `json:"retryCount,omitempty"`
+	AssertionStrategy string          `json:"assertionStrategy,omitempty"`
+	Parameter         *eventparameter `json:"parameter,omitempty"`
+	Condition         string          `json:"condition,omitempty"`
+	RetryCount        int             `json:"retryCount,omitempty"`
 }
 
 type mockConfig struct {
 	MockStrategy     string           `json:"mockStrategy,omitempty"`
 	Parameters       []eventparameter `json:"parameters,omitempty"`
 	FailedExecutions string           `json:"failedExecutions,omitempty"`
+}
+
+type testCaseResponse struct {
+	ExecutionId        string            `json:"executionId,omitempty`
+	OutputParameters   interface{}       `json:"outputParameters,omitempty`
+	AssertionResults   []assertionResult `json:"assertionResults,omitempty`
+	TestExecutionState string            `json:"testExecutionState,omitempty`
+}
+
+type assertionResult struct {
+	TaskNumber     string      `json:"taskNumber,omitempty"`
+	Assertion      interface{} `json:"assertion,omitempty"`
+	TaskName       string      `json:"taskName,omitempty"`
+	Status         string      `json:"status,omitempty"`
+	FailureMessage string      `json:"failureMessage,omitempty"`
 }
 
 func CreateTestCase(name string, version string, content string) (respBody []byte, err error) {
@@ -132,6 +147,18 @@ func ExecuteTestCase(name string, version string, testCaseID string, content str
 	return respBody, err
 }
 
+func AssertTestExecutionResult(testBody []byte) error {
+	tr := testCaseResponse{}
+	err := json.Unmarshal(testBody, &tr)
+	if err != nil {
+		return err
+	}
+	if tr.TestExecutionState == "PASSED" {
+		return nil
+	}
+	return fmt.Errorf("test failed with %d assertions", len(tr.AssertionResults))
+}
+
 func ListTestCasesByUserlabel(name string, userLabel string, full bool, filter string,
 	pageSize int, pageToken string, orderBy string) (respBody []byte, err error) {
 
@@ -185,12 +212,58 @@ func FindTestCase(name string, integrationVersion string, displayName string, pa
 	return "", fmt.Errorf("testCase not found")
 }
 
+func ListAllTestCases(name string, version string) (respBody []byte, err error) {
+	l := listTestCases{}
+	for {
+		newltc := listTestCases{}
+		respBody, err = ListTestCases(name, version, true, "", -1, "", "")
+		if err != nil {
+			return nil, err
+		}
+		err = json.Unmarshal(respBody, &newltc)
+		if err != nil {
+			return nil, err
+		}
+
+		l.TestCases = append(l.TestCases, newltc.TestCases...)
+
+		if newltc.NextPageToken == "" {
+			break
+		}
+	}
+
+	respBody, err = json.Marshal(l)
+
+	return respBody, err
+}
+
+func DeleteAllTestCases(name string, version string) (err error) {
+	respBody, err := ListAllTestCases(name, version)
+	if err != nil {
+		return err
+	}
+
+	l := listTestCases{}
+	err = json.Unmarshal(respBody, &l)
+	if err != nil {
+		return err
+	}
+
+	for _, tc := range l.TestCases {
+		_, err = DeleteTestCase(name, version, filepath.Base(tc.Name))
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
 func getTestCaseIntegrationVersion(name string, snapshot string, userLabel string) (version string, err error) {
 
 	var iversionBytes []byte
 
-	tmp := apiclient.GetCmdPrintHttpResponseSetting()
-	apiclient.DisableCmdPrintHttpResponse()
+	apiclient.ClientPrintHttpResponse.Set(false)
 
 	if snapshot != "" {
 		iversionBytes, err = GetBySnapshot(name, snapshot, false, false, false)
@@ -212,8 +285,7 @@ func getTestCaseIntegrationVersion(name string, snapshot string, userLabel strin
 
 	version = getVersion(iversion.Name)
 
-	apiclient.ClientPrintHttpResponse.Set(tmp)
-	apiclient.EnableCmdPrintHttpResponse()
+	apiclient.ClientPrintHttpResponse.Set(apiclient.GetCmdPrintHttpResponseSetting())
 
 	return version, nil
 

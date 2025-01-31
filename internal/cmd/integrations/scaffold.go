@@ -28,6 +28,7 @@ import (
 	"os"
 	"path"
 	"regexp"
+	"slices"
 	"strconv"
 
 	"github.com/spf13/cobra"
@@ -161,7 +162,10 @@ var ScaffoldCmd = &cobra.Command{
 			if err = generateFolder(path.Join(folder, "tests")); err != nil {
 				return err
 			}
-			if err = generateTestcases(testCasesBody, folder); err != nil {
+			if err = generateFolder(path.Join(folder, "test-configs")); err != nil {
+				return err
+			}
+			if err = generateTestcases(testCasesBody, integrationBody, folder); err != nil {
 				return err
 			}
 		}
@@ -427,6 +431,9 @@ var (
 )
 
 const jsonExt = ".json"
+const emptyTestConfig = `{
+    "inputParameters": {}
+}`
 
 func init() {
 	var name, userLabel, snapshot, version string
@@ -478,9 +485,10 @@ func getName(authConfigResp []byte) string {
 	return m["displayName"]
 }
 
-func generateTestcases(testcases []byte, folder string) error {
+func generateTestcases(testcases []byte, integrationBody []byte, folder string) error {
 
 	var data []map[string]interface{}
+	var testNames []string
 
 	err := json.Unmarshal(testcases, &data)
 	if err != nil {
@@ -496,6 +504,14 @@ func generateTestcases(testcases []byte, folder string) error {
 		if err != nil {
 			return fmt.Errorf("unable to get name: %v", err)
 		}
+
+		//check for duplicates
+		if !slices.Contains(testNames, name) {
+			testNames = append(testNames, name)
+		} else {
+			clilog.Warning.Println("two or more test cases have the same display name. only the most recent one will be used")
+		}
+
 		jsonData, err = apiclient.PrettifyJson(jsonData)
 		if err != nil {
 			return err
@@ -504,6 +520,13 @@ func generateTestcases(testcases []byte, folder string) error {
 			path.Join(folder, "tests", name+jsonExt),
 			false,
 			jsonData); err != nil {
+			return err
+		}
+		testConfig, _ := integrations.GetInputParameters(integrationBody)
+		if err = apiclient.WriteByteArrayToFile(
+			path.Join(folder, "test-configs", name+jsonExt),
+			false,
+			testConfig); err != nil {
 			return err
 		}
 	}
@@ -518,6 +541,6 @@ func getTestCaseName(jsonData map[string]interface{}) (string, error) {
 }
 
 func removeNonAlphanumeric(str string) string {
-	reg, _ := regexp.Compile("[^a-zA-Z0-9]+")
+	reg, _ := regexp.Compile("[^a-zA-Z0-9-_]+")
 	return reg.ReplaceAllString(str, "")
 }

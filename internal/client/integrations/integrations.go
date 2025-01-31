@@ -943,6 +943,49 @@ func GetConnectionsWithRegion(integration []byte) (connections []integrationConn
 	return connections, err
 }
 
+// GetVersion
+func GetVersion(name string, userLabel string, snapshot string) (version string, err error) {
+	var integrationBody []byte
+
+	apiclient.DisableCmdPrintHttpResponse()
+	defer apiclient.EnableCmdPrintHttpResponse()
+
+	if userLabel != "" {
+		integrationBody, err = GetByUserlabel(name, userLabel, true, false, false)
+		if err != nil {
+			return "", err
+		}
+	} else {
+		integrationBody, err = GetBySnapshot(name, snapshot, true, false, false)
+		if err != nil {
+			return "", err
+		}
+	}
+	apiclient.ClientPrintHttpResponse.Set(true)
+	return GetIntegrationVersion(integrationBody)
+}
+
+func GetIntegrationVersion(respBody []byte) (string, error) {
+	var data map[string]interface{}
+	err := json.Unmarshal(respBody, &data)
+	if err != nil {
+		return "", err
+	}
+	if data["integrationVersions"] == nil {
+		if data["version"] == nil {
+			return "", fmt.Errorf("no integration versions were found")
+		} else {
+			return data["version"].(string), nil
+		}
+	}
+	integrationVersions := data["integrationVersions"].([]interface{})
+	firstIntegrationVersion := integrationVersions[0].(map[string]interface{})
+	if firstIntegrationVersion["version"].(string) == "" {
+		return "", fmt.Errorf("unable to extract version id from integration")
+	}
+	return firstIntegrationVersion["version"].(string), nil
+}
+
 // changeState
 func changeState(name string, version string, filter string, configVars []byte, action string) (respBody []byte, err error) {
 	// if a version is sent, use it, else try the filter
@@ -1517,4 +1560,47 @@ func isCustomConnection(connectionVersion eventparameter) bool {
 	} else {
 		return false
 	}
+}
+
+// GetInputParameters
+func GetInputParameters(integrationBody []byte) (execConfig []byte, err error) {
+	iversion := integrationVersionExternal{}
+
+	inputParameters := []string{}
+
+	const emptyTestConfig = `{
+		"inputParameters": {}
+}`
+
+	err = json.Unmarshal(integrationBody, &iversion)
+	if err != nil {
+		return []byte(emptyTestConfig), err
+	}
+
+	for _, p := range iversion.IntegrationParameters {
+		if p.InputOutputType == "IN" {
+			switch p.DataType {
+			case "STRING_VALUE":
+				inputParameters = append(inputParameters, fmt.Sprintf("\"%s\": {\"stringValue\": \"\"}", p.Key))
+			case "INT_VALUE":
+				inputParameters = append(inputParameters, fmt.Sprintf("\"%s\": {\"intValue\": 0}", p.Key))
+			case "BOOLEAN_VALUE":
+				inputParameters = append(inputParameters, fmt.Sprintf("\"%s\": {\"booleanValue\": false}", p.Key))
+			case "JSON_VALUE":
+				inputParameters = append(inputParameters, fmt.Sprintf("\"%s\": {\"jsonValue\": {}}", p.Key))
+			case "DOUBLE_TPYE":
+				inputParameters = append(inputParameters, fmt.Sprintf("\"%s\": {\"doubleValue\": 0.0}", p.Key))
+			case "INT_ARRAY":
+				inputParameters = append(inputParameters, fmt.Sprintf("\"%s\": {\"intArray\": {\"intValues\": [0]}}", p.Key))
+			case "STRING_ARRAY":
+				inputParameters = append(inputParameters, fmt.Sprintf("\"%s\": {\"stringArray\": {\"stringValues\":[\"\"]}}", p.Key))
+			}
+		}
+	}
+
+	if len(inputParameters) == 0 {
+		return []byte(emptyTestConfig), nil
+	}
+
+	return apiclient.PrettifyJson([]byte("{\"inputParameters\": {" + strings.Join(inputParameters, ",") + "}}"))
 }
