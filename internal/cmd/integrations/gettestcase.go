@@ -74,7 +74,7 @@ var GetTestCaseCmd = &cobra.Command{
 			} else {
 				return errors.New("latest version not found. Must pass oneOf version, snapshot or user-label or fix the integration name")
 			}
-			version, err = getIntegrationVersion(integrationBody)
+			version, err = integrations.GetIntegrationVersion(integrationBody)
 			if err != nil {
 				return err
 			}
