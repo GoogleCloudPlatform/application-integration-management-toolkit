@@ -18,17 +18,18 @@ metadata:
   name: appint-sample-pipeline
 serialPipeline:
   stages:
-  - targetId: dev-env
-  - targetId: staging-env
+  - targetId: dev
+  - targetId: staging
 ---
 apiVersion: deploy.cloud.google.com/v1
 kind: Target
 metadata:
-  name: dev-env
+  name: dev
 customTarget:
   customTargetType: appint-sample-target
 deployParameters:
   APP_INTEGRATION_PROJECT_ID: "dev-integration-project"
+  APP_INTEGRATION_REGION: "us-central1"
 #executionConfigs:
 #- usages:
 #  - DEPLOY
@@ -44,11 +45,12 @@ deployParameters:
 apiVersion: deploy.cloud.google.com/v1
 kind: Target
 metadata:
-  name: staging-env
+  name: staging
 customTarget:
   customTargetType: appint-sample-target
 deployParameters:
   APP_INTEGRATION_PROJECT_ID: "staging-integration-project"
+  APP_INTEGRATION_REGION: "us-central1"
 #executionConfigs:
 #- usages:
 #  - DEPLOY

@@ -98,6 +98,8 @@ type clientPrintHttpResponse struct {
 
 var ClientPrintHttpResponse = &clientPrintHttpResponse{enable: true}
 
+var cliVersion, cliCommitSha, cliBuildDate string
+
 // NewIntegrationClient sets up options to invoke Integration APIs
 func NewIntegrationClient(o IntegrationClientOptions) {
 	if options == nil {
@@ -494,4 +496,20 @@ func GetMetadataToken() bool {
 // SetMetadataToken
 func SetMetadataToken(b bool) {
 	options.MetadataToken = b
+}
+
+func SetBuildParams(version string, commit string, date string) {
+	cliVersion = version
+	cliCommitSha = commit
+	cliBuildDate = date
+}
+
+func GetBuildParams() (version string, commit string, date string) {
+	if cliVersion == "" {
+		cliVersion = "unknown"
+	}
+	if cliCommitSha == "" {
+		cliCommitSha = "unknown"
+	}
+	return cliVersion, cliCommitSha, cliBuildDate
 }

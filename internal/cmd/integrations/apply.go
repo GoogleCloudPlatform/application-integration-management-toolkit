@@ -49,17 +49,6 @@ var ApplyCmd = &cobra.Command{
 		if err = apiclient.SetRegion(utils.GetStringParam(cmdRegion)); err != nil {
 			return err
 		}
-		if folder == "" && (pipeline == "" || release == "" || outputGCSPath == "") {
-			return fmt.Errorf("atleast one of folder or pipeline, release and outputGCSPath must be supplied")
-		}
-		if folder != "" && (pipeline != "" || release != "" || outputGCSPath != "") {
-			return fmt.Errorf("both folder and pipeline, release and outputGCSPath cannot be supplied")
-		}
-		if (pipeline != "" && (release == "" || outputGCSPath == "")) ||
-			(release != "" && (pipeline == "" && outputGCSPath == "")) ||
-			(outputGCSPath != "" && (pipeline == "" && release == "")) {
-			return fmt.Errorf("release, pipeline and outputGCSPath must be set")
-		}
 		cmd.Flags().VisitAll(func(f *pflag.Flag) {
 			clilog.Debug.Printf("%s: %s\n", f.Name, f.Value)
 		})
@@ -71,7 +60,7 @@ var ApplyCmd = &cobra.Command{
 		var skaffoldConfigUri string
 
 		if folder == "" {
-			skaffoldConfigUri, err = apiclient.GetCloudDeployGCSLocations(pipeline, release)
+			skaffoldConfigUri, err = apiclient.GetCloudDeployGCSLocations(cloudDeployProjectId, cloudDeployLocation, pipeline, release)
 			if err != nil {
 				return err
 			}
@@ -90,6 +79,7 @@ var ApplyCmd = &cobra.Command{
 		}
 
 		createSecret, _ := strconv.ParseBool(utils.GetStringParam(cmd.Flag("create-secret")))
+		cloudDeploy, _ := strconv.ParseBool(utils.GetStringParam(cmd.Flag("cloud-deploy")))
 		grantPermission, _ := strconv.ParseBool(utils.GetStringParam(cmd.Flag("grant-permission")))
 		userLabel := utils.GetStringParam(cmd.Flag("user-label"))
 		wait, _ := strconv.ParseBool(utils.GetStringParam(cmd.Flag("wait")))
@@ -109,6 +99,12 @@ var ApplyCmd = &cobra.Command{
 		zonesFolder := path.Join(folder, "zones")
 
 		apiclient.DisableCmdPrintHttpResponse()
+
+		if cloudDeploy {
+			if err = storeCloudDeployVariables(); err != nil {
+				return err
+			}
+		}
 
 		if !skipAuthconfigs {
 			if err = processAuthConfigs(authconfigFolder); err != nil {
@@ -160,20 +156,17 @@ Apply scaffold configuration, but skip connectors: ` + GetExample(12) + `
 Apply scaffold configuration and run functional tests: ` + GetExample(18),
 }
 
-var serviceAccountName, serviceAccountProject, encryptionKey, pipeline, release, outputGCSPath string
+var serviceAccountName, serviceAccountProject, encryptionKey, pipeline string
+var release, outputGCSPath, cloudDeployProjectId, cloudDeployLocation string
 
 func init() {
 	var userLabel string
-	grantPermission, createSecret, wait, runTests := false, false, false, false
+	grantPermission, createSecret, wait, runTests, cloudDeploy := false, false, false, false, false
 
 	ApplyCmd.Flags().StringVarP(&folder, "folder", "f",
 		"", "Folder containing scaffolding configuration")
-	ApplyCmd.Flags().StringVarP(&pipeline, "pipeline", "",
-		"", "Cloud Deploy Pipeline name")
-	ApplyCmd.Flags().StringVarP(&release, "release", "",
-		"", "Cloud Deploy Release name")
-	ApplyCmd.Flags().StringVarP(&outputGCSPath, "output-gcs-path", "",
-		"", "Upload a file named results.json containing the results")
+	ApplyCmd.Flags().BoolVarP(&cloudDeploy, "cloud-deploy", "",
+		false, "Deploy using Cloud Deploy; default is false")
 	ApplyCmd.Flags().BoolVarP(&grantPermission, "grant-permission", "g",
 		false, "Grant the service account permission to the GCP resource; default is false")
 	ApplyCmd.Flags().StringVarP(&userLabel, "userlabel", "u",
@@ -745,6 +738,20 @@ func processTestCases(testsFolder string, integrationName string, version string
 				return err
 			}
 		}
+	}
+	return nil
+}
+
+func storeCloudDeployVariables() (err error) {
+	pipeline = os.Getenv("CLOUD_DEPLOY_DELIVERY_PIPELINE")
+	release = os.Getenv("CLOUD_DEPLOY_RELEASE_NAME")
+	outputGCSPath = os.Getenv("CLOUD_DEPLOY_OUTPUT_GCS_PATH")
+	cloudDeployProjectId = os.Getenv("CLOUD_DEPLOY_PROJECT_ID")
+	cloudDeployLocation = os.Getenv("CLOUD_DEPLOY_LOCATION")
+
+	if pipeline == "" || release == "" || outputGCSPath == "" || cloudDeployProjectId == "" {
+		return fmt.Errorf("CLOUD_DEPLOY_DELIVERY_PIPELINE, CLOUD_DEPLOY_RELEASE_NAME, CLOUD_DEPLOY_OUTPUT_GCS_PATH, " +
+			"CLOUD_DEPLOY_PROJECT_ID, CLOUD_DEPLOY_LOCATION must be set")
 	}
 	return nil
 }

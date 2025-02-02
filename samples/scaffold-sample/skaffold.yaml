@@ -32,4 +32,4 @@ customActions:
     args:
       - '-c'
       - |-
-        integrationcli integrations apply --env=dev --reg=$CLOUD_DEPLOY_LOCATION --proj=$APP_INTEGRATION_PROJECT_ID --pipeline=$CLOUD_DEPLOY_DELIVERY_PIPELINE --release=$CLOUD_DEPLOY_RELEASE --output-gcs-path=$CLOUD_DEPLOY_OUTPUT_GCS_PATH --run-tests=true --metadata-token
+        integrationcli integrations apply --env=$CLOUD_DEPLOY_TARGET --reg=$APP_INTEGRATION_REGION --proj=$APP_INTEGRATION_PROJECT_ID --wait=true --run-tests=true --metadata-token

@@ -16,6 +16,7 @@ package main
 
 import (
 	"fmt"
+	"internal/apiclient"
 	"internal/cmd"
 	"os"
 )
@@ -29,6 +30,7 @@ var (
 
 func main() {
 	rootCmd := cmd.GetRootCmd()
+	apiclient.SetBuildParams(version, commit, date)
 	rootCmd.Version = fmt.Sprintf("%s date: %s [commit: %.7s]", version, date, commit)
 
 	if err := rootCmd.Execute(); err != nil {

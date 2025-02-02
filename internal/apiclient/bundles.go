@@ -225,7 +225,8 @@ func ExtractTgz(gcsURL string) (folder string, err error) {
 	return folder, nil
 }
 
-func GetCloudDeployGCSLocations(pipeline string, release string) (skaffoldConfigUri string, err error) {
+func GetCloudDeployGCSLocations(cloudDeployProjectId string, cloudDeployLocation string,
+	pipeline string, release string) (skaffoldConfigUri string, err error) {
 	type cloudDeployRelease struct {
 		SkaffoldConfigUri string `json:"skaffoldConfigUri"`
 		TargetArtifacts   map[string]struct {
@@ -242,7 +243,7 @@ func GetCloudDeployGCSLocations(pipeline string, release string) (skaffoldConfig
 	r := cloudDeployRelease{}
 
 	cloudDeployURL := fmt.Sprintf("https://clouddeploy.googleapis.com/v1/projects/%s/locations/%s/deliveryPipelines/%s/releases/%s",
-		GetProjectID(), GetRegion(), pipeline, release)
+		cloudDeployProjectId, cloudDeployLocation, pipeline, release)
 	u, _ := url.Parse(cloudDeployURL)
 
 	ClientPrintHttpResponse.Set(false)

@@ -19,7 +19,6 @@ import (
 	"internal/apiclient"
 	"io"
 	"os"
-	"runtime/debug"
 	"strconv"
 	"strings"
 
@@ -51,7 +50,7 @@ const cloudBuild = `# Copyright 2023 Google LLC
 
 steps:
 - id: 'Apply Integration scaffolding configuration'
-  name: us-docker.pkg.dev/appintegration-toolkit/images/integrationcli:latest
+  name: us-docker.pkg.dev/appintegration-toolkit/images/integrationcli:%s
   args:
     - integrations
     - apply
@@ -104,17 +103,18 @@ metadata:
   name: appint-%s-pipeline
 serialPipeline:
   stages:
-  - targetId: %s-env
+  - targetId: %s
 ---
 
 apiVersion: deploy.cloud.google.com/v1
 kind: Target
 metadata:
-  name: %s-env
+  name: %s
 customTarget:
   customTargetType: appint-%s-target
 deployParameters:
   APP_INTEGRATION_PROJECT_ID: "%s"
+  APP_INTEGRATION_REGION: "%s"
 ---
 
 apiVersion: deploy.cloud.google.com/v1
@@ -122,8 +122,8 @@ kind: CustomTargetType
 metadata:
   name: appint-%s-target
 customActions:
-  renderAction: render-app-integration
-  deployAction: deploy-app-integration`
+  renderAction: render-%s-integration
+  deployAction: deploy-%s-integration`
 
 var skaffold = `# Copyright 2024 Google LLC
 #
@@ -145,7 +145,7 @@ customActions:
 - name: render-%s-integration
   containers:
   - name: render
-    image: us-docker.pkg.dev/appintegration-toolkit/images/integrationcli:latest
+    image: us-docker.pkg.dev/appintegration-toolkit/images/integrationcli:%s
     command: ['sh']
     args:
       - '-c'
@@ -154,12 +154,12 @@ customActions:
 - name: deploy-%s-integration
   containers:
   - name: deploy
-    image: us-docker.pkg.dev/appintegration-toolkit/images/integrationcli:latest
+    image: us-docker.pkg.dev/appintegration-toolkit/images/integrationcli:%s
     command: ['sh']
     args:
       - '-c'
       - |-
-        integrationcli integrations apply --env=dev --reg=$CLOUD_DEPLOY_LOCATION --proj=$APP_INTEGRATION_PROJECT_ID --pipeline=$CLOUD_DEPLOY_DELIVERY_PIPELINE --release=$CLOUD_DEPLOY_OUTPUT_GCS_PATH --output-gcs-path=$CLOUD_DEPLOY_TARGET --metadata-token`
+        integrationcli integrations apply --env=$CLOUD_DEPLOY_TARGET --reg=$CLOUD_DEPLOY_LOCATION --proj=$APP_INTEGRATION_PROJECT_ID --reg=$APP_INTEGRATION_REGION --cloud-deploy=true --run-tests=true --wait=true --metadata-token`
 
 var githubActionApply = `# Copyright 2025 Google LLC
 #
@@ -223,7 +223,7 @@ jobs:
 
       - name: Create and Publish Integration
         id: 'publish-integration'
-        uses: docker://us-docker.pkg.dev/appintegration-toolkit/images/integrationcli:v0.79.0 #pin to version of choice
+        uses: docker://us-docker.pkg.dev/appintegration-toolkit/images/integrationcli:%s #pin to version of choice
         with:
           args: integrations apply --env=${{ env.ENVIRONMENT}} --folder=. --userlabel=${{ steps.calc-vars.outputs.SHORT_SHA }} --wait=true --proj=${{ env.PROJECT_ID }} --reg=${{ env.REGION }} --token ${{ steps.gcp-auth.outputs.access_token }}`
 
@@ -231,15 +231,18 @@ func GetCloudDeployYaml(integrationName string, env string) string {
 	if env == "" {
 		env = "dev"
 	}
-	return fmt.Sprintf(cloudDeploy, integrationName, env, env, integrationName, apiclient.GetProjectID(), integrationName)
+	return fmt.Sprintf(cloudDeploy, integrationName, env, env, integrationName, apiclient.GetProjectID(), apiclient.GetRegion(),
+		integrationName, integrationName, integrationName)
 }
 
 func GetSkaffoldYaml(integrationName string) string {
-	return fmt.Sprintf(skaffold, integrationName, integrationName)
+	v, _, _ := apiclient.GetBuildParams()
+	return fmt.Sprintf(skaffold, integrationName, v, integrationName, v)
 }
 
 func GetCloudBuildYaml() string {
-	return cloudBuild
+	v, _, _ := apiclient.GetBuildParams()
+	return fmt.Sprintf(cloudBuild, v)
 }
 
 func ReadFile(filePath string) (byteValue []byte, err error) {
@@ -271,19 +274,8 @@ func GetGithubAction(environment string, integrationName string) string {
 	} else {
 		githubAction = githubActionApply
 	}
-	v := GetCLIVersion()
-	if v != "" {
-		githubAction = strings.ReplaceAll(githubAction, "v0.79.0", v)
-	}
-	return fmt.Sprintf(githubAction, integrationName)
-}
-
-func GetCLIVersion() string {
-	bi, ok := debug.ReadBuildInfo()
-	if ok && bi.Main.Version != "" {
-		return bi.Main.Version
-	}
-	return "latest"
+	v, _, _ := apiclient.GetBuildParams()
+	return fmt.Sprintf(githubAction, integrationName, v)
 }
 
 func GetBasicInfo(cmd *cobra.Command, flag string) bool {
