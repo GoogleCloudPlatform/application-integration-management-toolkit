@@ -955,11 +955,13 @@ func GetVersion(name string, userLabel string, snapshot string) (version string,
 		if err != nil {
 			return "", err
 		}
-	} else {
+	} else if snapshot != "" {
 		integrationBody, err = GetBySnapshot(name, snapshot, true, false, false)
 		if err != nil {
 			return "", err
 		}
+	} else {
+		return "", fmt.Errorf("userLabel or snapshot must be passed")
 	}
 	apiclient.ClientPrintHttpResponse.Set(true)
 	return GetIntegrationVersion(integrationBody)
