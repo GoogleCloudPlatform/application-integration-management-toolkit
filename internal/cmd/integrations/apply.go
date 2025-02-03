@@ -73,8 +73,6 @@ var ApplyCmd = &cobra.Command{
 		wait, _ := strconv.ParseBool(utils.GetStringParam(cmd.Flag("wait")))
 		runTests, _ := strconv.ParseBool(utils.GetStringParam(cmd.Flag("run-tests")))
 
-		apiclient.DisableCmdPrintHttpResponse()
-
 		if cloudDeploy {
 			if err = storeCloudDeployVariables(); err != nil {
 				return err
@@ -254,8 +252,8 @@ func processAuthConfigs(authconfigFolder string) (err error) {
 							return err
 						}
 						clilog.Info.Printf("Creating authconfig: %s\n", authConfigFile)
-						if _, err = authconfigs.Create(authConfigBytes); err != nil {
-							return err
+						if response := authconfigs.Create(authConfigBytes); response.Err != nil {
+							return response.Err
 						}
 					} else {
 						clilog.Info.Printf("Authconfig %s already exists\n", authConfigFile)
@@ -296,9 +294,9 @@ func processEndpoints(endpointsFolder string) (err error) {
 					if err != nil {
 						return err
 					}
-					if _, err = connections.CreateEndpoint(getFilenameWithoutExtension(endpointFile),
-						serviceAccountName, "", false); err != nil {
-						return err
+					if response := connections.CreateEndpoint(getFilenameWithoutExtension(endpointFile),
+						serviceAccountName, "", false); response.Err != nil {
+						return response.Err
 					}
 				} else {
 					clilog.Info.Printf("Endpoint %s already exists\n", endpointFile)
@@ -329,15 +327,15 @@ func processManagedZones(zonesFolder string) (err error) {
 				if rJSONFiles.MatchString(zoneFile) {
 					clilog.Info.Printf("Found configuration for managed zone: %s\n", zoneFile)
 				}
-				if _, err = connections.GetZone(getFilenameWithoutExtension(zoneFile), true); err != nil {
+				if zoneResponse := connections.GetZone(getFilenameWithoutExtension(zoneFile), true); zoneResponse.Err != nil {
 					// the managed zone does not exist, try to create it
 					zoneBytes, err := utils.ReadFile(path)
 					if err != nil {
 						return err
 					}
-					if _, err = connections.CreateZone(getFilenameWithoutExtension(zoneFile),
-						zoneBytes); err != nil {
-						return err
+					if response := connections.CreateZone(getFilenameWithoutExtension(zoneFile),
+						zoneBytes); response.Err != nil {
+						return response.Err
 					}
 				} else {
 					clilog.Info.Printf("Zone %s already exists\n", zoneFile)
@@ -366,16 +364,16 @@ func processConnectors(connectorsFolder string, grantPermission bool, createSecr
 				connectionFile := filepath.Base(path)
 				if rJSONFiles.MatchString(connectionFile) {
 					clilog.Info.Printf("Found configuration for connection: %s\n", connectionFile)
-					_, err = connections.Get(getFilenameWithoutExtension(connectionFile), "", true, false)
+					response := connections.Get(getFilenameWithoutExtension(connectionFile), "", true, false)
 					// create the connection only if the connection is not found
-					if err != nil {
+					if response.Err != nil {
 						connectionBytes, err := utils.ReadFile(path)
 						if err != nil {
-							return err
+							return response.Err
 						}
 						clilog.Info.Printf("Creating connector: %s\n", connectionFile)
 
-						if _, err = connections.Create(getFilenameWithoutExtension(connectionFile),
+						if response = connections.Create(getFilenameWithoutExtension(connectionFile),
 							connectionBytes,
 							serviceAccountName,
 							serviceAccountProject,
@@ -428,8 +426,8 @@ func processCustomConnectors(customConnectorsFolder string) (err error) {
 							return err
 						}
 						clilog.Info.Printf("Creating custom connector: %s\n", customConnectionFile)
-						if _, err := connections.GetCustomVersion(customConnectionDetails[0],
-							customConnectionDetails[1], false); err != nil {
+						if response := connections.GetCustomVersion(customConnectionDetails[0],
+							customConnectionDetails[1], false); response.Err != nil {
 							// didn't find the custom connector, create it
 							if err = connections.CreateCustomWithVersion(customConnectionDetails[0],
 								customConnectionDetails[1], contents, serviceAccountName, serviceAccountProject); err != nil {
@@ -461,17 +459,17 @@ func processSfdcInstances(sfdcinstancesFolder string) (err error) {
 				instanceFile := filepath.Base(path)
 				if rJSONFiles.MatchString(instanceFile) {
 					clilog.Info.Printf("Found configuration for sfdc instance: %s\n", instanceFile)
-					_, err = sfdc.GetInstance(getFilenameWithoutExtension(instanceFile), true)
+					response := sfdc.GetInstance(getFilenameWithoutExtension(instanceFile), true)
 					// create the instance only if the sfdc instance is not found
-					if err != nil {
+					if response.Err != nil {
 						instanceBytes, err := utils.ReadFile(path)
 						if err != nil {
 							return err
 						}
 						clilog.Info.Printf("Creating sfdc instance: %s\n", instanceFile)
-						_, err = sfdc.CreateInstanceFromContent(instanceBytes)
-						if err != nil {
-							return nil
+						response = sfdc.CreateInstanceFromContent(instanceBytes)
+						if response.Err != nil {
+							return response.Err
 						}
 					} else {
 						clilog.Info.Printf("sfdc instance %s already exists\n", instanceFile)
@@ -515,17 +513,17 @@ func processSfdcChannels(sfdcchannelsFolder string) (err error) {
 							"convention instanceName_channelName.json\n", channelFile)
 						return nil
 					}
-					version, _, err := sfdc.FindChannel(sfdcNames[1], sfdcNames[0])
+					version, response := sfdc.FindChannel(sfdcNames[1], sfdcNames[0])
 					// create the instance only if the sfdc channel is not found
-					if err != nil {
+					if response.Err != nil {
 						channelBytes, err := utils.ReadFile(path)
 						if err != nil {
 							return err
 						}
 						clilog.Info.Printf("Creating sfdc channel: %s\n", channelFile)
-						_, err = sfdc.CreateChannelFromContent(version, channelBytes)
-						if err != nil {
-							return nil
+						response = sfdc.CreateChannelFromContent(version, channelBytes)
+						if response.Err != nil {
+							return response.Err
 						}
 					} else {
 						clilog.Info.Printf("sfdc channel %s already exists\n", channelFile)
@@ -599,12 +597,12 @@ func processIntegration(overridesFile string, integrationFolder string, testsFol
 		}
 
 		clilog.Info.Printf("Create integration %s\n", getFilenameWithoutExtension(integrationNames[0]))
-		respBody, err := integrations.CreateVersion(getFilenameWithoutExtension(integrationNames[0]),
+		response := integrations.CreateVersion(getFilenameWithoutExtension(integrationNames[0]),
 			integrationBytes, overridesBytes, "", userLabel, grantPermission, false)
-		if err != nil {
-			return err
+		if response.Err != nil {
+			return response.Err
 		}
-		version, err := getVersion(respBody)
+		version, err := getVersion(response.RespBody)
 		if err != nil {
 			return err
 		}
@@ -626,9 +624,9 @@ func processIntegration(overridesFile string, integrationFolder string, testsFol
 				return err
 			}
 		}
-		_, err = integrations.Publish(getFilenameWithoutExtension(integrationNames[0]), version, configVarBytes)
-		if err != nil {
-			return err
+		response = integrations.Publish(getFilenameWithoutExtension(integrationNames[0]), version, configVarBytes)
+		if response.Err != nil {
+			return response.Err
 		}
 
 		// Execute test cases
@@ -739,9 +737,9 @@ func processTestCases(testsFolder string, integrationName string, version string
 			if err != nil {
 				return err
 			}
-			_, err = integrations.CreateTestCase(integrationName, version, string(testCaseBytes))
-			if err != nil {
-				return err
+			response := integrations.CreateTestCase(integrationName, version, string(testCaseBytes))
+			if response.Err != nil {
+				return response.Err
 			}
 		}
 	}

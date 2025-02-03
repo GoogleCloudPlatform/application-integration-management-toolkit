@@ -57,18 +57,14 @@ var GetCmd = &cobra.Command{
 		id := utils.GetStringParam(cmd.Flag("id"))
 
 		if name != "" {
-			apiclient.DisableCmdPrintHttpResponse()
 			version, err := certificates.Find(name)
 			if err != nil {
 				return err
 			}
-			apiclient.EnableCmdPrintHttpResponse()
-			_, err = certificates.Get(version)
-			return err
+			return apiclient.PrettyPrint(certificates.Get(version))
 		}
 
-		_, err = certificates.Get(id)
-		return err
+		return apiclient.PrettyPrint(certificates.Get(id))
 	},
 }
 

@@ -45,8 +45,7 @@ var LiftSuspCmd = &cobra.Command{
 		cmd.SilenceUsage = true
 
 		name := utils.GetStringParam(cmd.Flag("name"))
-		_, err = integrations.Lift(name, execution, suspension, result)
-		return err
+		return apiclient.PrettyPrint(integrations.Lift(name, execution, suspension, result))
 	},
 }
 

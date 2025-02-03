@@ -56,8 +56,7 @@ var PatchVerCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		_, err = integrations.Patch(name, version, content)
-		return err
+		return apiclient.PrettyPrint(integrations.Patch(name, version, content))
 	},
 }
 

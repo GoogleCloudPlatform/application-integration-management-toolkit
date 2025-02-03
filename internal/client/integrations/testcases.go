@@ -76,45 +76,46 @@ type assertionResult struct {
 	FailureMessage string      `json:"failureMessage,omitempty"`
 }
 
-func CreateTestCase(name string, version string, content string) (respBody []byte, err error) {
+func CreateTestCase(name string, version string, content string) apiclient.APIResponse {
 	u, _ := url.Parse(apiclient.GetBaseIntegrationURL())
 	u.Path = path.Join(u.Path, "integrations", name, "versions", version, "testCases")
-	respBody, err = apiclient.HttpClient(u.String(), content)
-	return respBody, err
+	return apiclient.HttpClient(u.String(), content)
 }
 
-func CreateTestCaseBySnapshot(name string, snapshot string, content string) (respBody []byte, err error) {
+func CreateTestCaseBySnapshot(name string, snapshot string, content string) apiclient.APIResponse {
 	version, err := getTestCaseIntegrationVersion(name, snapshot, "")
 	if err != nil {
-		return nil, err
+		return apiclient.APIResponse{
+			Err: err,
+		}
 	}
 	return CreateTestCase(name, version, content)
 }
 
-func CreateTestCaseByUserLabel(name string, userLabel string, content string) (respBody []byte, err error) {
+func CreateTestCaseByUserLabel(name string, userLabel string, content string) apiclient.APIResponse {
 	version, err := getTestCaseIntegrationVersion(name, "", userLabel)
 	if err != nil {
-		return nil, err
+		return apiclient.APIResponse{
+			Err: err,
+		}
 	}
 	return CreateTestCase(name, version, content)
 }
 
-func DeleteTestCase(name string, version string, testCaseID string) (respBody []byte, err error) {
+func DeleteTestCase(name string, version string, testCaseID string) apiclient.APIResponse {
 	u, _ := url.Parse(apiclient.GetBaseIntegrationURL())
 	u.Path = path.Join(u.Path, "integrations", name, "versions", version, "testCases", testCaseID)
-	respBody, err = apiclient.HttpClient(u.String(), "", "DELETE")
-	return respBody, err
+	return apiclient.HttpClient(u.String(), "", "DELETE")
 }
 
-func GetTestCase(name string, version string, testCaseID string) (respBody []byte, err error) {
+func GetTestCase(name string, version string, testCaseID string) apiclient.APIResponse {
 	u, _ := url.Parse(apiclient.GetBaseIntegrationURL())
 	u.Path = path.Join(u.Path, "integrations", name, "versions", version, "testCases", testCaseID)
-	respBody, err = apiclient.HttpClient(u.String())
-	return respBody, err
+	return apiclient.HttpClient(u.String())
 }
 
 func ListTestCases(name string, version string, full bool, filter string,
-	pageSize int, pageToken string, orderBy string) (respBody []byte, err error) {
+	pageSize int, pageToken string, orderBy string) apiclient.APIResponse {
 
 	u, _ := url.Parse(apiclient.GetBaseIntegrationURL())
 	q := u.Query()
@@ -133,18 +134,17 @@ func ListTestCases(name string, version string, full bool, filter string,
 
 	u.RawQuery = q.Encode()
 	u.Path = path.Join(u.Path, "integrations", name, "versions", version, "testCases")
-	respBody, err = apiclient.HttpClient(u.String())
+	response := apiclient.HttpClient(u.String())
 	if !full {
-		return getTestCases(respBody, full)
+		return getTestCases(response.RespBody, full)
 	}
-	return respBody, err
+	return response
 }
 
-func ExecuteTestCase(name string, version string, testCaseID string, content string) (respBody []byte, err error) {
+func ExecuteTestCase(name string, version string, testCaseID string, content string) apiclient.APIResponse {
 	u, _ := url.Parse(apiclient.GetBaseIntegrationURL())
 	u.Path = path.Join(u.Path, "integrations", name, "versions", version, "testCases", testCaseID, ":executeTest")
-	respBody, err = apiclient.HttpClient(u.String(), content)
-	return respBody, err
+	return apiclient.HttpClient(u.String(), content)
 }
 
 func AssertTestExecutionResult(testBody []byte) error {
@@ -160,21 +160,25 @@ func AssertTestExecutionResult(testBody []byte) error {
 }
 
 func ListTestCasesByUserlabel(name string, userLabel string, full bool, filter string,
-	pageSize int, pageToken string, orderBy string) (respBody []byte, err error) {
+	pageSize int, pageToken string, orderBy string) apiclient.APIResponse {
 
 	version, err := getTestCaseIntegrationVersion(name, "", userLabel)
 	if err != nil {
-		return nil, err
+		return apiclient.APIResponse{
+			Err: err,
+		}
 	}
 	return ListTestCases(name, version, full, filter, pageSize, pageToken, orderBy)
 }
 
 func ListTestCasesBySnapshot(name string, snapshot string, full bool, filter string,
-	pageSize int, pageToken string, orderBy string) (respBody []byte, err error) {
+	pageSize int, pageToken string, orderBy string) apiclient.APIResponse {
 
 	version, err := getTestCaseIntegrationVersion(name, snapshot, "")
 	if err != nil {
-		return nil, err
+		return apiclient.APIResponse{
+			Err: err,
+		}
 	}
 	return ListTestCases(name, version, full, filter, pageSize, pageToken, orderBy)
 }
@@ -192,8 +196,8 @@ func FindTestCase(name string, integrationVersion string, displayName string, pa
 	}
 
 	u.Path = path.Join(u.Path, "integrations", name, "versions", integrationVersion, "testCases")
-	if respBody, err = apiclient.HttpClient(u.String()); err != nil {
-		return "", err
+	if response := apiclient.HttpClient(u.String()); response.Err != nil {
+		return "", response.Err
 	}
 
 	if err = json.Unmarshal(respBody, &lt); err != nil {
@@ -212,17 +216,22 @@ func FindTestCase(name string, integrationVersion string, displayName string, pa
 	return "", fmt.Errorf("testCase not found")
 }
 
-func ListAllTestCases(name string, version string) (respBody []byte, err error) {
+func ListAllTestCases(name string, version string) apiclient.APIResponse {
 	l := listTestCases{}
+	var err error
+	var response apiclient.APIResponse
+
 	for {
 		newltc := listTestCases{}
-		respBody, err = ListTestCases(name, version, true, "", -1, "", "")
-		if err != nil {
-			return nil, err
+		response := ListTestCases(name, version, true, "", -1, "", "")
+		if response.Err != nil {
+			return response
 		}
-		err = json.Unmarshal(respBody, &newltc)
+		err = json.Unmarshal(response.RespBody, &newltc)
 		if err != nil {
-			return nil, err
+			return apiclient.APIResponse{
+				Err: err,
+			}
 		}
 
 		l.TestCases = append(l.TestCases, newltc.TestCases...)
@@ -232,27 +241,27 @@ func ListAllTestCases(name string, version string) (respBody []byte, err error) 
 		}
 	}
 
-	respBody, err = json.Marshal(l)
+	response.RespBody, response.Err = json.Marshal(l)
 
-	return respBody, err
+	return response
 }
 
 func DeleteAllTestCases(name string, version string) (err error) {
-	respBody, err := ListAllTestCases(name, version)
-	if err != nil {
-		return err
+	response := ListAllTestCases(name, version)
+	if response.Err != nil {
+		return response.Err
 	}
 
 	l := listTestCases{}
-	err = json.Unmarshal(respBody, &l)
+	err = json.Unmarshal(response.RespBody, &l)
 	if err != nil {
 		return err
 	}
 
 	for _, tc := range l.TestCases {
-		_, err = DeleteTestCase(name, version, filepath.Base(tc.Name))
-		if err != nil {
-			return err
+		response := DeleteTestCase(name, version, filepath.Base(tc.Name))
+		if response.Err != nil {
+			return response.Err
 		}
 	}
 
@@ -261,48 +270,52 @@ func DeleteAllTestCases(name string, version string) (err error) {
 
 func getTestCaseIntegrationVersion(name string, snapshot string, userLabel string) (version string, err error) {
 
-	var iversionBytes []byte
-
-	apiclient.ClientPrintHttpResponse.Set(false)
+	var response apiclient.APIResponse
 
 	if snapshot != "" {
-		iversionBytes, err = GetBySnapshot(name, snapshot, false, false, false)
-		if err != nil {
-			return "", err
+		response = GetBySnapshot(name, snapshot, false, false, false)
+		if response.Err != nil {
+			return "", response.Err
 		}
 	} else {
-		iversionBytes, err = GetByUserlabel(name, userLabel, false, false, false)
-		if err != nil {
-			return "", err
+		response = GetByUserlabel(name, userLabel, false, false, false)
+		if response.Err != nil {
+			return "", response.Err
 		}
 	}
 
 	iversion := integrationVersion{}
-	err = json.Unmarshal(iversionBytes, &iversion)
+	err = json.Unmarshal(response.RespBody, &iversion)
 	if err != nil {
 		return "", err
 	}
 
 	version = getVersion(iversion.Name)
 
-	apiclient.ClientPrintHttpResponse.Set(apiclient.GetCmdPrintHttpResponseSetting())
-
 	return version, nil
 
 }
 
-func getTestCases(respBody []byte, full bool) (rb []byte, err error) {
+func getTestCases(respBody []byte, full bool) apiclient.APIResponse {
+
+	var response apiclient.APIResponse
 
 	if full {
-		return respBody, nil
+		return apiclient.APIResponse{
+			RespBody: respBody,
+			Err:      nil,
+		}
 	}
 
 	l := listTestCases{}
 	newltc := listTestCases{}
 
-	err = json.Unmarshal(respBody, &l)
+	err := json.Unmarshal(respBody, &l)
 	if err != nil {
-		return nil, err
+		return apiclient.APIResponse{
+			RespBody: nil,
+			Err:      err,
+		}
 	}
 	for _, tc := range l.TestCases {
 		if tc.DatabasePersistencePolicy != nil && *tc.DatabasePersistencePolicy == "" {
@@ -310,5 +323,6 @@ func getTestCases(respBody []byte, full bool) (rb []byte, err error) {
 		}
 		newltc.TestCases = append(newltc.TestCases, tc)
 	}
-	return json.Marshal(newltc.TestCases)
+	response.RespBody, response.Err = json.Marshal(newltc.TestCases)
+	return response
 }

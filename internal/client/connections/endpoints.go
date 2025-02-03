@@ -45,7 +45,7 @@ type endpointExternal struct {
 }
 
 // CreateEndpoint
-func CreateEndpoint(name string, serviceAttachment string, description string, wait bool) (respBody []byte, err error) {
+func CreateEndpoint(name string, serviceAttachment string, description string, wait bool) apiclient.APIResponse {
 	endpointStr := []string{}
 
 	endpointStr = append(endpointStr, "\"name\":\""+
@@ -66,15 +66,19 @@ func CreateEndpoint(name string, serviceAttachment string, description string, w
 	q.Set("endpointAttachmentId", name)
 	u.RawQuery = q.Encode()
 
-	respBody, err = apiclient.HttpClient(u.String(), payload)
+	response := apiclient.HttpClient(u.String(), payload)
+	if response.Err != nil {
+		return response
+	}
 
 	if wait {
-		apiclient.ClientPrintHttpResponse.Set(false)
-		defer apiclient.ClientPrintHttpResponse.Set(apiclient.GetCmdPrintHttpResponseSetting())
 
 		o := operation{}
-		if err = json.Unmarshal(respBody, &o); err != nil {
-			return nil, err
+		if err := json.Unmarshal(response.RespBody, &o); err != nil {
+			return apiclient.APIResponse{
+				RespBody: nil,
+				Err:      err,
+			}
 		}
 
 		operationId := filepath.Base(o.Name)
@@ -83,11 +87,11 @@ func CreateEndpoint(name string, serviceAttachment string, description string, w
 		stop := apiclient.Every(interval*time.Second, func(time.Time) bool {
 			var respBody []byte
 
-			if respBody, err = GetOperation(operationId); err != nil {
+			if response := GetOperation(operationId); response.Err != nil {
 				return false
 			}
 
-			if err = json.Unmarshal(respBody, &o); err != nil {
+			if err := json.Unmarshal(respBody, &o); err != nil {
 				return false
 			}
 
@@ -106,38 +110,45 @@ func CreateEndpoint(name string, serviceAttachment string, description string, w
 
 		<-stop
 	}
-	return
+	return response
 }
 
 // GetEndpoint
-func GetEndpoint(name string, overrides bool) (respBody []byte, err error) {
+func GetEndpoint(name string, overrides bool) apiclient.APIResponse {
 	u, _ := url.Parse(apiclient.GetBaseConnectorEndpointAttachURL())
 	u.Path = path.Join(u.Path, name)
-	if overrides {
-		apiclient.ClientPrintHttpResponse.Set(false)
+
+	response := apiclient.HttpClient(u.String())
+	if response.Err != nil {
+		return response
 	}
 
-	respBody, err = apiclient.HttpClient(u.String())
 	if overrides {
 		e := endpoint{}
-		if err = json.Unmarshal(respBody, &e); err != nil {
-			return nil, err
+		if err := json.Unmarshal(response.RespBody, &e); err != nil {
+			return apiclient.APIResponse{
+				RespBody: nil,
+				Err:      err,
+			}
 		}
 		eversion := convertInternalToExternal(e)
-		respBody, err = json.Marshal(eversion)
+		respBody, err := json.Marshal(eversion)
 		if err != nil {
-			return nil, err
+			return apiclient.APIResponse{
+				RespBody: nil,
+				Err:      err,
+			}
 		}
-		apiclient.ClientPrintHttpResponse.Set(apiclient.GetCmdPrintHttpResponseSetting())
-		apiclient.PrettyPrint(respBody)
-		return
+		return apiclient.APIResponse{
+			RespBody: respBody,
+			Err:      nil,
+		}
 	}
-	apiclient.ClientPrintHttpResponse.Set(apiclient.GetCmdPrintHttpResponseSetting())
-	return
+	return response
 }
 
 // ListEndpoints
-func ListEndpoints(pageSize int, pageToken string, filter string, orderBy string) (respBody []byte, err error) {
+func ListEndpoints(pageSize int, pageToken string, filter string, orderBy string) apiclient.APIResponse {
 	u, _ := url.Parse(apiclient.GetBaseConnectorEndpointAttachURL())
 	q := u.Query()
 	if pageSize != -1 {
@@ -154,25 +165,22 @@ func ListEndpoints(pageSize int, pageToken string, filter string, orderBy string
 	}
 
 	u.RawQuery = q.Encode()
-	respBody, err = apiclient.HttpClient(u.String())
-	return respBody, err
+	return apiclient.HttpClient(u.String())
 }
 
 // DeleteEndpoint
-func DeleteEndpoint(name string) (respBody []byte, err error) {
+func DeleteEndpoint(name string) apiclient.APIResponse {
 	u, _ := url.Parse(apiclient.GetBaseConnectorEndpointAttachURL())
 	u.Path = path.Join(u.Path, name)
-	respBody, err = apiclient.HttpClient(u.String(), "", "DELETE")
-	return respBody, err
+	return apiclient.HttpClient(u.String(), "", "DELETE")
 }
 
 func FindEndpoint(name string) (found bool) {
 	var pageToken string
 	var respBody []byte
-	var err error
 
 	for {
-		if respBody, err = ListEndpoints(maxPageSize, pageToken, "", ""); err != nil {
+		if response := ListEndpoints(maxPageSize, pageToken, "", ""); response.Err != nil {
 			return false
 		}
 		l := endpoints{}

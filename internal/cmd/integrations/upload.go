@@ -56,9 +56,7 @@ var UploadCmd = &cobra.Command{
 			return err
 		}
 
-		_, err = integrations.Upload(name, content)
-
-		return err
+		return apiclient.PrettyPrint(integrations.Upload(name, content))
 	},
 }
 

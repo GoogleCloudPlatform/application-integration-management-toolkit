@@ -74,8 +74,7 @@ var UpdateNodeCountCmd = &cobra.Command{
 		}
 
 		content = content + nodeCount + "}}"
-		_, err = connections.Patch(name, []byte(content), nodeConfig)
-		return err
+		return apiclient.PrettyPrint(connections.Patch(name, []byte(content), nodeConfig))
 	},
 }
 

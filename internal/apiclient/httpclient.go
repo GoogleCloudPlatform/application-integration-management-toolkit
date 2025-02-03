@@ -19,10 +19,12 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"internal/clilog"
 	"io"
 	"net/http"
 	"net/url"
+	"strings"
 	"time"
 
 	"golang.org/x/time/rate"
@@ -44,7 +46,7 @@ var connectorsAPIRateLimit = rate.NewLimiter(rate.Every(time.Second), 1)
 var noAPIRateLimit = rate.NewLimiter(rate.Inf, 1)
 
 // HttpClient method is used to GET,POST,PUT or DELETE JSON data
-func HttpClient(params ...string) (respBody []byte, err error) {
+func HttpClient(params ...string) APIResponse {
 	// The first parameter is url. If only one parameter is sent, assume GET
 	// The second parameter is the payload. The two parameters are sent, assume POST
 	// THe third parameter is the method. If three parameters are sent, assume method in param
@@ -54,7 +56,10 @@ func HttpClient(params ...string) (respBody []byte, err error) {
 
 	client, err := getHttpClient()
 	if err != nil {
-		return nil, err
+		return APIResponse{
+			RespBody: nil,
+			Err:      err,
+		}
 	}
 
 	clilog.Debug.Println("Connecting to: ", params[0])
@@ -74,56 +79,81 @@ func HttpClient(params ...string) (respBody []byte, err error) {
 		req, err = http.NewRequestWithContext(ctx, http.MethodPost, params[0], bytes.NewBuffer([]byte(params[1])))
 	case 3:
 		if req, err = getRequest(params); err != nil {
-			return nil, err
+			return APIResponse{
+				RespBody: nil,
+				Err:      err,
+			}
 		}
 	case 4:
 		if req, err = getRequest(params); err != nil {
-			return nil, err
+			return APIResponse{
+				RespBody: nil,
+				Err:      err,
+			}
 		}
 		contentType = params[3]
 	default:
-		return nil, errors.New("unsupported method")
+		return APIResponse{
+			RespBody: nil,
+			Err:      errors.New("unsupported method"),
+		}
 	}
 
 	if err != nil {
 		clilog.Error.Println("error in client: ", err)
-		return nil, err
+		return APIResponse{
+			RespBody: nil,
+			Err:      err,
+		}
 	}
 
 	req, err = setAuthHeader(req)
 	if err != nil {
-		return nil, err
+		return APIResponse{
+			RespBody: nil,
+			Err:      err,
+		}
 	}
 
 	clilog.Debug.Println("Content-Type : ", contentType)
 	req.Header.Set("Content-Type", contentType)
 
 	if DryRun() {
-		return nil, nil
+		return APIResponse{
+			RespBody: nil,
+			Err:      err,
+		}
 	}
 
 	resp, err := client.Do(req)
 	if err != nil {
 		clilog.Error.Println("error connecting: ", err)
-		return nil, err
+		return APIResponse{
+			RespBody: nil,
+			Err:      err,
+		}
 	}
 
 	return handleResponse(resp)
 }
 
 // PrettyPrint method prints formatted json
-func PrettyPrint(body []byte) error {
-	if GetCmdPrintHttpResponseSetting() && ClientPrintHttpResponse.Get() {
-		var prettyJSON bytes.Buffer
-		err := json.Indent(&prettyJSON, body, "", "\t")
-		if err != nil {
-			clilog.Error.Println("error parsing response: ", err)
-			return err
-		}
-
-		clilog.HTTPResponse.Println(prettyJSON.String())
+func PrettyPrint(response APIResponse) error {
+	if response.Err != nil {
+		return response.Err
 	}
-	clilog.Debug.Println(string(body))
+	if response.RespBody == nil || len(response.RespBody) == 0 || strings.TrimSpace(string(response.RespBody)) == "{}" {
+		return nil
+	}
+
+	var prettyJSON bytes.Buffer
+	err := json.Indent(&prettyJSON, response.RespBody, "", "\t")
+	if err != nil {
+		clilog.Error.Println("error parsing response: ", err)
+		return err
+	}
+
+	clilog.HTTPResponse.Println(prettyJSON.String())
 	return nil
 }
 
@@ -132,9 +162,9 @@ func PrettifyJson(body []byte) (prettyJson []byte, err error) {
 	err = json.Indent(&prettyJSON, body, "", "\t")
 	if err != nil {
 		clilog.Error.Printf("error parsing json response: %v, the original response was: %s\n", err, string(body))
-		return nil, err
+		return nil, newError("error parsing json response", err)
 	}
-	return prettyJSON.Bytes(), err
+	return prettyJSON.Bytes(), nil
 }
 
 func getRequest(params []string) (req *http.Request, err error) {
@@ -157,7 +187,7 @@ func getRequest(params []string) (req *http.Request, err error) {
 	} else {
 		return nil, errors.New("unsupported method")
 	}
-	return req, err
+	return req, newError("unable to create http request", err)
 }
 
 func setAuthHeader(req *http.Request) (*http.Request, error) {
@@ -222,31 +252,49 @@ func getHttpClient() (client *RateLimitedHTTPClient, err error) {
 	}
 }
 
-func handleResponse(resp *http.Response) (respBody []byte, err error) {
+func handleResponse(resp *http.Response) APIResponse {
+	var respBody []byte
+	var err error
+
 	if resp != nil {
 		defer resp.Body.Close()
 	}
 
 	if resp == nil {
 		clilog.Error.Println("error in response: Response was null")
-		return nil, nil
+		return APIResponse{
+			RespBody: nil,
+			Err:      fmt.Errorf(("error in response: Response was null")),
+		}
 	}
 
 	respBody, err = io.ReadAll(resp.Body)
 	if err != nil {
 		clilog.Error.Printf("error in response: %v\n", err)
-		return nil, err
+		return APIResponse{
+			RespBody: nil,
+			Err:      err,
+		}
 	} else if resp.StatusCode > 399 {
 		if GetConflictsAsErrors() && resp.StatusCode == http.StatusConflict {
 			clilog.Warning.Printf("entity already exists, ignoring conflict")
-			return respBody, nil
+			return APIResponse{
+				RespBody: respBody,
+				Err:      nil,
+			}
 		}
 		clilog.Debug.Printf("status code %d, error in response: %s\n", resp.StatusCode, string(respBody))
 		clilog.HTTPError.Println(string(respBody))
-		return nil, errors.New(getErrorMessage(resp.StatusCode) + ": " + string(respBody))
+		return APIResponse{
+			RespBody: nil,
+			Err:      errors.New(getErrorMessage(resp.StatusCode) + ": " + string(respBody)),
+		}
 	}
-
-	return respBody, PrettyPrint(respBody)
+	clilog.Debug.Println(string(respBody))
+	return APIResponse{
+		RespBody: respBody,
+		Err:      err,
+	}
 }
 
 func getErrorMessage(statusCode int) string {

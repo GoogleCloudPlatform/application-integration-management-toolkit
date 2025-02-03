@@ -81,8 +81,7 @@ var CreateCmd = &cobra.Command{
 			}
 		}
 
-		_, err = certificates.Create(name, description, string(sslCertContent), string(privateKeyCertContent), passphrase)
-		return err
+		return apiclient.PrettyPrint(certificates.Create(name, description, string(sslCertContent), string(privateKeyCertContent), passphrase))
 	},
 }
 

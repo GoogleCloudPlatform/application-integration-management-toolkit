@@ -270,10 +270,15 @@ type conditionalFailurePolicy struct {
 // CreateVersion
 func CreateVersion(name string, content []byte, overridesContent []byte, snapshot string,
 	userlabel string, grantPermission bool, basicInfo bool,
-) (respBody []byte, err error) {
+) apiclient.APIResponse {
+
+	var err error
 	iversion := integrationVersion{}
-	if err = json.Unmarshal(content, &iversion); err != nil {
-		return nil, err
+	if err := json.Unmarshal(content, &iversion); err != nil {
+		return apiclient.APIResponse{
+			RespBody: nil,
+			Err:      err,
+		}
 	}
 
 	// remove any internal elements if exists
@@ -294,10 +299,16 @@ func CreateVersion(name string, content []byte, overridesContent []byte, snapsho
 		}
 
 		if err = json.Unmarshal(overridesContent, &o); err != nil {
-			return nil, err
+			return apiclient.APIResponse{
+				RespBody: nil,
+				Err:      err,
+			}
 		}
 		if eversion, err = mergeOverrides(eversion, o, grantPermission); err != nil {
-			return nil, err
+			return apiclient.APIResponse{
+				RespBody: nil,
+				Err:      err,
+			}
 		}
 	}
 
@@ -311,84 +322,92 @@ func CreateVersion(name string, content []byte, overridesContent []byte, snapsho
 	}
 
 	if content, err = json.Marshal(eversion); err != nil {
-		return nil, err
-	}
-
-	if basicInfo {
-		apiclient.ClientPrintHttpResponse.Set(false)
+		return apiclient.APIResponse{
+			RespBody: nil,
+			Err:      err,
+		}
 	}
 
 	u, _ := url.Parse(apiclient.GetBaseIntegrationURL())
 	u.Path = path.Join(u.Path, "integrations", name, "versions")
-	respBody, err = apiclient.HttpClient(u.String(), string(content))
-
-	if basicInfo {
-		var respBasicBody []byte
-		apiclient.ClientPrintHttpResponse.Set(apiclient.GetCmdPrintHttpResponseSetting())
-		if respBasicBody, err = getBasicInfo(respBody); err != nil {
-			return nil, err
-		}
-		apiclient.PrettyPrint(respBasicBody)
-		return respBasicBody, nil
+	response := apiclient.HttpClient(u.String(), string(content))
+	if response.Err != nil {
+		return response
 	}
 
-	return respBody, err
+	if basicInfo {
+		response = getBasicInfo(response.RespBody)
+		return response
+	}
+
+	return response
 }
 
 // Upload
-func Upload(name string, content []byte) (respBody []byte, err error) {
+func Upload(name string, content []byte) apiclient.APIResponse {
 	uploadVersion := uploadIntegrationFormat{}
-	if err = json.Unmarshal(content, &uploadVersion); err != nil {
+	if err := json.Unmarshal(content, &uploadVersion); err != nil {
 		clilog.Error.Println("invalid format for upload. Upload must have the json field content which contains " +
 			"stringified integration json and optionally the file format")
-		return nil, err
+		return apiclient.APIResponse{
+			RespBody: nil,
+			Err:      err,
+		}
 	}
 
 	if uploadVersion.Content == "" {
-		return nil, fmt.Errorf("invalid format for upload. Upload must have the json field content which contains " +
-			"stringified integration json and optionally the file format")
+		return apiclient.APIResponse{
+			RespBody: nil,
+			Err: fmt.Errorf("invalid format for upload. Upload must have the json field content which contains " +
+				"stringified integration json and optionally the file format"),
+		}
 	}
 
 	u, _ := url.Parse(apiclient.GetBaseIntegrationURL())
 	u.Path = path.Join(u.Path, "integrations", name, "versions:upload")
-	respBody, err = apiclient.HttpClient(u.String(), string(content))
-	return respBody, err
+	return apiclient.HttpClient(u.String(), string(content))
 }
 
 // Patch
-func Patch(name string, version string, content []byte) (respBody []byte, err error) {
+func Patch(name string, version string, content []byte) apiclient.APIResponse {
 	iversion := integrationVersion{}
+	var err error
+
 	if err = json.Unmarshal(content, &iversion); err != nil {
-		return nil, err
+		return apiclient.APIResponse{
+			RespBody: nil,
+			Err:      err,
+		}
 	}
 
 	// remove any internal elements if exists
 	eversion := convertInternalToExternal(iversion)
 
 	if content, err = json.Marshal(eversion); err != nil {
-		return nil, err
+		return apiclient.APIResponse{
+			RespBody: nil,
+			Err:      err,
+		}
 	}
 
 	u, _ := url.Parse(apiclient.GetBaseIntegrationURL())
 	u.Path = path.Join(u.Path, "integrations", name, "versions", version)
-	respBody, err = apiclient.HttpClient(u.String(), string(content), "PATCH")
-	return respBody, err
+	return apiclient.HttpClient(u.String(), string(content), "PATCH")
 }
 
 // TakeOverEditLock
-func TakeoverEditLock(name string, version string) (respBody []byte, err error) {
+func TakeoverEditLock(name string, version string) apiclient.APIResponse {
 	u, _ := url.Parse(apiclient.GetBaseIntegrationURL())
 	u.Path = path.Join(u.Path, "integrations", name, "versions", version)
-	respBody, err = apiclient.HttpClient(u.String(), "")
-	return respBody, err
+	return apiclient.HttpClient(u.String(), "")
 }
 
 // ListVersions
 func ListVersions(name string, pageSize int, pageToken string, filter string, orderBy string,
 	allVersions bool, download bool, basicInfo bool,
-) (respBody []byte, err error) {
-	clientPrintSetting := apiclient.ClientPrintHttpResponse.Get()
+) apiclient.APIResponse {
 
+	var err error
 	u, _ := url.Parse(apiclient.GetBaseIntegrationURL())
 	q := u.Query()
 	if pageSize != -1 {
@@ -408,24 +427,20 @@ func ListVersions(name string, pageSize int, pageToken string, filter string, or
 
 	u.Path = path.Join(u.Path, "integrations", name, "versions")
 
-	if apiclient.GetExportToFile() != "" {
-		apiclient.ClientPrintHttpResponse.Set(false)
-		defer apiclient.ClientPrintHttpResponse.Set(apiclient.GetCmdPrintHttpResponseSetting())
-	}
-
 	if !allVersions {
 		if basicInfo {
-			apiclient.ClientPrintHttpResponse.Set(false)
-			respBody, err = apiclient.HttpClient(u.String())
-			if err != nil {
-				return nil, err
+			response := apiclient.HttpClient(u.String())
+			if response.Err != nil {
+				return response
 			}
-			apiclient.ClientPrintHttpResponse.Set(apiclient.GetCmdPrintHttpResponseSetting())
 			listIvers := listIntegrationVersions{}
 			listBIvers := listbasicIntegrationVersions{}
 
-			if err = json.Unmarshal(respBody, &listIvers); err != nil {
-				return nil, err
+			if err := json.Unmarshal(response.RespBody, &listIvers); err != nil {
+				return apiclient.APIResponse{
+					RespBody: nil,
+					Err:      err,
+				}
 			}
 
 			for _, iVer := range listIvers.IntegrationVersions {
@@ -436,25 +451,25 @@ func ListVersions(name string, pageSize int, pageToken string, filter string, or
 				listBIvers.BasicIntegrationVersions = append(listBIvers.BasicIntegrationVersions, basicIVer)
 			}
 			newResp, err := json.Marshal(listBIvers)
-			if clientPrintSetting {
-				apiclient.PrettyPrint(newResp)
+			return apiclient.APIResponse{
+				RespBody: newResp,
+				Err:      err,
 			}
-			return newResp, err
 		}
-		respBody, err = apiclient.HttpClient(u.String())
-		if err != nil {
-			return nil, err
-		}
-		return respBody, err
+		response := apiclient.HttpClient(u.String())
+		return response
 	} else {
-		respBody, err = apiclient.HttpClient(u.String())
-		if err != nil {
-			return nil, err
+		response := apiclient.HttpClient(u.String())
+		if response.Err != nil {
+			return response
 		}
 
 		iversions := listIntegrationVersions{}
-		if err = json.Unmarshal(respBody, &iversions); err != nil {
-			return nil, err
+		if err := json.Unmarshal(response.RespBody, &iversions); err != nil {
+			return apiclient.APIResponse{
+				RespBody: nil,
+				Err:      err,
+			}
 		}
 
 		if apiclient.GetExportToFile() != "" {
@@ -462,28 +477,37 @@ func ListVersions(name string, pageSize int, pageToken string, filter string, or
 			for _, iversion := range iversions.IntegrationVersions {
 				var iversionBytes []byte
 				if iversionBytes, err = json.Marshal(iversion); err != nil {
-					return nil, err
+					return apiclient.APIResponse{
+						RespBody: nil,
+						Err:      err,
+					}
 				}
 				version := iversion.Name[strings.LastIndex(iversion.Name, "/")+1:]
 				fileName := strings.Join([]string{name, iversion.SnapshotNumber, version}, "+") + ".json"
 				if download {
 					version := iversion.Name[strings.LastIndex(iversion.Name, "/")+1:]
-					payload, err := Download(name, version)
-					if err != nil {
-						return nil, err
+					response := Download(name, version)
+					if response.Err != nil {
+						return response
 					}
 					if err = apiclient.WriteByteArrayToFile(
 						path.Join(apiclient.GetExportToFile(), fileName),
 						false,
-						payload); err != nil {
-						return nil, err
+						response.RespBody); err != nil {
+						return apiclient.APIResponse{
+							RespBody: nil,
+							Err:      err,
+						}
 					}
 				} else {
 					if err = apiclient.WriteByteArrayToFile(
 						path.Join(apiclient.GetExportToFile(), fileName),
 						false,
 						iversionBytes); err != nil {
-						return nil, err
+						return apiclient.APIResponse{
+							RespBody: nil,
+							Err:      err,
+						}
 					}
 				}
 				clilog.Info.Printf("Downloaded version %s for Integration flow %s\n", version, name)
@@ -492,18 +516,24 @@ func ListVersions(name string, pageSize int, pageToken string, filter string, or
 
 		// if more versions exist, repeat the process
 		if iversions.NextPageToken != "" {
-			if _, err = ListVersions(name, -1, iversions.NextPageToken, filter, orderBy, true, download, false); err != nil {
-				return nil, err
+			if response = ListVersions(name, -1, iversions.NextPageToken, filter, orderBy, true, download, false); response.Err != nil {
+				return response
 			}
 		} else {
-			return nil, nil
+			return apiclient.APIResponse{
+				RespBody: nil,
+				Err:      nil,
+			}
 		}
 	}
-	return nil, err
+	return apiclient.APIResponse{
+		RespBody: nil,
+		Err:      nil,
+	}
 }
 
 // List
-func List(pageSize int, pageToken string, filter string, orderBy string) (respBody []byte, err error) {
+func List(pageSize int, pageToken string, filter string, orderBy string) apiclient.APIResponse {
 	u, _ := url.Parse(apiclient.GetBaseIntegrationURL())
 	q := u.Query()
 	if pageSize != -1 {
@@ -521,90 +551,77 @@ func List(pageSize int, pageToken string, filter string, orderBy string) (respBo
 
 	u.RawQuery = q.Encode()
 	u.Path = path.Join(u.Path, "integrations")
-	respBody, err = apiclient.HttpClient(u.String())
-	return respBody, err
+	return apiclient.HttpClient(u.String())
 }
 
 // Get
-func Get(name string, version string, basicInfo bool, minimal bool, override bool) ([]byte, error) {
+func Get(name string, version string, basicInfo bool, minimal bool, override bool) apiclient.APIResponse {
 	if (basicInfo && minimal) || (basicInfo && override) || (minimal && override) {
-		return nil, errors.New("cannot combine basicInfo, minimal and override flags")
+		return apiclient.APIResponse{
+			Err: errors.New("cannot combine basicInfo, minimal and override flags"),
+		}
 	}
 
 	u, _ := url.Parse(apiclient.GetBaseIntegrationURL())
 	u.Path = path.Join(u.Path, "integrations", name, "versions", version)
-	apiclient.ClientPrintHttpResponse.Set(false)
 
-	respBody, err := apiclient.HttpClient(u.String())
+	response := apiclient.HttpClient(u.String())
 
 	if !override && !minimal && !basicInfo {
-		apiclient.ClientPrintHttpResponse.Set(apiclient.GetCmdPrintHttpResponseSetting())
-		apiclient.PrettyPrint(respBody)
-		return respBody, nil
+		return response
 	}
 
 	iversion := integrationVersion{}
-	err = json.Unmarshal(respBody, &iversion)
+	err := json.Unmarshal(response.RespBody, &iversion)
 	if err != nil {
-		return nil, err
+		return apiclient.APIResponse{
+			RespBody: nil,
+			Err:      err,
+		}
 	}
 
 	if basicInfo {
-		var respBasicBody []byte
-		apiclient.ClientPrintHttpResponse.Set(apiclient.GetCmdPrintHttpResponseSetting())
-		if respBasicBody, err = getBasicInfo(respBody); err != nil {
-			return nil, err
-		}
-		apiclient.PrettyPrint(respBasicBody)
-		return respBasicBody, nil
+		return getBasicInfo(response.RespBody)
 	}
 
 	if minimal {
 		eversion := convertInternalToExternal(iversion)
-		respExtBody, err := json.Marshal(eversion)
-		if err != nil {
-			return nil, err
-		}
-		apiclient.ClientPrintHttpResponse.Set(apiclient.GetCmdPrintHttpResponseSetting())
-		apiclient.PrettyPrint(respExtBody)
-		return respExtBody, nil
+		response.RespBody, response.Err = json.Marshal(eversion)
+		return response
 	}
 
 	if override {
 		var or overrides
-		var respOvrBody []byte
 		if or, err = extractOverrides(iversion); err != nil {
-			return nil, err
+			return apiclient.APIResponse{
+				Err: err,
+			}
 		}
-		if respOvrBody, err = json.Marshal(or); err != nil {
-			return nil, err
-		}
-		apiclient.ClientPrintHttpResponse.Set(apiclient.GetCmdPrintHttpResponseSetting())
-		apiclient.PrettyPrint(respOvrBody)
-		return respOvrBody, nil
+		response.RespBody, response.Err = json.Marshal(or)
+		return response
 	}
-	return respBody, err
+	return response
 }
 
 // GetBySnapshot
-func GetBySnapshot(name string, snapshot string, basicInfo bool, minimal bool, override bool) ([]byte, error) {
-	apiclient.ClientPrintHttpResponse.Set(false)
-
-	listBody, err := ListVersions(name, -1, "", "snapshotNumber="+snapshot, "", false, false, true)
-	if err != nil {
-		return nil, err
+func GetBySnapshot(name string, snapshot string, basicInfo bool, minimal bool, override bool) apiclient.APIResponse {
+	response := ListVersions(name, -1, "", "snapshotNumber="+snapshot, "", false, false, true)
+	if response.Err != nil {
+		return response
 	}
 
-	apiclient.ClientPrintHttpResponse.Set(apiclient.GetCmdPrintHttpResponseSetting())
-
 	listBasicVersions := listbasicIntegrationVersions{}
-	err = json.Unmarshal(listBody, &listBasicVersions)
+	err := json.Unmarshal(response.RespBody, &listBasicVersions)
 	if err != nil {
-		return nil, err
+		return apiclient.APIResponse{
+			Err: err,
+		}
 	}
 
 	if len(listBasicVersions.BasicIntegrationVersions) < 1 {
-		return nil, fmt.Errorf("snapshot number was not found")
+		return apiclient.APIResponse{
+			Err: fmt.Errorf("snapshot number was not found"),
+		}
 	}
 
 	version := getVersion(listBasicVersions.BasicIntegrationVersions[0].Version)
@@ -612,24 +629,24 @@ func GetBySnapshot(name string, snapshot string, basicInfo bool, minimal bool, o
 }
 
 // GetByUserlabel
-func GetByUserlabel(name string, userLabel string, basicInfo bool, minimal bool, override bool) ([]byte, error) {
-	apiclient.ClientPrintHttpResponse.Set(false)
-
-	listBody, err := ListVersions(name, -1, "", "userLabel="+userLabel, "", false, false, true)
-	if err != nil {
-		return nil, err
+func GetByUserlabel(name string, userLabel string, basicInfo bool, minimal bool, override bool) apiclient.APIResponse {
+	response := ListVersions(name, -1, "", "userLabel="+userLabel, "", false, false, true)
+	if response.Err != nil {
+		return response
 	}
 
-	apiclient.ClientPrintHttpResponse.Set(apiclient.GetCmdPrintHttpResponseSetting())
-
 	listBasicVersions := listbasicIntegrationVersions{}
-	err = json.Unmarshal(listBody, &listBasicVersions)
+	err := json.Unmarshal(response.RespBody, &listBasicVersions)
 	if err != nil {
-		return nil, err
+		return apiclient.APIResponse{
+			Err: err,
+		}
 	}
 
 	if len(listBasicVersions.BasicIntegrationVersions) < 1 {
-		return nil, fmt.Errorf("userLabel was not found")
+		return apiclient.APIResponse{
+			Err: fmt.Errorf("userLabel was not found"),
+		}
 	}
 
 	version := getVersion(listBasicVersions.BasicIntegrationVersions[0].Version)
@@ -637,13 +654,17 @@ func GetByUserlabel(name string, userLabel string, basicInfo bool, minimal bool,
 }
 
 // GetConfigVariables
-func GetConfigVariables(contents []byte) (respBody []byte, err error) {
+func GetConfigVariables(contents []byte) apiclient.APIResponse {
 	iversion := integrationVersion{}
 	configVariables := make(map[string]interface{})
+	var response apiclient.APIResponse
+	var err error
 
 	err = json.Unmarshal(contents, &iversion)
 	if err != nil {
-		return nil, err
+		return apiclient.APIResponse{
+			Err: err,
+		}
 	}
 
 	for _, param := range iversion.IntegrationConfigParameters {
@@ -675,144 +696,148 @@ func GetConfigVariables(contents []byte) (respBody []byte, err error) {
 		}
 	}
 	if len(configVariables) > 0 {
-		respBody, err = json.Marshal(configVariables)
+		response.RespBody, response.Err = json.Marshal(configVariables)
 	}
-	return respBody, err
+	return response
 }
 
 // Delete
-func Delete(name string) (respBody []byte, err error) {
+func Delete(name string) apiclient.APIResponse {
 	u, _ := url.Parse(apiclient.GetBaseIntegrationURL())
 	u.Path = path.Join(u.Path, "integrations", name)
-	respBody, err = apiclient.HttpClient(u.String(), "", "DELETE")
-	return respBody, err
+	return apiclient.HttpClient(u.String(), "", "DELETE")
 }
 
 // DeleteVersion
-func DeleteVersion(name string, version string) (respBody []byte, err error) {
+func DeleteVersion(name string, version string) apiclient.APIResponse {
 	u, _ := url.Parse(apiclient.GetBaseIntegrationURL())
 	u.Path = path.Join(u.Path, "integrations", name, "versions", version)
-	respBody, err = apiclient.HttpClient(u.String(), "", "DELETE")
-	return respBody, err
+	return apiclient.HttpClient(u.String(), "", "DELETE")
 }
 
 // DeleteByUserlabel
-func DeleteByUserlabel(name string, userLabel string) (respBody []byte, err error) {
-	apiclient.ClientPrintHttpResponse.Set(false)
-	iversionBytes, err := GetByUserlabel(name, userLabel, false, false, false)
-	if err != nil {
-		return nil, err
+func DeleteByUserlabel(name string, userLabel string) apiclient.APIResponse {
+	response := GetByUserlabel(name, userLabel, false, false, false)
+	if response.Err != nil {
+		return response
 	}
 
 	iversion := integrationVersion{}
-	err = json.Unmarshal(iversionBytes, &iversion)
+	err := json.Unmarshal(response.RespBody, &iversion)
 	if err != nil {
-		return nil, err
+		return apiclient.APIResponse{
+			Err: err,
+		}
 	}
 
 	version := getVersion(iversion.Name)
-	apiclient.ClientPrintHttpResponse.Set(apiclient.GetCmdPrintHttpResponseSetting())
 	return DeleteVersion(name, version)
 }
 
 // DeleteBySnapshot
-func DeleteBySnapshot(name string, snapshot string) (respBody []byte, err error) {
-	apiclient.ClientPrintHttpResponse.Set(false)
-	iversionBytes, err := GetBySnapshot(name, snapshot, false, false, false)
-	if err != nil {
-		return nil, err
+func DeleteBySnapshot(name string, snapshot string) apiclient.APIResponse {
+	response := GetBySnapshot(name, snapshot, false, false, false)
+	if response.Err != nil {
+		return response
 	}
 
 	iversion := integrationVersion{}
-	err = json.Unmarshal(iversionBytes, &iversion)
+	err := json.Unmarshal(response.RespBody, &iversion)
 	if err != nil {
-		return nil, err
+		return apiclient.APIResponse{
+			Err: err,
+		}
 	}
 
 	version := getVersion(iversion.Name)
-	apiclient.ClientPrintHttpResponse.Set(apiclient.GetCmdPrintHttpResponseSetting())
 	return DeleteVersion(name, version)
 }
 
 // Deactivate
-func Deactivate(name string, version string) (respBody []byte, err error) {
+func Deactivate(name string, version string) apiclient.APIResponse {
 	return changeState(name, version, "", nil, ":deactivate")
 }
 
 // Archive
-func Archive(name string, version string) (respBody []byte, err error) {
+func Archive(name string, version string) apiclient.APIResponse {
 	return changeState(name, version, "", nil, ":archive")
 }
 
 // Publish
-func Publish(name string, version string, configVariables []byte) (respBody []byte, err error) {
+func Publish(name string, version string, configVariables []byte) apiclient.APIResponse {
 	return changeState(name, version, "", configVariables, ":publish")
 }
 
 // Unpublish
-func Unpublish(name string, version string) (respBody []byte, err error) {
+func Unpublish(name string, version string) apiclient.APIResponse {
 	return changeState(name, version, "", nil, ":unpublish")
 }
 
 // UnpublishSnapshot
-func UnpublishSnapshot(name string, snapshot string) (respBody []byte, err error) {
+func UnpublishSnapshot(name string, snapshot string) apiclient.APIResponse {
 	return changeState(name, "", "snapshotNumber="+snapshot, nil, ":unpublish")
 }
 
 // UnpublishUserLabel
-func UnpublishUserLabel(name string, userLabel string) (respBody []byte, err error) {
+func UnpublishUserLabel(name string, userLabel string) apiclient.APIResponse {
 	return changeState(name, "", "userLabel="+userLabel, nil, ":unpublish")
 }
 
 // Download
-func Download(name string, version string) (respBody []byte, err error) {
+func Download(name string, version string) apiclient.APIResponse {
 	return changeState(name, version, "", nil, ":download")
 }
 
 // ArchiveSnapshot
-func ArchiveSnapshot(name string, snapshot string) (respBody []byte, err error) {
+func ArchiveSnapshot(name string, snapshot string) apiclient.APIResponse {
 	return changeState(name, "", "snapshotNumber="+snapshot, nil, ":archive")
 }
 
 // DeactivateSnapshot
-func DeactivateSnapshot(name string, snapshot string) (respBody []byte, err error) {
+func DeactivateSnapshot(name string, snapshot string) apiclient.APIResponse {
 	return changeState(name, "", "snapshotNumber="+snapshot, nil, ":deactivate")
 }
 
 // ArchiveUserLabel
-func ArchiveUserLabel(name string, userLabel string) (respBody []byte, err error) {
+func ArchiveUserLabel(name string, userLabel string) apiclient.APIResponse {
 	return changeState(name, "", "userLabel="+userLabel, nil, ":archive")
 }
 
 // DeactivateUserLabel
-func DeactivateUserLabel(name string, userLabel string) (respBody []byte, err error) {
+func DeactivateUserLabel(name string, userLabel string) apiclient.APIResponse {
 	return changeState(name, "", "userLabel="+userLabel, nil, ":deactivate")
 }
 
 // PublishUserLabel
-func PublishUserLabel(name string, userlabel string, configVariables []byte) (respBody []byte, err error) {
+func PublishUserLabel(name string, userlabel string, configVariables []byte) apiclient.APIResponse {
 	return changeState(name, "", "userLabel="+userlabel, configVariables, ":publish")
 }
 
 // PublishSnapshot
-func PublishSnapshot(name string, snapshot string, configVariables []byte) (respBody []byte, err error) {
+func PublishSnapshot(name string, snapshot string, configVariables []byte) apiclient.APIResponse {
 	return changeState(name, "", "snapshotNumber="+snapshot, configVariables, ":publish")
 }
 
 // DownloadSnapshot
-func DownloadSnapshot(name string, snapshot string) (respBody []byte, err error) {
+func DownloadSnapshot(name string, snapshot string) apiclient.APIResponse {
 	var version string
+	var err error
 	if version, err = getVersionId(name, "snapshotNumber="+snapshot); err != nil {
-		return nil, err
+		return apiclient.APIResponse{
+			Err: err,
+		}
 	}
 	return Download(name, version)
 }
 
 // DownloadSnapshot
-func DownloadUserLabel(name string, userlabel string) (respBody []byte, err error) {
+func DownloadUserLabel(name string, userlabel string) apiclient.APIResponse {
 	var version string
+	var err error
 	if version, err = getVersionId(name, "userLabel="+userlabel); err != nil {
-		return nil, err
+		return apiclient.APIResponse{
+			Err: err,
+		}
 	}
 	return Download(name, version)
 }
@@ -945,26 +970,22 @@ func GetConnectionsWithRegion(integration []byte) (connections []integrationConn
 
 // GetVersion
 func GetVersion(name string, userLabel string, snapshot string) (version string, err error) {
-	var integrationBody []byte
-
-	apiclient.DisableCmdPrintHttpResponse()
-	defer apiclient.EnableCmdPrintHttpResponse()
+	var response apiclient.APIResponse
 
 	if userLabel != "" {
-		integrationBody, err = GetByUserlabel(name, userLabel, true, false, false)
+		response = GetByUserlabel(name, userLabel, true, false, false)
 		if err != nil {
 			return "", err
 		}
 	} else if snapshot != "" {
-		integrationBody, err = GetBySnapshot(name, snapshot, true, false, false)
-		if err != nil {
-			return "", err
+		response = GetBySnapshot(name, snapshot, true, false, false)
+		if response.Err != nil {
+			return "", response.Err
 		}
 	} else {
 		return "", fmt.Errorf("userLabel or snapshot must be passed")
 	}
-	apiclient.ClientPrintHttpResponse.Set(true)
-	return GetIntegrationVersion(integrationBody)
+	return GetIntegrationVersion(response.RespBody)
 }
 
 func GetIntegrationVersion(respBody []byte) (string, error) {
@@ -989,18 +1010,23 @@ func GetIntegrationVersion(respBody []byte) (string, error) {
 }
 
 // changeState
-func changeState(name string, version string, filter string, configVars []byte, action string) (respBody []byte, err error) {
+func changeState(name string, version string, filter string, configVars []byte, action string) apiclient.APIResponse {
+	var err error
+	var response apiclient.APIResponse
+
 	// if a version is sent, use it, else try the filter
 	if version == "" {
 		if version, err = getVersionId(name, filter); err != nil {
-			return nil, err
+			return apiclient.APIResponse{
+				Err: err,
+			}
 		}
 	}
 	u, _ := url.Parse(apiclient.GetBaseIntegrationURL())
 	u.Path = path.Join(u.Path, "integrations", name, "versions", version+action)
 	// download is a get, the rest are post
 	if action == ":download" {
-		respBody, err = apiclient.HttpClient(u.String())
+		response = apiclient.HttpClient(u.String())
 	} else if action == ":publish" {
 		if configVars != nil {
 			contents := string(configVars)
@@ -1008,14 +1034,14 @@ func changeState(name string, version string, filter string, configVars []byte, 
 			contents = strings.Replace(contents, "\t", "", -1)
 			contents = strings.Replace(contents, "\\", "", -1)
 			contents = fmt.Sprintf("{\"configParameters\":%s}", contents)
-			respBody, err = apiclient.HttpClient(u.String(), contents)
+			response = apiclient.HttpClient(u.String(), contents)
 		} else {
-			respBody, err = apiclient.HttpClient(u.String(), "")
+			response = apiclient.HttpClient(u.String(), "")
 		}
 	} else {
-		respBody, err = apiclient.HttpClient(u.String(), "")
+		response = apiclient.HttpClient(u.String(), "")
 	}
-	return respBody, err
+	return response
 }
 
 // getVersionId
@@ -1026,15 +1052,13 @@ func getVersionId(name string, filter string) (version string, err error) {
 
 	u.RawQuery = q.Encode()
 	u.Path = path.Join(u.Path, "integrations", name, "versions")
-	apiclient.ClientPrintHttpResponse.Set(false)
-	respBody, err := apiclient.HttpClient(u.String())
-	if err != nil {
+	response := apiclient.HttpClient(u.String())
+	if response.Err != nil {
 		return "", err
 	}
-	apiclient.ClientPrintHttpResponse.Set(apiclient.GetCmdPrintHttpResponseSetting())
 
 	iversions := listIntegrationVersions{}
-	if err = json.Unmarshal(respBody, &iversions); err != nil {
+	if err = json.Unmarshal(response.RespBody, &iversions); err != nil {
 		return "", err
 	}
 
@@ -1049,19 +1073,17 @@ func getVersionId(name string, filter string) (version string, err error) {
 func ExportConcurrent(folder string, numConnections int) error {
 	// Set export settings
 	apiclient.SetExportToFile(folder)
-	apiclient.ClientPrintHttpResponse.Set(false)
-	defer apiclient.ClientPrintHttpResponse.Set(apiclient.GetCmdPrintHttpResponseSetting())
 
 	pageToken := ""
 	lintegrations := listintegrations{}
 
 	for {
 		l := listintegrations{}
-		listRespBytes, err := List(maxPageSize, pageToken, "", "")
-		if err != nil {
-			return fmt.Errorf("failed to fetch Integrations: %w", err)
+		response := List(maxPageSize, pageToken, "", "")
+		if response.Err != nil {
+			return fmt.Errorf("failed to fetch Integrations: %w", response.Err)
 		}
-		err = json.Unmarshal(listRespBytes, &l)
+		err := json.Unmarshal(response.RespBody, &l)
 		if err != nil {
 			return fmt.Errorf("failed to unmarshall: %w", err)
 		}
@@ -1122,8 +1144,8 @@ func exportWorker(wg *sync.WaitGroup, workCh <-chan integration, errs chan<- err
 		integrationName := work.Name[strings.LastIndex(work.Name, "/")+1:]
 		clilog.Info.Printf("Exporting all the revisions for Integration Flow %s\n", integrationName)
 
-		if _, err := ListVersions(integrationName, maxPageSize, "", "", "", true, false, false); err != nil {
-			errs <- err
+		if response := ListVersions(integrationName, maxPageSize, "", "", "", true, false, false); response.Err != nil {
+			errs <- response.Err
 		}
 	}
 }
@@ -1131,19 +1153,17 @@ func exportWorker(wg *sync.WaitGroup, workCh <-chan integration, errs chan<- err
 // Export
 func Export(folder string) (err error) {
 	apiclient.SetExportToFile(folder)
-	apiclient.ClientPrintHttpResponse.Set(false)
-	defer apiclient.ClientPrintHttpResponse.Set(apiclient.GetCmdPrintHttpResponseSetting())
 
 	pageToken := ""
 	lintegrations := listintegrations{}
 
 	for {
 		l := listintegrations{}
-		listRespBytes, err := List(maxPageSize, pageToken, "", "")
+		response := List(maxPageSize, pageToken, "", "")
 		if err != nil {
-			return fmt.Errorf("failed to fetch Integrations: %w", err)
+			return fmt.Errorf("failed to fetch Integrations: %w", response.Err)
 		}
-		err = json.Unmarshal(listRespBytes, &l)
+		err = json.Unmarshal(response.RespBody, &l)
 		if err != nil {
 			return fmt.Errorf("failed to unmarshall: %w", err)
 		}
@@ -1162,8 +1182,8 @@ func Export(folder string) (err error) {
 	for _, lintegration := range lintegrations.Integrations {
 		integrationName := lintegration.Name[strings.LastIndex(lintegration.Name, "/")+1:]
 		clilog.Info.Printf("Exporting all the revisions for Integration Flow %s\n", integrationName)
-		if _, err = ListVersions(integrationName, maxPageSize, "", "", "", true, false, false); err != nil {
-			return err
+		if response := ListVersions(integrationName, maxPageSize, "", "", "", true, false, false); response.Err != nil {
+			return response.Err
 		}
 	}
 
@@ -1201,9 +1221,6 @@ func ImportFlow(name string, folder string, numConnections int) (err error) {
 	numEntities := len(versions)
 	clilog.Info.Printf("Found %d versions for integration %s in the folder\n", numEntities, name)
 	clilog.Debug.Printf("Importing versions with %d connections\n", numConnections)
-
-	apiclient.ClientPrintHttpResponse.Set(false)
-	defer apiclient.ClientPrintHttpResponse.Set(apiclient.GetCmdPrintHttpResponseSetting())
 
 	errChan := make(chan error)
 	workChan := make(chan []string, numEntities)
@@ -1279,8 +1296,8 @@ func uploadAsync(name string, filePath string) error {
 		return err
 	}
 
-	if _, err := CreateVersion(name, content, nil, "", "", false, false); err != nil {
-		return err
+	if response := CreateVersion(name, content, nil, "", "", false, false); response.Err != nil {
+		return response.Err
 	}
 
 	clilog.Info.Printf("Uploaded file %s for Integration flow %s\n", filePath, name)
@@ -1292,9 +1309,6 @@ func Import(folder string, numConnections int) (err error) {
 	var fileNames []string
 
 	rIntegrationFlowFiles := regexp.MustCompile(`[\w|-]+\+[0-9]+\+[a-zA-Z0-9]{8}-[a-zA-Z0-9]{4}-[a-zA-Z0-9]{4}-[a-zA-Z0-9]{4}-[a-zA-Z0-9]{12}\.json`)
-
-	apiclient.ClientPrintHttpResponse.Set(false)
-	defer apiclient.ClientPrintHttpResponse.Set(apiclient.GetCmdPrintHttpResponseSetting())
 
 	err = filepath.Walk(folder, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
@@ -1412,22 +1426,24 @@ func convertInternalToExternal(internalVersion integrationVersion) (externalVers
 	return externalVersion
 }
 
-func getBasicInfo(respBody []byte) (newResp []byte, err error) {
+func getBasicInfo(respBody []byte) apiclient.APIResponse {
 	iVer := integrationVersion{}
 	bIVer := basicIntegrationVersion{}
+	var err error
+	var response apiclient.APIResponse
 
 	if err = json.Unmarshal(respBody, &iVer); err != nil {
-		return nil, err
+		return apiclient.APIResponse{
+			Err: err,
+		}
 	}
 
 	bIVer.SnapshotNumber = iVer.SnapshotNumber
 	bIVer.Version = getVersion(iVer.Name)
 
-	if newResp, err = json.Marshal(bIVer); err != nil {
-		return nil, err
-	}
+	response.RespBody, response.Err = json.Marshal(bIVer)
 
-	return newResp, err
+	return response
 }
 
 // getAuthConfigUuid

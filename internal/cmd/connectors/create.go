@@ -71,10 +71,8 @@ var CreateCmd = &cobra.Command{
 			}
 		}
 
-		_, err = connections.Create(name, content, serviceAccountName,
-			serviceAccountProject, encryptionKey, grantPermission, createSecret, wait)
-
-		return err
+		return apiclient.PrettyPrint(connections.Create(name, content, serviceAccountName,
+			serviceAccountProject, encryptionKey, grantPermission, createSecret, wait))
 	},
 	Example: `Create a PubSub connector and grant the Service Account permissions: ` + GetExample(0) + `
 Create a GCS Connector: ` + GetExample(1),

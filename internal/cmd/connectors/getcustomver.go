@@ -46,8 +46,7 @@ var GetCustomVerCmd = &cobra.Command{
 
 		name := utils.GetStringParam(cmd.Flag("name"))
 		id := utils.GetStringParam(cmd.Flag("id"))
-		_, err = connections.GetCustomVersion(name, id, overrides)
-		return err
+		return apiclient.PrettyPrint(connections.GetCustomVersion(name, id, overrides))
 	},
 }
 

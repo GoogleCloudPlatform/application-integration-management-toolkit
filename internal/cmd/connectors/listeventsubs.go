@@ -45,10 +45,9 @@ var ListEventSubCmd = &cobra.Command{
 		cmd.SilenceUsage = true
 
 		name := utils.GetStringParam(cmd.Flag("name"))
-		_, err = connections.ListEventSubscriptions(name, pageSize,
+		return apiclient.PrettyPrint(connections.ListEventSubscriptions(name, pageSize,
 			utils.GetStringParam(cmd.Flag("pageToken")), utils.GetStringParam(cmd.Flag("filter")),
-			utils.GetStringParam(cmd.Flag("orderBy")))
-		return err
+			utils.GetStringParam(cmd.Flag("orderBy"))))
 	},
 }
 

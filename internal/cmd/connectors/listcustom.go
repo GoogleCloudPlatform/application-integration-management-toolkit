@@ -44,10 +44,9 @@ var ListCustomCmd = &cobra.Command{
 	RunE: func(cmd *cobra.Command, args []string) (err error) {
 		cmd.SilenceUsage = true
 
-		_, err = connections.ListCustom(pageSize,
+		return apiclient.PrettyPrint(connections.ListCustom(pageSize,
 			utils.GetStringParam(cmd.Flag("pageToken")),
-			utils.GetStringParam(cmd.Flag("filter")))
-		return err
+			utils.GetStringParam(cmd.Flag("filter"))))
 	},
 }
 

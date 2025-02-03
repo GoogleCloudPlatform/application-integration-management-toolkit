@@ -55,8 +55,7 @@ var GetCmd = &cobra.Command{
 		if overrides {
 			minimal = true
 		}
-		_, err = connections.Get(name, view, minimal, overrides)
-		return err
+		return apiclient.PrettyPrint(connections.Get(name, view, minimal, overrides))
 	},
 }
 

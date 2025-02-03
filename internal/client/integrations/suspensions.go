@@ -22,7 +22,7 @@ import (
 )
 
 // List all suspensions
-func ListSuspensions(name string, execution string, pageSize int, pageToken string, filter string, orderBy string) (respBody []byte, err error) {
+func ListSuspensions(name string, execution string, pageSize int, pageToken string, filter string, orderBy string) apiclient.APIResponse {
 	u, _ := url.Parse(apiclient.GetBaseIntegrationURL())
 	q := u.Query()
 	if pageSize != -1 {
@@ -40,17 +40,15 @@ func ListSuspensions(name string, execution string, pageSize int, pageToken stri
 
 	u.RawQuery = q.Encode()
 	u.Path = path.Join(u.Path, "integrations", name, "executions", execution, "suspensions")
-	respBody, err = apiclient.HttpClient(u.String())
-	return respBody, err
+	return apiclient.HttpClient(u.String())
 }
 
 // Lift a suspension
-func Lift(name string, execution string, suspension string, result string) (respBody []byte, err error) {
+func Lift(name string, execution string, suspension string, result string) apiclient.APIResponse {
 	u, _ := url.Parse(apiclient.GetBaseIntegrationURL())
 	u.Path = path.Join(u.Path, "integrations", name, "executions", execution, "suspensions", suspension, ":lift")
 	payload := "{ \"suspension_result\":\"" + result + "\"}"
-	respBody, err = apiclient.HttpClient(u.String(), payload)
-	return respBody, err
+	return apiclient.HttpClient(u.String(), payload)
 }
 
 // Resolve one or more suspensions

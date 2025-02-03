@@ -45,8 +45,7 @@ var CancelOperationCmd = &cobra.Command{
 		cmd.SilenceUsage = true
 
 		name := utils.GetStringParam(cmd.Flag("name"))
-		_, err = connections.CancelOperation(name)
-		return
+		return apiclient.PrettyPrint(connections.CancelOperation(name))
 	},
 }
 

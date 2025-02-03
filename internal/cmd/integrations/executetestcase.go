@@ -88,8 +88,6 @@ var ExecuteTestCaseCmd = &cobra.Command{
 			}
 		}
 
-		apiclient.EnableCmdPrintHttpResponse()
-
 		if inputFile != "" {
 			if _, err := os.Stat(inputFile); os.IsNotExist(err) {
 				return err
@@ -100,11 +98,11 @@ var ExecuteTestCaseCmd = &cobra.Command{
 				return err
 			}
 			clilog.Info.Printf("Executing test cases from file %s for integration: %s\n", inputFile, name)
-			testCaseResp, err := integrations.ExecuteTestCase(name, version, testCaseID, string(content))
-			if err != nil {
-				return err
+			response := integrations.ExecuteTestCase(name, version, testCaseID, string(content))
+			if response.Err != nil {
+				return response.Err
 			}
-			err = integrations.AssertTestExecutionResult(testCaseResp)
+			err = integrations.AssertTestExecutionResult(response.RespBody)
 			if err != nil {
 				return err
 			}

@@ -49,26 +49,31 @@ type instanceExternal struct {
 }
 
 // CreateInstanceFromContent
-func CreateInstanceFromContent(content []byte) (respBody []byte, err error) {
+func CreateInstanceFromContent(content []byte) apiclient.APIResponse {
 	i := instance{}
 
-	if err = json.Unmarshal(content, &i); err != nil {
-		return nil, err
+	if err := json.Unmarshal(content, &i); err != nil {
+		return apiclient.APIResponse{
+			RespBody: nil,
+			Err:      err,
+		}
 	}
 
 	u, _ := url.Parse(apiclient.GetBaseIntegrationURL())
 	u.Path = path.Join(u.Path, "sfdcInstances")
 
-	respBody, err = apiclient.HttpClient(u.String(), string(content))
-	return respBody, err
+	return apiclient.HttpClient(u.String(), string(content))
 }
 
 // CreateInstance
-func CreateInstance(name string, description string, sfdcOrgId string, serviceAuthority string, authConfig []string) (respBody []byte, err error) {
+func CreateInstance(name string, description string, sfdcOrgId string, serviceAuthority string, authConfig []string) apiclient.APIResponse {
 	u, _ := url.Parse(apiclient.GetBaseIntegrationURL())
 
 	if len(authConfig) < 1 {
-		return nil, fmt.Errorf("at least one authConfig must be sent")
+		return apiclient.APIResponse{
+			RespBody: nil,
+			Err:      fmt.Errorf("at least one authConfig must be sent"),
+		}
 	}
 
 	instanceStr := []string{}
@@ -83,54 +88,51 @@ func CreateInstance(name string, description string, sfdcOrgId string, serviceAu
 
 	payload := "{" + strings.Join(instanceStr, ",") + "}"
 	u.Path = path.Join(u.Path, "sfdcInstances")
-	respBody, err = apiclient.HttpClient(u.String(), payload)
-
-	return respBody, err
+	return apiclient.HttpClient(u.String(), payload)
 }
 
 // GetInstance
-func GetInstance(name string, minimal bool) (respBody []byte, err error) {
+func GetInstance(name string, minimal bool) apiclient.APIResponse {
 	u, _ := url.Parse(apiclient.GetBaseIntegrationURL())
 	u.Path = path.Join(u.Path, "sfdcInstances", name)
 
-	if minimal {
-		apiclient.ClientPrintHttpResponse.Set(false)
+	response := apiclient.HttpClient(u.String())
+	if response.Err != nil {
+		return response
 	}
-	respBody, err = apiclient.HttpClient(u.String())
+
 	if minimal {
 		iversion := instance{}
-		err := json.Unmarshal(respBody, &iversion)
+		err := json.Unmarshal(response.RespBody, &iversion)
 		if err != nil {
-			return nil, err
+			return apiclient.APIResponse{
+				RespBody: nil,
+				Err:      err,
+			}
 		}
 		eversion := convertInternalInstanceToExternal(iversion)
-		respBody, err = json.Marshal(eversion)
-		if err != nil {
-			return nil, err
-		}
-		apiclient.ClientPrintHttpResponse.Set(apiclient.GetCmdPrintHttpResponseSetting())
-		apiclient.PrettyPrint(respBody)
+		response.RespBody, response.Err = json.Marshal(eversion)
+		return response
 	}
-	return respBody, err
+	return response
 }
 
 // ListInstances
-func ListInstances() (respBody []byte, err error) {
+func ListInstances() apiclient.APIResponse {
 	u, _ := url.Parse(apiclient.GetBaseIntegrationURL())
 	u.Path = path.Join(u.Path, "sfdcInstances")
-	respBody, err = apiclient.HttpClient(u.String())
-	return respBody, err
+	return apiclient.HttpClient(u.String())
 }
 
 // FindInstance
 func FindInstance(name string) (version string, respBody []byte, err error) {
 	ilist := instances{}
 
-	respBody, err = ListInstances()
-	if err != nil {
-		return "", nil, err
+	response := ListInstances()
+	if response.Err != nil {
+		return "", response.RespBody, response.Err
 	}
-	if err = json.Unmarshal(respBody, &ilist); err != nil {
+	if err = json.Unmarshal(response.RespBody, &ilist); err != nil {
 		return "", nil, err
 	}
 

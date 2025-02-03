@@ -504,9 +504,7 @@ func overrideParameters(overrideParameters map[string]eventparameter,
 ) map[string]eventparameter {
 	for overrideParamName, overrideParam := range overrideParameters {
 		if overrideParam.Key == "authConfig" {
-			apiclient.ClientPrintHttpResponse.Set(false)
 			acversion, err := authconfigs.Find(*overrideParam.Value.StringValue, "")
-			apiclient.ClientPrintHttpResponse.Set(apiclient.GetCmdPrintHttpResponseSetting())
 			if err != nil {
 				clilog.Warning.Println(err)
 				return taskParameters
@@ -529,9 +527,6 @@ func getNewConnectionParams(connectionName string, connectionLocation string) (c
 	var connectionVersionResponse map[string]interface{}
 	var integrationRegion string
 
-	apiclient.ClientPrintHttpResponse.Set(false)
-	defer apiclient.ClientPrintHttpResponse.Set(apiclient.GetCmdPrintHttpResponseSetting())
-
 	if connectionLocation != "" {
 		integrationRegion = apiclient.GetRegion()     // store the integration location
 		err = apiclient.SetRegion(connectionLocation) // set the connector region
@@ -539,7 +534,7 @@ func getNewConnectionParams(connectionName string, connectionLocation string) (c
 			return cp, err
 		}
 	}
-	connResp, err := connections.Get(connectionName, "BASIC", false, false) // get connector details
+	response := connections.Get(connectionName, "BASIC", false, false) // get connector details
 	if connectionLocation != "" {
 		err = apiclient.SetRegion(integrationRegion) // set the integration region back
 		if err != nil {
@@ -550,7 +545,7 @@ func getNewConnectionParams(connectionName string, connectionLocation string) (c
 		return cp, err
 	}
 
-	err = json.Unmarshal(connResp, &connectionVersionResponse)
+	err = json.Unmarshal(response.RespBody, &connectionVersionResponse)
 	if err != nil {
 		return cp, err
 	}

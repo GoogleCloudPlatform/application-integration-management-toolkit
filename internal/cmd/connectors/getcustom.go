@@ -45,8 +45,7 @@ var GetCustomCmd = &cobra.Command{
 		cmd.SilenceUsage = true
 
 		name := utils.GetStringParam(cmd.Flag("name"))
-		_, err = connections.GetCustom(name)
-		return err
+		return apiclient.PrettyPrint(connections.GetCustom(name))
 	},
 }
 

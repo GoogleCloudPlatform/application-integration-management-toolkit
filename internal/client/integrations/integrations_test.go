@@ -32,8 +32,8 @@ func TestCreateVersionNoOverrides(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unable to read authConfig failed: %v", err)
 	}
-	_, err = CreateVersion("name", contents, nil, "", "", false, false)
-	if err != nil {
+	response := CreateVersion("name", contents, nil, "", "", false, false)
+	if response.Err != nil {
 		t.Fatalf("Create failed: %v", err)
 	}
 }
@@ -50,8 +50,8 @@ func TestCreateVersionOverrides(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unable to read authConfig failed: %v", err)
 	}
-	_, err = CreateVersion("name", contents, overrides, "2", "2", false, false)
-	if err != nil {
+	response := CreateVersion("name", contents, overrides, "2", "2", false, false)
+	if response.Err != nil {
 		t.Fatalf("Create failed: %v", err)
 	}
 }
@@ -60,7 +60,7 @@ func TestDelete(t *testing.T) {
 	if err := clienttest.TestSetup(); err != nil {
 		t.Fatalf("TestSetup failed: %v", err)
 	}
-	if _, err := Delete("test"); err != nil {
-		t.Fatalf("Delete failed: %v", err)
+	if response := Delete("test"); response.Err != nil {
+		t.Fatalf("Delete failed: %v", response.Err)
 	}
 }

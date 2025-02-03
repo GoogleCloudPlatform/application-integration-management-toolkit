@@ -45,8 +45,7 @@ var DelCustomCmd = &cobra.Command{
 		cmd.SilenceUsage = true
 
 		name := utils.GetStringParam(cmd.Flag("name"))
-		_, err = connections.DeleteCustom(name, force)
-		return err
+		return apiclient.PrettyPrint(connections.DeleteCustom(name, force))
 	},
 }
 

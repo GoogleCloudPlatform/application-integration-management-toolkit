@@ -58,8 +58,7 @@ var CrtEventSubCmd = &cobra.Command{
 		if err != nil {
 			return fmt.Errorf("unable to open file %w", err)
 		}
-		_, err = connections.CreateEventSubscription(name, id, contents)
-		return err
+		return apiclient.PrettyPrint(connections.CreateEventSubscription(name, id, contents))
 	},
 }
 

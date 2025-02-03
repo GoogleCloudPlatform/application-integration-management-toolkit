@@ -46,8 +46,7 @@ var DelCmd = &cobra.Command{
 
 		name := utils.GetStringParam(cmd.Flag("name"))
 
-		_, err = connections.DeleteEndpoint(name)
-		return
+		return apiclient.PrettyPrint(connections.DeleteEndpoint(name))
 	},
 }
 

@@ -47,8 +47,7 @@ var ListCmd = &cobra.Command{
 		pageToken := utils.GetStringParam(cmd.Flag("pageToken"))
 		filter := utils.GetStringParam(cmd.Flag("filter"))
 
-		_, err = connections.ListEndpoints(pageSize, pageToken, filter, "")
-		return err
+		return apiclient.PrettyPrint(connections.ListEndpoints(pageSize, pageToken, filter, ""))
 	},
 }
 

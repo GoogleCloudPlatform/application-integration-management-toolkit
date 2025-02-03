@@ -47,8 +47,7 @@ var ReplayExecCmd = &cobra.Command{
 		name := utils.GetStringParam(cmd.Flag("name"))
 		executionID := utils.GetStringParam(cmd.Flag("execution-id"))
 		replayReason := utils.GetStringParam(cmd.Flag("replay-reason"))
-		_, err = integrations.Replay(name, executionID, replayReason)
-		return err
+		return apiclient.PrettyPrint(integrations.Replay(name, executionID, replayReason))
 	},
 }
 
