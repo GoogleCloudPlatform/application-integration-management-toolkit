@@ -23,6 +23,7 @@ import (
 	"os"
 
 	"github.com/spf13/cobra"
+	"github.com/spf13/pflag"
 )
 
 // ExecuteTestCaseCmd to get integration flow
@@ -39,6 +40,10 @@ var ExecuteTestCaseCmd = &cobra.Command{
 		snapshot := utils.GetStringParam(cmd.Flag("snapshot"))
 		inputFile := utils.GetStringParam(cmd.Flag("input-file"))
 		inputFolder := utils.GetStringParam(cmd.Flag("input-folder"))
+
+		cmd.Flags().VisitAll(func(f *pflag.Flag) {
+			clilog.Debug.Printf("%s: %s\n", f.Name, f.Value)
+		})
 
 		if err = apiclient.SetRegion(cmdRegion); err != nil {
 			return err
@@ -76,9 +81,11 @@ var ExecuteTestCaseCmd = &cobra.Command{
 		inputFile := utils.GetStringParam(cmd.Flag("input-file"))
 		inputFolder := utils.GetStringParam(cmd.Flag("input-folder"))
 
-		version, err = integrations.GetVersion(name, userLabel, snapshot)
-		if err != nil {
-			return err
+		if version == "" {
+			version, err = integrations.GetVersion(name, userLabel, snapshot)
+			if err != nil {
+				return err
+			}
 		}
 
 		apiclient.EnableCmdPrintHttpResponse()
