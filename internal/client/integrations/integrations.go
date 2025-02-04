@@ -277,7 +277,7 @@ func CreateVersion(name string, content []byte, overridesContent []byte, snapsho
 	if err := json.Unmarshal(content, &iversion); err != nil {
 		return apiclient.APIResponse{
 			RespBody: nil,
-			Err:      err,
+			Err:      apiclient.NewCliError("error unmarshalling integration json", err),
 		}
 	}
 
@@ -301,13 +301,13 @@ func CreateVersion(name string, content []byte, overridesContent []byte, snapsho
 		if err = json.Unmarshal(overridesContent, &o); err != nil {
 			return apiclient.APIResponse{
 				RespBody: nil,
-				Err:      err,
+				Err:      apiclient.NewCliError("error unmarshalling overrides json", err),
 			}
 		}
 		if eversion, err = mergeOverrides(eversion, o, grantPermission); err != nil {
 			return apiclient.APIResponse{
 				RespBody: nil,
-				Err:      err,
+				Err:      apiclient.NewCliError("error merging overrides", err),
 			}
 		}
 	}
@@ -324,7 +324,7 @@ func CreateVersion(name string, content []byte, overridesContent []byte, snapsho
 	if content, err = json.Marshal(eversion); err != nil {
 		return apiclient.APIResponse{
 			RespBody: nil,
-			Err:      err,
+			Err:      apiclient.NewCliError("error marshalling", err),
 		}
 	}
 
@@ -333,11 +333,8 @@ func CreateVersion(name string, content []byte, overridesContent []byte, snapsho
 	response := apiclient.HttpClient(u.String(), string(content))
 	if response.Err != nil {
 		return response
-	}
-
-	if basicInfo {
-		response = getBasicInfo(response.RespBody)
-		return response
+	} else if basicInfo {
+		return getBasicInfo(response.RespBody)
 	}
 
 	return response
@@ -351,15 +348,15 @@ func Upload(name string, content []byte) apiclient.APIResponse {
 			"stringified integration json and optionally the file format")
 		return apiclient.APIResponse{
 			RespBody: nil,
-			Err:      err,
+			Err:      apiclient.NewCliError("error unmarshalling json", err),
 		}
 	}
 
 	if uploadVersion.Content == "" {
 		return apiclient.APIResponse{
 			RespBody: nil,
-			Err: fmt.Errorf("invalid format for upload. Upload must have the json field content which contains " +
-				"stringified integration json and optionally the file format"),
+			Err: apiclient.NewCliError("invalid format for upload. Upload must have the json field content which contains "+
+				"stringified integration json and optionally the file format", nil),
 		}
 	}
 
@@ -376,7 +373,7 @@ func Patch(name string, version string, content []byte) apiclient.APIResponse {
 	if err = json.Unmarshal(content, &iversion); err != nil {
 		return apiclient.APIResponse{
 			RespBody: nil,
-			Err:      err,
+			Err:      apiclient.NewCliError("error unmarshalling json", err),
 		}
 	}
 
@@ -386,7 +383,7 @@ func Patch(name string, version string, content []byte) apiclient.APIResponse {
 	if content, err = json.Marshal(eversion); err != nil {
 		return apiclient.APIResponse{
 			RespBody: nil,
-			Err:      err,
+			Err:      apiclient.NewCliError("error marshalling", err),
 		}
 	}
 
@@ -439,7 +436,7 @@ func ListVersions(name string, pageSize int, pageToken string, filter string, or
 			if err := json.Unmarshal(response.RespBody, &listIvers); err != nil {
 				return apiclient.APIResponse{
 					RespBody: nil,
-					Err:      err,
+					Err:      apiclient.NewCliError("error unmarshalling json", err),
 				}
 			}
 
@@ -451,9 +448,15 @@ func ListVersions(name string, pageSize int, pageToken string, filter string, or
 				listBIvers.BasicIntegrationVersions = append(listBIvers.BasicIntegrationVersions, basicIVer)
 			}
 			newResp, err := json.Marshal(listBIvers)
+			if err != nil {
+				return apiclient.APIResponse{
+					RespBody: nil,
+					Err:      apiclient.NewCliError("error marshalling", err),
+				}
+			}
 			return apiclient.APIResponse{
 				RespBody: newResp,
-				Err:      err,
+				Err:      nil,
 			}
 		}
 		response := apiclient.HttpClient(u.String())
@@ -468,7 +471,7 @@ func ListVersions(name string, pageSize int, pageToken string, filter string, or
 		if err := json.Unmarshal(response.RespBody, &iversions); err != nil {
 			return apiclient.APIResponse{
 				RespBody: nil,
-				Err:      err,
+				Err:      apiclient.NewCliError("error unmarshalling json", err),
 			}
 		}
 
@@ -479,7 +482,7 @@ func ListVersions(name string, pageSize int, pageToken string, filter string, or
 				if iversionBytes, err = json.Marshal(iversion); err != nil {
 					return apiclient.APIResponse{
 						RespBody: nil,
-						Err:      err,
+						Err:      apiclient.NewCliError("error marshalling json", err),
 					}
 				}
 				version := iversion.Name[strings.LastIndex(iversion.Name, "/")+1:]
@@ -496,7 +499,7 @@ func ListVersions(name string, pageSize int, pageToken string, filter string, or
 						response.RespBody); err != nil {
 						return apiclient.APIResponse{
 							RespBody: nil,
-							Err:      err,
+							Err:      apiclient.NewCliError("error writing file", err),
 						}
 					}
 				} else {
@@ -506,7 +509,7 @@ func ListVersions(name string, pageSize int, pageToken string, filter string, or
 						iversionBytes); err != nil {
 						return apiclient.APIResponse{
 							RespBody: nil,
-							Err:      err,
+							Err:      apiclient.NewCliError("error writing file", err),
 						}
 					}
 				}
@@ -558,7 +561,7 @@ func List(pageSize int, pageToken string, filter string, orderBy string) apiclie
 func Get(name string, version string, basicInfo bool, minimal bool, override bool) apiclient.APIResponse {
 	if (basicInfo && minimal) || (basicInfo && override) || (minimal && override) {
 		return apiclient.APIResponse{
-			Err: errors.New("cannot combine basicInfo, minimal and override flags"),
+			Err: apiclient.NewCliError("cannot combine basicInfo, minimal and override flags", nil),
 		}
 	}
 
@@ -576,7 +579,7 @@ func Get(name string, version string, basicInfo bool, minimal bool, override boo
 	if err != nil {
 		return apiclient.APIResponse{
 			RespBody: nil,
-			Err:      err,
+			Err:      apiclient.NewCliError("error unmarshalling", err),
 		}
 	}
 
@@ -614,13 +617,13 @@ func GetBySnapshot(name string, snapshot string, basicInfo bool, minimal bool, o
 	err := json.Unmarshal(response.RespBody, &listBasicVersions)
 	if err != nil {
 		return apiclient.APIResponse{
-			Err: err,
+			Err: apiclient.NewCliError("error unmarshalling", err),
 		}
 	}
 
 	if len(listBasicVersions.BasicIntegrationVersions) < 1 {
 		return apiclient.APIResponse{
-			Err: fmt.Errorf("snapshot number was not found"),
+			Err: apiclient.NewCliError("snapshot number was not found", nil),
 		}
 	}
 
@@ -639,13 +642,13 @@ func GetByUserlabel(name string, userLabel string, basicInfo bool, minimal bool,
 	err := json.Unmarshal(response.RespBody, &listBasicVersions)
 	if err != nil {
 		return apiclient.APIResponse{
-			Err: err,
+			Err: apiclient.NewCliError("error unmarshalling", err),
 		}
 	}
 
 	if len(listBasicVersions.BasicIntegrationVersions) < 1 {
 		return apiclient.APIResponse{
-			Err: fmt.Errorf("userLabel was not found"),
+			Err: apiclient.NewCliError("userLabel was not found", err),
 		}
 	}
 
@@ -663,7 +666,7 @@ func GetConfigVariables(contents []byte) apiclient.APIResponse {
 	err = json.Unmarshal(contents, &iversion)
 	if err != nil {
 		return apiclient.APIResponse{
-			Err: err,
+			Err: apiclient.NewCliError("error unmarshalling", err),
 		}
 	}
 
@@ -726,7 +729,7 @@ func DeleteByUserlabel(name string, userLabel string) apiclient.APIResponse {
 	err := json.Unmarshal(response.RespBody, &iversion)
 	if err != nil {
 		return apiclient.APIResponse{
-			Err: err,
+			Err: apiclient.NewCliError("error unmarshalling", err),
 		}
 	}
 
@@ -745,7 +748,7 @@ func DeleteBySnapshot(name string, snapshot string) apiclient.APIResponse {
 	err := json.Unmarshal(response.RespBody, &iversion)
 	if err != nil {
 		return apiclient.APIResponse{
-			Err: err,
+			Err: apiclient.NewCliError("error unmarshalling", err),
 		}
 	}
 
@@ -848,7 +851,7 @@ func GetAuthConfigs(integration []byte) (authcfgs []string, err error) {
 
 	err = json.Unmarshal(integration, &iversion)
 	if err != nil {
-		return authcfgs, err
+		return authcfgs, apiclient.NewCliError("error unmarshalling", err)
 	}
 
 	for _, taskConfig := range iversion.TaskConfigs {
@@ -864,7 +867,7 @@ func GetAuthConfigs(integration []byte) (authcfgs []string, err error) {
 			if authConfigNameParams.Key == "authConfigName" && *authConfigNameParams.Value.StringValue != "" {
 				authConfigUuid, err := authconfigs.Find(*authConfigNameParams.Value.StringValue, "")
 				if err != nil {
-					return nil, fmt.Errorf("unable to find authconfig with name %s", *authConfigNameParams.Value.StringValue)
+					return nil, apiclient.NewCliError("", fmt.Errorf("unable to find authconfig with name %s", *authConfigNameParams.Value.StringValue))
 				}
 				authcfgs = append(authcfgs, authConfigUuid)
 			}
@@ -880,7 +883,7 @@ func GetSfdcInstances(integration []byte) (instances map[string]string, err erro
 
 	err = json.Unmarshal(integration, &iversion)
 	if err != nil {
-		return instances, err
+		return instances, apiclient.NewCliError("error unmarshalling", err)
 	}
 
 	instances = make(map[string]string)
@@ -900,7 +903,7 @@ func GetConnections(integration []byte) (connections []string, err error) {
 
 	err = json.Unmarshal(integration, &iversion)
 	if err != nil {
-		return connections, err
+		return connections, apiclient.NewCliError("error unmarshalling", err)
 	}
 
 	for _, taskConfig := range iversion.TaskConfigs {
@@ -927,7 +930,7 @@ func GetConnectionsWithRegion(integration []byte) (connections []integrationConn
 
 	err = json.Unmarshal(integration, &iversion)
 	if err != nil {
-		return connections, err
+		return connections, apiclient.NewCliError("error unmarshalling", err)
 	}
 
 	for _, taskConfig := range iversion.TaskConfigs {
@@ -983,7 +986,7 @@ func GetVersion(name string, userLabel string, snapshot string) (version string,
 			return "", response.Err
 		}
 	} else {
-		return "", fmt.Errorf("userLabel or snapshot must be passed")
+		return "", apiclient.NewCliError("userLabel or snapshot must be passed", nil)
 	}
 	return GetIntegrationVersion(response.RespBody)
 }
@@ -992,11 +995,11 @@ func GetIntegrationVersion(respBody []byte) (string, error) {
 	var data map[string]interface{}
 	err := json.Unmarshal(respBody, &data)
 	if err != nil {
-		return "", err
+		return "", apiclient.NewCliError("error unmarshalling", err)
 	}
 	if data["integrationVersions"] == nil {
 		if data["version"] == nil {
-			return "", fmt.Errorf("no integration versions were found")
+			return "", apiclient.NewCliError("no integration versions were found", nil)
 		} else {
 			return data["version"].(string), nil
 		}
@@ -1004,7 +1007,7 @@ func GetIntegrationVersion(respBody []byte) (string, error) {
 	integrationVersions := data["integrationVersions"].([]interface{})
 	firstIntegrationVersion := integrationVersions[0].(map[string]interface{})
 	if firstIntegrationVersion["version"].(string) == "" {
-		return "", fmt.Errorf("unable to extract version id from integration")
+		return "", apiclient.NewCliError("unable to extract version id from integration", nil)
 	}
 	return firstIntegrationVersion["version"].(string), nil
 }
@@ -1054,18 +1057,18 @@ func getVersionId(name string, filter string) (version string, err error) {
 	u.Path = path.Join(u.Path, "integrations", name, "versions")
 	response := apiclient.HttpClient(u.String())
 	if response.Err != nil {
-		return "", err
+		return "", apiclient.NewCliError("error fetching versions", nil)
 	}
 
 	iversions := listIntegrationVersions{}
 	if err = json.Unmarshal(response.RespBody, &iversions); err != nil {
-		return "", err
+		return "", apiclient.NewCliError("error unmarshalling", err)
 	}
 
 	if len(iversions.IntegrationVersions) > 0 {
 		return iversions.IntegrationVersions[0].Name[strings.LastIndex(iversions.IntegrationVersions[0].Name, "/")+1:], nil
 	} else {
-		return "", fmt.Errorf("filter condition not found")
+		return "", apiclient.NewCliError("filter condition not found", nil)
 	}
 }
 
@@ -1081,11 +1084,11 @@ func ExportConcurrent(folder string, numConnections int) error {
 		l := listintegrations{}
 		response := List(maxPageSize, pageToken, "", "")
 		if response.Err != nil {
-			return fmt.Errorf("failed to fetch Integrations: %w", response.Err)
+			return apiclient.NewCliError("failed to fetch Integrations", response.Err)
 		}
 		err := json.Unmarshal(response.RespBody, &l)
 		if err != nil {
-			return fmt.Errorf("failed to unmarshall: %w", err)
+			return apiclient.NewCliError("failed to unmarshall", err)
 		}
 		lintegrations.Integrations = append(lintegrations.Integrations, l.Integrations...)
 		if l.NextPageToken == "" {
@@ -1329,7 +1332,7 @@ func Import(folder string, numConnections int) (err error) {
 		return nil
 	})
 	if err != nil {
-		return err
+		return apiclient.NewCliError("error listing file", err)
 	}
 
 	numEntities := len(fileNames)
@@ -1434,7 +1437,7 @@ func getBasicInfo(respBody []byte) apiclient.APIResponse {
 
 	if err = json.Unmarshal(respBody, &iVer); err != nil {
 		return apiclient.APIResponse{
-			Err: err,
+			Err: apiclient.NewCliError("error unmarshalling", err),
 		}
 	}
 
