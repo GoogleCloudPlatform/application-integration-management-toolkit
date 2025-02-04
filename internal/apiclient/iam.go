@@ -58,7 +58,7 @@ func iamServiceAccountExists(iamname string) (code int, err error) {
 
 	projectid, _, err := getNameAndProject(iamname)
 	if err != nil {
-		return -1, newError("unable to get project id", err)
+		return -1, NewCliError("unable to get project id", err)
 	}
 
 	getendpoint := fmt.Sprintf("https://iam.googleapis.com/v1/projects/%s/serviceAccounts/%s", projectid, iamname)
@@ -66,7 +66,7 @@ func iamServiceAccountExists(iamname string) (code int, err error) {
 
 	client, err := getHttpClient()
 	if err != nil {
-		return -1, newError("unable to get http client", err)
+		return -1, NewCliError("unable to get http client", err)
 	}
 
 	if DryRun() {
@@ -75,12 +75,12 @@ func iamServiceAccountExists(iamname string) (code int, err error) {
 
 	req, err = http.NewRequest("GET", getendpoint, nil)
 	if err != nil {
-		return -1, newError("error in client", err)
+		return -1, NewCliError("error in client", err)
 	}
 
 	req, err = setAuthHeader(req)
 	if err != nil {
-		return -1, newError("error setting auth header", err)
+		return -1, NewCliError("error setting auth header", err)
 	}
 
 	clilog.Debug.Println("Content-Type : ", contentType)
@@ -88,7 +88,7 @@ func iamServiceAccountExists(iamname string) (code int, err error) {
 
 	resp, err = client.Do(req)
 	if err != nil {
-		return resp.StatusCode, newError("error connecting", err)
+		return resp.StatusCode, NewCliError("error connecting", err)
 	}
 
 	if resp != nil {
@@ -96,14 +96,14 @@ func iamServiceAccountExists(iamname string) (code int, err error) {
 	}
 
 	if resp == nil {
-		return -1, newError("error in response: Response was null", nil)
+		return -1, NewCliError("error in response: Response was null", nil)
 	}
 
 	respBody, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return -1, newError("error in response", err)
+		return -1, NewCliError("error in response", err)
 	} else if resp.StatusCode > 399 && resp.StatusCode != 404 {
-		return resp.StatusCode, newError("error in client", fmt.Errorf("status code %d, error in response: %s", resp.StatusCode, string(respBody)))
+		return resp.StatusCode, NewCliError("error in client", fmt.Errorf("status code %d, error in response: %s", resp.StatusCode, string(respBody)))
 	} else {
 		return resp.StatusCode, nil
 	}
@@ -116,14 +116,14 @@ func setIAMPermission(endpoint string, name string, memberName string, role stri
 
 	response := HttpClient(u.String())
 	if response.Err != nil {
-		return newError("error in http client", response.Err)
+		return NewCliError("error in http client", response.Err)
 	}
 
 	getIamPolicy := iamPolicy{}
 
 	err = json.Unmarshal(response.RespBody, &getIamPolicy)
 	if err != nil {
-		return newError("error marshalling", err)
+		return NewCliError("error marshalling", err)
 	}
 
 	foundRole := false
@@ -151,12 +151,12 @@ func setIAMPermission(endpoint string, name string, memberName string, role stri
 
 	setIamPolicyBody, err := json.Marshal(setIamPolicy)
 	if err != nil {
-		return newError("error marshalling", err)
+		return NewCliError("error marshalling", err)
 	}
 
 	response = HttpClient(u.String(), string(setIamPolicyBody))
 	if response.Err != nil {
-		return newError("error in http client", response.Err)
+		return NewCliError("error in http client", response.Err)
 	}
 	return nil
 }
@@ -171,7 +171,7 @@ func setProjectIAMPermission(project string, memberName string, role string) (er
 	// Get the current IAM policies for the project
 	response := HttpClient(getendpoint, "")
 	if response.Err != nil {
-		return newError("error in http client", response.Err)
+		return NewCliError("error in http client", response.Err)
 	}
 
 	// binding for IAM Roles
@@ -197,7 +197,7 @@ func setProjectIAMPermission(project string, memberName string, role string) (er
 
 	err = json.Unmarshal(response.RespBody, &policy)
 	if err != nil {
-		return newError("error unmarshalling", err)
+		return NewCliError("error unmarshalling", err)
 	}
 
 	binding := roleBinding{}
@@ -210,13 +210,13 @@ func setProjectIAMPermission(project string, memberName string, role string) (er
 	policyRequest.Policy = policy
 	policyRequestBody, err := json.Marshal(policyRequest)
 	if err != nil {
-		return newError("error marshalling", err)
+		return NewCliError("error marshalling", err)
 	}
 
 	response = HttpClient(setendpoint, string(policyRequestBody))
 	if response.Err != nil {
 		clilog.Debug.Printf("error setting IAM policies for the project %s: %v", project, err)
-		return newError("error in http client", response.Err)
+		return NewCliError("error in http client", response.Err)
 	}
 
 	return nil
@@ -228,11 +228,11 @@ func CreateServiceAccount(iamname string) (err error) {
 
 	projectid, displayname, err := getNameAndProject(iamname)
 	if err != nil {
-		return newError("unable to get project id", err)
+		return NewCliError("unable to get project id", err)
 	}
 
 	if statusCode, err = iamServiceAccountExists(iamname); err != nil {
-		return newError("unable to fetch service account details", err)
+		return NewCliError("unable to fetch service account details", err)
 	}
 
 	switch statusCode {
@@ -246,11 +246,11 @@ func CreateServiceAccount(iamname string) (err error) {
 		payload := "{" + strings.Join(iamPayload, ",") + "}"
 
 		if response := HttpClient(createendpoint, payload); response.Err != nil {
-			return newError("error in http client", response.Err)
+			return NewCliError("error in http client", response.Err)
 		}
 		return nil
 	default:
-		return newError("unhandled status code", fmt.Errorf("unable to fetch service account details, err: %d", statusCode))
+		return NewCliError("unhandled status code", fmt.Errorf("unable to fetch service account details, err: %d", statusCode))
 	}
 }
 
@@ -306,7 +306,7 @@ func SetBigQueryIAMPermission(project string, datasetid string, memberName strin
 	// first fetch the information
 	response := HttpClient(endpoint)
 	if response.Err != nil {
-		return newError("error in http client", response.Err)
+		return NewCliError("error in http client", response.Err)
 	}
 
 	type accessType struct {
@@ -323,7 +323,7 @@ func SetBigQueryIAMPermission(project string, datasetid string, memberName strin
 
 	dataset := datasetType{}
 	if err = json.Unmarshal(response.RespBody, &dataset); err != nil {
-		return newError("error unmarshalling", err)
+		return NewCliError("error unmarshalling", err)
 	}
 
 	access := accessType{}
@@ -335,12 +335,12 @@ func SetBigQueryIAMPermission(project string, datasetid string, memberName strin
 	dataset.Access = append(dataset.Access, access)
 
 	if content, err = json.Marshal(dataset); err != nil {
-		return newError("error marshalling", err)
+		return NewCliError("error marshalling", err)
 	}
 
 	// patch the update
 	if response := HttpClient(endpoint, string(content), "PATCH"); response.Err != nil {
-		return newError("error in http client", response.Err)
+		return NewCliError("error in http client", response.Err)
 	}
 
 	return nil
@@ -378,15 +378,15 @@ func getNameAndProject(iamFullName string) (projectid string, name string, err e
 	parts := strings.Split(iamFullName, "@")
 
 	if len(parts) != 2 {
-		return "", "", newError("error splitting iam name", fmt.Errorf("invalid iam name, %s", parts))
+		return "", "", NewCliError("error splitting iam name", fmt.Errorf("invalid iam name, %s", parts))
 	}
 	name = parts[0]
 	projectid = strings.ReplaceAll(parts[1], ".iam.gserviceaccount.com", "") // strings.Split(parts[1], ".iam.gserviceaccount.com")[0]
 	if name == "" || projectid == "" {
-		return "", "", newError("error splitting iam name", fmt.Errorf("invalid iam name %s, %s", name, projectid))
+		return "", "", NewCliError("error splitting iam name", fmt.Errorf("invalid iam name %s, %s", name, projectid))
 	}
 	if ok := riam.Match([]byte(name)); !ok {
-		return "", "", newError("error splitting iam name", fmt.Errorf("the ID must be between 6 and 30 characters"))
+		return "", "", NewCliError("error splitting iam name", fmt.Errorf("the ID must be between 6 and 30 characters"))
 	}
 	return projectid, name, nil
 }
@@ -400,7 +400,7 @@ func GetComputeEngineDefaultServiceAccount(projectId string) (serviceAccount str
 	response := HttpClient(getendpoint)
 	if response.Err != nil {
 		clilog.Debug.Printf("error getting details for the project %s: %v", projectId, err)
-		return serviceAccount, newError("error in http client", response.Err)
+		return serviceAccount, NewCliError("error in http client", response.Err)
 	}
 
 	type projectResponse struct {
@@ -421,11 +421,11 @@ func GetComputeEngineDefaultServiceAccount(projectId string) (serviceAccount str
 	err = json.Unmarshal(response.RespBody, &p)
 	if err != nil {
 		clilog.Debug.Println(err)
-		return serviceAccount, newError("error unmarshalling", err)
+		return serviceAccount, NewCliError("error unmarshalling", err)
 	}
 
 	if p.Name == "" {
-		return serviceAccount, newError("error getting project numner", fmt.Errorf("project number was not available"))
+		return serviceAccount, NewCliError("error getting project numner", fmt.Errorf("project number was not available"))
 	}
 
 	// get the project number

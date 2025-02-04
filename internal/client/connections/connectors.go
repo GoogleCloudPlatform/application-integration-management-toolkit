@@ -273,7 +273,7 @@ func Create(name string, content []byte, serviceAccountName string, serviceAccou
 		if err := json.Unmarshal(response.RespBody, &o); err != nil {
 			return apiclient.APIResponse{
 				RespBody: nil,
-				Err:      err,
+				Err:      apiclient.NewCliError("error unmarshalling", err),
 			}
 		}
 
@@ -322,7 +322,7 @@ func create(name string, content []byte, serviceAccountName string, serviceAccou
 	if err := json.Unmarshal(content, &c); err != nil {
 		return apiclient.APIResponse{
 			RespBody: nil,
-			Err:      err,
+			Err:      apiclient.NewCliError("error unmarshalling", err),
 		}
 	}
 
@@ -337,14 +337,14 @@ func create(name string, content []byte, serviceAccountName string, serviceAccou
 		if err := apiclient.CreateServiceAccount(serviceAccountName); err != nil {
 			return apiclient.APIResponse{
 				RespBody: nil,
-				Err:      err,
+				Err:      apiclient.NewCliError("error creating service account", err),
 			}
 		}
 	} else if grantPermission { // use the default compute engine SA to grant permissions
 		if serviceAccountName, err = apiclient.GetComputeEngineDefaultServiceAccount(apiclient.GetProjectID()); err != nil {
 			return apiclient.APIResponse{
 				RespBody: nil,
-				Err:      err,
+				Err:      apiclient.NewCliError("error getting default SA", err),
 			}
 		}
 	}
@@ -366,28 +366,28 @@ func create(name string, content []byte, serviceAccountName string, serviceAccou
 	if c.ConnectorDetails.Version != nil && c.ConnectorDetails.VersionId != nil {
 		return apiclient.APIResponse{
 			RespBody: nil,
-			Err:      fmt.Errorf("Version and VersionId cannot be set"),
+			Err:      apiclient.NewCliError("Version and VersionId cannot be set", nil),
 		}
 	}
 
 	if c.ConnectorDetails.Name == "" || c.ConnectorDetails.Provider == "" {
 		return apiclient.APIResponse{
 			RespBody: nil,
-			Err: fmt.Errorf("connectorDetails Name and Provider must be set." +
-				" See https://github.com/GoogleCloudPlatform/application-integration-management-toolkit" +
-				"#connectors-for-third-party-applications for more details"),
+			Err: apiclient.NewCliError("connectorDetails Name and Provider must be set."+
+				" See https://github.com/GoogleCloudPlatform/application-integration-management-toolkit"+
+				"#connectors-for-third-party-applications for more details", nil),
 		}
 	}
 
 	if c.ConnectorDetails.Provider == "customconnector" && c.ConnectorDetails.VersionId == nil {
 		return apiclient.APIResponse{
 			RespBody: nil,
-			Err:      fmt.Errorf("connectorDetails VersionId must be set for customconnectors"),
+			Err:      apiclient.NewCliError("connectorDetails VersionId must be set for customconnectors", nil),
 		}
 	} else if c.ConnectorDetails.Provider != "customconnector" && c.ConnectorDetails.Version == nil {
 		return apiclient.APIResponse{
 			RespBody: nil,
-			Err:      fmt.Errorf("connectorDetails Version must be set"),
+			Err:      apiclient.NewCliError("connectorDetails Version must be set", nil),
 		}
 	}
 
@@ -423,7 +423,7 @@ func create(name string, content []byte, serviceAccountName string, serviceAccou
 			if projectID == "" || topicName == "" {
 				return apiclient.APIResponse{
 					RespBody: nil,
-					Err:      fmt.Errorf("project_id or topic_id was not set"),
+					Err:      apiclient.NewCliError("project_id or topic_id was not set", nil),
 				}
 			}
 
@@ -444,7 +444,7 @@ func create(name string, content []byte, serviceAccountName string, serviceAccou
 			if projectID == "" || datasetID == "" {
 				return apiclient.APIResponse{
 					RespBody: nil,
-					Err:      fmt.Errorf("project_id or dataset_id was not set"),
+					Err:      apiclient.NewCliError("project_id or dataset_id was not set", nil),
 				}
 			}
 
@@ -460,7 +460,7 @@ func create(name string, content []byte, serviceAccountName string, serviceAccou
 			if projectID == "" {
 				return apiclient.APIResponse{
 					RespBody: nil,
-					Err:      fmt.Errorf("project_id was not set"),
+					Err:      apiclient.NewCliError("project_id was not set", nil),
 				}
 			}
 			if err = apiclient.SetCloudStorageIAMPermission(projectID, *c.ServiceAccount); err != nil {
@@ -475,7 +475,7 @@ func create(name string, content []byte, serviceAccountName string, serviceAccou
 			if projectID == "" {
 				return apiclient.APIResponse{
 					RespBody: nil,
-					Err:      fmt.Errorf("project_id was not set"),
+					Err:      apiclient.NewCliError("project_id was not set", nil),
 				}
 			}
 			if err = apiclient.SetCloudSQLIAMPermission(projectID, *c.ServiceAccount); err != nil {
@@ -490,7 +490,7 @@ func create(name string, content []byte, serviceAccountName string, serviceAccou
 			if projectID == "" {
 				return apiclient.APIResponse{
 					RespBody: nil,
-					Err:      fmt.Errorf("project_id was not set"),
+					Err:      apiclient.NewCliError("project_id was not set", nil),
 				}
 			}
 			if err = apiclient.SetCloudSpannerIAMPermission(projectID, *c.ServiceAccount); err != nil {
@@ -520,14 +520,14 @@ func create(name string, content []byte, serviceAccountName string, serviceAccou
 					if c.AuthConfig.UserPassword.PasswordDetails.Reference == "" {
 						return apiclient.APIResponse{
 							RespBody: nil,
-							Err:      fmt.Errorf("create-secret is enabled, but reference is not passed"),
+							Err:      apiclient.NewCliError("create-secret is enabled, but reference is not passed", nil),
 						}
 					}
 					payload, err := readSecretFile(c.AuthConfig.UserPassword.PasswordDetails.Reference)
 					if err != nil {
 						return apiclient.APIResponse{
 							RespBody: nil,
-							Err:      err,
+							Err:      apiclient.NewCliError("error opening secret", err),
 						}
 					}
 
@@ -538,7 +538,7 @@ func create(name string, content []byte, serviceAccountName string, serviceAccou
 						if err != nil {
 							return apiclient.APIResponse{
 								RespBody: nil,
-								Err:      err,
+								Err:      apiclient.NewCliError("error decrypting payload", err),
 							}
 						}
 					}
@@ -549,7 +549,7 @@ func create(name string, content []byte, serviceAccountName string, serviceAccou
 						payload); err != nil {
 						return apiclient.APIResponse{
 							RespBody: nil,
-							Err:      err,
+							Err:      apiclient.NewCliError("error creating secret", err),
 						}
 					}
 
@@ -565,7 +565,7 @@ func create(name string, content []byte, serviceAccountName string, serviceAccou
 							*c.ServiceAccount); err != nil {
 							return apiclient.APIResponse{
 								RespBody: nil,
-								Err:      err,
+								Err:      apiclient.NewCliError("error setting permissions to secret", err),
 							}
 						}
 					}
@@ -584,7 +584,7 @@ func create(name string, content []byte, serviceAccountName string, serviceAccou
 					if err != nil {
 						return apiclient.APIResponse{
 							RespBody: nil,
-							Err:      err,
+							Err:      apiclient.NewCliError("error opening secret", err),
 						}
 					}
 					// check if a Cloud KMS key was passsed, assume the file is encrypted
@@ -594,7 +594,7 @@ func create(name string, content []byte, serviceAccountName string, serviceAccou
 						if err != nil {
 							return apiclient.APIResponse{
 								RespBody: nil,
-								Err:      err,
+								Err:      apiclient.NewCliError("error decrypting payload", err),
 							}
 						}
 					}
@@ -604,7 +604,7 @@ func create(name string, content []byte, serviceAccountName string, serviceAccou
 						payload); err != nil {
 						return apiclient.APIResponse{
 							RespBody: nil,
-							Err:      err,
+							Err:      apiclient.NewCliError("error creating secret", err),
 						}
 					}
 					secretName := c.AuthConfig.Oauth2JwtBearer.ClientKeyDetails.SecretName
@@ -619,7 +619,7 @@ func create(name string, content []byte, serviceAccountName string, serviceAccou
 							*c.ServiceAccount); err != nil {
 							return apiclient.APIResponse{
 								RespBody: nil,
-								Err:      err,
+								Err:      apiclient.NewCliError("error setting permissions to secret", err),
 							}
 						}
 					}
@@ -656,7 +656,7 @@ func create(name string, content []byte, serviceAccountName string, serviceAccou
 				if err != nil {
 					return apiclient.APIResponse{
 						RespBody: nil,
-						Err:      err,
+						Err:      apiclient.NewCliError("error opening secret", err),
 					}
 				}
 				// check if a Cloud KMS key was passsed, assume the file is encrypted
@@ -666,7 +666,7 @@ func create(name string, content []byte, serviceAccountName string, serviceAccou
 					if err != nil {
 						return apiclient.APIResponse{
 							RespBody: nil,
-							Err:      err,
+							Err:      apiclient.NewCliError("error decrypting payload", err),
 						}
 					}
 				}
@@ -677,7 +677,7 @@ func create(name string, content []byte, serviceAccountName string, serviceAccou
 					payload); err != nil {
 					return apiclient.APIResponse{
 						RespBody: nil,
-						Err:      err,
+						Err:      apiclient.NewCliError("error creating secret", err),
 					}
 				}
 
@@ -698,7 +698,7 @@ func create(name string, content []byte, serviceAccountName string, serviceAccou
 				if err != nil {
 					return apiclient.APIResponse{
 						RespBody: nil,
-						Err:      err,
+						Err:      apiclient.NewCliError("error reading secret file", err),
 					}
 				}
 				// check if a Cloud KMS key was passsed, assume the file is encrypted
@@ -708,7 +708,7 @@ func create(name string, content []byte, serviceAccountName string, serviceAccou
 					if err != nil {
 						return apiclient.APIResponse{
 							RespBody: nil,
-							Err:      err,
+							Err:      apiclient.NewCliError("error decrypting payload", err),
 						}
 					}
 				}
@@ -719,7 +719,7 @@ func create(name string, content []byte, serviceAccountName string, serviceAccou
 					payload); err != nil {
 					return apiclient.APIResponse{
 						RespBody: nil,
-						Err:      err,
+						Err:      apiclient.NewCliError("error creating secret", err),
 					}
 				}
 
@@ -739,7 +739,7 @@ func create(name string, content []byte, serviceAccountName string, serviceAccou
 				if err != nil {
 					return apiclient.APIResponse{
 						RespBody: nil,
-						Err:      err,
+						Err:      apiclient.NewCliError("error opening secret", err),
 					}
 				}
 				// check if a Cloud KMS key was passsed, assume the file is encrypted
@@ -749,7 +749,7 @@ func create(name string, content []byte, serviceAccountName string, serviceAccou
 					if err != nil {
 						return apiclient.APIResponse{
 							RespBody: nil,
-							Err:      err,
+							Err:      apiclient.NewCliError("error decrypting payload", err),
 						}
 					}
 				}
@@ -760,7 +760,7 @@ func create(name string, content []byte, serviceAccountName string, serviceAccou
 					payload); err != nil {
 					return apiclient.APIResponse{
 						RespBody: nil,
-						Err:      err,
+						Err:      apiclient.NewCliError("error creating secret", err),
 					}
 				}
 
@@ -780,7 +780,7 @@ func create(name string, content []byte, serviceAccountName string, serviceAccou
 				if err != nil {
 					return apiclient.APIResponse{
 						RespBody: nil,
-						Err:      err,
+						Err:      apiclient.NewCliError("error opening secret", err),
 					}
 				}
 				// check if a Cloud KMS key was passsed, assume the file is encrypted
@@ -790,7 +790,7 @@ func create(name string, content []byte, serviceAccountName string, serviceAccou
 					if err != nil {
 						return apiclient.APIResponse{
 							RespBody: nil,
-							Err:      err,
+							Err:      apiclient.NewCliError("error decrypting payload", err),
 						}
 					}
 				}
@@ -801,7 +801,7 @@ func create(name string, content []byte, serviceAccountName string, serviceAccou
 					payload); err != nil {
 					return apiclient.APIResponse{
 						RespBody: nil,
-						Err:      err,
+						Err:      apiclient.NewCliError("error creating secret", err),
 					}
 				}
 
@@ -825,7 +825,7 @@ func create(name string, content []byte, serviceAccountName string, serviceAccou
 	if content, err = json.Marshal(c); err != nil {
 		return apiclient.APIResponse{
 			RespBody: nil,
-			Err:      err,
+			Err:      apiclient.NewCliError("error marshalling", err),
 		}
 	}
 
@@ -860,7 +860,7 @@ func Get(name string, view string, minimal bool, overrides bool) apiclient.APIRe
 		if err != nil {
 			return apiclient.APIResponse{
 				RespBody: nil,
-				Err:      err,
+				Err:      apiclient.NewCliError("error unmarshalling", err),
 			}
 		}
 
@@ -928,7 +928,7 @@ func Get(name string, view string, minimal bool, overrides bool) apiclient.APIRe
 		if err != nil {
 			return apiclient.APIResponse{
 				RespBody: nil,
-				Err:      err,
+				Err:      apiclient.NewCliError("error marshalling", err),
 			}
 		}
 		return apiclient.APIResponse{
@@ -960,7 +960,7 @@ func GetConnectionDetailWithRegion(name string, region string, view string, mini
 		if err != nil {
 			return apiclient.APIResponse{
 				RespBody: nil,
-				Err:      err,
+				Err:      apiclient.NewCliError("error unmarshalling", err),
 			}
 		}
 
@@ -1032,7 +1032,7 @@ func GetConnectionDetailWithRegion(name string, region string, view string, mini
 		if err != nil {
 			return apiclient.APIResponse{
 				RespBody: nil,
-				Err:      err,
+				Err:      apiclient.NewCliError("error marshalling", err),
 			}
 		}
 		return apiclient.APIResponse{
@@ -1068,7 +1068,7 @@ func Patch(name string, content []byte, updateMask []string) apiclient.APIRespon
 	c := connectionRequest{}
 	if err := json.Unmarshal(content, &c); err != nil {
 		return apiclient.APIResponse{
-			Err: err,
+			Err: apiclient.NewCliError("error unmarshalling", err),
 		}
 	}
 
@@ -1088,12 +1088,12 @@ func Patch(name string, content []byte, updateMask []string) apiclient.APIRespon
 
 func readSecretFile(name string) (payload []byte, err error) {
 	if _, err := os.Stat(name); os.IsNotExist(err) {
-		return nil, fmt.Errorf("unable to open secret file %s, err: %w", name, err)
+		return nil, apiclient.NewCliError("unable to open secret file "+name, err)
 	}
 
 	content, err := os.ReadFile(name)
 	if err != nil {
-		return nil, err
+		return nil, apiclient.NewCliError("error reading file", err)
 	}
 	return content, nil
 }
@@ -1116,7 +1116,7 @@ func Import(folder string, createSecret bool, wait bool) (err error) {
 		name := strings.TrimSuffix(filepath.Base(path), filepath.Ext(filepath.Base(path)))
 		content, err := os.ReadFile(path)
 		if err != nil {
-			return err
+			return apiclient.NewCliError("error reading file", err)
 		}
 
 		if response := Get(name, "", false, false); response.Err != nil { // create only if connection doesn't exist
@@ -1136,7 +1136,7 @@ func Import(folder string, createSecret bool, wait bool) (err error) {
 	}
 
 	if len(errs) > 0 {
-		return errors.New(strings.Join(errs, "\n"))
+		return apiclient.NewCliError("error importing connections", errors.New(strings.Join(errs, "\n")))
 	}
 	return nil
 }
@@ -1152,11 +1152,11 @@ func Export(folder string) (err error) {
 		l := listconnections{}
 		response := List(maxPageSize, pageToken, "", "")
 		if response.Err != nil {
-			return fmt.Errorf("failed to fetch Integrations: %w", err)
+			return apiclient.NewCliError("failed to fetch connections", response.Err)
 		}
 		err = json.Unmarshal(response.RespBody, &l)
 		if err != nil {
-			return fmt.Errorf("failed to unmarshall: %w", err)
+			return apiclient.NewCliError("failed to unmarshall", err)
 		}
 		lconnections.Connections = append(lconnections.Connections, l.Connections...)
 		pageToken = l.NextPageToken
@@ -1186,14 +1186,14 @@ func Export(folder string) (err error) {
 		lconnection.Name = nil
 		connectionPayload, err := json.Marshal(lconnection)
 		if err != nil {
-			return err
+			return apiclient.NewCliError("error marshalling", err)
 		}
 		if err = apiclient.WriteByteArrayToFile(
 			path.Join(apiclient.GetExportToFile(), fileName),
 			false,
 			connectionPayload); err != nil {
 			clilog.Error.Println(err)
-			return err
+			return apiclient.NewCliError("error writing file", err)
 		}
 		clilog.Info.Printf("Downloaded %s\n", fileName)
 	}
@@ -1212,7 +1212,7 @@ func RepairEvent(name string, wait bool) (err error) {
 
 		o := operation{}
 		if err = json.Unmarshal(response.RespBody, &o); err != nil {
-			return err
+			return apiclient.NewCliError("error unmarshalling", err)
 		}
 
 		operationId := filepath.Base(o.Name)
@@ -1244,7 +1244,10 @@ func RepairEvent(name string, wait bool) (err error) {
 
 		<-stop
 	}
-	return err
+	if err != nil {
+		return apiclient.NewCliError("error in repair event", err)
+	}
+	return nil
 }
 
 func getConnectorName(version string) string {

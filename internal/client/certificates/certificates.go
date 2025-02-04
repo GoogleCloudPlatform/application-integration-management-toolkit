@@ -112,7 +112,7 @@ func Find(name string) (version string, err error) {
 	}
 
 	if err = json.Unmarshal(respBody, &cs); err != nil {
-		return "", err
+		return "", apiclient.NewCliError("error unmarshalling", err)
 	}
 
 	for _, c := range cs.Cert {

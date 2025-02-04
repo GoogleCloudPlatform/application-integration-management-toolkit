@@ -16,6 +16,7 @@ package integrations
 
 import (
 	"encoding/json"
+	"internal/apiclient"
 	"internal/clilog"
 )
 
@@ -31,7 +32,7 @@ func Clean(name string, reportOnly bool, keepList []string) (err error) {
 		iversions := listbasicIntegrationVersions{}
 		err = json.Unmarshal(response.RespBody, &iversions)
 		if err != nil {
-			return err
+			return apiclient.NewCliError("error unmarshalling", err)
 		}
 
 		listOfVersions = append(listOfVersions, iversions.BasicIntegrationVersions...)

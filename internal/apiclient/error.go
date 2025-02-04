@@ -19,7 +19,7 @@ import (
 	"runtime"
 )
 
-func newError(message string, err error) error {
+func NewCliError(message string, err error) error {
 	pc := make([]uintptr, 1) // Program counter values
 	runtime.Callers(2, pc)   // Skip runtime.Callers and newError itself
 	frame, _ := runtime.CallersFrames(pc).Next()

@@ -47,14 +47,14 @@ func WriteByteArrayToFile(exportFile string, fileAppend bool, payload []byte) er
 
 	f, err := os.OpenFile(exportFile, fileFlags, 0o644)
 	if err != nil {
-		return newError("error opening file", err)
+		return NewCliError("error opening file", err)
 	}
 
 	defer f.Close()
 
 	_, err = f.Write(payload)
 	if err != nil {
-		return newError("error writing to file: ", err)
+		return NewCliError("error writing to file: ", err)
 	}
 	return nil
 }
@@ -69,7 +69,7 @@ func WriteArrayByteArrayToFile(exportFile string, fileAppend bool, payload [][]b
 
 	f, err := os.OpenFile(exportFile, fileFlags, 0o644)
 	if err != nil {
-		return newError("error opening file", err)
+		return NewCliError("error opening file", err)
 	}
 
 	defer f.Close()
@@ -78,7 +78,7 @@ func WriteArrayByteArrayToFile(exportFile string, fileAppend bool, payload [][]b
 	_, err = f.Write([]byte("["))
 	if err != nil {
 		clilog.Error.Println("error writing to file ", err)
-		return newError("error writing to file: ", err)
+		return NewCliError("error writing to file: ", err)
 	}
 
 	payloadFromArray := bytes.Join(payload, []byte(","))
@@ -88,7 +88,7 @@ func WriteArrayByteArrayToFile(exportFile string, fileAppend bool, payload [][]b
 	_, err = f.Write(payloadFromArray)
 	if err != nil {
 		clilog.Error.Println("error writing to file: ", err)
-		return newError("error writing to file: ", err)
+		return NewCliError("error writing to file: ", err)
 	}
 
 	return nil
@@ -100,7 +100,7 @@ func FolderExists(folder string) (err error) {
 	}
 	_, err = os.Stat(folder)
 	if err != nil {
-		return newError("folder not found or write permission denied", err)
+		return NewCliError("folder not found or write permission denied", err)
 	}
 	return nil
 }
@@ -122,16 +122,16 @@ func ExtractTgz(gcsURL string) (folder string, err error) {
 
 	folder, err = os.MkdirTemp("", "integration")
 	if err != nil {
-		return "", newError("error creating temp folder", err)
+		return "", NewCliError("error creating temp folder", err)
 	}
 
 	// Parse the GCS URL
 	parsedURL, err := url.Parse(gcsURL)
 	if err != nil {
-		return "", newError("error parsing GCS URL", err)
+		return "", NewCliError("error parsing GCS URL", err)
 	}
 	if parsedURL.Scheme != "gs" {
-		return "", newError("Invalid GCS URL scheme. Should be 'gs://'", nil)
+		return "", NewCliError("Invalid GCS URL scheme. Should be 'gs://'", nil)
 	}
 
 	bucketName := parsedURL.Host
@@ -141,7 +141,7 @@ func ExtractTgz(gcsURL string) (folder string, err error) {
 	// Create a Google Cloud Storage client
 	client, err := storage.NewClient(ctx)
 	if err != nil {
-		return "", newError("Error creating GCS client", err)
+		return "", NewCliError("Error creating GCS client", err)
 	}
 	defer client.Close()
 
@@ -152,33 +152,33 @@ func ExtractTgz(gcsURL string) (folder string, err error) {
 	// Create a reader to stream the object's content
 	reader, err := object.NewReader(ctx)
 	if err != nil {
-		return "", newError("Error creating object reader", err)
+		return "", NewCliError("Error creating object reader", err)
 	}
 	defer reader.Close()
 
 	// Create the local file to save the download
 	localFile, err := os.Create(path.Join(folder, fileName))
 	if err != nil {
-		return "", newError("Error creating local file", err)
+		return "", NewCliError("Error creating local file", err)
 	}
 	defer localFile.Close()
 
 	// Download the object and save it to the local file
 	if _, err := io.Copy(localFile, reader); err != nil {
-		return "", newError("Error downloading object", err)
+		return "", NewCliError("Error downloading object", err)
 	}
 
 	// Open the .tgz file
 	file, err := os.Open(path.Join(folder, fileName))
 	if err != nil {
-		return "", newError("Error opening file", err)
+		return "", NewCliError("Error opening file", err)
 	}
 	defer file.Close() // Ensure file closure
 
 	// Create a gzip reader
 	gzipReader, err := gzip.NewReader(file)
 	if err != nil {
-		return "", newError("Error creating gzip reader", err)
+		return "", NewCliError("Error creating gzip reader", err)
 	}
 	defer gzipReader.Close() // Ensure closure
 
@@ -192,7 +192,7 @@ func ExtractTgz(gcsURL string) (folder string, err error) {
 			break // End of archive
 		}
 		if err != nil {
-			return "", newError("Error reading tar entry", err)
+			return "", NewCliError("Error reading tar entry", err)
 		}
 		if strings.Contains(header.Name, "..") {
 			continue
@@ -203,22 +203,22 @@ func ExtractTgz(gcsURL string) (folder string, err error) {
 		case tar.TypeDir:
 			// Create directory
 			if err := os.Mkdir(path.Join(folder, header.Name), 0o755); err != nil {
-				return "", newError("Error creating directory", err)
+				return "", NewCliError("Error creating directory", err)
 			}
 		case tar.TypeReg:
 			// Create output file
 			outFile, err := os.Create(path.Join(folder, header.Name))
 			if err != nil {
-				return "", newError("Error creating file", err)
+				return "", NewCliError("Error creating file", err)
 			}
 			defer outFile.Close()
 
 			// Copy contents from the tar to the output file
 			if _, err := io.Copy(outFile, tarReader); err != nil {
-				return "", newError("Error writing file", err)
+				return "", NewCliError("Error writing file", err)
 			}
 		default:
-			return "", newError("", fmt.Errorf("Unsupported type: %b in %s\n", header.Typeflag, header.Name))
+			return "", NewCliError("", fmt.Errorf("Unsupported type: %b in %s\n", header.Typeflag, header.Name))
 		}
 	}
 	return folder, nil
@@ -247,12 +247,12 @@ func GetCloudDeployGCSLocations(cloudDeployProjectId string, cloudDeployLocation
 
 	response := HttpClient(u.String())
 	if response.Err != nil {
-		return "", newError("error calling cloud deploy api", response.Err)
+		return "", NewCliError("error calling cloud deploy api", response.Err)
 	}
 
 	err = json.Unmarshal(response.RespBody, &r)
 	if err != nil {
-		return "", newError("unmarshall error", err)
+		return "", NewCliError("unmarshall error", err)
 	}
 
 	return r.SkaffoldConfigUri, nil
@@ -264,7 +264,7 @@ func WriteResultsFile(deployOutputGCS string, status string) (err error) {
 
 	err = writeGCSFile(deployOutputGCS, filename, contents)
 	if err != nil {
-		return newError("error writing results.json", err)
+		return NewCliError("error writing results.json", err)
 	}
 	return nil
 }
@@ -273,10 +273,10 @@ func parseGCSURI(gcsURI string) (bucketName, objectPath string, err error) {
 	// Parse the GCS URL
 	parsedURL, err := url.Parse(gcsURI)
 	if err != nil {
-		return "", "", newError("Error parsing GCS URL", err)
+		return "", "", NewCliError("Error parsing GCS URL", err)
 	}
 	if parsedURL.Scheme != "gs" {
-		return "", "", newError("Invalid GCS URL scheme. Should be 'gs://'", nil)
+		return "", "", NewCliError("Invalid GCS URL scheme. Should be 'gs://'", nil)
 	}
 	// Remove the protocol prefix
 	uri := strings.TrimPrefix(gcsURI, `gs://`)
@@ -286,7 +286,7 @@ func parseGCSURI(gcsURI string) (bucketName, objectPath string, err error) {
 
 	// Check for proper URI format
 	if len(parts) != 2 {
-		return "", "", newError("Invalid GCS URI format", nil)
+		return "", "", NewCliError("Invalid GCS URI format", nil)
 	}
 	return parts[0], parts[1], nil
 }
@@ -301,12 +301,12 @@ func WriteManifest(deployOutputGCS string, version string) (err error) {
 
 	err = writeGCSFile(deployOutputGCS, manifestFile, manifestContents)
 	if err != nil {
-		return newError("error writing manifest contents", err)
+		return NewCliError("error writing manifest contents", err)
 	}
 
 	err = writeGCSFile(deployOutputGCS, resultsFile, resultContents)
 	if err != nil {
-		return newError("error writing result contents", err)
+		return NewCliError("error writing result contents", err)
 	}
 
 	return nil
@@ -316,7 +316,7 @@ func writeGCSFile(deployOutputGCS string, fileName string, contents string) (err
 	ctx := context.Background()
 	client, err := storage.NewClient(ctx)
 	if err != nil {
-		return newError("storage.NewClient", err)
+		return NewCliError("storage.NewClient", err)
 	}
 	defer client.Close()
 
@@ -330,12 +330,12 @@ func writeGCSFile(deployOutputGCS string, fileName string, contents string) (err
 
 	// Write the content
 	if _, err := writer.Write([]byte(contents)); err != nil {
-		return newError("Object("+objectName+").NewWriter", err)
+		return NewCliError("Object("+objectName+").NewWriter", err)
 	}
 
 	// Close the writer to ensure data is uploaded
 	if err := writer.Close(); err != nil {
-		return newError("Writer.Close", err)
+		return NewCliError("Writer.Close", err)
 	}
 
 	return nil

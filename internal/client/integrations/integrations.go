@@ -974,8 +974,8 @@ func GetVersion(name string, userLabel string, snapshot string) (version string,
 
 	if userLabel != "" {
 		response = GetByUserlabel(name, userLabel, true, false, false)
-		if err != nil {
-			return "", err
+		if response.Err != nil {
+			return "", response.Err
 		}
 	} else if snapshot != "" {
 		response = GetBySnapshot(name, snapshot, true, false, false)

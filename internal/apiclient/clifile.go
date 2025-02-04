@@ -46,13 +46,13 @@ func readPreferencesFile() (cliPref *integrationCLI, err error) {
 	usr, err := user.Current()
 	if err != nil {
 		clilog.Debug.Println(err)
-		return cliPref, newError("unable to get current user", err)
+		return cliPref, NewCliError("unable to get current user", err)
 	}
 
 	prefFile, err := os.ReadFile(path.Join(usr.HomeDir, integrationcliPath, integrationcliFile))
 	if err != nil {
 		clilog.Debug.Println("Cached preferences was not found")
-		return cliPref, newError("Cached preferences was not found", err)
+		return cliPref, NewCliError("Cached preferences was not found", err)
 	}
 
 	err = json.Unmarshal(prefFile, &cliPref)
@@ -67,7 +67,7 @@ func readPreferencesFile() (cliPref *integrationCLI, err error) {
 
 	if cliPref.Api != "" {
 		if cliPref.Api != PROD && cliPref.Api != STAGING && cliPref.Api != AUTOPUSH {
-			return cliPref, newError("invalid api settings in configuration file", nil)
+			return cliPref, NewCliError("invalid api settings in configuration file", nil)
 		}
 	}
 
@@ -78,11 +78,11 @@ func DeletePreferencesFile() (err error) {
 	usr, err := user.Current()
 	if err != nil {
 		clilog.Debug.Println(err)
-		return newError("unable to get current user", err)
+		return NewCliError("unable to get current user", err)
 	}
 	if _, err := os.Stat(path.Join(usr.HomeDir, integrationcliPath, integrationcliFile)); os.IsNotExist(err) {
 		clilog.Debug.Println(err)
-		return newError("file does not exist", err)
+		return NewCliError("file does not exist", err)
 	}
 	return os.Remove(path.Join(usr.HomeDir, integrationcliPath, integrationcliFile))
 }
@@ -103,7 +103,7 @@ func writeToken(token string) (err error) {
 	data, err := json.Marshal(&cliPref)
 	if err != nil {
 		clilog.Debug.Printf("Error marshalling: %v\n", err)
-		return newError("error marshalling", err)
+		return NewCliError("error marshalling", err)
 	}
 	clilog.Debug.Println("Writing ", string(data))
 	return writePerferencesFile(data)
@@ -134,7 +134,7 @@ func SetNoCheck(nocheck bool) (err error) {
 	data, err := json.Marshal(&cliPref)
 	if err != nil {
 		clilog.Debug.Printf("Error marshalling: %v\n", err)
-		return newError("error marshalling", err)
+		return NewCliError("error marshalling", err)
 	}
 	clilog.Debug.Println("Writing ", string(data))
 	return writePerferencesFile(data)
@@ -152,7 +152,7 @@ func SetBasicInfo(basicInfo string) (err error) {
 	clilog.Debug.Println("BasicInfo set to: ", basicInfo)
 
 	if _, err = strconv.ParseBool(basicInfo); err != nil {
-		return newError("error parsing to bool", err)
+		return NewCliError("error parsing to bool", err)
 	}
 
 	clilog.Debug.Println("BasicInfo set to: ", basicInfo)
@@ -163,7 +163,7 @@ func SetBasicInfo(basicInfo string) (err error) {
 	data, err := json.Marshal(&cliPref)
 	if err != nil {
 		clilog.Debug.Printf("Error marshalling: %v\n", err)
-		return newError("error marshalling", err)
+		return NewCliError("error marshalling", err)
 	}
 	clilog.Debug.Println("Writing ", string(data))
 	return writePerferencesFile(data)
@@ -178,7 +178,7 @@ func SetAPIPref(a API) (err error) {
 	data, err := json.Marshal(&cliPref)
 	if err != nil {
 		clilog.Debug.Printf("Error marshalling: %v\n", err)
-		return newError("error marshalling", err)
+		return NewCliError("error marshalling", err)
 	}
 	clilog.Debug.Println("Writing ", string(data))
 	return writePerferencesFile(data)
@@ -200,11 +200,11 @@ func TestAndUpdateLastCheck() (updated bool, err error) {
 	data, err := json.Marshal(&cliPref)
 	if err != nil {
 		clilog.Warning.Printf("Error marshalling: %v\n", err)
-		return false, newError("error marshalling", err)
+		return false, NewCliError("error marshalling", err)
 	}
 	clilog.Debug.Println("Writing ", string(data))
 	if err = writePerferencesFile(data); err != nil {
-		return false, newError("error writing preference", err)
+		return false, NewCliError("error writing preference", err)
 	}
 	return false, nil
 }
@@ -221,7 +221,7 @@ func WriteDefaultProject(project string) (err error) {
 	data, err := json.Marshal(&cliPref)
 	if err != nil {
 		clilog.Debug.Printf("Error marshalling: %v\n", err)
-		return newError("error marshalling", err)
+		return NewCliError("error marshalling", err)
 	}
 	clilog.Debug.Println("Writing ", string(data))
 	return writePerferencesFile(data)
@@ -236,7 +236,7 @@ func SetProxy(url string) (err error) {
 	data, err := json.Marshal(&cliPref)
 	if err != nil {
 		clilog.Debug.Printf("Error marshalling: %v\n", err)
-		return newError("error marshalling", err)
+		return NewCliError("error marshalling", err)
 	}
 	clilog.Debug.Println("Writing ", string(data))
 	return writePerferencesFile(data)
@@ -251,7 +251,7 @@ func SetDefaultRegion(region string) (err error) {
 	data, err := json.Marshal(&cliPref)
 	if err != nil {
 		clilog.Debug.Printf("Error marshalling: %v\n", err)
-		return newError("error marshalling", err)
+		return NewCliError("error marshalling", err)
 	}
 	clilog.Debug.Println("Writing ", string(data))
 	return writePerferencesFile(data)
@@ -260,19 +260,17 @@ func SetDefaultRegion(region string) (err error) {
 func GetPreferences() APIResponse {
 	cliPref, err := readPreferencesFile()
 	if err != nil {
-		clilog.Error.Println(err)
 		return APIResponse{
 			RespBody: nil,
-			Err:      err,
+			Err:      NewCliError("error reading preferences", err),
 		}
 	}
 
 	output, err := json.Marshal(&cliPref)
 	if err != nil {
-		clilog.Error.Println(err)
 		return APIResponse{
 			RespBody: nil,
-			Err:      err,
+			Err:      NewCliError("error marshalling", err),
 		}
 	}
 
@@ -287,7 +285,7 @@ func writePerferencesFile(payload []byte) (err error) {
 	usr, err := user.Current()
 	if err != nil {
 		clilog.Warning.Println(err)
-		return err
+		return NewCliError("error getting current user", err)
 	}
 	_, err = os.Stat(path.Join(usr.HomeDir, integrationcliPath, integrationcliFile))
 	if err == nil {
@@ -295,12 +293,12 @@ func writePerferencesFile(payload []byte) (err error) {
 	} else {
 		if os.IsNotExist(err) {
 			if err = os.MkdirAll(path.Join(usr.HomeDir, integrationcliPath), 0o755); err != nil {
-				return err
+				return NewCliError("unable to create directory", err)
 			}
 			return WriteByteArrayToFile(path.Join(usr.HomeDir, integrationcliPath, integrationcliFile), false, payload)
 		} else {
 			clilog.Warning.Println(err)
-			return err
+			return NewCliError("error getting dir details", err)
 		}
 	}
 }

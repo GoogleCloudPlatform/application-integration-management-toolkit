@@ -16,7 +16,6 @@ package sfdc
 
 import (
 	"encoding/json"
-	"fmt"
 	"internal/apiclient"
 	"net/url"
 	"path"
@@ -55,7 +54,7 @@ func CreateInstanceFromContent(content []byte) apiclient.APIResponse {
 	if err := json.Unmarshal(content, &i); err != nil {
 		return apiclient.APIResponse{
 			RespBody: nil,
-			Err:      err,
+			Err:      apiclient.NewCliError("error unmarshalling", err),
 		}
 	}
 
@@ -72,7 +71,7 @@ func CreateInstance(name string, description string, sfdcOrgId string, serviceAu
 	if len(authConfig) < 1 {
 		return apiclient.APIResponse{
 			RespBody: nil,
-			Err:      fmt.Errorf("at least one authConfig must be sent"),
+			Err:      apiclient.NewCliError("at least one authConfig must be sent", nil),
 		}
 	}
 
@@ -107,7 +106,7 @@ func GetInstance(name string, minimal bool) apiclient.APIResponse {
 		if err != nil {
 			return apiclient.APIResponse{
 				RespBody: nil,
-				Err:      err,
+				Err:      apiclient.NewCliError("error unmarshalling", err),
 			}
 		}
 		eversion := convertInternalInstanceToExternal(iversion)
@@ -133,17 +132,17 @@ func FindInstance(name string) (version string, respBody []byte, err error) {
 		return "", response.RespBody, response.Err
 	}
 	if err = json.Unmarshal(response.RespBody, &ilist); err != nil {
-		return "", nil, err
+		return "", nil, apiclient.NewCliError("error unmarshalling", err)
 	}
 
 	for _, i := range ilist.SfdcInstances {
 		if i.DisplayName == name {
 			version = i.Name[strings.LastIndex(i.Name, "/")+1:]
 			respBody, err := json.Marshal(&i)
-			return version, respBody, err
+			return version, respBody, apiclient.NewCliError("error marshallilng", err)
 		}
 	}
-	return "", nil, fmt.Errorf("instance not found")
+	return "", nil, apiclient.NewCliError("instance not found", nil)
 }
 
 // convertInternalInstanceToExternal

@@ -16,7 +16,6 @@ package integrations
 
 import (
 	"encoding/json"
-	"fmt"
 	"internal/apiclient"
 	"net/url"
 	"path"
@@ -100,7 +99,7 @@ func Execute(name string, content []byte) apiclient.APIResponse {
 	regExTrigger := regexp.MustCompile(`api_trigger\/\w+`)
 	if !regExTrigger.MatchString(e.TriggerId) {
 		return apiclient.APIResponse{
-			Err: fmt.Errorf("triggerId must match the format api_trigger/*"),
+			Err: apiclient.NewCliError("triggerId must match the format api_trigger/*", nil),
 		}
 	}
 
@@ -115,7 +114,7 @@ func Execute(name string, content []byte) apiclient.APIResponse {
 	err = json.Unmarshal(response.RespBody, &eresp)
 	if err != nil {
 		return apiclient.APIResponse{
-			Err: err,
+			Err: apiclient.NewCliError("error unmarshalling", err),
 		}
 	}
 

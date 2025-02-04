@@ -106,7 +106,7 @@ func Create(content []byte) apiclient.APIResponse {
 	if err := json.Unmarshal(content, &c); err != nil {
 		return apiclient.APIResponse{
 			RespBody: nil,
-			Err:      err,
+			Err:      apiclient.NewCliError("error unmarshalling", err),
 		}
 	}
 
@@ -135,7 +135,7 @@ func Get(name string, minimal bool) apiclient.APIResponse {
 		if err != nil {
 			return apiclient.APIResponse{
 				RespBody: nil,
-				Err:      err,
+				Err:      apiclient.NewCliError("error unmarshalling", err),
 			}
 		}
 		eversion := convertInternalToExternal(iversion)
@@ -143,7 +143,7 @@ func Get(name string, minimal bool) apiclient.APIResponse {
 		if err != nil {
 			return apiclient.APIResponse{
 				RespBody: nil,
-				Err:      err,
+				Err:      apiclient.NewCliError("error marshalling", err),
 			}
 		}
 		return apiclient.APIResponse{
@@ -167,7 +167,7 @@ func GetDisplayName(name string) (displayName string, err error) {
 	iversion := authConfig{}
 	err = json.Unmarshal(response.RespBody, &iversion)
 	if err != nil {
-		return "", err
+		return "", apiclient.NewCliError("error unmarshalling", err)
 	}
 
 	return iversion.DisplayName, nil
@@ -210,7 +210,7 @@ func Find(name string, pageToken string) (version string, err error) {
 	}
 
 	if err = json.Unmarshal(respBody, &ac); err != nil {
-		return "", err
+		return "", apiclient.NewCliError("error unmarshalling", err)
 	}
 
 	for _, config := range ac.AuthConfig {
@@ -238,8 +238,7 @@ func Export(folder string) (err error) {
 
 	fileName := "authconfigs_" + strconv.Itoa(count) + ".json"
 	if err = apiclient.WriteByteArrayToFile(path.Join(apiclient.GetExportToFile(), fileName), false, respBody); err != nil {
-		clilog.Error.Println(err)
-		return err
+		return apiclient.NewCliError("error writing to file", err)
 	}
 	clilog.Info.Printf("Downloaded %s\n", fileName)
 
@@ -255,14 +254,13 @@ func Export(folder string) (err error) {
 		}
 
 		if err = json.Unmarshal(respBody, &aconfigs); err != nil {
-			return err
+			return apiclient.NewCliError("error unmarshalling", err)
 		}
 
 		count++
 		fileName := "authconfigs_" + strconv.Itoa(count) + ".json"
 		if err = apiclient.WriteByteArrayToFile(path.Join(apiclient.GetExportToFile(), fileName), false, respBody); err != nil {
-			clilog.Error.Println(err)
-			return err
+			return apiclient.NewCliError("error writing to file", err)
 		}
 		clilog.Info.Printf("Downloaded %s\n", fileName)
 	}
@@ -275,7 +273,7 @@ func Patch(name string, content []byte, updateMask []string) apiclient.APIRespon
 	if err := json.Unmarshal(content, &a); err != nil {
 		return apiclient.APIResponse{
 			RespBody: nil,
-			Err:      err,
+			Err:      apiclient.NewCliError("error unmarshalling", err),
 		}
 	}
 

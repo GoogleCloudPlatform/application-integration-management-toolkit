@@ -16,7 +16,6 @@ package sfdc
 
 import (
 	"encoding/json"
-	"fmt"
 	"internal/apiclient"
 	"net/url"
 	"path"
@@ -95,7 +94,7 @@ func GetChannel(name string, instance string, minimal bool) apiclient.APIRespons
 		if err != nil {
 			return apiclient.APIResponse{
 				RespBody: nil,
-				Err:      err,
+				Err:      apiclient.NewCliError("error unmarshalling", err),
 			}
 		}
 		eversion := convertInternalChannelToExternal(iversion)
@@ -128,7 +127,7 @@ func FindChannel(name string, instance string) (version string, response apiclie
 	if err := json.Unmarshal(response.RespBody, &clist); err != nil {
 		return "", apiclient.APIResponse{
 			RespBody: nil,
-			Err:      err,
+			Err:      apiclient.NewCliError("error unmarshalling", err),
 		}
 	}
 
@@ -136,6 +135,12 @@ func FindChannel(name string, instance string) (version string, response apiclie
 		if c.DisplayName == name {
 			version = c.Name[strings.LastIndex(c.Name, "/")+1:]
 			respBody, err := json.Marshal(&c)
+			if err != nil {
+				return "", apiclient.APIResponse{
+					RespBody: nil,
+					Err:      apiclient.NewCliError("error marshalling", err),
+				}
+			}
 			return version, apiclient.APIResponse{
 				RespBody: respBody,
 				Err:      err,
@@ -144,7 +149,7 @@ func FindChannel(name string, instance string) (version string, response apiclie
 	}
 	return "", apiclient.APIResponse{
 		RespBody: nil,
-		Err:      fmt.Errorf("channel not found"),
+		Err:      apiclient.NewCliError("channel not found", nil),
 	}
 }
 
@@ -155,11 +160,11 @@ func GetInstancesAndChannels(instances map[string]string) (instancesContent map[
 	for instance, channel := range instances {
 		instanceUuid, instancesResp, err := FindInstance(instance)
 		if err != nil {
-			return instancesContent, err
+			return instancesContent, apiclient.NewCliError("error finding instance", err)
 		}
 		_, response := FindChannel(channel, instanceUuid)
 		if response.Err != nil {
-			return instancesContent, err
+			return instancesContent, apiclient.NewCliError("error finding channel", response.Err)
 		}
 		instancesContent[string(instancesResp)] = string(response.RespBody)
 	}

@@ -162,7 +162,7 @@ func PrettifyJson(body []byte) (prettyJson []byte, err error) {
 	err = json.Indent(&prettyJSON, body, "", "\t")
 	if err != nil {
 		clilog.Error.Printf("error parsing json response: %v, the original response was: %s\n", err, string(body))
-		return nil, newError("error parsing json response", err)
+		return nil, NewCliError("error parsing json response", err)
 	}
 	return prettyJSON.Bytes(), nil
 }
@@ -187,13 +187,13 @@ func getRequest(params []string) (req *http.Request, err error) {
 	} else {
 		return nil, errors.New("unsupported method")
 	}
-	return req, newError("unable to create http request", err)
+	return req, NewCliError("unable to create http request", err)
 }
 
 func setAuthHeader(req *http.Request) (*http.Request, error) {
 	if GetIntegrationToken() == "" {
 		if err := SetAccessToken(); err != nil {
-			return nil, err
+			return nil, NewCliError("error setting token", err)
 		}
 	}
 	clilog.Debug.Println("Setting token : ", GetIntegrationToken())
