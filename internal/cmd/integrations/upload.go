@@ -53,7 +53,7 @@ var UploadCmd = &cobra.Command{
 
 		content, err := os.ReadFile(filePath)
 		if err != nil {
-			return err
+			return apiclient.NewCliError("unable to open file", err)
 		}
 
 		return apiclient.PrettyPrint(integrations.Upload(name, content))
