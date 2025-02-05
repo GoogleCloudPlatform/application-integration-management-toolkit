@@ -1,0 +1,88 @@
+{
+    "displayName": "test1",
+    "name": "projects/100000000000/locations/us-west1/integrations/sample/versions/f8145f7e-173c-4c1e-ad35-c6392853b628/testCases/dc4a4be5-1625-4f0b-a8c6-b81dce8f8620",
+    "testTaskConfigs": [
+        {
+            "assertions": [
+                {
+                    "assertionStrategy": "ASSERT_SUCCESSFUL_EXECUTION",
+                    "parameter": {
+                        "value": {}
+                    }
+                }
+            ],
+            "mockConfig": {
+                "mockStrategy": "SPECIFIC_MOCK_STRATEGY"
+            },
+            "task": "JsonnetMapperTask",
+            "taskConfig": {
+                "displayName": "Data Transformer (Preview)",
+                "nextTasks": [
+                    {
+                        "taskId": "2"
+                    }
+                ],
+                "task": "JsonnetMapperTask",
+                "taskExecutionStrategy": "WHEN_ALL_SUCCEED",
+                "taskId": "1"
+            },
+            "taskNumber": "1"
+        },
+        {
+            "assertions": [
+                {
+                    "assertionStrategy": "ASSERT_SUCCESSFUL_EXECUTION",
+                    "parameter": {
+                        "value": {}
+                    }
+                }
+            ],
+            "mockConfig": {
+                "mockStrategy": "SPECIFIC_MOCK_STRATEGY",
+                "parameters": [
+                    {
+                        "key": "`Task_2_responseHeader`",
+                        "value": {
+                            "stringValue": "test"
+                        }
+                    },
+                    {
+                        "key": "`Task_2_responseBody`",
+                        "value": {
+                            "stringValue": "test"
+                        }
+                    },
+                    {
+                        "key": "`Task_2_responseStatus`",
+                        "value": {
+                            "stringValue": "tesst"
+                        }
+                    }
+                ]
+            },
+            "task": "GenericRestV2Task",
+            "taskConfig": {
+                "displayName": "Call REST Endpoint",
+                "task": "GenericRestV2Task",
+                "taskExecutionStrategy": "WHEN_ALL_SUCCEED",
+                "taskId": "2"
+            },
+            "taskNumber": "2"
+        }
+    ],
+    "triggerConfig": {
+        "label": "API Trigger",
+        "properties": {
+            "Trigger name": "sample_API_1"
+        },
+        "startTasks": [
+            {
+                "taskId": "1"
+            }
+        ],
+        "triggerId": "api_trigger/sample_API_1",
+        "triggerNumber": "1",
+        "triggerType": "API"
+    },
+    "triggerId": "api_trigger/sample_API_1"
+}

@@ -45,24 +45,20 @@ var ApplyCmd = &cobra.Command{
 	Args: func(cmd *cobra.Command, args []string) (err error) {
 		cmdProject := cmd.Flag("proj")
 		cmdRegion := cmd.Flag("reg")
+		cloudDeploy, _ := strconv.ParseBool(utils.GetStringParam(cmd.Flag("cloud-deploy")))
+
+		cmd.Flags().VisitAll(func(f *pflag.Flag) {
+			clilog.Debug.Printf("%s: %s\n", f.Name, f.Value)
+		})
+
+		if !cloudDeploy && folder == "" {
+			return fmt.Errorf("either --folder or --cloud-deploy must be set")
+		}
 
 		if err = apiclient.SetRegion(utils.GetStringParam(cmdRegion)); err != nil {
 			return err
 		}
-		if folder == "" && (pipeline == "" || release == "" || outputGCSPath == "") {
-			return fmt.Errorf("atleast one of folder or pipeline, release and outputGCSPath must be supplied")
-		}
-		if folder != "" && (pipeline != "" || release != "" || outputGCSPath != "") {
-			return fmt.Errorf("both folder and pipeline, release and outputGCSPath cannot be supplied")
-		}
-		if (pipeline != "" && (release == "" || outputGCSPath == "")) ||
-			(release != "" && (pipeline == "" && outputGCSPath == "")) ||
-			(outputGCSPath != "" && (pipeline == "" && release == "")) {
-			return fmt.Errorf("release, pipeline and outputGCSPath must be set")
-		}
-		cmd.Flags().VisitAll(func(f *pflag.Flag) {
-			clilog.Debug.Printf("%s: %s\n", f.Name, f.Value)
-		})
+
 		return apiclient.SetProjectID(utils.GetStringParam(cmdProject))
 	},
 	RunE: func(cmd *cobra.Command, args []string) (err error) {
@@ -70,8 +66,21 @@ var ApplyCmd = &cobra.Command{
 
 		var skaffoldConfigUri string
 
-		if folder == "" {
-			skaffoldConfigUri, err = apiclient.GetCloudDeployGCSLocations(pipeline, release)
+		cloudDeploy, _ := strconv.ParseBool(utils.GetStringParam(cmd.Flag("cloud-deploy")))
+		createSecret, _ := strconv.ParseBool(utils.GetStringParam(cmd.Flag("create-secret")))
+		grantPermission, _ := strconv.ParseBool(utils.GetStringParam(cmd.Flag("grant-permission")))
+		userLabel := utils.GetStringParam(cmd.Flag("user-label"))
+		wait, _ := strconv.ParseBool(utils.GetStringParam(cmd.Flag("wait")))
+		runTests, _ := strconv.ParseBool(utils.GetStringParam(cmd.Flag("run-tests")))
+
+		apiclient.DisableCmdPrintHttpResponse()
+
+		if cloudDeploy {
+			if err = storeCloudDeployVariables(); err != nil {
+				return err
+			}
+
+			skaffoldConfigUri, err = apiclient.GetCloudDeployGCSLocations(cloudDeployProjectId, cloudDeployLocation, pipeline, release)
 			if err != nil {
 				return err
 			}
@@ -89,13 +98,6 @@ var ApplyCmd = &cobra.Command{
 			return fmt.Errorf("problem with supplied path, %w", err)
 		}
 
-		createSecret, _ := strconv.ParseBool(utils.GetStringParam(cmd.Flag("create-secret")))
-		grantPermission, _ := strconv.ParseBool(utils.GetStringParam(cmd.Flag("grant-permission")))
-		userLabel := utils.GetStringParam(cmd.Flag("user-label"))
-		wait, _ := strconv.ParseBool(utils.GetStringParam(cmd.Flag("wait")))
-		runTests, _ := strconv.ParseBool(utils.GetStringParam(cmd.Flag("run-tests")))
-
-		integrationFolder := path.Join(srcFolder, "src")
 		testsFolder := path.Join(folder, "tests")
 		testsConfigFolder := path.Join(folder, "test-configs")
 		authconfigFolder := path.Join(folder, "authconfigs")
@@ -108,7 +110,7 @@ var ApplyCmd = &cobra.Command{
 		endpointsFolder := path.Join(folder, "endpoints")
 		zonesFolder := path.Join(folder, "zones")
 
-		apiclient.DisableCmdPrintHttpResponse()
+		integrationFolder := path.Join(srcFolder, "src")
 
 		if !skipAuthconfigs {
 			if err = processAuthConfigs(authconfigFolder); err != nil {
@@ -160,20 +162,17 @@ Apply scaffold configuration, but skip connectors: ` + GetExample(12) + `
 Apply scaffold configuration and run functional tests: ` + GetExample(18),
 }
 
-var serviceAccountName, serviceAccountProject, encryptionKey, pipeline, release, outputGCSPath string
+var serviceAccountName, serviceAccountProject, encryptionKey, pipeline string
+var release, outputGCSPath, cloudDeployProjectId, cloudDeployLocation string
 
 func init() {
 	var userLabel string
-	grantPermission, createSecret, wait, runTests := false, false, false, false
+	grantPermission, createSecret, wait, runTests, cloudDeploy := false, false, false, false, false
 
 	ApplyCmd.Flags().StringVarP(&folder, "folder", "f",
 		"", "Folder containing scaffolding configuration")
-	ApplyCmd.Flags().StringVarP(&pipeline, "pipeline", "",
-		"", "Cloud Deploy Pipeline name")
-	ApplyCmd.Flags().StringVarP(&release, "release", "",
-		"", "Cloud Deploy Release name")
-	ApplyCmd.Flags().StringVarP(&outputGCSPath, "output-gcs-path", "",
-		"", "Upload a file named results.json containing the results")
+	ApplyCmd.Flags().BoolVarP(&cloudDeploy, "cloud-deploy", "",
+		false, "Deploy using Cloud Deploy; default is false")
 	ApplyCmd.Flags().BoolVarP(&grantPermission, "grant-permission", "g",
 		false, "Grant the service account permission to the GCP resource; default is false")
 	ApplyCmd.Flags().StringVarP(&userLabel, "userlabel", "u",
@@ -745,6 +744,26 @@ func processTestCases(testsFolder string, integrationName string, version string
 				return err
 			}
 		}
+	}
+	return nil
+}
+
+func storeCloudDeployVariables() (err error) {
+	pipeline = os.Getenv("CLOUD_DEPLOY_DELIVERY_PIPELINE")
+	release = os.Getenv("CLOUD_DEPLOY_RELEASE")
+	outputGCSPath = os.Getenv("CLOUD_DEPLOY_OUTPUT_GCS_PATH")
+	cloudDeployProjectId = os.Getenv("CLOUD_DEPLOY_PROJECT_ID")
+	cloudDeployLocation = os.Getenv("CLOUD_DEPLOY_LOCATION")
+
+	clilog.Debug.Printf("CLOUD_DEPLOY_DELIVERY_PIPELINE: %s\n", pipeline)
+	clilog.Debug.Printf("CLOUD_DEPLOY_RELEASE: %s\n", release)
+	clilog.Debug.Printf("CLOUD_DEPLOY_OUTPUT_GCS_PATH: %s\n", outputGCSPath)
+	clilog.Debug.Printf("CLOUD_DEPLOY_PROJECT_ID: %s\n", cloudDeployProjectId)
+	clilog.Debug.Printf("CLOUD_DEPLOY_LOCATION: %s\n", cloudDeployLocation)
+
+	if pipeline == "" || release == "" || outputGCSPath == "" || cloudDeployProjectId == "" {
+		return fmt.Errorf("CLOUD_DEPLOY_DELIVERY_PIPELINE, CLOUD_DEPLOY_RELEASE, CLOUD_DEPLOY_OUTPUT_GCS_PATH, " +
+			"CLOUD_DEPLOY_PROJECT_ID, CLOUD_DEPLOY_LOCATION must be set")
 	}
 	return nil
 }

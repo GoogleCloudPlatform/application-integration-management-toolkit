@@ -30,8 +30,8 @@ var Cmd = &cobra.Command{
 		cmd.SilenceUsage = true
 
 		outputGCSPath := utils.GetStringParam(cmd.Flag("output-gcs-path"))
-
-		err = apiclient.WriteManifest(outputGCSPath, utils.GetCLIVersion())
+		v, _, _ := apiclient.GetBuildParams()
+		err = apiclient.WriteManifest(outputGCSPath, v)
 		return
 	},
 }
