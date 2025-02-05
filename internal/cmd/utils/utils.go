@@ -145,7 +145,7 @@ customActions:
 - name: render-%s-integration
   containers:
   - name: render
-    image: us-docker.pkg.dev/appintegration-toolkit/images/integrationcli:%s
+    image: us-docker.pkg.dev/appintegration-toolkit/images/integrationcli:v%s
     command: ['sh']
     args:
       - '-c'
@@ -154,7 +154,7 @@ customActions:
 - name: deploy-%s-integration
   containers:
   - name: deploy
-    image: us-docker.pkg.dev/appintegration-toolkit/images/integrationcli:%s
+    image: us-docker.pkg.dev/appintegration-toolkit/images/integrationcli:v%s
     command: ['sh']
     args:
       - '-c'
