@@ -16,7 +16,6 @@ package integrations
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"internal/apiclient"
 	"internal/client/authconfigs"
@@ -205,15 +204,15 @@ func getVersion(respBody []byte) (version string, err error) {
 	var jsonMap map[string]interface{}
 
 	if err = json.Unmarshal(respBody, &jsonMap); err != nil {
-		return "", err
+		return "", apiclient.NewCliError("error unmarshalling", err)
 	}
 
 	if jsonMap["name"] == "" {
-		return "", errors.New("version not found")
+		return "", apiclient.NewCliError("version not found", nil)
 	}
 
 	if version = filepath.Base(fmt.Sprintf("%s", jsonMap["name"])); version == "" {
-		return "", errors.New("version not found")
+		return "", apiclient.NewCliError("version not found", nil)
 	}
 	return version, nil
 }
@@ -222,10 +221,10 @@ func getServiceAttachment(respBody []byte) (sa string, err error) {
 	var jsonMap map[string]string
 
 	if err = json.Unmarshal(respBody, &jsonMap); err != nil {
-		return "", err
+		return "", apiclient.NewCliError("error unmarshalling", err)
 	}
 	if jsonMap["serviceAttachment"] == "" {
-		return "", errors.New("serviceAttachment not found")
+		return "", apiclient.NewCliError("serviceAttachment not found", nil)
 	}
 	return jsonMap["serviceAttachment"], nil
 }
@@ -238,7 +237,7 @@ func processAuthConfigs(authconfigFolder string) (err error) {
 		// create any authconfigs
 		err = filepath.Walk(authconfigFolder, func(path string, info os.FileInfo, err error) error {
 			if err != nil {
-				return err
+				return apiclient.NewCliError("unable to traverse folder", err)
 			}
 			if !info.IsDir() {
 				authConfigFile := filepath.Base(path)
@@ -249,7 +248,7 @@ func processAuthConfigs(authconfigFolder string) (err error) {
 					if version == "" {
 						authConfigBytes, err := utils.ReadFile(path)
 						if err != nil {
-							return err
+							return apiclient.NewCliError("unable to read file", err)
 						}
 						clilog.Info.Printf("Creating authconfig: %s\n", authConfigFile)
 						if response := authconfigs.Create(authConfigBytes); response.Err != nil {
@@ -263,7 +262,7 @@ func processAuthConfigs(authconfigFolder string) (err error) {
 			return nil
 		})
 		if err != nil {
-			return err
+			return apiclient.NewCliError("unable to traverse folder", err)
 		}
 	}
 	return nil
@@ -277,7 +276,7 @@ func processEndpoints(endpointsFolder string) (err error) {
 		// create any endpoint attachments
 		err = filepath.Walk(endpointsFolder, func(path string, info os.FileInfo, err error) error {
 			if err != nil {
-				return err
+				return apiclient.NewCliError("unable to traverse folder", err)
 			}
 			if !info.IsDir() {
 				endpointFile := filepath.Base(path)
@@ -288,7 +287,7 @@ func processEndpoints(endpointsFolder string) (err error) {
 					// the endpoint does not exist, try to create it
 					endpointBytes, err := utils.ReadFile(path)
 					if err != nil {
-						return err
+						return apiclient.NewCliError("unable to read file", err)
 					}
 					serviceAccountName, err := getServiceAttachment(endpointBytes)
 					if err != nil {
@@ -305,7 +304,7 @@ func processEndpoints(endpointsFolder string) (err error) {
 			return nil
 		})
 		if err != nil {
-			return err
+			return apiclient.NewCliError("unable to traverse folder", err)
 		}
 	}
 	return nil
@@ -320,7 +319,7 @@ func processManagedZones(zonesFolder string) (err error) {
 		// create any managedzones
 		err = filepath.Walk(zonesFolder, func(path string, info os.FileInfo, err error) error {
 			if err != nil {
-				return err
+				return apiclient.NewCliError("unable to traverse folder", err)
 			}
 			if !info.IsDir() {
 				zoneFile := filepath.Base(path)
@@ -331,7 +330,7 @@ func processManagedZones(zonesFolder string) (err error) {
 					// the managed zone does not exist, try to create it
 					zoneBytes, err := utils.ReadFile(path)
 					if err != nil {
-						return err
+						return apiclient.NewCliError("unable to read file", err)
 					}
 					if response := connections.CreateZone(getFilenameWithoutExtension(zoneFile),
 						zoneBytes); response.Err != nil {
@@ -344,7 +343,7 @@ func processManagedZones(zonesFolder string) (err error) {
 			return nil
 		})
 		if err != nil {
-			return err
+			return apiclient.NewCliError("unable to traverse folder", err)
 		}
 	}
 	return nil
@@ -358,7 +357,7 @@ func processConnectors(connectorsFolder string, grantPermission bool, createSecr
 		// create any connectors
 		err = filepath.Walk(connectorsFolder, func(path string, info os.FileInfo, err error) error {
 			if err != nil {
-				return err
+				return apiclient.NewCliError("unable to traverse folder", err)
 			}
 			if !info.IsDir() {
 				connectionFile := filepath.Base(path)
@@ -369,7 +368,7 @@ func processConnectors(connectorsFolder string, grantPermission bool, createSecr
 					if response.Err != nil {
 						connectionBytes, err := utils.ReadFile(path)
 						if err != nil {
-							return response.Err
+							return apiclient.NewCliError("unable to traverse folder", err)
 						}
 						clilog.Info.Printf("Creating connector: %s\n", connectionFile)
 
@@ -380,8 +379,8 @@ func processConnectors(connectorsFolder string, grantPermission bool, createSecr
 							encryptionKey,
 							grantPermission,
 							createSecret,
-							wait); err != nil {
-							return err
+							wait); response.Err != nil {
+							return response.Err
 						}
 					} else {
 						clilog.Info.Printf("Connector %s already exists\n", connectionFile)
@@ -391,7 +390,7 @@ func processConnectors(connectorsFolder string, grantPermission bool, createSecr
 			return nil
 		})
 		if err != nil {
-			return err
+			return apiclient.NewCliError("unable to traverse folder", err)
 		}
 	}
 	return nil
@@ -412,7 +411,7 @@ func processCustomConnectors(customConnectorsFolder string) (err error) {
 		// create any custom connectors
 		err = filepath.Walk(customConnectorsFolder, func(path string, info os.FileInfo, err error) error {
 			if err != nil {
-				return err
+				return apiclient.NewCliError("unable to traverse folder", err)
 			}
 			if !info.IsDir() {
 				customConnectionFile := filepath.Base(path)
@@ -423,7 +422,7 @@ func processCustomConnectors(customConnectorsFolder string) (err error) {
 						clilog.Info.Printf("Found configuration for custom connection: %v\n", customConnectionFile)
 						contents, err := utils.ReadFile(path)
 						if err != nil {
-							return err
+							return apiclient.NewCliError("unable to read file", err)
 						}
 						clilog.Info.Printf("Creating custom connector: %s\n", customConnectionFile)
 						if response := connections.GetCustomVersion(customConnectionDetails[0],
@@ -441,6 +440,9 @@ func processCustomConnectors(customConnectorsFolder string) (err error) {
 			}
 			return nil
 		})
+		if err != nil {
+			return apiclient.NewCliError("unable to traverse folder", err)
+		}
 	}
 	return nil
 }
@@ -453,7 +455,7 @@ func processSfdcInstances(sfdcinstancesFolder string) (err error) {
 		// create any sfdc instances
 		err = filepath.Walk(sfdcinstancesFolder, func(path string, info os.FileInfo, err error) error {
 			if err != nil {
-				return err
+				return apiclient.NewCliError("unable to traverse folder", err)
 			}
 			if !info.IsDir() {
 				instanceFile := filepath.Base(path)
@@ -464,7 +466,7 @@ func processSfdcInstances(sfdcinstancesFolder string) (err error) {
 					if response.Err != nil {
 						instanceBytes, err := utils.ReadFile(path)
 						if err != nil {
-							return err
+							return apiclient.NewCliError("unable to read file", err)
 						}
 						clilog.Info.Printf("Creating sfdc instance: %s\n", instanceFile)
 						response = sfdc.CreateInstanceFromContent(instanceBytes)
@@ -479,7 +481,7 @@ func processSfdcInstances(sfdcinstancesFolder string) (err error) {
 			return nil
 		})
 		if err != nil {
-			return err
+			return apiclient.NewCliError("unable to traverse folder", err)
 		}
 	}
 	return nil
@@ -501,7 +503,7 @@ func processSfdcChannels(sfdcchannelsFolder string) (err error) {
 		// create any sfdc channels
 		err = filepath.Walk(sfdcchannelsFolder, func(path string, info os.FileInfo, err error) error {
 			if err != nil {
-				return err
+				return apiclient.NewCliError("unable to traverse folder", err)
 			}
 			if !info.IsDir() {
 				channelFile := filepath.Base(path)
@@ -518,7 +520,7 @@ func processSfdcChannels(sfdcchannelsFolder string) (err error) {
 					if response.Err != nil {
 						channelBytes, err := utils.ReadFile(path)
 						if err != nil {
-							return err
+							return apiclient.NewCliError("unable to read file", err)
 						}
 						clilog.Info.Printf("Creating sfdc channel: %s\n", channelFile)
 						response = sfdc.CreateChannelFromContent(version, channelBytes)
@@ -533,7 +535,7 @@ func processSfdcChannels(sfdcchannelsFolder string) (err error) {
 			return nil
 		})
 		if err != nil {
-			return err
+			return apiclient.NewCliError("unable to traverse folder", err)
 		}
 	}
 	return nil
@@ -554,7 +556,7 @@ func processIntegration(overridesFile string, integrationFolder string, testsFol
 	if _, err = os.Stat(overridesFile); err == nil {
 		overridesBytes, err = utils.ReadFile(overridesFile)
 		if err != nil {
-			return err
+			return apiclient.NewCliError("unable to read file", err)
 		}
 	}
 
@@ -581,7 +583,7 @@ func processIntegration(overridesFile string, integrationFolder string, testsFol
 		// get only the first file
 		integrationBytes, err := utils.ReadFile(path.Join(integrationFolder, integrationNames[0]))
 		if err != nil {
-			return err
+			return apiclient.NewCliError("unable to read file", err)
 		}
 		// check for code files
 		codeMap, err := processCodeFolders(javascriptFolder, jsonnetFolder)
@@ -621,7 +623,7 @@ func processIntegration(overridesFile string, integrationFolder string, testsFol
 		if _, err = os.Stat(configVarsFile); err == nil {
 			configVarBytes, err = utils.ReadFile(configVarsFile)
 			if err != nil {
-				return err
+				return apiclient.NewCliError("unable to read file", err)
 			}
 		}
 		response = integrations.Publish(getFilenameWithoutExtension(integrationNames[0]), version, configVarBytes)
@@ -760,8 +762,8 @@ func storeCloudDeployVariables() (err error) {
 	clilog.Debug.Printf("CLOUD_DEPLOY_LOCATION: %s\n", cloudDeployLocation)
 
 	if pipeline == "" || release == "" || outputGCSPath == "" || cloudDeployProjectId == "" {
-		return fmt.Errorf("CLOUD_DEPLOY_DELIVERY_PIPELINE, CLOUD_DEPLOY_RELEASE, CLOUD_DEPLOY_OUTPUT_GCS_PATH, " +
-			"CLOUD_DEPLOY_PROJECT_ID, CLOUD_DEPLOY_LOCATION must be set")
+		return apiclient.NewCliError("CLOUD_DEPLOY_DELIVERY_PIPELINE, CLOUD_DEPLOY_RELEASE, CLOUD_DEPLOY_OUTPUT_GCS_PATH, "+
+			"CLOUD_DEPLOY_PROJECT_ID, CLOUD_DEPLOY_LOCATION must be set", nil)
 	}
 	return nil
 }

@@ -631,5 +631,9 @@ func SetCode(content []byte, codeMap map[string]map[string]string) (integrationB
 			}
 		}
 	}
-	return json.Marshal(iversion)
+	integrationBytes, err = json.Marshal(iversion)
+	if err != nil {
+		return nil, apiclient.NewCliError("error marshalling", err)
+	}
+	return integrationBytes, nil
 }
