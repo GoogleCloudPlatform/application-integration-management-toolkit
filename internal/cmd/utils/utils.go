@@ -225,7 +225,7 @@ jobs:
         id: 'publish-integration'
         uses: docker://us-docker.pkg.dev/appintegration-toolkit/images/integrationcli:%s #pin to version of choice
         with:
-          args: integrations apply --env=${{ env.ENVIRONMENT}} --folder=. --userlabel=${{ steps.calc-vars.outputs.SHORT_SHA }} --wait=true --proj=${{ env.PROJECT_ID }} --reg=${{ env.REGION }} --token ${{ steps.gcp-auth.outputs.access_token }}`
+          args: integrations apply --env=${{ env.ENVIRONMENT}} --folder=. --userlabel=${{ steps.calc-vars.outputs.SHORT_SHA }} --run-tests=true --wait=true --proj=${{ env.PROJECT_ID }} --reg=${{ env.REGION }} --token ${{ steps.gcp-auth.outputs.access_token }}`
 
 func GetCloudDeployYaml(integrationName string, env string) string {
 	if env == "" {
