@@ -40,6 +40,7 @@ type listconnections struct {
 
 type connection struct {
 	Name                   *string             `json:"name,omitempty"`
+	Labels                 *map[string]string  `json:"labels,omitempty"`
 	Description            string              `json:"description,omitempty"`
 	ConnectorVersion       *string             `json:"connectorVersion,omitempty"`
 	ConnectorDetails       *connectorDetails   `json:"connectorDetails,omitempty"`
