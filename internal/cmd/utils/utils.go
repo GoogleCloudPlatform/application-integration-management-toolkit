@@ -186,7 +186,7 @@ permissions: read-all
 on: push
 
 env:
-  ENVIRONMENT: 'dev'
+  ENVIRONMENT: ${{ vars.ENVIRONMENT }}
   PROJECT_ID: ${{ vars.PROJECT_ID }}
   REGION: ${{ vars.REGION }}
   WORKLOAD_IDENTITY_PROVIDER_NAME: ${{ vars.PROVIDER_NAME }}
