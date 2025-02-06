@@ -1,2 +1,3 @@
 #!/bin/sh
-gcloud deploy releases create test-release-$((RANDOM % 900 + 100)) --project=${PROJECT_ID} --region=${LOCATION} --to-target=dev --delivery-pipeline=appint-sample-pipeline
+RELEASE_NAME=test-release
+gcloud deploy releases create $RELEASE_NAME--$(date +'%Y%m%d%H%M%S') --project=${PROJECT_ID} --region=${LOCATION} --to-target=dev --delivery-pipeline=appint-sample-pipeline
