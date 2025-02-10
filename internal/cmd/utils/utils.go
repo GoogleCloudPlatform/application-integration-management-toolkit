@@ -145,7 +145,7 @@ customActions:
 - name: render-%s-integration
   containers:
   - name: render
-    image: us-docker.pkg.dev/appintegration-toolkit/images/integrationcli:%s
+    image: us-docker.pkg.dev/appintegration-toolkit/images/integrationcli:v%s
     command: ['sh']
     args:
       - '-c'
@@ -154,7 +154,7 @@ customActions:
 - name: deploy-%s-integration
   containers:
   - name: deploy
-    image: us-docker.pkg.dev/appintegration-toolkit/images/integrationcli:%s
+    image: us-docker.pkg.dev/appintegration-toolkit/images/integrationcli:v%s
     command: ['sh']
     args:
       - '-c'
@@ -186,7 +186,7 @@ permissions: read-all
 on: push
 
 env:
-  ENVIRONMENT: 'dev'
+  ENVIRONMENT: ${{ vars.ENVIRONMENT }}
   PROJECT_ID: ${{ vars.PROJECT_ID }}
   REGION: ${{ vars.REGION }}
   WORKLOAD_IDENTITY_PROVIDER_NAME: ${{ vars.PROVIDER_NAME }}
@@ -225,7 +225,7 @@ jobs:
         id: 'publish-integration'
         uses: docker://us-docker.pkg.dev/appintegration-toolkit/images/integrationcli:%s #pin to version of choice
         with:
-          args: integrations apply --env=${{ env.ENVIRONMENT}} --folder=. --userlabel=${{ steps.calc-vars.outputs.SHORT_SHA }} --wait=true --proj=${{ env.PROJECT_ID }} --reg=${{ env.REGION }} --token ${{ steps.gcp-auth.outputs.access_token }}`
+          args: integrations apply --env=${{ env.ENVIRONMENT}} --folder=. --userlabel=${{ steps.calc-vars.outputs.SHORT_SHA }} --run-tests=true --wait=true --proj=${{ env.PROJECT_ID }} --reg=${{ env.REGION }} --token ${{ steps.gcp-auth.outputs.access_token }}`
 
 func GetCloudDeployYaml(integrationName string, env string) string {
 	if env == "" {
