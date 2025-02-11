@@ -274,10 +274,6 @@ base64 ./test/enc_password.txt > ./test/b64_enc_password.txt # on MacOS, use bas
 * [GCS](./test/gcs_connection.json)
 * [CloudSQL - MySQL](./test/cloudsql_mysql_connection.json)
 
-## CICD with Application Integration
-
-Please refer to this [article](https://www.googlecloudcommunity.com/gc/Cloud-Product-Articles/CI-CD-for-Application-Integration/ta-p/722811) in Google Cloud Community for how to perform CICD in Application Integration with `integrationcli`
-
 ## Samples
 
 Please see [here](./samples/README.md)
