@@ -133,9 +133,11 @@ The following environment variables may be set to control the behavior of `integ
 * `INTEGRATIONCLI_NO_ERRORS=true` does not print error messages from the CLI (control plane error messages are displayed)
 * `INTEGRATIONCLI_DRYRUN=true` does not execute control plane APIs
 
-## Automate via Cloud Build
+## CI/CD
 
-Please see [here](https://www.googlecloudcommunity.com/gc/Cloud-Product-Articles/CI-CD-for-Application-Integration/ta-p/722811) for details on how to automate deployments via Cloud Build. The container images for integrationcli are:
+Please see the following community post to learn more about the best practice around CI/CD. These posts covers developing, testing and promoting integrations across different environments:
+- [Part 1](https://www.googlecloudcommunity.com/gc/Integration-Services/Part-1-CI-CD-for-Application-Integration/m-p/871711#M1975)
+- [Part 2](https://www.googlecloudcommunity.com/gc/Integration-Services/Part-2-CI-CD-for-Application-Integration/m-p/871713#M1976)
 
 ## Creating Integration Connectors
 
