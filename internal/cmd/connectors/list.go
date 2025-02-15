@@ -44,11 +44,10 @@ var ListCmd = &cobra.Command{
 	RunE: func(cmd *cobra.Command, args []string) (err error) {
 		cmd.SilenceUsage = true
 
-		_, err = connections.List(pageSize,
+		return apiclient.PrettyPrint(connections.List(pageSize,
 			utils.GetStringParam(cmd.Flag("pageToken")),
 			utils.GetStringParam(cmd.Flag("filter")),
-			utils.GetStringParam(cmd.Flag("orderBy")))
-		return err
+			utils.GetStringParam(cmd.Flag("orderBy"))))
 	},
 }
 

@@ -100,52 +100,58 @@ type oauth2ResourceOwnerCredentials struct {
 }
 
 // Create
-func Create(content []byte) (respBody []byte, err error) {
+func Create(content []byte) apiclient.APIResponse {
 	c := authConfig{}
 
-	if err = json.Unmarshal(content, &c); err != nil {
-		return nil, err
+	if err := json.Unmarshal(content, &c); err != nil {
+		return apiclient.APIResponse{
+			RespBody: nil,
+			Err:      apiclient.NewCliError("error unmarshalling", err),
+		}
 	}
 
 	u, _ := url.Parse(apiclient.GetBaseIntegrationURL())
 
 	u.Path = path.Join(u.Path, "authConfigs")
-	respBody, err = apiclient.HttpClient(u.String(), string(content))
-	return respBody, err
+	return apiclient.HttpClient(u.String(), string(content))
 }
 
 // Delete
-func Delete(name string) (respBody []byte, err error) {
+func Delete(name string) apiclient.APIResponse {
 	u, _ := url.Parse(apiclient.GetBaseIntegrationURL())
 	u.Path = path.Join(u.Path, "authConfigs", name)
-	respBody, err = apiclient.HttpClient(u.String(), "", "DELETE")
-	return respBody, err
+	return apiclient.HttpClient(u.String(), "", "DELETE")
 }
 
 // Get
-func Get(name string, minimal bool) (respBody []byte, err error) {
+func Get(name string, minimal bool) apiclient.APIResponse {
 	u, _ := url.Parse(apiclient.GetBaseIntegrationURL())
 	u.Path = path.Join(u.Path, "authConfigs", name)
 
-	if minimal {
-		apiclient.ClientPrintHttpResponse.Set(false)
-	}
-	respBody, err = apiclient.HttpClient(u.String())
+	response := apiclient.HttpClient(u.String())
 	if minimal {
 		iversion := authConfig{}
-		err := json.Unmarshal(respBody, &iversion)
+		err := json.Unmarshal(response.RespBody, &iversion)
 		if err != nil {
-			return nil, err
+			return apiclient.APIResponse{
+				RespBody: nil,
+				Err:      apiclient.NewCliError("error unmarshalling", err),
+			}
 		}
 		eversion := convertInternalToExternal(iversion)
-		respBody, err = json.Marshal(eversion)
+		respBody, err := json.Marshal(eversion)
 		if err != nil {
-			return nil, err
+			return apiclient.APIResponse{
+				RespBody: nil,
+				Err:      apiclient.NewCliError("error marshalling", err),
+			}
 		}
-		apiclient.PrettyPrint(respBody)
+		return apiclient.APIResponse{
+			RespBody: respBody,
+			Err:      nil,
+		}
 	}
-	apiclient.ClientPrintHttpResponse.Set(apiclient.GetCmdPrintHttpResponseSetting())
-	return respBody, err
+	return response
 }
 
 // GetDisplayName
@@ -153,25 +159,22 @@ func GetDisplayName(name string) (displayName string, err error) {
 	u, _ := url.Parse(apiclient.GetBaseIntegrationURL())
 	u.Path = path.Join(u.Path, "authConfigs", name)
 
-	apiclient.ClientPrintHttpResponse.Set(false)
-	defer apiclient.ClientPrintHttpResponse.Set(apiclient.GetCmdPrintHttpResponseSetting())
-
-	respBody, err := apiclient.HttpClient(u.String())
-	if err != nil {
+	response := apiclient.HttpClient(u.String())
+	if response.Err != nil {
 		return "", err
 	}
 
 	iversion := authConfig{}
-	err = json.Unmarshal(respBody, &iversion)
+	err = json.Unmarshal(response.RespBody, &iversion)
 	if err != nil {
-		return "", err
+		return "", apiclient.NewCliError("error unmarshalling", err)
 	}
 
 	return iversion.DisplayName, nil
 }
 
 // List
-func List(pageSize int, pageToken string, filter string) (respBody []byte, err error) {
+func List(pageSize int, pageToken string, filter string) apiclient.APIResponse {
 	u, _ := url.Parse(apiclient.GetBaseIntegrationURL())
 	q := u.Query()
 	if pageSize != -1 {
@@ -186,8 +189,7 @@ func List(pageSize int, pageToken string, filter string) (respBody []byte, err e
 
 	u.RawQuery = q.Encode()
 	u.Path = path.Join(u.Path, "authConfigs")
-	respBody, err = apiclient.HttpClient(u.String())
-	return respBody, err
+	return apiclient.HttpClient(u.String())
 }
 
 // Find
@@ -203,12 +205,12 @@ func Find(name string, pageToken string) (version string, err error) {
 	}
 
 	u.Path = path.Join(u.Path, "authConfigs")
-	if respBody, err = apiclient.HttpClient(u.String()); err != nil {
-		return "", err
+	if response := apiclient.HttpClient(u.String()); response.Err != nil {
+		return "", response.Err
 	}
 
 	if err = json.Unmarshal(respBody, &ac); err != nil {
-		return "", err
+		return "", apiclient.NewCliError("error unmarshalling", err)
 	}
 
 	for _, config := range ac.AuthConfig {
@@ -228,19 +230,15 @@ func Export(folder string) (err error) {
 	var respBody []byte
 	count := 1
 
-	apiclient.ClientPrintHttpResponse.Set(false)
-	defer apiclient.ClientPrintHttpResponse.Set(apiclient.GetCmdPrintHttpResponseSetting())
-
 	apiclient.SetExportToFile(folder)
 
-	if respBody, err = List(100, "", ""); err != nil {
-		return err
+	if response := List(100, "", ""); response.Err != nil {
+		return response.Err
 	}
 
 	fileName := "authconfigs_" + strconv.Itoa(count) + ".json"
 	if err = apiclient.WriteByteArrayToFile(path.Join(apiclient.GetExportToFile(), fileName), false, respBody); err != nil {
-		clilog.Error.Println(err)
-		return err
+		return apiclient.NewCliError("error writing to file", err)
 	}
 	clilog.Info.Printf("Downloaded %s\n", fileName)
 
@@ -251,19 +249,18 @@ func Export(folder string) (err error) {
 
 	for aconfigs.NextPageToken != "" {
 
-		if respBody, err = List(100, "", ""); err != nil {
-			return err
+		if response := List(100, "", ""); response.Err != nil {
+			return response.Err
 		}
 
 		if err = json.Unmarshal(respBody, &aconfigs); err != nil {
-			return err
+			return apiclient.NewCliError("error unmarshalling", err)
 		}
 
 		count++
 		fileName := "authconfigs_" + strconv.Itoa(count) + ".json"
 		if err = apiclient.WriteByteArrayToFile(path.Join(apiclient.GetExportToFile(), fileName), false, respBody); err != nil {
-			clilog.Error.Println(err)
-			return err
+			return apiclient.NewCliError("error writing to file", err)
 		}
 		clilog.Info.Printf("Downloaded %s\n", fileName)
 	}
@@ -271,10 +268,13 @@ func Export(folder string) (err error) {
 	return nil
 }
 
-func Patch(name string, content []byte, updateMask []string) (respBody []byte, err error) {
+func Patch(name string, content []byte, updateMask []string) apiclient.APIResponse {
 	a := authConfig{}
-	if err = json.Unmarshal(content, &a); err != nil {
-		return nil, err
+	if err := json.Unmarshal(content, &a); err != nil {
+		return apiclient.APIResponse{
+			RespBody: nil,
+			Err:      apiclient.NewCliError("error unmarshalling", err),
+		}
 	}
 
 	u, _ := url.Parse(apiclient.GetBaseIntegrationURL())

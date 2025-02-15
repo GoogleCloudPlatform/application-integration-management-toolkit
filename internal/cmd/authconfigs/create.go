@@ -96,8 +96,7 @@ var CreateCmd = &cobra.Command{
 			}
 		}
 
-		_, err = authconfigs.Create(content)
-		return err
+		return apiclient.PrettyPrint(authconfigs.Create(content))
 	},
 	Example: `Create a new user name auth config: ` + GetExample(0) + `
 Create a new OIDC auth config: ` + GetExample(1) + `

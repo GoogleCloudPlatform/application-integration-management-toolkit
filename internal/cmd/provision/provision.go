@@ -63,8 +63,7 @@ var Cmd = &cobra.Command{
 			}
 		}
 
-		_, err = provision.Provision(cloudKMS, samples, gmek, serviceAccount)
-		return err
+		return apiclient.PrettyPrint(provision.Provision(cloudKMS, samples, gmek, serviceAccount))
 	},
 }
 

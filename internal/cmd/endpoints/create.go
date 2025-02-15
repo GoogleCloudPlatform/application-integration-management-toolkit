@@ -59,8 +59,7 @@ var CreateCmd = &cobra.Command{
 			return fmt.Errorf("The service attachment does not match the required format")
 		}
 
-		_, err = connections.CreateEndpoint(name, serviceAttachment, description, wait)
-		return err
+		return apiclient.PrettyPrint(connections.CreateEndpoint(name, serviceAttachment, description, wait))
 	},
 }
 

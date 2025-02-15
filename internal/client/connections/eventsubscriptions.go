@@ -53,46 +53,45 @@ type jms struct {
 }
 
 // CreateEventSubscription
-func CreateEventSubscription(connName string, subscriptionId string, contents []byte) (respBody []byte, err error) {
+func CreateEventSubscription(connName string, subscriptionId string, contents []byte) apiclient.APIResponse {
 	e := eventRequest{}
-	if err = json.Unmarshal(contents, &e); err != nil {
-		return nil, err
+	if err := json.Unmarshal(contents, &e); err != nil {
+		return apiclient.APIResponse{
+			RespBody: nil,
+			Err:      err,
+		}
 	}
 	u, _ := url.Parse(apiclient.GetBaseConnectorURL())
 	u.Path = path.Join(u.Path, "connectors", connName, "eventSubscriptions")
 	q := u.Query()
 	q.Set("eventSubscriptionId", subscriptionId)
 	u.RawQuery = q.Encode()
-	respBody, err = apiclient.HttpClient(u.String(), string(contents))
-	return respBody, err
+	return apiclient.HttpClient(u.String(), string(contents))
 }
 
 // GetEventSubscription
-func GetEventSubscription(name string, connName string, overrides bool) (respBody []byte, err error) {
+func GetEventSubscription(name string, connName string, overrides bool) apiclient.APIResponse {
 	u, _ := url.Parse(apiclient.GetBaseConnectorURL())
 	u.Path = path.Join(u.Path, "connectors", connName, "eventSubscriptions", name)
-	respBody, err = apiclient.HttpClient(u.String())
-	return respBody, err
+	return apiclient.HttpClient(u.String())
 }
 
 // DeleteEventSubscription
-func DeleteEventSubscription(name string, connName string) (respBody []byte, err error) {
+func DeleteEventSubscription(name string, connName string) apiclient.APIResponse {
 	u, _ := url.Parse(apiclient.GetBaseConnectorURL())
 	u.Path = path.Join(u.Path, "connectors", connName, "eventSubscriptions", name)
-	respBody, err = apiclient.HttpClient(u.String(), "", "DELETE")
-	return respBody, err
+	return apiclient.HttpClient(u.String(), "", "DELETE")
 }
 
 // RetryEventSubscription
-func RetryEventSubscription(name string, connName string) (respBody []byte, err error) {
+func RetryEventSubscription(name string, connName string) apiclient.APIResponse {
 	u, _ := url.Parse(apiclient.GetBaseConnectorURL())
 	u.Path = path.Join(u.Path, "connectors", connName, "eventSubscriptions", name+":retry")
-	respBody, err = apiclient.HttpClient(u.String(), "")
-	return respBody, err
+	return apiclient.HttpClient(u.String(), "")
 }
 
 // ListEventSubscriptions
-func ListEventSubscriptions(connName string, pageSize int, pageToken string, filter string, orderBy string) (respBody []byte, err error) {
+func ListEventSubscriptions(connName string, pageSize int, pageToken string, filter string, orderBy string) apiclient.APIResponse {
 	u, _ := url.Parse(apiclient.GetBaseConnectorURL())
 	u.Path = path.Join(u.Path, "connectors", connName, "eventSubscriptions")
 	q := u.Query()
@@ -109,6 +108,5 @@ func ListEventSubscriptions(connName string, pageSize int, pageToken string, fil
 		q.Set("orderBy", orderBy)
 	}
 	u.RawQuery = q.Encode()
-	respBody, err = apiclient.HttpClient(u.String())
-	return respBody, err
+	return apiclient.HttpClient(u.String())
 }

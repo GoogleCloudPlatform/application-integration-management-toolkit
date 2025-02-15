@@ -60,9 +60,8 @@ var CreateManagedZonesCmd = &cobra.Command{
 
 		payload := "{" + strings.Join(zone, ",") + "}"
 
-		_, err = connections.CreateZone(utils.GetStringParam(cmd.Flag("name")),
-			[]byte(payload))
-		return err
+		return apiclient.PrettyPrint(connections.CreateZone(utils.GetStringParam(cmd.Flag("name")),
+			[]byte(payload)))
 	},
 }
 

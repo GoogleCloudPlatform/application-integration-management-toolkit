@@ -16,7 +16,6 @@ package integrations
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"internal/apiclient"
 	"internal/client/authconfigs"
@@ -129,7 +128,7 @@ func mergeOverrides(eversion integrationVersionExternal, o overrides, grantPermi
 						if userDefineSA {
 							// create the SA if it doesn't exist
 							if err := apiclient.CreateServiceAccount(serviceAccountName); err != nil {
-								return eversion, err
+								return eversion, apiclient.NewCliError("unable to create service account", err)
 							}
 						}
 						if err := apiclient.SetIntegrationInvokerPermission(*triggerOverride.ProjectId, serviceAccountName); err != nil {
@@ -138,7 +137,7 @@ func mergeOverrides(eversion integrationVersionExternal, o overrides, grantPermi
 					}
 				case "API":
 					if triggerOverride.APIPath == nil {
-						return eversion, fmt.Errorf("the field apiPath is missing from the API Trigger in overrides")
+						return eversion, apiclient.NewCliError("the field apiPath is missing from the API Trigger in overrides", nil)
 					}
 					trigger.TriggerId = apiTrigger + *triggerOverride.APIPath
 					if len(triggerOverride.Properties) > 0 {
@@ -216,7 +215,7 @@ func mergeOverrides(eversion integrationVersionExternal, o overrides, grantPermi
 					newcp, err := getNewConnectionParams(connectionOverride.Parameters.ConnectionName,
 						connectionOverride.Parameters.ConnectionLocation)
 					if err != nil {
-						return eversion, err
+						return eversion, apiclient.NewCliError("unable to get connection params", err)
 					}
 
 					cparams := task.Parameters["config"]
@@ -224,7 +223,7 @@ func mergeOverrides(eversion integrationVersionExternal, o overrides, grantPermi
 					if cparams.Value.JsonValue != nil {
 						cd, err := getConnectionDetails(*cparams.Value.JsonValue)
 						if err != nil {
-							return eversion, err
+							return eversion, apiclient.NewCliError("unable to get connection details", err)
 						}
 
 						cd.Connection.ConnectionName = newcp.ConnectionName
@@ -233,7 +232,7 @@ func mergeOverrides(eversion integrationVersionExternal, o overrides, grantPermi
 
 						jsonValue, err := stringifyValue(cd)
 						if err != nil {
-							return eversion, err
+							return eversion, apiclient.NewCliError("unable to stringify connection details", err)
 						}
 
 						*cparams.Value.JsonValue = jsonValue
@@ -308,15 +307,15 @@ func extractOverrides(iversion integrationVersion) (overrides, error) {
 	for _, task := range iversion.TaskConfigs {
 		if task.Task == "GenericConnectorTask" {
 			if err := handleGenericConnectorTask(task, &taskOverrides, iversion.IntegrationConfigParameters); err != nil {
-				return taskOverrides, err
+				return taskOverrides, apiclient.NewCliError("unable to handle generic connector task", err)
 			}
 		} else if task.Task == "GenericRestV2Task" {
 			if err := handleGenericRestV2Task(task, &taskOverrides); err != nil {
-				return taskOverrides, err
+				return taskOverrides, apiclient.NewCliError("unable to handle generic rest", err)
 			}
 		} else if task.Task == "CloudFunctionTask" {
 			if err := handleCloudFunctionTask(task, &taskOverrides); err != nil {
-				return taskOverrides, err
+				return taskOverrides, apiclient.NewCliError("unable to handle cloud function", err)
 			}
 		}
 	}
@@ -418,7 +417,7 @@ func handleGenericRestV2Task(taskConfig taskconfig, taskOverrides *overrides) er
 	if _, ok := taskConfig.Parameters["authConfig"]; ok {
 		displayName, err := authconfigs.GetDisplayName(getAuthConfigUuid(*taskConfig.Parameters["authConfig"].Value.JsonValue))
 		if err != nil {
-			return err
+			return apiclient.NewCliError("unable to get display name", err)
 		}
 		if displayName != "" {
 			eventparam := eventparameter{}
@@ -445,7 +444,7 @@ func handleCloudFunctionTask(taskConfig taskconfig, taskOverrides *overrides) er
 	if _, ok := taskConfig.Parameters["authConfig"]; ok {
 		displayName, err := authconfigs.GetDisplayName(getAuthConfigUuid(*taskConfig.Parameters["authConfig"].Value.JsonValue))
 		if err != nil {
-			return err
+			return apiclient.NewCliError("unable to get display name", err)
 		}
 		if displayName != "" {
 			eventparam := eventparameter{}
@@ -474,7 +473,7 @@ func handleGenericConnectorTask(taskConfig taskconfig, taskOverrides *overrides,
 		if connectionNameparams.Value.StringValue != nil {
 			connectionName, err := getConnectionStringFromConnectionName(*connectionNameparams.Value.StringValue, iconfigParam)
 			if err != nil {
-				return err
+				return apiclient.NewCliError("unable to get connection string", err)
 			}
 			parts := strings.Split(connectionName, "/")
 			connName := parts[len(parts)-1]
@@ -504,9 +503,7 @@ func overrideParameters(overrideParameters map[string]eventparameter,
 ) map[string]eventparameter {
 	for overrideParamName, overrideParam := range overrideParameters {
 		if overrideParam.Key == "authConfig" {
-			apiclient.ClientPrintHttpResponse.Set(false)
 			acversion, err := authconfigs.Find(*overrideParam.Value.StringValue, "")
-			apiclient.ClientPrintHttpResponse.Set(apiclient.GetCmdPrintHttpResponseSetting())
 			if err != nil {
 				clilog.Warning.Println(err)
 				return taskParameters
@@ -529,30 +526,27 @@ func getNewConnectionParams(connectionName string, connectionLocation string) (c
 	var connectionVersionResponse map[string]interface{}
 	var integrationRegion string
 
-	apiclient.ClientPrintHttpResponse.Set(false)
-	defer apiclient.ClientPrintHttpResponse.Set(apiclient.GetCmdPrintHttpResponseSetting())
-
 	if connectionLocation != "" {
 		integrationRegion = apiclient.GetRegion()     // store the integration location
 		err = apiclient.SetRegion(connectionLocation) // set the connector region
 		if err != nil {
-			return cp, err
+			return cp, apiclient.NewCliError("unable to set region", err)
 		}
 	}
-	connResp, err := connections.Get(connectionName, "BASIC", false, false) // get connector details
+	response := connections.Get(connectionName, "BASIC", false, false) // get connector details
 	if connectionLocation != "" {
 		err = apiclient.SetRegion(integrationRegion) // set the integration region back
 		if err != nil {
-			return cp, err
+			return cp, apiclient.NewCliError("unable to set region", err)
 		}
 	}
 	if err != nil {
 		return cp, err
 	}
 
-	err = json.Unmarshal(connResp, &connectionVersionResponse)
+	err = json.Unmarshal(response.RespBody, &connectionVersionResponse)
 	if err != nil {
-		return cp, err
+		return cp, apiclient.NewCliError("error unmarshalling", err)
 	}
 
 	cp.ConnectorVersion = fmt.Sprintf("%v", connectionVersionResponse["connectorVersion"])
@@ -573,7 +567,7 @@ func getConnectionDetails(jsonValue string) (connectiondetails, error) {
 func stringifyValue(cd connectiondetails) (string, error) {
 	jsonValue, err := json.Marshal(cd)
 	if err != nil {
-		return "", err
+		return "", apiclient.NewCliError("error marshalling", err)
 	}
 	return string(jsonValue), nil
 }
@@ -597,7 +591,7 @@ func getConnectionStringFromConnectionName(connectionName string, iconfigParam [
 
 	re := regexp.MustCompile(`projects/(.*)/locations/(.*)/connections/(.*)`)
 	if !re.MatchString(name) {
-		return "", errors.New("Connection Name is not valid. Connection name should be in the format: projects/{projectId}/locations/{locationId}/connections/{connectionId}")
+		return "", apiclient.NewCliError("Connection Name is not valid. Connection name should be in the format: projects/{projectId}/locations/{locationId}/connections/{connectionId}", nil)
 	}
 	return name, nil
 }
@@ -608,7 +602,7 @@ func ExtractCode(content []byte) (codeMap map[string]map[string]string, err erro
 	codeMap["JsonnetMapperTask"] = make(map[string]string)
 	iversion := integrationVersion{}
 	if err = json.Unmarshal(content, &iversion); err != nil {
-		return nil, err
+		return nil, apiclient.NewCliError("error unmarshalling", err)
 	}
 	for _, task := range iversion.TaskConfigs {
 		if task.Task == "JavaScriptTask" {
@@ -623,7 +617,7 @@ func ExtractCode(content []byte) (codeMap map[string]map[string]string, err erro
 func SetCode(content []byte, codeMap map[string]map[string]string) (integrationBytes []byte, err error) {
 	iversion := integrationVersion{}
 	if err = json.Unmarshal(content, &iversion); err != nil {
-		return nil, err
+		return nil, apiclient.NewCliError("error unmarshalling", err)
 	}
 	for _, task := range iversion.TaskConfigs {
 		content := codeMap[task.Task][task.TaskId]
@@ -637,5 +631,9 @@ func SetCode(content []byte, codeMap map[string]map[string]string) (integrationB
 			}
 		}
 	}
-	return json.Marshal(iversion)
+	integrationBytes, err = json.Marshal(iversion)
+	if err != nil {
+		return nil, apiclient.NewCliError("error marshalling", err)
+	}
+	return integrationBytes, nil
 }

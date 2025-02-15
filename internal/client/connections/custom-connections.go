@@ -59,7 +59,7 @@ const waitTime = 1 * time.Second
 // CreateCustom
 func CreateCustom(name string, description string, displayName string,
 	connType string, labels map[string]string,
-) (respBody []byte, err error) {
+) apiclient.APIResponse {
 	u, _ := url.Parse(apiclient.GetBaseCustomConnectorURL())
 	q := u.Query()
 	q.Set("customConnectorId", name)
@@ -81,31 +81,28 @@ func CreateCustom(name string, description string, displayName string,
 
 	payload := "{" + strings.Join(customConnect, ",") + "}"
 	u.RawQuery = q.Encode()
-	respBody, err = apiclient.HttpClient(u.String(), payload)
-	return respBody, err
+	return apiclient.HttpClient(u.String(), payload)
 }
 
 // DeleteCustom
-func DeleteCustom(name string, force bool) (respBody []byte, err error) {
+func DeleteCustom(name string, force bool) apiclient.APIResponse {
 	u, _ := url.Parse(apiclient.GetBaseCustomConnectorURL())
 	u.Path = path.Join(u.Path, name)
 	q := u.Query()
 	q.Set("force", strconv.FormatBool(force))
 	u.RawQuery = q.Encode()
-	respBody, err = apiclient.HttpClient(u.String(), "", "DELETE")
-	return respBody, err
+	return apiclient.HttpClient(u.String(), "", "DELETE")
 }
 
 // GetCustom
-func GetCustom(name string) (respBody []byte, err error) {
+func GetCustom(name string) apiclient.APIResponse {
 	u, _ := url.Parse(apiclient.GetBaseCustomConnectorURL())
 	u.Path = path.Join(u.Path, name)
-	respBody, err = apiclient.HttpClient(u.String())
-	return respBody, err
+	return apiclient.HttpClient(u.String())
 }
 
 // ListCustom
-func ListCustom(pageSize int, pageToken string, filter string) (respBody []byte, err error) {
+func ListCustom(pageSize int, pageToken string, filter string) apiclient.APIResponse {
 	u, _ := url.Parse(apiclient.GetBaseCustomConnectorURL())
 	q := u.Query()
 	if pageSize != -1 {
@@ -118,17 +115,21 @@ func ListCustom(pageSize int, pageToken string, filter string) (respBody []byte,
 		q.Set("filter", filter)
 	}
 	u.RawQuery = q.Encode()
-	respBody, err = apiclient.HttpClient(u.String())
-	return respBody, err
+	return apiclient.HttpClient(u.String())
 }
 
 // CreateCustomVersion
 func CreateCustomVersion(connName string, versionName string, content []byte,
 	serviceAccountName string, serviceAccountProject string,
-) (respBody []byte, err error) {
+) apiclient.APIResponse {
+
+	var err error
 	c := customConnectorVersionRequest{}
-	if err = json.Unmarshal(content, &c); err != nil {
-		return nil, err
+	if err := json.Unmarshal(content, &c); err != nil {
+		return apiclient.APIResponse{
+			RespBody: nil,
+			Err:      err,
+		}
 	}
 
 	// service account overrides have been provided, use them
@@ -140,7 +141,10 @@ func CreateCustomVersion(connName string, versionName string, content []byte,
 		serviceAccountName = fmt.Sprintf("%s@%s.iam.gserviceaccount.com", serviceAccountName, serviceAccountProject)
 		// create the SA if it doesn't exist
 		if err = apiclient.CreateServiceAccount(serviceAccountName); err != nil {
-			return nil, err
+			return apiclient.APIResponse{
+				RespBody: nil,
+				Err:      err,
+			}
 		}
 	}
 
@@ -149,7 +153,10 @@ func CreateCustomVersion(connName string, versionName string, content []byte,
 	}
 
 	if content, err = json.Marshal(c); err != nil {
-		return nil, err
+		return apiclient.APIResponse{
+			RespBody: nil,
+			Err:      err,
+		}
 	}
 
 	u, _ := url.Parse(apiclient.GetBaseCustomConnectorURL())
@@ -158,31 +165,39 @@ func CreateCustomVersion(connName string, versionName string, content []byte,
 	q.Set("customConnectorVersionId", versionName)
 	u.RawQuery = q.Encode()
 
-	respBody, err = apiclient.HttpClient(u.String(), string(content))
-	return respBody, err
+	return apiclient.HttpClient(u.String(), string(content))
 }
 
-func GetCustomVersion(connName string, connVersion string, overrides bool) (respBody []byte, err error) {
+func GetCustomVersion(connName string, connVersion string, overrides bool) apiclient.APIResponse {
+
+	var response apiclient.APIResponse
+
 	u, _ := url.Parse(apiclient.GetBaseCustomConnectorURL())
 	u.Path = path.Join(u.Path, connName, "customConnectorVersions", connVersion)
 	if overrides {
-		apiclient.ClientPrintHttpResponse.Set(false)
 		c := customConnectorOverrides{}
-		connRespBody, err := GetCustom(connName)
-		if err != nil {
-			return nil, err
+
+		if response = GetCustom(connName); response.Err != nil {
+			return response
 		}
-		if err = json.Unmarshal(connRespBody, &c); err != nil {
-			return nil, err
+
+		if err := json.Unmarshal(response.RespBody, &c); err != nil {
+			return apiclient.APIResponse{
+				RespBody: nil,
+				Err:      err,
+			}
 		}
-		respBody, err = apiclient.HttpClient(u.String())
-		if err != nil {
-			return nil, err
+
+		if response = apiclient.HttpClient(u.String()); response.Err != nil {
+			return response
 		}
-		apiclient.ClientPrintHttpResponse.Set(apiclient.GetCmdPrintHttpResponseSetting())
+
 		cVerReq := customConnectorVersionRequest{}
-		if err = json.Unmarshal(respBody, &cVerReq); err != nil {
-			return nil, err
+		if err := json.Unmarshal(response.RespBody, &cVerReq); err != nil {
+			return apiclient.APIResponse{
+				RespBody: nil,
+				Err:      err,
+			}
 		}
 		// remove the default p4s from the overrides
 		if cVerReq.ServiceAccount != nil && strings.Contains(*cVerReq.ServiceAccount, "-compute@developer.gserviceaccount.com") {
@@ -191,16 +206,20 @@ func GetCustomVersion(connName string, connVersion string, overrides bool) (resp
 		c.CustomConnectorVersion = cVerReq
 		overridesResp, err := json.Marshal(c)
 		if err != nil {
-			return nil, err
+			return apiclient.APIResponse{
+				RespBody: nil,
+				Err:      err,
+			}
 		}
-		apiclient.PrettyPrint(overridesResp)
-		return overridesResp, nil
+		return apiclient.APIResponse{
+			RespBody: overridesResp,
+			Err:      nil,
+		}
 	}
-	respBody, err = apiclient.HttpClient(u.String())
-	return respBody, err
+	return apiclient.HttpClient(u.String())
 }
 
-func ListCustomVersions(connName string, pageSize int, pageToken string) (respBody []byte, err error) {
+func ListCustomVersions(connName string, pageSize int, pageToken string) apiclient.APIResponse {
 	u, _ := url.Parse(apiclient.GetBaseCustomConnectorURL())
 	u.Path = path.Join(u.Path, connName, "customConnectorVersions")
 	q := u.Query()
@@ -211,21 +230,24 @@ func ListCustomVersions(connName string, pageSize int, pageToken string) (respBo
 		q.Set("pageToken", pageToken)
 	}
 	u.RawQuery = q.Encode()
-	respBody, err = apiclient.HttpClient(u.String())
-	return respBody, err
+	return apiclient.HttpClient(u.String())
 }
 
-func GetCustomFromConnection(contents []byte) (respBody []byte, err error) {
+func GetCustomFromConnection(contents []byte) apiclient.APIResponse {
 	c := connection{}
-	err = json.Unmarshal(respBody, &c)
-	if err != nil {
-		return nil, err
+	if err := json.Unmarshal(contents, &c); err != nil {
+		return apiclient.APIResponse{
+			RespBody: nil,
+			Err:      err,
+		}
 	}
 	if c.ConnectorDetails.Provider != "customconnector" {
-		return nil, fmt.Errorf("connector is not of type customconnector")
+		return apiclient.APIResponse{
+			RespBody: nil,
+			Err:      fmt.Errorf("connector is not of type customconnector"),
+		}
 	}
-	respBody, err = GetCustomVersion(getConnectorName(*c.ConnectorVersion), getConnectorVersionId(*c.ConnectorVersion), false)
-	return respBody, err
+	return GetCustomVersion(getConnectorName(*c.ConnectorVersion), getConnectorVersionId(*c.ConnectorVersion), false)
 }
 
 func IsCustomConnector(contents []byte) bool {
@@ -243,18 +265,20 @@ func IsCustomConnector(contents []byte) bool {
 func CreateCustomWithVersion(name string, version string, contents []byte,
 	serviceAccount string, serviceAccountProject string,
 ) (err error) {
+
+	var response apiclient.APIResponse
+
 	c := customConnectorOverrides{}
 	err = json.Unmarshal(contents, &c)
 	if err != nil {
 		return err
 	}
-	createCustomBody, err := CreateCustom(name, c.Description, c.DisplayName, c.CustomConnectorType, c.Labels)
-	if err != nil {
-		return err
+	if response = CreateCustom(name, c.Description, c.DisplayName, c.CustomConnectorType, c.Labels); response.Err != nil {
+		return response.Err
 	}
 
 	var createCustomMap map[string]interface{}
-	err = json.Unmarshal(createCustomBody, &createCustomMap)
+	err = json.Unmarshal(response.RespBody, &createCustomMap)
 	if err != nil {
 		return err
 	}
@@ -272,9 +296,9 @@ func CreateCustomWithVersion(name string, version string, contents []byte,
 	if err != nil {
 		return err
 	}
-	_, err = CreateCustomVersion(name, version, connectionVersionContents, serviceAccount, serviceAccountProject)
-	if err != nil {
-		return err
+
+	if response = CreateCustomVersion(name, version, connectionVersionContents, serviceAccount, serviceAccountProject); response.Err != nil {
+		return response.Err
 	}
 
 	// wait for custom version to be created
@@ -293,8 +317,8 @@ func waitForCustom(operationName string) error {
 	apiclient.SetRegion("global")
 
 	for {
-		if respBody, err = GetOperation(operationName); err != nil {
-			return err
+		if response := GetOperation(operationName); response.Err != nil {
+			return response.Err
 		}
 		if err = json.Unmarshal(respBody, &respMap); err != nil {
 			return err
@@ -314,8 +338,8 @@ func waitForCustomVersion(name string, version string) error {
 	var respMap map[string]string
 
 	for {
-		if respBody, err = GetCustomVersion(name, version, false); err != nil {
-			return err
+		if response := GetCustomVersion(name, version, false); response.Err != nil {
+			return response.Err
 		}
 
 		if err = json.Unmarshal(respBody, &respMap); err != nil {

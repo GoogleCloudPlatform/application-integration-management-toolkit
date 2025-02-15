@@ -65,8 +65,8 @@ var GetVerCmd = &cobra.Command{
 	RunE: func(cmd *cobra.Command, args []string) (err error) {
 		cmd.SilenceUsage = true
 
-		var integrationBody, respBody []byte
 		var basic bool
+		var response apiclient.APIResponse
 
 		version := utils.GetStringParam(cmd.Flag("ver"))
 		name := utils.GetStringParam(cmd.Flag("name"))
@@ -77,10 +77,6 @@ var GetVerCmd = &cobra.Command{
 		userLabel := utils.GetStringParam(cmd.Flag("user-label"))
 		snapshot := utils.GetStringParam(cmd.Flag("snapshot"))
 
-		if configVar {
-			apiclient.DisableCmdPrintHttpResponse()
-		}
-
 		latest := ignoreLatest(version, userLabel, snapshot)
 		if latest {
 			if version, err = getLatestVersion(name); err != nil {
@@ -89,31 +85,24 @@ var GetVerCmd = &cobra.Command{
 		}
 
 		if version != "" {
-			integrationBody, err = integrations.Get(name, version, basic, minimal, overrides)
+			response = integrations.Get(name, version, basic, minimal, overrides)
 		} else if snapshot != "" {
-			integrationBody, err = integrations.GetBySnapshot(name, snapshot, basic, minimal, overrides)
+			response = integrations.GetBySnapshot(name, snapshot, basic, minimal, overrides)
 		} else if userLabel != "" {
-			integrationBody, err = integrations.GetByUserlabel(name, userLabel, basic, minimal, overrides)
+			response = integrations.GetByUserlabel(name, userLabel, basic, minimal, overrides)
 		} else {
 			return errors.New("latest version not found. Must pass oneOf version, snapshot or user-label or fix the integration name")
 		}
 
-		if err != nil {
-			return err
+		if response.Err != nil {
+			return response.Err
 		}
+
 		if configVar {
-			apiclient.EnableCmdPrintHttpResponse()
-			apiclient.ClientPrintHttpResponse.Set(true)
-			respBody, err = integrations.GetConfigVariables(integrationBody)
-			if err != nil {
-				return err
-			}
-			if respBody != nil {
-				apiclient.PrettyPrint(respBody)
-			}
-			return nil
+			return apiclient.PrettyPrint(integrations.GetConfigVariables(response.RespBody))
+		} else {
+			return apiclient.PrettyPrint(response)
 		}
-		return err
 	},
 }
 

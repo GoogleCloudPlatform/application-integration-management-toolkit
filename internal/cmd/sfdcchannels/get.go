@@ -51,17 +51,11 @@ var GetCmd = &cobra.Command{
 		minimal, _ := strconv.ParseBool(utils.GetStringParam(cmd.Flag("minimal")))
 
 		if name != "" {
-			apiclient.DisableCmdPrintHttpResponse()
-			_, respBody, err := sfdc.FindChannel(name, instance)
-			if err != nil {
-				return err
-			}
-			apiclient.EnableCmdPrintHttpResponse()
-			apiclient.PrettyPrint(respBody)
+			_, response := sfdc.FindChannel(name, instance)
+			return apiclient.PrettyPrint(response)
 		} else {
-			_, err = sfdc.GetChannel(id, instance, minimal)
+			return apiclient.PrettyPrint(sfdc.GetChannel(id, instance, minimal))
 		}
-		return err
 	},
 }
 

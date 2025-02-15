@@ -47,8 +47,7 @@ var CancelExecCmd = &cobra.Command{
 		name := utils.GetStringParam(cmd.Flag("name"))
 		executionID := utils.GetStringParam(cmd.Flag("execution-id"))
 		cancelReason := utils.GetStringParam(cmd.Flag("cancel-reason"))
-		_, err = integrations.Cancel(name, executionID, cancelReason)
-		return err
+		return apiclient.PrettyPrint(integrations.Cancel(name, executionID, cancelReason))
 	},
 }
 

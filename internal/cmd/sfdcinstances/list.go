@@ -44,8 +44,7 @@ var ListCmd = &cobra.Command{
 	RunE: func(cmd *cobra.Command, args []string) (err error) {
 		cmd.SilenceUsage = true
 
-		_, err = sfdc.ListInstances()
-		return
+		return apiclient.PrettyPrint(sfdc.ListInstances())
 	},
 }
 

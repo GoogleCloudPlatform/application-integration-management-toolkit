@@ -17,6 +17,7 @@ package utils
 import (
 	"fmt"
 	"internal/apiclient"
+	"internal/clilog"
 	"io"
 	"os"
 	"strconv"
@@ -289,6 +290,6 @@ func GetBasicInfo(cmd *cobra.Command, flag string) bool {
 	}
 
 	pref, _ = strconv.ParseBool(apiclient.GetBasicInfo())
-
+	clilog.Debug.Printf("basic perference: %t\n", pref)
 	return pref
 }

@@ -46,8 +46,7 @@ var GetEventSubCmd = &cobra.Command{
 
 		name := utils.GetStringParam(cmd.Flag("name"))
 		conn := utils.GetStringParam(cmd.Flag("conn"))
-		_, err = connections.GetEventSubscription(name, conn, overrides)
-		return err
+		return apiclient.PrettyPrint(connections.GetEventSubscription(name, conn, overrides))
 	},
 }
 

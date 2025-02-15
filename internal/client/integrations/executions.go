@@ -16,7 +16,6 @@ package integrations
 
 import (
 	"encoding/json"
-	"fmt"
 	"internal/apiclient"
 	"net/url"
 	"path"
@@ -66,7 +65,7 @@ type executionResponse struct {
 }
 
 // ListExecutions lists all executions
-func ListExecutions(name string, pageSize int, pageToken string, filter string, orderBy string) (respBody []byte, err error) {
+func ListExecutions(name string, pageSize int, pageToken string, filter string, orderBy string) apiclient.APIResponse {
 	u, _ := url.Parse(apiclient.GetBaseIntegrationURL())
 	q := u.Query()
 	if pageSize != -1 {
@@ -84,62 +83,58 @@ func ListExecutions(name string, pageSize int, pageToken string, filter string, 
 
 	u.RawQuery = q.Encode()
 	u.Path = path.Join(u.Path, "integrations", name, "executions")
-	respBody, err = apiclient.HttpClient(u.String())
-	return respBody, err
+	return apiclient.HttpClient(u.String())
 }
 
 // Execute
-func Execute(name string, content []byte) (respBody []byte, err error) {
+func Execute(name string, content []byte) apiclient.APIResponse {
 	e := execute{}
+	var err error
 	if err = json.Unmarshal(content, &e); err != nil {
-		return nil, err
+		return apiclient.APIResponse{
+			Err: err,
+		}
 	}
 
 	regExTrigger := regexp.MustCompile(`api_trigger\/\w+`)
 	if !regExTrigger.MatchString(e.TriggerId) {
-		return nil, fmt.Errorf("triggerId must match the format api_trigger/*")
+		return apiclient.APIResponse{
+			Err: apiclient.NewCliError("triggerId must match the format api_trigger/*", nil),
+		}
 	}
 
-	apiclient.ClientPrintHttpResponse.Set(false)
 	u, _ := url.Parse(apiclient.GetBaseIntegrationURL())
 	u.Path = path.Join(u.Path, "integrations", name+":execute")
-	respBody, err = apiclient.HttpClient(u.String(), string(content))
-	if err != nil {
-		return nil, err
+	response := apiclient.HttpClient(u.String(), string(content))
+	if response.Err != nil {
+		return response
 	}
 
 	eresp := executionResponse{}
-	err = json.Unmarshal(respBody, &eresp)
+	err = json.Unmarshal(response.RespBody, &eresp)
 	if err != nil {
-		return nil, err
+		return apiclient.APIResponse{
+			Err: apiclient.NewCliError("error unmarshalling", err),
+		}
 	}
 
 	// remove from response
 	eresp.EventParameters = nil
 
-	respBody, err = json.Marshal(eresp)
-	if err != nil {
-		return nil, err
-	}
-
-	apiclient.ClientPrintHttpResponse.Set(apiclient.GetCmdPrintHttpResponseSetting())
-	apiclient.PrettyPrint(respBody)
-
-	return respBody, err
+	response.RespBody, response.Err = json.Marshal(eresp)
+	return response
 }
 
-func Cancel(name string, executionID string, cancelReason string) (respBody []byte, err error) {
+func Cancel(name string, executionID string, cancelReason string) apiclient.APIResponse {
 	u, _ := url.Parse(apiclient.GetBaseIntegrationURL())
 	u.Path = path.Join(u.Path, "integrations", name, "executions", executionID, ":cancel")
 	payload := "{ \"cancelReason\":\"" + cancelReason + "\"}"
-	respBody, err = apiclient.HttpClient(u.String(), payload)
-	return respBody, err
+	return apiclient.HttpClient(u.String(), payload)
 }
 
-func Replay(name string, executionID string, replayReason string) (respBody []byte, err error) {
+func Replay(name string, executionID string, replayReason string) apiclient.APIResponse {
 	u, _ := url.Parse(apiclient.GetBaseIntegrationURL())
 	u.Path = path.Join(u.Path, "integrations", name, "executions", executionID, ":replay")
 	payload := "{ \"replayReason\":\"" + replayReason + "\"}"
-	respBody, err = apiclient.HttpClient(u.String(), payload)
-	return respBody, err
+	return apiclient.HttpClient(u.String(), payload)
 }

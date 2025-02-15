@@ -45,8 +45,7 @@ var DelCmd = &cobra.Command{
 		cmd.SilenceUsage = true
 
 		name := utils.GetStringParam(cmd.Flag("name"))
-		_, err = integrations.Delete(name)
-		return err
+		return apiclient.PrettyPrint(integrations.Delete(name))
 	},
 }
 

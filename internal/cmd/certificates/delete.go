@@ -45,8 +45,7 @@ var DelCmd = &cobra.Command{
 		cmd.SilenceUsage = true
 
 		name := utils.GetStringParam(cmd.Flag("name"))
-		_, err = certificates.Delete(name)
-		return
+		return apiclient.PrettyPrint(certificates.Delete(name))
 	},
 }
 

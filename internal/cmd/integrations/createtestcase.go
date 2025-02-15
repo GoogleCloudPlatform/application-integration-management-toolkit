@@ -67,11 +67,11 @@ var CrtTestCaseCmd = &cobra.Command{
 		}
 
 		if version != "" {
-			_, err = integrations.CreateTestCase(name, version, string(content))
+			return apiclient.PrettyPrint(integrations.CreateTestCase(name, version, string(content)))
 		} else if userLabel != "" {
-			_, err = integrations.CreateTestCaseByUserLabel(name, userLabel, string(content))
+			return apiclient.PrettyPrint(integrations.CreateTestCaseByUserLabel(name, userLabel, string(content)))
 		} else if snapshot != "" {
-			_, err = integrations.CreateTestCaseBySnapshot(name, snapshot, string(content))
+			return apiclient.PrettyPrint(integrations.CreateTestCaseBySnapshot(name, snapshot, string(content)))
 		}
 
 		return err

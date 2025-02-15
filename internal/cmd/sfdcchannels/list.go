@@ -45,8 +45,7 @@ var ListCmd = &cobra.Command{
 		cmd.SilenceUsage = true
 
 		instance := utils.GetStringParam(cmd.Flag("instance"))
-		_, err = sfdc.ListChannels(instance)
-		return
+		return apiclient.PrettyPrint(sfdc.ListChannels(instance))
 	},
 }
 

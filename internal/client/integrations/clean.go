@@ -24,17 +24,15 @@ func Clean(name string, reportOnly bool, keepList []string) (err error) {
 	var listOfVersions []basicIntegrationVersion
 	var nextPage string
 
-	apiclient.ClientPrintHttpResponse.Set(false)
-	defer apiclient.ClientPrintHttpResponse.Set(apiclient.GetCmdPrintHttpResponseSetting())
 	for {
-		respBody, err := ListVersions(name, -1, nextPage, "", "", false, false, true)
-		if err != nil {
-			return err
+		response := ListVersions(name, -1, nextPage, "", "", false, false, true)
+		if response.Err != nil {
+			return response.Err
 		}
 		iversions := listbasicIntegrationVersions{}
-		err = json.Unmarshal(respBody, &iversions)
+		err = json.Unmarshal(response.RespBody, &iversions)
 		if err != nil {
-			return err
+			return apiclient.NewCliError("error unmarshalling", err)
 		}
 
 		listOfVersions = append(listOfVersions, iversions.BasicIntegrationVersions...)
@@ -54,9 +52,9 @@ func Clean(name string, reportOnly bool, keepList []string) (err error) {
 			if reportOnly {
 				clilog.Info.Println("[REPORT]: Integration '" + name + "' Version: " + iversion.Version + " and Snapshot " + iversion.SnapshotNumber + " can be cleaned")
 			} else {
-				_, err = DeleteVersion(name, iversion.Version)
-				if err != nil {
-					return err
+				response := DeleteVersion(name, iversion.Version)
+				if response.Err != nil {
+					return response.Err
 				}
 			}
 		}

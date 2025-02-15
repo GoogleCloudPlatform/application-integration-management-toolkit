@@ -45,11 +45,10 @@ var ListSuspCmd = &cobra.Command{
 		cmd.SilenceUsage = true
 
 		name := utils.GetStringParam(cmd.Flag("name"))
-		_, err = integrations.ListSuspensions(name, execution, pageSize,
+		return apiclient.PrettyPrint(integrations.ListSuspensions(name, execution, pageSize,
 			utils.GetStringParam(cmd.Flag("pageToken")),
 			utils.GetStringParam(cmd.Flag("filter")),
-			utils.GetStringParam(cmd.Flag("orderBy")))
-		return err
+			utils.GetStringParam(cmd.Flag("orderBy"))))
 	},
 }
 

@@ -63,7 +63,7 @@ var ScaffoldCmd = &cobra.Command{
 
 		const jsonExt = ".json"
 		var fileSplitter string
-		var integrationBody, overridesBody, testCasesBody []byte
+		var integrationResponse, overridesResponse, testCasesResponse apiclient.APIResponse
 		version := utils.GetStringParam(cmd.Flag("ver"))
 		userLabel := utils.GetStringParam(cmd.Flag("user-label"))
 		snapshot := utils.GetStringParam(cmd.Flag("snapshot"))
@@ -102,39 +102,37 @@ var ScaffoldCmd = &cobra.Command{
 			}
 		}
 
-		apiclient.DisableCmdPrintHttpResponse()
-
 		// Get
 
 		if version != "" {
-			if integrationBody, err = integrations.Get(name, version, false, true, false); err != nil {
-				return err
+			if integrationResponse = integrations.Get(name, version, false, true, false); integrationResponse.Err != nil {
+				return integrationResponse.Err
 			}
-			if overridesBody, err = integrations.Get(name, version, false, false, true); err != nil {
-				return err
+			if overridesResponse = integrations.Get(name, version, false, false, true); overridesResponse.Err != nil {
+				return overridesResponse.Err
 			}
-			if testCasesBody, err = integrations.ListTestCases(name, version, false, "", -1, "", ""); err != nil {
-				return err
+			if testCasesResponse = integrations.ListTestCases(name, version, false, "", -1, "", ""); testCasesResponse.Err != nil {
+				return testCasesResponse.Err
 			}
 		} else if userLabel != "" {
-			if integrationBody, err = integrations.GetByUserlabel(name, userLabel, false, true, false); err != nil {
-				return err
+			if integrationResponse = integrations.GetByUserlabel(name, userLabel, false, true, false); integrationResponse.Err != nil {
+				return integrationResponse.Err
 			}
-			if overridesBody, err = integrations.GetByUserlabel(name, userLabel, false, false, true); err != nil {
-				return err
+			if overridesResponse = integrations.GetByUserlabel(name, userLabel, false, false, true); overridesResponse.Err != nil {
+				return overridesResponse.Err
 			}
-			if testCasesBody, err = integrations.ListTestCasesByUserlabel(name, userLabel, false, "", -1, "", ""); err != nil {
-				return err
+			if testCasesResponse = integrations.ListTestCasesByUserlabel(name, userLabel, false, "", -1, "", ""); testCasesResponse.Err != nil {
+				return testCasesResponse.Err
 			}
 		} else if snapshot != "" {
-			if integrationBody, err = integrations.GetBySnapshot(name, snapshot, false, true, false); err != nil {
-				return err
+			if integrationResponse = integrations.GetBySnapshot(name, snapshot, false, true, false); integrationResponse.Err != nil {
+				return integrationResponse.Err
 			}
-			if overridesBody, err = integrations.GetBySnapshot(name, snapshot, false, false, true); err != nil {
-				return err
+			if overridesResponse = integrations.GetBySnapshot(name, snapshot, false, false, true); overridesResponse.Err != nil {
+				return overridesResponse.Err
 			}
-			if testCasesBody, err = integrations.ListTestCasesBySnapshot(name, snapshot, false, "", -1, "", ""); err != nil {
-				return err
+			if testCasesResponse = integrations.ListTestCasesBySnapshot(name, snapshot, false, "", -1, "", ""); testCasesResponse.Err != nil {
+				return testCasesResponse.Err
 			}
 		} else {
 			return errors.New("latest version not found. 1) The integration may be in DRAFT state. Pass a snapshot number. 2) An invalid integration name was set. 3) Latest flag was combined with version, snapshot or user-label")
@@ -145,7 +143,7 @@ var ScaffoldCmd = &cobra.Command{
 			return err
 		}
 
-		integrationBody, err = apiclient.PrettifyJson(integrationBody)
+		integrationBody, err := apiclient.PrettifyJson(integrationResponse.RespBody)
 		if err != nil {
 			return err
 		}
@@ -157,7 +155,7 @@ var ScaffoldCmd = &cobra.Command{
 			return err
 		}
 
-		if len(testCasesBody) > 3 {
+		if len(testCasesResponse.RespBody) > 3 {
 			clilog.Info.Printf("Found test cases in the integration, storing the test cases file\n")
 			if err = generateFolder(path.Join(folder, "tests")); err != nil {
 				return err
@@ -165,18 +163,18 @@ var ScaffoldCmd = &cobra.Command{
 			if err = generateFolder(path.Join(folder, "test-configs")); err != nil {
 				return err
 			}
-			if err = generateTestcases(testCasesBody, integrationBody, folder); err != nil {
+			if err = generateTestcases(testCasesResponse.RespBody, integrationBody, folder); err != nil {
 				return err
 			}
 		}
 
 		// write integration overrides
-		if len(overridesBody) > 0 && string(overridesBody) != "{}" {
+		if len(overridesResponse.RespBody) > 0 && string(overridesResponse.RespBody) != "{}" {
 			clilog.Info.Printf("Found overrides in the integration, storing the overrides file\n")
 			if err = generateFolder(path.Join(folder, "overrides")); err != nil {
 				return err
 			}
-			overridesBody, err = apiclient.PrettifyJson(overridesBody)
+			overridesBody, err := apiclient.PrettifyJson(overridesResponse.RespBody)
 			if err != nil {
 				return err
 			}
@@ -189,20 +187,20 @@ var ScaffoldCmd = &cobra.Command{
 		}
 
 		// write integation config variables
-		configVariables, err := integrations.GetConfigVariables(integrationBody)
-		if err != nil {
-			return err
+		configVariablesResponse := integrations.GetConfigVariables(integrationBody)
+		if configVariablesResponse.Err != nil {
+			return configVariablesResponse.Err
 		}
-		if len(configVariables) > 0 {
+		if len(configVariablesResponse.RespBody) > 0 {
 			clilog.Info.Printf("Found config variables in the integration, storing the config file\n")
 			if err = generateFolder(path.Join(folder, "config-variables")); err != nil {
 				return err
 			}
-			configVariables, err = apiclient.PrettifyJson(configVariables)
+			configVariablesBody, err := apiclient.PrettifyJson(configVariablesResponse.RespBody)
 			if err = apiclient.WriteByteArrayToFile(
 				path.Join(folder, "config-variables", name+"-config.json"),
 				false,
-				configVariables); err != nil {
+				configVariablesBody); err != nil {
 				return err
 			}
 		}
@@ -258,13 +256,13 @@ var ScaffoldCmd = &cobra.Command{
 					return err
 				}
 				for _, authConfigUUIDs := range authConfigUuids {
-					authConfigResp, err := authconfigs.Get(authConfigUUIDs, true)
+					authConfigResponse := authconfigs.Get(authConfigUUIDs, true)
 					if err != nil {
 						return err
 					}
-					authConfigName := getName(authConfigResp)
+					authConfigName := getName(authConfigResponse.RespBody)
 					clilog.Info.Printf("Storing authconfig %s\n", authConfigName)
-					authConfigResp, err = apiclient.PrettifyJson(authConfigResp)
+					authConfigResp, err := apiclient.PrettifyJson(authConfigResponse.RespBody)
 					if err != nil {
 						return err
 					}
@@ -302,35 +300,35 @@ var ScaffoldCmd = &cobra.Command{
 				}
 				for _, connector := range connectors {
 					if connector.CustomConnection {
-						customConnectionResp, err := connections.GetCustomVersion(connector.Name, connector.Version, true)
-						if err != nil {
-							return err
+						customConnectionResp := connections.GetCustomVersion(connector.Name, connector.Version, true)
+						if customConnectionResp.Err != nil {
+							return customConnectionResp.Err
 						}
 						clilog.Info.Printf("Storing custom connector %s\n", connector.Name)
-						customConnectionResp, err = apiclient.PrettifyJson(customConnectionResp)
+						customConnectionBody, err := apiclient.PrettifyJson(customConnectionResp.RespBody)
 						if err != nil {
 							return err
 						}
 						if err = apiclient.WriteByteArrayToFile(
 							path.Join(folder, "custom-connectors", connector.Name+fileSplitter+connector.Version+jsonExt),
 							false,
-							customConnectionResp); err != nil {
+							customConnectionBody); err != nil {
 							return err
 						}
 					} else {
-						connectionResp, err := connections.GetConnectionDetailWithRegion(connector.Name, connector.Region, "", true, true)
-						if err != nil {
-							return err
+						connectionResp := connections.GetConnectionDetailWithRegion(connector.Name, connector.Region, "", true, true)
+						if connectionResp.Err != nil {
+							return connectionResp.Err
 						}
 						clilog.Info.Printf("Storing connector %s\n", connector.Name)
-						connectionResp, err = apiclient.PrettifyJson(connectionResp)
+						connectionRespBody, err := apiclient.PrettifyJson(connectionResp.RespBody)
 						if err != nil {
 							return err
 						}
 						if err = apiclient.WriteByteArrayToFile(
 							path.Join(folder, "connectors", connector.Name+jsonExt),
 							false,
-							connectionResp); err != nil {
+							connectionRespBody); err != nil {
 							return err
 						}
 					}

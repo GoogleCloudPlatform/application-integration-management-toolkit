@@ -24,11 +24,10 @@ import (
 var validMemberTypes = []string{"serviceAccount", "group", "user", "domain"}
 
 // GetIAM
-func GetIAM(name string) (respBody []byte, err error) {
+func GetIAM(name string) apiclient.APIResponse {
 	u, _ := url.Parse(apiclient.GetBaseConnectorURL())
 	u.Path = path.Join(u.Path, name+":getIamPolicy")
-	respBody, err = apiclient.HttpClient(u.String())
-	return respBody, err
+	return apiclient.HttpClient(u.String())
 }
 
 // SetIAM
@@ -40,12 +39,11 @@ func SetIAM(name string, memberName string, permission string, memberType string
 }
 
 // TestIAM
-func TestIAM(name string, resource string) (respBody []byte, err error) {
+func TestIAM(name string, resource string) apiclient.APIResponse {
 	u, _ := url.Parse(apiclient.GetBaseConnectorURL())
 	u.Path = path.Join(u.Path, name+":testIamPermissions")
 	payload := "{\"permissions\":[\"" + resource + "\"]}"
-	respBody, err = apiclient.HttpClient(u.String(), payload)
-	return respBody, err
+	return apiclient.HttpClient(u.String(), payload)
 }
 
 func isValidMemberType(memberType string) bool {

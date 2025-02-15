@@ -35,8 +35,8 @@ func TestCreate(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unable to read authConfig failed: %v", err)
 	}
-	if _, err := Create(contents); err != nil {
-		t.Fatalf("TestCreate failed: %v", err)
+	if response := Create(contents); response.Err != nil {
+		t.Fatalf("TestCreate failed: %v", response.Err)
 	}
 }
 
@@ -55,8 +55,8 @@ func TestGet(t *testing.T) {
 	if err := clienttest.TestSetup(); err != nil {
 		t.Fatalf("TestSetup failed: %v", err)
 	}
-	if _, err := Get(authConfigID, false); err != nil {
-		t.Fatalf("Get failed: %v", err)
+	if response := Get(authConfigID, false); response.Err != nil {
+		t.Fatalf("Get failed: %v", response.Err)
 	}
 }
 
@@ -73,8 +73,8 @@ func TestList(t *testing.T) {
 	if err := clienttest.TestSetup(); err != nil {
 		t.Fatalf("TestSetup failed: %v", err)
 	}
-	if _, err := List(-1, "", ""); err != nil {
-		t.Fatalf("List failed: %v", err)
+	if response := List(-1, "", ""); response.Err != nil {
+		t.Fatalf("List failed: %v", response.Err)
 	}
 }
 
@@ -82,7 +82,7 @@ func TestDelete(t *testing.T) {
 	if err := clienttest.TestSetup(); err != nil {
 		t.Fatalf("TestSetup failed: %v", err)
 	}
-	if _, err := Delete(authConfigID); err != nil {
-		t.Fatalf("Delete failed: %v", err)
+	if response := Delete(authConfigID); response.Err != nil {
+		t.Fatalf("Delete failed: %v", response.Err)
 	}
 }

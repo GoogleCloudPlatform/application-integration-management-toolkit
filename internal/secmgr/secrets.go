@@ -29,7 +29,7 @@ func secretExists(project string, name string) (version string, err error) {
 	ctx := context.Background()
 	client, err := secretmanager.NewClient(ctx)
 	if err != nil {
-		return "", err
+		return "", apiclient.NewCliError("secret management client err", err)
 	}
 	defer client.Close()
 
@@ -41,7 +41,7 @@ func secretExists(project string, name string) (version string, err error) {
 	// Call the API.
 	secretVersion, err := client.GetSecretVersion(ctx, req)
 	if err != nil {
-		return "", err
+		return "", apiclient.NewCliError("get secret version err", err)
 	}
 
 	return secretVersion.Name, nil
@@ -57,7 +57,7 @@ func Create(project string, secretId string, payload []byte) (version string, er
 
 	c, err := secretmanager.NewClient(ctx)
 	if err != nil {
-		return "", err
+		return "", apiclient.NewCliError("new client err", err)
 	}
 	defer c.Close()
 
@@ -85,7 +85,7 @@ func Create(project string, secretId string, payload []byte) (version string, er
 
 	secret, err := c.CreateSecret(ctx, req)
 	if err != nil {
-		return "", err
+		return "", apiclient.NewCliError("create secret err", err)
 	}
 
 	// Build the request.
@@ -99,7 +99,7 @@ func Create(project string, secretId string, payload []byte) (version string, er
 	// Call the API.
 	secretVersion, err := c.AddSecretVersion(ctx, addSecretVersionReq)
 	if err != nil {
-		return "", err
+		return "", apiclient.NewCliError("add secret version err", err)
 	}
 
 	return secretVersion.Name, nil

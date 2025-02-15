@@ -72,8 +72,7 @@ var ExecuteCmd = &cobra.Command{
 				triggerID, doNotPropagateError, requestID))
 		}
 
-		_, err = integrations.Execute(name, content)
-		return err
+		return apiclient.PrettyPrint(integrations.Execute(name, content))
 	},
 }
 

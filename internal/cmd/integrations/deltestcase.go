@@ -40,8 +40,7 @@ var DelTestCaseCmd = &cobra.Command{
 		version := cmd.Flag("ver").Value.String()
 		name := cmd.Flag("name").Value.String()
 		testCaseID := cmd.Flag("test-case-id").Value.String()
-		_, err = integrations.DeleteTestCase(name, version, testCaseID)
-		return err
+		return apiclient.PrettyPrint(integrations.DeleteTestCase(name, version, testCaseID))
 	},
 }
 

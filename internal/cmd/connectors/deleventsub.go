@@ -46,8 +46,7 @@ var DelEventSubCmd = &cobra.Command{
 
 		name := utils.GetStringParam(cmd.Flag("name"))
 		conn := utils.GetStringParam(cmd.Flag("conn"))
-		_, err = connections.DeleteEventSubscription(name, conn)
-		return err
+		return apiclient.PrettyPrint(connections.DeleteEventSubscription(name, conn))
 	},
 }
 

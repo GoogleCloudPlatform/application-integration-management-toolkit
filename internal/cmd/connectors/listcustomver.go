@@ -45,9 +45,8 @@ var ListCustomVerCmd = &cobra.Command{
 		cmd.SilenceUsage = true
 
 		name := utils.GetStringParam(cmd.Flag("name"))
-		_, err = connections.ListCustomVersions(name, pageSize,
-			utils.GetStringParam(cmd.Flag("pageToken")))
-		return err
+		return apiclient.PrettyPrint(connections.ListCustomVersions(name, pageSize,
+			utils.GetStringParam(cmd.Flag("pageToken"))))
 	},
 }
 

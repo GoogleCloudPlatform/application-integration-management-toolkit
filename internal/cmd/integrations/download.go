@@ -57,35 +57,34 @@ var DownloadVerCmd = &cobra.Command{
 		userLabel := utils.GetStringParam(cmd.Flag("user-label"))
 		snapshot := utils.GetStringParam(cmd.Flag("snapshot"))
 		name := utils.GetStringParam(cmd.Flag("name"))
+		var response apiclient.APIResponse
 
 		latest := ignoreLatest(version, userLabel, snapshot)
 
 		if latest {
-			apiclient.DisableCmdPrintHttpResponse()
 			// list integration versions, order by state=SNAPSHOT, page size = 1 and return basic info
-			respBody, err := integrations.ListVersions(name, 1, "", "state=SNAPSHOT",
+			response = integrations.ListVersions(name, 1, "", "state=SNAPSHOT",
 				"snapshot_number", false, false, true)
-			if err != nil {
-				return fmt.Errorf("unable to list versions: %v", err)
+			if response.Err != nil {
+				return fmt.Errorf("unable to list versions: %v", response.Err)
 			}
-			if string(respBody) == "{}" {
-				if respBody, err = integrations.ListVersions(name, 1, "", "state=DRAFT",
+			if string(response.RespBody) == "{}" {
+				if response = integrations.ListVersions(name, 1, "", "state=DRAFT",
 					"snapshot_number", false, false, true); err != nil {
-					return fmt.Errorf("unable to list versions: %v", err)
+					return fmt.Errorf("unable to list versions: %v", response.Err)
 				}
 			}
-			version, err = integrations.GetIntegrationVersion(respBody)
+			version, err = integrations.GetIntegrationVersion(response.RespBody)
 			if err != nil {
 				return err
 			}
-			apiclient.EnableCmdPrintHttpResponse()
-			_, err = integrations.Download(name, version)
+			return apiclient.PrettyPrint(integrations.Download(name, version))
 		} else if version != "" {
-			_, err = integrations.Download(name, version)
+			return apiclient.PrettyPrint(integrations.Download(name, version))
 		} else if userLabel != "" {
-			_, err = integrations.DownloadUserLabel(name, userLabel)
+			return apiclient.PrettyPrint(integrations.DownloadUserLabel(name, userLabel))
 		} else if snapshot != "" {
-			_, err = integrations.DownloadSnapshot(name, snapshot)
+			return apiclient.PrettyPrint(integrations.DownloadSnapshot(name, snapshot))
 		}
 		return err
 	},

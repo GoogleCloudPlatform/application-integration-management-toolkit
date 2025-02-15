@@ -45,11 +45,10 @@ var ListExecCmd = &cobra.Command{
 		cmd.SilenceUsage = true
 
 		name := utils.GetStringParam(cmd.Flag("name"))
-		_, err = integrations.ListExecutions(name, pageSize,
+		return apiclient.PrettyPrint(integrations.ListExecutions(name, pageSize,
 			utils.GetStringParam(cmd.Flag("pageToken")),
 			utils.GetStringParam(cmd.Flag("filter")),
-			utils.GetStringParam(cmd.Flag("orderBy")))
-		return err
+			utils.GetStringParam(cmd.Flag("orderBy"))))
 	},
 }
 

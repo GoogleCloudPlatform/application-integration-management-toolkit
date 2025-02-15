@@ -46,8 +46,7 @@ var DelManagedZonesCmd = &cobra.Command{
 
 		name := utils.GetStringParam(cmd.Flag("name"))
 
-		_, err = connections.DeleteZone(name)
-		return
+		return apiclient.PrettyPrint(connections.DeleteZone(name))
 	},
 }
 

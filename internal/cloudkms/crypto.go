@@ -18,10 +18,10 @@ import (
 	"bytes"
 	"context"
 	"encoding/base64"
-	"fmt"
+	"internal/apiclient"
 
 	kms "cloud.google.com/go/kms/apiv1"
-	kmspb "google.golang.org/genproto/googleapis/cloud/kms/v1"
+	kmspb "cloud.google.com/go/kms/apiv1/kmspb"
 )
 
 // EncryptSymmetric will encrypt the input plaintext with the specified symmetric key.
@@ -32,7 +32,7 @@ func EncryptSymmetric(name string, plaintext []byte) (b64CipherText string, err 
 	ctx := context.Background()
 	kmsClient, err = kms.NewKeyManagementClient(ctx)
 	if err != nil {
-		return "", err
+		return "", apiclient.NewCliError("NewKeyManagementClient error", err)
 	}
 
 	defer kmsClient.Close()
@@ -46,7 +46,7 @@ func EncryptSymmetric(name string, plaintext []byte) (b64CipherText string, err 
 	// Call the API.
 	resp, err := kmsClient.Encrypt(ctx, req)
 	if err != nil {
-		return "", fmt.Errorf("encrypt error: %v", err)
+		return "", apiclient.NewCliError("encrypt error", err)
 	}
 
 	// base64 encode the cipher
@@ -64,7 +64,7 @@ func DecryptSymmetric(name string, b64CipherText []byte) ([]byte, error) {
 	ctx := context.Background()
 	kmsClient, err = kms.NewKeyManagementClient(ctx)
 	if err != nil {
-		return nil, err
+		return nil, apiclient.NewCliError("NewKeyManagementClient error", err)
 	}
 
 	defer kmsClient.Close()
@@ -72,7 +72,7 @@ func DecryptSymmetric(name string, b64CipherText []byte) ([]byte, error) {
 	// base64 encode the cipher
 	cipherText, err := base64.StdEncoding.DecodeString(string(b64CipherText))
 	if err != nil {
-		return nil, fmt.Errorf("decode: %v", err)
+		return nil, apiclient.NewCliError("decode base64 err", err)
 	}
 
 	// Build the request.
@@ -83,7 +83,7 @@ func DecryptSymmetric(name string, b64CipherText []byte) ([]byte, error) {
 	// Call the API.
 	resp, err := kmsClient.Decrypt(ctx, req)
 	if err != nil {
-		return nil, fmt.Errorf("decrypt: %v", err)
+		return nil, apiclient.NewCliError("decrypt err", err)
 	}
 
 	return bytes.TrimSpace(resp.Plaintext), nil

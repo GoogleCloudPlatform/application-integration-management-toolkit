@@ -66,13 +66,12 @@ var DelVerCmd = &cobra.Command{
 		name := utils.GetStringParam(cmd.Flag("name"))
 
 		if version != "" {
-			_, err = integrations.DeleteVersion(name, version)
+			return apiclient.PrettyPrint(integrations.DeleteVersion(name, version))
 		} else if snapshot != "" {
-			_, err = integrations.DeleteBySnapshot(name, snapshot)
+			return apiclient.PrettyPrint(integrations.DeleteBySnapshot(name, snapshot))
 		} else {
-			_, err = integrations.DeleteByUserlabel(name, userLabel)
+			return apiclient.PrettyPrint(integrations.DeleteByUserlabel(name, userLabel))
 		}
-		return err
 	},
 }
 

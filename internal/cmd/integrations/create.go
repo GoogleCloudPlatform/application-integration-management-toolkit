@@ -106,25 +106,21 @@ var CreateCmd = &cobra.Command{
 			}
 		}
 
-		if publish {
-			apiclient.DisableCmdPrintHttpResponse()
-		}
-		respBody, err := integrations.CreateVersion(name, content, overridesContent, snapshot,
+		response := integrations.CreateVersion(name, content, overridesContent, snapshot,
 			userLabel, grantPermission, basic)
-		if err != nil {
-			return err
+		if response.Err != nil {
+			return response.Err
 		}
 
 		if publish {
-			apiclient.EnableCmdPrintHttpResponse()
 			var integrationMap map[string]interface{}
-			err = json.Unmarshal(respBody, &integrationMap)
+			err = json.Unmarshal(response.RespBody, &integrationMap)
 			if err != nil {
 				return err
 			}
 			version := integrationMap["name"].(string)[strings.LastIndex(integrationMap["name"].(string), "/")+1:]
 			if version != "" {
-				_, err = integrations.Publish(name, version, contents)
+				return apiclient.PrettyPrint(integrations.Publish(name, version, contents))
 			} else {
 				return fmt.Errorf("unable to extract version id from integration")
 			}

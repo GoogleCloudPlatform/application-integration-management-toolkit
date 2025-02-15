@@ -24,7 +24,7 @@ import (
 )
 
 // Provision
-func Provision(cloudkms string, samples bool, gmek bool, serviceAccount string) (respBody []byte, err error) {
+func Provision(cloudkms string, samples bool, gmek bool, serviceAccount string) apiclient.APIResponse {
 	u, _ := url.Parse(apiclient.GetBaseIntegrationURL())
 	provStr := []string{}
 
@@ -43,8 +43,7 @@ func Provision(cloudkms string, samples bool, gmek bool, serviceAccount string) 
 	u.Path = path.Join(u.Path, "clients:provision")
 
 	payload := "{" + strings.Join(provStr, ",") + "}"
-	respBody, err = apiclient.HttpClient(u.String(), payload)
-	return respBody, err
+	return apiclient.HttpClient(u.String(), payload)
 }
 
 func getCloudKMSConfig(cloudkms string) string {

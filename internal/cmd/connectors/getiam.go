@@ -45,8 +45,7 @@ var GetIamCmd = &cobra.Command{
 		cmd.SilenceUsage = true
 
 		name := utils.GetStringParam(cmd.Flag("name"))
-		_, err = connections.GetIAM(name)
-		return
+		return apiclient.PrettyPrint(connections.GetIAM(name))
 	},
 }
 

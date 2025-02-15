@@ -59,19 +59,14 @@ var GetCmd = &cobra.Command{
 		minimal := utils.GetBasicInfo(cmd, "minimal")
 
 		if name != "" {
-			apiclient.DisableCmdPrintHttpResponse()
 			version, err := authconfigs.Find(name, "")
 			if err != nil {
 				return err
 			}
-			apiclient.EnableCmdPrintHttpResponse()
-			_, err = authconfigs.Get(path.Base(version), minimal)
-			return err
+			return apiclient.PrettyPrint(authconfigs.Get(path.Base(version), minimal))
 		}
 
-		_, err = authconfigs.Get(id, minimal)
-
-		return err
+		return apiclient.PrettyPrint(authconfigs.Get(id, minimal))
 	},
 }
 

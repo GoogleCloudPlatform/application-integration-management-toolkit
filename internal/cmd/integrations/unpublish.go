@@ -59,41 +59,40 @@ var UnPublishVerCmd = &cobra.Command{
 		name := utils.GetStringParam(cmd.Flag("name"))
 
 		var info string
+		var response apiclient.APIResponse
 
 		latest := ignoreLatest(version, userLabel, snapshot)
 
 		if latest {
-			apiclient.DisableCmdPrintHttpResponse()
 			// list integration versions, order by state=ACTIVE, page size = 1 and return basic info
-			respBody, err := integrations.ListVersions(name, 1, "", "state=ACTIVE",
+			response = integrations.ListVersions(name, 1, "", "state=ACTIVE",
 				"snapshot_number", false, false, true)
-			if err != nil {
+			if response.Err != nil {
 				return fmt.Errorf("unable to list versions: %v", err)
 			}
-			if string(respBody) == "{}" {
-				if respBody, err = integrations.ListVersions(name, 1, "", "state=DRAFT",
+			if string(response.RespBody) == "{}" {
+				if response = integrations.ListVersions(name, 1, "", "state=DRAFT",
 					"snapshot_number", false, false, true); err != nil {
 					return fmt.Errorf("unable to list versions: %v", err)
 				}
 			}
-			version, err = integrations.GetIntegrationVersion(respBody)
+			version, err = integrations.GetIntegrationVersion(response.RespBody)
 			if err != nil {
 				return err
 			}
-			apiclient.EnableCmdPrintHttpResponse()
-			_, err = integrations.Unpublish(name, version)
+			apiclient.PrettyPrint(integrations.Unpublish(name, version))
 			info = "version " + version
 		} else if version != "" {
-			_, err = integrations.Unpublish(name, version)
+			return apiclient.PrettyPrint(integrations.Unpublish(name, version))
 		} else if userLabel != "" {
-			_, err = integrations.UnpublishUserLabel(name, userLabel)
+			return apiclient.PrettyPrint(integrations.UnpublishUserLabel(name, userLabel))
 		} else if snapshot != "" {
-			_, err = integrations.UnpublishSnapshot(name, snapshot)
+			return apiclient.PrettyPrint(integrations.UnpublishSnapshot(name, snapshot))
 		}
-		if err == nil {
+		if response.Err == nil {
 			clilog.Info.Printf("Integration %s %s unpublished successfully\n", name, info)
 		}
-		return err
+		return response.Err
 	},
 	Example: `Unpublishes an integration vesion with the highest snapshot in SNAPHOST state: ` + GetExample(16) + `
 Unpublishes an integration version that matches user supplied user label: ` + GetExample(17),

@@ -45,8 +45,7 @@ var GetOperationCmd = &cobra.Command{
 		cmd.SilenceUsage = true
 
 		name := utils.GetStringParam(cmd.Flag("name"))
-		_, err = connections.GetOperation(name)
-		return
+		return apiclient.PrettyPrint(connections.GetOperation(name))
 	},
 }
 

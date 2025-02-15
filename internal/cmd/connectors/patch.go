@@ -64,8 +64,7 @@ var PatchCmd = &cobra.Command{
 			}
 		}
 
-		_, err = connections.Patch(name, content, updateMask)
-		return err
+		return apiclient.PrettyPrint(connections.Patch(name, content, updateMask))
 	},
 }
 

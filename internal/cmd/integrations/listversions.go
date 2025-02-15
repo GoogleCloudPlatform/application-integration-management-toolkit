@@ -46,12 +46,11 @@ var ListVerCmd = &cobra.Command{
 
 		name := utils.GetStringParam(cmd.Flag("name"))
 		basic := utils.GetBasicInfo(cmd, "basic")
-		_, err = integrations.ListVersions(name, pageSize,
+		return apiclient.PrettyPrint(integrations.ListVersions(name, pageSize,
 			utils.GetStringParam(cmd.Flag("pageToken")),
 			utils.GetStringParam(cmd.Flag("filter")),
 			utils.GetStringParam(cmd.Flag("orderBy")),
-			false, false, basic)
-		return err
+			false, false, basic))
 	},
 	Example: `Return a list of versions with basic information: ` + GetExample(3) + `
 Return the version that is published: ` + GetExample(4),
