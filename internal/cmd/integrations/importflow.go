@@ -50,7 +50,6 @@ var ImportflowCmd = &cobra.Command{
 		if err = apiclient.FolderExists(folder); err != nil {
 			return err
 		}
-		apiclient.DisableCmdPrintHttpResponse()
 		return integrations.ImportFlow(name, folder, maxConnections)
 	},
 }

@@ -16,7 +16,6 @@ package sfdc
 
 import (
 	"encoding/json"
-	"fmt"
 	"internal/apiclient"
 	"net/url"
 	"path"
@@ -46,23 +45,25 @@ type channelExternal struct {
 }
 
 // CreateChannelFromContent
-func CreateChannelFromContent(instanceVersion string, content []byte) (respBody []byte, err error) {
+func CreateChannelFromContent(instanceVersion string, content []byte) apiclient.APIResponse {
 	c := channel{}
 
-	if err = json.Unmarshal(content, &c); err != nil {
-		return nil, err
+	if err := json.Unmarshal(content, &c); err != nil {
+		return apiclient.APIResponse{
+			RespBody: nil,
+			Err:      err,
+		}
 	}
 
 	u, _ := url.Parse(apiclient.GetBaseIntegrationURL())
 	u.Path = path.Join(u.Path, "sfdcInstances")
 
 	u.Path = path.Join(u.Path, "sfdcInstances", instanceVersion, "sfdcChannels")
-	respBody, err = apiclient.HttpClient(u.String(), string(content))
-	return respBody, err
+	return apiclient.HttpClient(u.String(), string(content))
 }
 
 // CreateChannel
-func CreateChannel(name string, instance string, description string, channelTopic string) (respBody []byte, err error) {
+func CreateChannel(name string, instance string, description string, channelTopic string) apiclient.APIResponse {
 	u, _ := url.Parse(apiclient.GetBaseIntegrationURL())
 
 	channelStr := []string{}
@@ -74,67 +75,82 @@ func CreateChannel(name string, instance string, description string, channelTopi
 	payload := "{" + strings.Join(channelStr, ",") + "}"
 
 	u.Path = path.Join(u.Path, "sfdcInstances", instance, "sfdcChannels")
-	respBody, err = apiclient.HttpClient(u.String(), payload)
-	return respBody, err
+	return apiclient.HttpClient(u.String(), payload)
 }
 
 // GetChannel
-func GetChannel(name string, instance string, minimal bool) (respBody []byte, err error) {
+func GetChannel(name string, instance string, minimal bool) apiclient.APIResponse {
 	u, _ := url.Parse(apiclient.GetBaseIntegrationURL())
 	u.Path = path.Join(u.Path, "sfdcInstances", instance, "sfdcChannels", name)
 
-	if minimal {
-		apiclient.ClientPrintHttpResponse.Set(false)
+	response := apiclient.HttpClient(u.String())
+	if response.Err != nil {
+		return response
 	}
-	respBody, err = apiclient.HttpClient(u.String())
+
 	if minimal {
 		iversion := channel{}
-		err := json.Unmarshal(respBody, &iversion)
+		err := json.Unmarshal(response.RespBody, &iversion)
 		if err != nil {
-			return nil, err
+			return apiclient.APIResponse{
+				RespBody: nil,
+				Err:      apiclient.NewCliError("error unmarshalling", err),
+			}
 		}
 		eversion := convertInternalChannelToExternal(iversion)
-		respBody, err = json.Marshal(eversion)
-		if err != nil {
-			return nil, err
-		}
-		apiclient.ClientPrintHttpResponse.Set(apiclient.GetCmdPrintHttpResponseSetting())
-		apiclient.PrettyPrint(respBody)
-
+		response.RespBody, response.Err = json.Marshal(eversion)
+		return response
 	}
-	return respBody, err
+	return response
 }
 
 // ListChannels
-func ListChannels(instance string) (respBody []byte, err error) {
+func ListChannels(instance string) apiclient.APIResponse {
 	u, _ := url.Parse(apiclient.GetBaseIntegrationURL())
 	u.Path = path.Join(u.Path, "sfdcInstances", instance, "sfdcChannels")
-	respBody, err = apiclient.HttpClient(u.String())
-	return respBody, err
+	return apiclient.HttpClient(u.String())
 }
 
 // FindChannel
-func FindChannel(name string, instance string) (version string, respBody []byte, err error) {
+func FindChannel(name string, instance string) (version string, response apiclient.APIResponse) {
 	clist := channels{}
 
 	u, _ := url.Parse(apiclient.GetBaseIntegrationURL())
 	u.Path = path.Join(u.Path, "sfdcInstances", instance, "sfdcChannels")
-	if respBody, err = apiclient.HttpClient(u.String()); err != nil {
-		return "", nil, err
+	if response = apiclient.HttpClient(u.String()); response.Err != nil {
+		return "", apiclient.APIResponse{
+			RespBody: nil,
+			Err:      response.Err,
+		}
 	}
 
-	if err = json.Unmarshal(respBody, &clist); err != nil {
-		return "", nil, err
+	if err := json.Unmarshal(response.RespBody, &clist); err != nil {
+		return "", apiclient.APIResponse{
+			RespBody: nil,
+			Err:      apiclient.NewCliError("error unmarshalling", err),
+		}
 	}
 
 	for _, c := range clist.SfdcChannels {
 		if c.DisplayName == name {
 			version = c.Name[strings.LastIndex(c.Name, "/")+1:]
 			respBody, err := json.Marshal(&c)
-			return version, respBody, err
+			if err != nil {
+				return "", apiclient.APIResponse{
+					RespBody: nil,
+					Err:      apiclient.NewCliError("error marshalling", err),
+				}
+			}
+			return version, apiclient.APIResponse{
+				RespBody: respBody,
+				Err:      err,
+			}
 		}
 	}
-	return "", nil, fmt.Errorf("instance not found")
+	return "", apiclient.APIResponse{
+		RespBody: nil,
+		Err:      apiclient.NewCliError("channel not found", nil),
+	}
 }
 
 // GetInstancesAndChannels
@@ -144,13 +160,13 @@ func GetInstancesAndChannels(instances map[string]string) (instancesContent map[
 	for instance, channel := range instances {
 		instanceUuid, instancesResp, err := FindInstance(instance)
 		if err != nil {
-			return instancesContent, err
+			return instancesContent, apiclient.NewCliError("error finding instance", err)
 		}
-		_, channelResp, err := FindChannel(channel, instanceUuid)
-		if err != nil {
-			return instancesContent, err
+		_, response := FindChannel(channel, instanceUuid)
+		if response.Err != nil {
+			return instancesContent, apiclient.NewCliError("error finding channel", response.Err)
 		}
-		instancesContent[string(instancesResp)] = string(channelResp)
+		instancesContent[string(instancesResp)] = string(response.RespBody)
 	}
 	return instancesContent, err
 }

@@ -44,11 +44,10 @@ var ListManagedZonesCmd = &cobra.Command{
 	RunE: func(cmd *cobra.Command, args []string) (err error) {
 		cmd.SilenceUsage = true
 
-		_, err = connections.ListZones(pageSize,
+		return apiclient.PrettyPrint(connections.ListZones(pageSize,
 			utils.GetStringParam(cmd.Flag("pageToken")),
 			utils.GetStringParam(cmd.Flag("filter")),
-			utils.GetStringParam(cmd.Flag("orderBy")))
-		return err
+			utils.GetStringParam(cmd.Flag("orderBy"))))
 	},
 }
 

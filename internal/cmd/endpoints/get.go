@@ -48,8 +48,7 @@ var GetCmd = &cobra.Command{
 		name := utils.GetStringParam(cmd.Flag("name"))
 		overrides, _ := strconv.ParseBool(utils.GetStringParam(cmd.Flag("overrides")))
 
-		_, err = connections.GetEndpoint(name, overrides)
-		return err
+		return apiclient.PrettyPrint(connections.GetEndpoint(name, overrides))
 	},
 }
 

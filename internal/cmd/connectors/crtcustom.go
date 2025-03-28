@@ -54,9 +54,7 @@ var CrtCustomCmd = &cobra.Command{
 		displayName := utils.GetStringParam(cmd.Flag("display-name"))
 		connType := utils.GetStringParam(cmd.Flag("type"))
 
-		_, err = connections.CreateCustom(name, description, displayName, connType, labels)
-
-		return err
+		return apiclient.PrettyPrint(connections.CreateCustom(name, description, displayName, connType, labels))
 	},
 	Example: `Create a custom connector for OPEN_API type: ` + GetExample(3),
 }

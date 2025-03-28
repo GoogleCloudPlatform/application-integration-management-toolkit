@@ -56,8 +56,7 @@ var PatchCmd = &cobra.Command{
 			return err
 		}
 
-		_, err = authconfigs.Patch(name, content, updateMask)
-		return err
+		return apiclient.PrettyPrint(authconfigs.Patch(name, content, updateMask))
 	},
 }
 

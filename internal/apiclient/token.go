@@ -58,8 +58,7 @@ func getPrivateKey(privateKey string) (interface{}, error) {
 	block, _ := pem.Decode([]byte(pemPrivateKey))
 	privKey, err := x509.ParsePKCS8PrivateKey(block.Bytes)
 	if err != nil {
-		clilog.Error.Println("error parsing Private Key: ", err)
-		return nil, err
+		return nil, NewCliError("error parsing Private Key", err)
 	}
 	return privKey, nil
 }
@@ -69,7 +68,7 @@ func generateJWT(privateKey string) (string, error) {
 
 	privKey, err := getPrivateKey(privateKey)
 	if err != nil {
-		return "", err
+		return "", NewCliError("error parsing Private Key", err)
 	}
 
 	now := time.Now()
@@ -88,8 +87,7 @@ func generateJWT(privateKey string) (string, error) {
 
 	payload, err := jwt.Sign(token, jwt.WithKey(jwa.RS256, privKey))
 	if err != nil {
-		clilog.Error.Println("error parsing Private Key: ", err)
-		return "", err
+		return "", NewCliError("error parsing Private Key", err)
 	}
 	clilog.Debug.Println("jwt token : ", string(payload))
 	return string(payload), nil
@@ -119,16 +117,14 @@ func generateAccessToken(privateKey string) (string, error) {
 	client := &http.Client{}
 	req, err := http.NewRequest("POST", tokenUri, strings.NewReader(form.Encode()))
 	if err != nil {
-		clilog.Error.Println("error in client: ", err)
-		return "", err
+		return "", NewCliError("error in http client", err)
 	}
 	req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
 	req.Header.Add("Content-Length", strconv.Itoa(len(form.Encode())))
 
 	resp, err := client.Do(req)
 	if err != nil {
-		clilog.Error.Println("failed to generate oauth token: ", err)
-		return "", err
+		return "", NewCliError("failed to generate oauth token", err)
 	}
 
 	if resp != nil {
@@ -136,24 +132,21 @@ func generateAccessToken(privateKey string) (string, error) {
 	}
 
 	if resp == nil {
-		clilog.Error.Println("error in response: Response was null")
-		return "", errors.New("error in response: Response was null")
+		return "", NewCliError("error in response: Response was null", nil)
 	}
 
 	respBody, err = io.ReadAll(resp.Body)
 	clilog.Debug.Printf("Response: %s\n", string(respBody))
 
 	if err != nil {
-		clilog.Error.Printf("error in response: %v\n", err)
-		return "", err
+		return "", NewCliError("error in response", err)
 	} else if resp.StatusCode > 399 {
-		clilog.Error.Printf("status code %d, error in response: %s\n", resp.StatusCode, string(respBody))
-		return "", fmt.Errorf("status code %d, error in response: %s", resp.StatusCode, string(respBody))
+		return "", NewCliError("error in client", fmt.Errorf("status code %d, error in response: %s", resp.StatusCode, string(respBody)))
 	}
 
 	accessToken := oAuthAccessToken{}
 	if err = json.Unmarshal(respBody, &accessToken); err != nil {
-		return "", err
+		return "", NewCliError("error unmarshalling", err)
 	}
 
 	clilog.Debug.Println("access token : ", accessToken)
@@ -166,12 +159,12 @@ func generateAccessToken(privateKey string) (string, error) {
 func readServiceAccount(serviceAccountPath string) error {
 	content, err := os.ReadFile(serviceAccountPath)
 	if err != nil {
-		return err
+		return NewCliError("error reading service account", err)
 	}
 
 	err = json.Unmarshal(content, &account)
 	if err != nil {
-		return err
+		return NewCliError("error unmarshalling", err)
 	}
 	return nil
 }
@@ -227,12 +220,12 @@ func SetAccessToken() error {
 	if GetIntegrationToken() == "" && GetServiceAccount() == "" {
 		SetIntegrationToken(getToken()) // read from configuration
 		if GetIntegrationToken() == "" {
-			return fmt.Errorf("either token or service account must be provided")
+			return NewCliError("", fmt.Errorf("either token or service account must be provided"))
 		}
 		if checkAccessToken() { // check if the token is still valid
 			return nil
 		}
-		return fmt.Errorf("token expired: request a new access token or pass the service account")
+		return NewCliError("", fmt.Errorf("token expired: request a new access token or pass the service account"))
 	}
 	if GetIntegrationToken() != "" {
 		// a token was passed, cache it
@@ -243,22 +236,22 @@ func SetAccessToken() error {
 	} else {
 		err := readServiceAccount(GetServiceAccount())
 		if err != nil { // Handle errors reading the config file
-			return fmt.Errorf("error reading config file: %s", err)
+			return NewCliError("error reading config file", err)
 		}
 		privateKey := getServiceAccountProperty("PrivateKey")
 		if privateKey == "" {
-			return fmt.Errorf("private key missing in the service account")
+			return NewCliError("private key missing in the service account", nil)
 		}
 		if getServiceAccountProperty("ClientEmail") == "" {
-			return fmt.Errorf("client email missing in the service account")
+			return NewCliError("client email missing in the service account", nil)
 		}
 		_, err = generateAccessToken(privateKey)
 		if err != nil {
-			return fmt.Errorf("fatal error generating access token: %s", err)
+			return NewCliError("fatal error generating access token", err)
 		}
 		return nil
 	}
-	return fmt.Errorf("token expired: request a new access token or pass the service account")
+	return NewCliError("token expired: request a new access token or pass the service account", nil)
 }
 
 // GetDefaultAccessToken
@@ -266,11 +259,11 @@ func GetDefaultAccessToken() (err error) {
 	ctx := context.Background()
 	tokenSource, err := google.DefaultTokenSource(ctx, "https://www.googleapis.com/auth/cloud-platform")
 	if err != nil {
-		return err
+		return NewCliError("error getting default token source", err)
 	}
 	token, err := tokenSource.Token()
 	if err != nil {
-		return err
+		return NewCliError("error getting token", err)
 	}
 	SetIntegrationToken(token.AccessToken)
 	return nil
@@ -285,7 +278,7 @@ func GetMetadataAccessToken() (err error) {
 
 	client, err := getHttpClient()
 	if err != nil {
-		return err
+		return NewCliError("error getting client", err)
 	}
 
 	if DryRun() {
@@ -296,15 +289,13 @@ func GetMetadataAccessToken() (err error) {
 
 	req, err = http.NewRequest(http.MethodGet, metadataURL, nil)
 	if err != nil {
-		clilog.Error.Println("error in client: ", err)
-		return err
+		return NewCliError("error getting client", err)
 	}
 
 	req.Header.Set("Metadata-Flavor", "Google")
 	resp, err := client.Do(req)
 	if err != nil {
-		clilog.Error.Println("error connecting: ", err)
-		return err
+		return NewCliError("error connecting", err)
 	}
 
 	if resp != nil {
@@ -312,23 +303,21 @@ func GetMetadataAccessToken() (err error) {
 	}
 
 	if resp == nil {
-		clilog.Error.Println("error in response: Response was null")
-		return fmt.Errorf("error in response: Response was null")
+		return NewCliError("error in response: Response was null", nil)
 	}
 
 	respBody, err := io.ReadAll(resp.Body)
 	if err != nil {
-		clilog.Error.Println("error in response: ", err)
-		return err
+		return NewCliError("error in response", err)
 	} else if resp.StatusCode > 399 {
 		clilog.Debug.Printf("status code %d, error in response: %s\n", resp.StatusCode, string(respBody))
 		clilog.HTTPError.Println(string(respBody))
-		return errors.New(getErrorMessage(resp.StatusCode))
+		return NewCliError("error in response", errors.New(getErrorMessage(resp.StatusCode)))
 	}
 
 	err = json.Unmarshal(respBody, &tokenResponse)
 	if err != nil {
-		return err
+		return NewCliError("error unmarshalling", err)
 	}
 
 	SetIntegrationToken(tokenResponse["access_token"].(string))

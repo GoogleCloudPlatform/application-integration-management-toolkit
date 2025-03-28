@@ -19,7 +19,6 @@ import (
 	"internal/clilog"
 	"os"
 	"strings"
-	"sync"
 )
 
 // BaseURL is the Integration control plane endpoint
@@ -89,14 +88,10 @@ const (
 
 var apiRate Rate
 
-var cmdPrintHttpResponses = true
-
-type clientPrintHttpResponse struct {
-	enable bool
-	sync.Mutex
+type APIResponse struct {
+	RespBody []byte
+	Err      error
 }
-
-var ClientPrintHttpResponse = &clientPrintHttpResponse{enable: true}
 
 var cliVersion, cliCommitSha, cliBuildDate string
 
@@ -255,35 +250,6 @@ func SetPrintOutput(output bool) {
 // GetPrintOutput
 func GetPrintOutput() bool {
 	return options.PrintOutput
-}
-
-// DisableCmdPrintHttpResponse
-func DisableCmdPrintHttpResponse() {
-	cmdPrintHttpResponses = false
-}
-
-// EnableCmdPrintHttpResponse
-func EnableCmdPrintHttpResponse() {
-	cmdPrintHttpResponses = true
-}
-
-// GetCmdPrintHttpResponseSetting
-func GetCmdPrintHttpResponseSetting() bool {
-	return cmdPrintHttpResponses
-}
-
-// SetClientPrintHttpResponse
-func (c *clientPrintHttpResponse) Set(b bool) {
-	c.Lock()
-	defer c.Unlock()
-	c.enable = b
-}
-
-// GetPrintHttpResponseSetting
-func (c *clientPrintHttpResponse) Get() bool {
-	c.Lock()
-	defer c.Unlock()
-	return c.enable
 }
 
 // GetProxyURL

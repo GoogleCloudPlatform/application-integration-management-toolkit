@@ -45,8 +45,7 @@ var DelCmd = &cobra.Command{
 		cmd.SilenceUsage = true
 
 		name := utils.GetStringParam(cmd.Flag("name"))
-		_, err = authconfigs.Delete(name)
-		return
+		return apiclient.PrettyPrint(authconfigs.Delete(name))
 	},
 }
 

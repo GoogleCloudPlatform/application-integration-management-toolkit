@@ -30,51 +30,54 @@ type zone struct {
 }
 
 // CreateZone
-func CreateZone(name string, content []byte) (respBody []byte, err error) {
+func CreateZone(name string, content []byte) apiclient.APIResponse {
 	u, _ := url.Parse(apiclient.GetBaseConnectorZonesURL())
 	q := u.Query()
 	q.Set("managedZoneId", name)
 	u.RawQuery = q.Encode()
 
 	z := zone{}
-	err = json.Unmarshal(content, &z)
-	if err != nil {
-		return nil, err
+	if err := json.Unmarshal(content, &z); err != nil {
+		return apiclient.APIResponse{
+			RespBody: nil,
+			Err:      err,
+		}
 	}
 
 	u.Path = path.Join(u.Path, name)
-	respBody, err = apiclient.HttpClient(u.String(), string(content))
-	return respBody, err
+	return apiclient.HttpClient(u.String(), string(content))
 }
 
 // GetZone
-func GetZone(name string, overrides bool) (respBody []byte, err error) {
+func GetZone(name string, overrides bool) apiclient.APIResponse {
 	u, _ := url.Parse(apiclient.GetBaseConnectorZonesURL())
 	u.Path = path.Join(u.Path, name)
-	if overrides {
-		apiclient.ClientPrintHttpResponse.Set(false)
-	}
-	respBody, err = apiclient.HttpClient(u.String())
+
+	response := apiclient.HttpClient(u.String())
+
 	if overrides {
 		z := zone{}
-		if err = json.Unmarshal(respBody, &z); err != nil {
-			return nil, err
+		if err := json.Unmarshal(response.RespBody, &z); err != nil {
+			return apiclient.APIResponse{
+				RespBody: nil,
+				Err:      err,
+			}
 		}
-		return json.Marshal(z)
+		response.RespBody, response.Err = json.Marshal(z)
+		return response
 	}
-	return respBody, err
+	return response
 }
 
 // DeleteZone
-func DeleteZone(name string) (respBody []byte, err error) {
+func DeleteZone(name string) apiclient.APIResponse {
 	u, _ := url.Parse(apiclient.GetBaseConnectorZonesURL())
 	u.Path = path.Join(u.Path, name)
-	respBody, err = apiclient.HttpClient(u.String(), "", "DELETE")
-	return respBody, err
+	return apiclient.HttpClient(u.String(), "", "DELETE")
 }
 
 // ListZones
-func ListZones(pageSize int, pageToken string, filter string, orderBy string) (respBody []byte, err error) {
+func ListZones(pageSize int, pageToken string, filter string, orderBy string) apiclient.APIResponse {
 	u, _ := url.Parse(apiclient.GetBaseConnectorZonesURL())
 	q := u.Query()
 	if pageSize != -1 {
@@ -91,6 +94,5 @@ func ListZones(pageSize int, pageToken string, filter string, orderBy string) (r
 	}
 
 	u.RawQuery = q.Encode()
-	respBody, err = apiclient.HttpClient(u.String())
-	return respBody, err
+	return apiclient.HttpClient(u.String())
 }

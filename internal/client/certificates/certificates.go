@@ -40,7 +40,7 @@ type cert struct {
 }
 
 // Create
-func Create(displayName string, description string, sslCertificate string, privateKey string, passphrase string) (respBody []byte, err error) {
+func Create(displayName string, description string, sslCertificate string, privateKey string, passphrase string) apiclient.APIResponse {
 	u, _ := url.Parse(apiclient.GetBaseIntegrationURL())
 	certStr := []string{}
 	rawCertStr := []string{}
@@ -63,12 +63,11 @@ func Create(displayName string, description string, sslCertificate string, priva
 	u.Path = path.Join(u.Path, "certificates")
 
 	payload := "{" + strings.Join(certStr, ",") + "}"
-	respBody, err = apiclient.HttpClient(u.String(), payload)
-	return respBody, err
+	return apiclient.HttpClient(u.String(), payload)
 }
 
 // List
-func List(pageSize int, pageToken string, filter string) (respBody []byte, err error) {
+func List(pageSize int, pageToken string, filter string) apiclient.APIResponse {
 	u, _ := url.Parse(apiclient.GetBaseIntegrationURL())
 	q := u.Query()
 	if pageSize != -1 {
@@ -83,24 +82,21 @@ func List(pageSize int, pageToken string, filter string) (respBody []byte, err e
 
 	u.RawQuery = q.Encode()
 	u.Path = path.Join(u.Path, "certificates")
-	respBody, err = apiclient.HttpClient(u.String())
-	return respBody, err
+	return apiclient.HttpClient(u.String())
 }
 
 // Delete
-func Delete(name string) (respBody []byte, err error) {
+func Delete(name string) apiclient.APIResponse {
 	u, _ := url.Parse(apiclient.GetBaseIntegrationURL())
 	u.Path = path.Join(u.Path, "certificates", name)
-	respBody, err = apiclient.HttpClient(u.String(), "", "DELETE")
-	return respBody, err
+	return apiclient.HttpClient(u.String(), "", "DELETE")
 }
 
 // Get
-func Get(name string) (respBody []byte, err error) {
+func Get(name string) apiclient.APIResponse {
 	u, _ := url.Parse(apiclient.GetBaseIntegrationURL())
 	u.Path = path.Join(u.Path, "certificates", name)
-	respBody, err = apiclient.HttpClient(u.String())
-	return respBody, err
+	return apiclient.HttpClient(u.String())
 }
 
 // Find
@@ -111,12 +107,12 @@ func Find(name string) (version string, err error) {
 	u, _ := url.Parse(apiclient.GetBaseIntegrationURL())
 
 	u.Path = path.Join(u.Path, "certificates")
-	if respBody, err = apiclient.HttpClient(u.String()); err != nil {
-		return "", err
+	if response := apiclient.HttpClient(u.String()); response.Err != nil {
+		return "", response.Err
 	}
 
 	if err = json.Unmarshal(respBody, &cs); err != nil {
-		return "", err
+		return "", apiclient.NewCliError("error unmarshalling", err)
 	}
 
 	for _, c := range cs.Cert {

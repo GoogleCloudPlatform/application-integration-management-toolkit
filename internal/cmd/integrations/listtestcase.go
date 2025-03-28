@@ -58,11 +58,11 @@ var ListTestCaseCmd = &cobra.Command{
 		orderBy := utils.GetStringParam(cmd.Flag("orderBy"))
 
 		if version != "" {
-			_, err = integrations.ListTestCases(name, version, full, filter, pageSize, pageToken, orderBy)
+			return apiclient.PrettyPrint(integrations.ListTestCases(name, version, full, filter, pageSize, pageToken, orderBy))
 		} else if userLabel != "" {
-			_, err = integrations.ListTestCasesByUserlabel(name, userLabel, full, filter, pageSize, pageToken, orderBy)
+			return apiclient.PrettyPrint(integrations.ListTestCasesByUserlabel(name, userLabel, full, filter, pageSize, pageToken, orderBy))
 		} else if snapshot != "" {
-			_, err = integrations.ListTestCasesBySnapshot(name, snapshot, full, filter, pageSize, pageToken, orderBy)
+			return apiclient.PrettyPrint(integrations.ListTestCasesBySnapshot(name, snapshot, full, filter, pageSize, pageToken, orderBy))
 		}
 
 		return err

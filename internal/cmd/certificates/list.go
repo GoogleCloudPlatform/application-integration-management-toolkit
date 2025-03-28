@@ -46,8 +46,7 @@ var ListCmd = &cobra.Command{
 
 		pageToken := utils.GetStringParam(cmd.Flag("pageToken"))
 		filter := utils.GetStringParam(cmd.Flag("filter"))
-		_, err = certificates.List(pageSize, pageToken, filter)
-		return
+		return apiclient.PrettyPrint(certificates.List(pageSize, pageToken, filter))
 	},
 }
 

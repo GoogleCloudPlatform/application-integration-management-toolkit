@@ -22,15 +22,14 @@ import (
 )
 
 // GetOperation
-func GetOperation(name string) (respBody []byte, err error) {
+func GetOperation(name string) apiclient.APIResponse {
 	u, _ := url.Parse(apiclient.GetBaseConnectorOperationsrURL())
 	u.Path = path.Join(u.Path, name)
-	respBody, err = apiclient.HttpClient(u.String())
-	return respBody, err
+	return apiclient.HttpClient(u.String())
 }
 
 // ListOperations
-func ListOperations(pageSize int, pageToken string, filter string, orderBy string) (respBody []byte, err error) {
+func ListOperations(pageSize int, pageToken string, filter string, orderBy string) apiclient.APIResponse {
 	u, _ := url.Parse(apiclient.GetBaseConnectorOperationsrURL())
 	q := u.Query()
 	if pageSize != -1 {
@@ -47,14 +46,12 @@ func ListOperations(pageSize int, pageToken string, filter string, orderBy strin
 	}
 
 	u.RawQuery = q.Encode()
-	respBody, err = apiclient.HttpClient(u.String())
-	return respBody, err
+	return apiclient.HttpClient(u.String())
 }
 
 // CancelOperation
-func CancelOperation(name string) (respBody []byte, err error) {
+func CancelOperation(name string) apiclient.APIResponse {
 	u, _ := url.Parse(apiclient.GetBaseConnectorOperationsrURL())
 	u.Path = path.Join(u.Path, name+":cancel")
-	respBody, err = apiclient.HttpClient(u.String(), "")
-	return respBody, err
+	return apiclient.HttpClient(u.String(), "")
 }

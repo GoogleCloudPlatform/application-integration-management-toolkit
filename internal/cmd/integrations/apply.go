@@ -16,7 +16,6 @@ package integrations
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"internal/apiclient"
 	"internal/client/authconfigs"
@@ -72,8 +71,6 @@ var ApplyCmd = &cobra.Command{
 		userLabel := utils.GetStringParam(cmd.Flag("user-label"))
 		wait, _ := strconv.ParseBool(utils.GetStringParam(cmd.Flag("wait")))
 		runTests, _ := strconv.ParseBool(utils.GetStringParam(cmd.Flag("run-tests")))
-
-		apiclient.DisableCmdPrintHttpResponse()
 
 		if cloudDeploy {
 			if err = storeCloudDeployVariables(); err != nil {
@@ -207,15 +204,15 @@ func getVersion(respBody []byte) (version string, err error) {
 	var jsonMap map[string]interface{}
 
 	if err = json.Unmarshal(respBody, &jsonMap); err != nil {
-		return "", err
+		return "", apiclient.NewCliError("error unmarshalling", err)
 	}
 
 	if jsonMap["name"] == "" {
-		return "", errors.New("version not found")
+		return "", apiclient.NewCliError("version not found", nil)
 	}
 
 	if version = filepath.Base(fmt.Sprintf("%s", jsonMap["name"])); version == "" {
-		return "", errors.New("version not found")
+		return "", apiclient.NewCliError("version not found", nil)
 	}
 	return version, nil
 }
@@ -224,10 +221,10 @@ func getServiceAttachment(respBody []byte) (sa string, err error) {
 	var jsonMap map[string]string
 
 	if err = json.Unmarshal(respBody, &jsonMap); err != nil {
-		return "", err
+		return "", apiclient.NewCliError("error unmarshalling", err)
 	}
 	if jsonMap["serviceAttachment"] == "" {
-		return "", errors.New("serviceAttachment not found")
+		return "", apiclient.NewCliError("serviceAttachment not found", nil)
 	}
 	return jsonMap["serviceAttachment"], nil
 }
@@ -240,7 +237,7 @@ func processAuthConfigs(authconfigFolder string) (err error) {
 		// create any authconfigs
 		err = filepath.Walk(authconfigFolder, func(path string, info os.FileInfo, err error) error {
 			if err != nil {
-				return err
+				return apiclient.NewCliError("unable to traverse folder", err)
 			}
 			if !info.IsDir() {
 				authConfigFile := filepath.Base(path)
@@ -251,11 +248,11 @@ func processAuthConfigs(authconfigFolder string) (err error) {
 					if version == "" {
 						authConfigBytes, err := utils.ReadFile(path)
 						if err != nil {
-							return err
+							return apiclient.NewCliError("unable to read file", err)
 						}
 						clilog.Info.Printf("Creating authconfig: %s\n", authConfigFile)
-						if _, err = authconfigs.Create(authConfigBytes); err != nil {
-							return err
+						if response := authconfigs.Create(authConfigBytes); response.Err != nil {
+							return response.Err
 						}
 					} else {
 						clilog.Info.Printf("Authconfig %s already exists\n", authConfigFile)
@@ -265,7 +262,7 @@ func processAuthConfigs(authconfigFolder string) (err error) {
 			return nil
 		})
 		if err != nil {
-			return err
+			return apiclient.NewCliError("unable to traverse folder", err)
 		}
 	}
 	return nil
@@ -279,7 +276,7 @@ func processEndpoints(endpointsFolder string) (err error) {
 		// create any endpoint attachments
 		err = filepath.Walk(endpointsFolder, func(path string, info os.FileInfo, err error) error {
 			if err != nil {
-				return err
+				return apiclient.NewCliError("unable to traverse folder", err)
 			}
 			if !info.IsDir() {
 				endpointFile := filepath.Base(path)
@@ -290,15 +287,15 @@ func processEndpoints(endpointsFolder string) (err error) {
 					// the endpoint does not exist, try to create it
 					endpointBytes, err := utils.ReadFile(path)
 					if err != nil {
-						return err
+						return apiclient.NewCliError("unable to read file", err)
 					}
 					serviceAccountName, err := getServiceAttachment(endpointBytes)
 					if err != nil {
 						return err
 					}
-					if _, err = connections.CreateEndpoint(getFilenameWithoutExtension(endpointFile),
-						serviceAccountName, "", false); err != nil {
-						return err
+					if response := connections.CreateEndpoint(getFilenameWithoutExtension(endpointFile),
+						serviceAccountName, "", false); response.Err != nil {
+						return response.Err
 					}
 				} else {
 					clilog.Info.Printf("Endpoint %s already exists\n", endpointFile)
@@ -307,7 +304,7 @@ func processEndpoints(endpointsFolder string) (err error) {
 			return nil
 		})
 		if err != nil {
-			return err
+			return apiclient.NewCliError("unable to traverse folder", err)
 		}
 	}
 	return nil
@@ -322,22 +319,22 @@ func processManagedZones(zonesFolder string) (err error) {
 		// create any managedzones
 		err = filepath.Walk(zonesFolder, func(path string, info os.FileInfo, err error) error {
 			if err != nil {
-				return err
+				return apiclient.NewCliError("unable to traverse folder", err)
 			}
 			if !info.IsDir() {
 				zoneFile := filepath.Base(path)
 				if rJSONFiles.MatchString(zoneFile) {
 					clilog.Info.Printf("Found configuration for managed zone: %s\n", zoneFile)
 				}
-				if _, err = connections.GetZone(getFilenameWithoutExtension(zoneFile), true); err != nil {
+				if zoneResponse := connections.GetZone(getFilenameWithoutExtension(zoneFile), true); zoneResponse.Err != nil {
 					// the managed zone does not exist, try to create it
 					zoneBytes, err := utils.ReadFile(path)
 					if err != nil {
-						return err
+						return apiclient.NewCliError("unable to read file", err)
 					}
-					if _, err = connections.CreateZone(getFilenameWithoutExtension(zoneFile),
-						zoneBytes); err != nil {
-						return err
+					if response := connections.CreateZone(getFilenameWithoutExtension(zoneFile),
+						zoneBytes); response.Err != nil {
+						return response.Err
 					}
 				} else {
 					clilog.Info.Printf("Zone %s already exists\n", zoneFile)
@@ -346,7 +343,7 @@ func processManagedZones(zonesFolder string) (err error) {
 			return nil
 		})
 		if err != nil {
-			return err
+			return apiclient.NewCliError("unable to traverse folder", err)
 		}
 	}
 	return nil
@@ -360,30 +357,30 @@ func processConnectors(connectorsFolder string, grantPermission bool, createSecr
 		// create any connectors
 		err = filepath.Walk(connectorsFolder, func(path string, info os.FileInfo, err error) error {
 			if err != nil {
-				return err
+				return apiclient.NewCliError("unable to traverse folder", err)
 			}
 			if !info.IsDir() {
 				connectionFile := filepath.Base(path)
 				if rJSONFiles.MatchString(connectionFile) {
 					clilog.Info.Printf("Found configuration for connection: %s\n", connectionFile)
-					_, err = connections.Get(getFilenameWithoutExtension(connectionFile), "", true, false)
+					response := connections.Get(getFilenameWithoutExtension(connectionFile), "", true, false)
 					// create the connection only if the connection is not found
-					if err != nil {
+					if response.Err != nil {
 						connectionBytes, err := utils.ReadFile(path)
 						if err != nil {
-							return err
+							return apiclient.NewCliError("unable to traverse folder", err)
 						}
 						clilog.Info.Printf("Creating connector: %s\n", connectionFile)
 
-						if _, err = connections.Create(getFilenameWithoutExtension(connectionFile),
+						if response = connections.Create(getFilenameWithoutExtension(connectionFile),
 							connectionBytes,
 							serviceAccountName,
 							serviceAccountProject,
 							encryptionKey,
 							grantPermission,
 							createSecret,
-							wait); err != nil {
-							return err
+							wait); response.Err != nil {
+							return response.Err
 						}
 					} else {
 						clilog.Info.Printf("Connector %s already exists\n", connectionFile)
@@ -393,7 +390,7 @@ func processConnectors(connectorsFolder string, grantPermission bool, createSecr
 			return nil
 		})
 		if err != nil {
-			return err
+			return apiclient.NewCliError("unable to traverse folder", err)
 		}
 	}
 	return nil
@@ -414,7 +411,7 @@ func processCustomConnectors(customConnectorsFolder string) (err error) {
 		// create any custom connectors
 		err = filepath.Walk(customConnectorsFolder, func(path string, info os.FileInfo, err error) error {
 			if err != nil {
-				return err
+				return apiclient.NewCliError("unable to traverse folder", err)
 			}
 			if !info.IsDir() {
 				customConnectionFile := filepath.Base(path)
@@ -425,11 +422,11 @@ func processCustomConnectors(customConnectorsFolder string) (err error) {
 						clilog.Info.Printf("Found configuration for custom connection: %v\n", customConnectionFile)
 						contents, err := utils.ReadFile(path)
 						if err != nil {
-							return err
+							return apiclient.NewCliError("unable to read file", err)
 						}
 						clilog.Info.Printf("Creating custom connector: %s\n", customConnectionFile)
-						if _, err := connections.GetCustomVersion(customConnectionDetails[0],
-							customConnectionDetails[1], false); err != nil {
+						if response := connections.GetCustomVersion(customConnectionDetails[0],
+							customConnectionDetails[1], false); response.Err != nil {
 							// didn't find the custom connector, create it
 							if err = connections.CreateCustomWithVersion(customConnectionDetails[0],
 								customConnectionDetails[1], contents, serviceAccountName, serviceAccountProject); err != nil {
@@ -443,6 +440,9 @@ func processCustomConnectors(customConnectorsFolder string) (err error) {
 			}
 			return nil
 		})
+		if err != nil {
+			return apiclient.NewCliError("unable to traverse folder", err)
+		}
 	}
 	return nil
 }
@@ -455,23 +455,23 @@ func processSfdcInstances(sfdcinstancesFolder string) (err error) {
 		// create any sfdc instances
 		err = filepath.Walk(sfdcinstancesFolder, func(path string, info os.FileInfo, err error) error {
 			if err != nil {
-				return err
+				return apiclient.NewCliError("unable to traverse folder", err)
 			}
 			if !info.IsDir() {
 				instanceFile := filepath.Base(path)
 				if rJSONFiles.MatchString(instanceFile) {
 					clilog.Info.Printf("Found configuration for sfdc instance: %s\n", instanceFile)
-					_, err = sfdc.GetInstance(getFilenameWithoutExtension(instanceFile), true)
+					response := sfdc.GetInstance(getFilenameWithoutExtension(instanceFile), true)
 					// create the instance only if the sfdc instance is not found
-					if err != nil {
+					if response.Err != nil {
 						instanceBytes, err := utils.ReadFile(path)
 						if err != nil {
-							return err
+							return apiclient.NewCliError("unable to read file", err)
 						}
 						clilog.Info.Printf("Creating sfdc instance: %s\n", instanceFile)
-						_, err = sfdc.CreateInstanceFromContent(instanceBytes)
-						if err != nil {
-							return nil
+						response = sfdc.CreateInstanceFromContent(instanceBytes)
+						if response.Err != nil {
+							return response.Err
 						}
 					} else {
 						clilog.Info.Printf("sfdc instance %s already exists\n", instanceFile)
@@ -481,7 +481,7 @@ func processSfdcInstances(sfdcinstancesFolder string) (err error) {
 			return nil
 		})
 		if err != nil {
-			return err
+			return apiclient.NewCliError("unable to traverse folder", err)
 		}
 	}
 	return nil
@@ -503,7 +503,7 @@ func processSfdcChannels(sfdcchannelsFolder string) (err error) {
 		// create any sfdc channels
 		err = filepath.Walk(sfdcchannelsFolder, func(path string, info os.FileInfo, err error) error {
 			if err != nil {
-				return err
+				return apiclient.NewCliError("unable to traverse folder", err)
 			}
 			if !info.IsDir() {
 				channelFile := filepath.Base(path)
@@ -515,17 +515,17 @@ func processSfdcChannels(sfdcchannelsFolder string) (err error) {
 							"convention instanceName_channelName.json\n", channelFile)
 						return nil
 					}
-					version, _, err := sfdc.FindChannel(sfdcNames[1], sfdcNames[0])
+					version, response := sfdc.FindChannel(sfdcNames[1], sfdcNames[0])
 					// create the instance only if the sfdc channel is not found
-					if err != nil {
+					if response.Err != nil {
 						channelBytes, err := utils.ReadFile(path)
 						if err != nil {
-							return err
+							return apiclient.NewCliError("unable to read file", err)
 						}
 						clilog.Info.Printf("Creating sfdc channel: %s\n", channelFile)
-						_, err = sfdc.CreateChannelFromContent(version, channelBytes)
-						if err != nil {
-							return nil
+						response = sfdc.CreateChannelFromContent(version, channelBytes)
+						if response.Err != nil {
+							return response.Err
 						}
 					} else {
 						clilog.Info.Printf("sfdc channel %s already exists\n", channelFile)
@@ -535,7 +535,7 @@ func processSfdcChannels(sfdcchannelsFolder string) (err error) {
 			return nil
 		})
 		if err != nil {
-			return err
+			return apiclient.NewCliError("unable to traverse folder", err)
 		}
 	}
 	return nil
@@ -556,7 +556,7 @@ func processIntegration(overridesFile string, integrationFolder string, testsFol
 	if _, err = os.Stat(overridesFile); err == nil {
 		overridesBytes, err = utils.ReadFile(overridesFile)
 		if err != nil {
-			return err
+			return apiclient.NewCliError("unable to read file", err)
 		}
 	}
 
@@ -583,7 +583,7 @@ func processIntegration(overridesFile string, integrationFolder string, testsFol
 		// get only the first file
 		integrationBytes, err := utils.ReadFile(path.Join(integrationFolder, integrationNames[0]))
 		if err != nil {
-			return err
+			return apiclient.NewCliError("unable to read file", err)
 		}
 		// check for code files
 		codeMap, err := processCodeFolders(javascriptFolder, jsonnetFolder)
@@ -599,12 +599,12 @@ func processIntegration(overridesFile string, integrationFolder string, testsFol
 		}
 
 		clilog.Info.Printf("Create integration %s\n", getFilenameWithoutExtension(integrationNames[0]))
-		respBody, err := integrations.CreateVersion(getFilenameWithoutExtension(integrationNames[0]),
+		response := integrations.CreateVersion(getFilenameWithoutExtension(integrationNames[0]),
 			integrationBytes, overridesBytes, "", userLabel, grantPermission, false)
-		if err != nil {
-			return err
+		if response.Err != nil {
+			return response.Err
 		}
-		version, err := getVersion(respBody)
+		version, err := getVersion(response.RespBody)
 		if err != nil {
 			return err
 		}
@@ -623,12 +623,12 @@ func processIntegration(overridesFile string, integrationFolder string, testsFol
 		if _, err = os.Stat(configVarsFile); err == nil {
 			configVarBytes, err = utils.ReadFile(configVarsFile)
 			if err != nil {
-				return err
+				return apiclient.NewCliError("unable to read file", err)
 			}
 		}
-		_, err = integrations.Publish(getFilenameWithoutExtension(integrationNames[0]), version, configVarBytes)
-		if err != nil {
-			return err
+		response = integrations.Publish(getFilenameWithoutExtension(integrationNames[0]), version, configVarBytes)
+		if response.Err != nil {
+			return response.Err
 		}
 
 		// Execute test cases
@@ -739,9 +739,9 @@ func processTestCases(testsFolder string, integrationName string, version string
 			if err != nil {
 				return err
 			}
-			_, err = integrations.CreateTestCase(integrationName, version, string(testCaseBytes))
-			if err != nil {
-				return err
+			response := integrations.CreateTestCase(integrationName, version, string(testCaseBytes))
+			if response.Err != nil {
+				return response.Err
 			}
 		}
 	}
@@ -762,8 +762,8 @@ func storeCloudDeployVariables() (err error) {
 	clilog.Debug.Printf("CLOUD_DEPLOY_LOCATION: %s\n", cloudDeployLocation)
 
 	if pipeline == "" || release == "" || outputGCSPath == "" || cloudDeployProjectId == "" {
-		return fmt.Errorf("CLOUD_DEPLOY_DELIVERY_PIPELINE, CLOUD_DEPLOY_RELEASE, CLOUD_DEPLOY_OUTPUT_GCS_PATH, " +
-			"CLOUD_DEPLOY_PROJECT_ID, CLOUD_DEPLOY_LOCATION must be set")
+		return apiclient.NewCliError("CLOUD_DEPLOY_DELIVERY_PIPELINE, CLOUD_DEPLOY_RELEASE, CLOUD_DEPLOY_OUTPUT_GCS_PATH, "+
+			"CLOUD_DEPLOY_PROJECT_ID, CLOUD_DEPLOY_LOCATION must be set", nil)
 	}
 	return nil
 }

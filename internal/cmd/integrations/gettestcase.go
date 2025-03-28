@@ -49,15 +49,13 @@ var GetTestCaseCmd = &cobra.Command{
 	RunE: func(cmd *cobra.Command, args []string) (err error) {
 		cmd.SilenceUsage = true
 
-		var integrationBody []byte
-
 		version := utils.GetStringParam(cmd.Flag("ver"))
 		name := utils.GetStringParam(cmd.Flag("name"))
 		testCaseID := utils.GetStringParam(cmd.Flag("test-case-id"))
 		userLabel := utils.GetStringParam(cmd.Flag("user-label"))
 		snapshot := utils.GetStringParam(cmd.Flag("snapshot"))
 
-		apiclient.DisableCmdPrintHttpResponse()
+		var response apiclient.APIResponse
 
 		latest := ignoreLatest(version, userLabel, snapshot)
 		if latest {
@@ -66,24 +64,21 @@ var GetTestCaseCmd = &cobra.Command{
 			}
 		} else {
 			if version != "" {
-				integrationBody, err = integrations.Get(name, version, true, false, false)
+				response = integrations.Get(name, version, true, false, false)
 			} else if snapshot != "" {
-				integrationBody, err = integrations.GetBySnapshot(name, snapshot, true, false, false)
+				response = integrations.GetBySnapshot(name, snapshot, true, false, false)
 			} else if userLabel != "" {
-				integrationBody, err = integrations.GetByUserlabel(name, userLabel, true, false, false)
+				response = integrations.GetByUserlabel(name, userLabel, true, false, false)
 			} else {
 				return errors.New("latest version not found. Must pass oneOf version, snapshot or user-label or fix the integration name")
 			}
-			version, err = integrations.GetIntegrationVersion(integrationBody)
+			version, err = integrations.GetIntegrationVersion(response.RespBody)
 			if err != nil {
 				return err
 			}
 		}
 
-		apiclient.EnableCmdPrintHttpResponse()
-
-		_, err = integrations.GetTestCase(name, version, testCaseID)
-		return err
+		return apiclient.PrettyPrint(integrations.GetTestCase(name, version, testCaseID))
 	},
 }
 

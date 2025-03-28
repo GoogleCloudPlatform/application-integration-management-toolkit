@@ -83,34 +83,33 @@ var PublishVerCmd = &cobra.Command{
 		latest := ignoreLatest(version, userLabel, snapshot)
 
 		if latest {
-			apiclient.DisableCmdPrintHttpResponse()
+			var response apiclient.APIResponse
 			// list integration versions, order by state=SNAPSHOT, page size = 1 and return basic info
-			respBody, err := integrations.ListVersions(name, 1, "", "state=SNAPSHOT",
+			response = integrations.ListVersions(name, 1, "", "state=SNAPSHOT",
 				"snapshot_number", false, false, true)
-			if err != nil {
-				return fmt.Errorf("unable to list versions: %v", err)
+			if response.Err != nil {
+				return fmt.Errorf("unable to list versions: %v", response.Err)
 			}
-			if string(respBody) == "{}" {
-				if respBody, err = integrations.ListVersions(name, 1, "", "state=DRAFT",
-					"snapshot_number", false, false, true); err != nil {
-					return fmt.Errorf("unable to list versions: %v", err)
+			if string(response.RespBody) == "{}" {
+				if response = integrations.ListVersions(name, 1, "", "state=DRAFT",
+					"snapshot_number", false, false, true); response.Err != nil {
+					return fmt.Errorf("unable to list versions: %v", response.Err)
 				}
 			}
-			version, err = integrations.GetIntegrationVersion(respBody)
+			version, err = integrations.GetIntegrationVersion(response.RespBody)
 			if err != nil {
 				return err
 			}
-			apiclient.EnableCmdPrintHttpResponse()
-			_, err = integrations.Publish(name, version, contents)
+			err = apiclient.PrettyPrint(integrations.Publish(name, version, contents))
 			info = "version " + version
 		} else if version != "" {
-			_, err = integrations.Publish(name, version, contents)
+			err = apiclient.PrettyPrint(integrations.Publish(name, version, contents))
 			info = "version " + version
 		} else if userLabel != "" {
-			_, err = integrations.PublishUserLabel(name, userLabel, contents)
+			err = apiclient.PrettyPrint(integrations.PublishUserLabel(name, userLabel, contents))
 			info = "user label " + userLabel
 		} else if snapshot != "" {
-			_, err = integrations.PublishSnapshot(name, snapshot, contents)
+			err = apiclient.PrettyPrint(integrations.PublishSnapshot(name, snapshot, contents))
 			info = "snapshot number " + snapshot
 		}
 		if err == nil {

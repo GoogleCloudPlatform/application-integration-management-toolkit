@@ -58,8 +58,7 @@ var CrtCustomVerCmd = &cobra.Command{
 		if err != nil {
 			return fmt.Errorf("unable to open file %w", err)
 		}
-		_, err = connections.CreateCustomVersion(name, id, content, serviceAccountName, serviceAccountProject)
-		return err
+		return apiclient.PrettyPrint(connections.CreateCustomVersion(name, id, content, serviceAccountName, serviceAccountProject))
 	},
 	Example: `Create a custom connection version: ` + GetExample(2),
 }

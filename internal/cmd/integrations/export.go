@@ -48,7 +48,6 @@ var ExportCmd = &cobra.Command{
 			return err
 		}
 
-		apiclient.DisableCmdPrintHttpResponse()
 		clilog.Warning.Println("API calls to integration.googleapis.com have a quota of 480 per min. " +
 			"Running this tool against large list of entities can exhaust the quota. Throttling to 360 per min.")
 
