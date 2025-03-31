@@ -491,7 +491,6 @@ func processSfdcChannels(sfdcchannelsFolder string) (err error) {
 	var stat fs.FileInfo
 	var fileSplitter string
 	rJSONFiles := regexp.MustCompile(`(\S*)\.json`)
-	const sfdcNamingConvention = 2 // when file is split with _, the result must be 2
 
 	if useUnderscore {
 		fileSplitter = utils.LegacyFileSplitter
@@ -509,13 +508,11 @@ func processSfdcChannels(sfdcchannelsFolder string) (err error) {
 				channelFile := filepath.Base(path)
 				if rJSONFiles.MatchString(channelFile) {
 					clilog.Info.Printf("Found configuration for sfdc channel: %s\n", channelFile)
-					sfdcNames := strings.Split(getFilenameWithoutExtension(channelFile), fileSplitter)
-					if len(sfdcNames) != sfdcNamingConvention {
-						clilog.Warning.Printf("sfdc chanel file %s does not follow the naming "+
-							"convention instanceName_channelName.json\n", channelFile)
-						return nil
-					}
-					version, _, err := sfdc.FindChannel(sfdcNames[1], sfdcNames[0])
+					//channelFile name could be instanceName_channelName.json or instanceName_channelName_e.json
+					fileName := getFilenameWithoutExtension(channelFile) //instanceName_channelName or instanceName_channelName_e
+					sfdcNames := strings.Split(fileName, fileSplitter)
+					name := fileName[len(sfdcNames[0])+len(fileSplitter):] //channelName or channelName_e
+					version, _, err := sfdc.FindChannel(name, sfdcNames[0])
 					// create the instance only if the sfdc channel is not found
 					if err != nil {
 						channelBytes, err := utils.ReadFile(path)
