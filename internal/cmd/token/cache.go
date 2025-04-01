@@ -34,7 +34,7 @@ var CacheCmd = &cobra.Command{
 	RunE: func(cmd *cobra.Command, args []string) error {
 		clilog.Init(apiclient.DebugEnabled(),
 			apiclient.GetPrintOutput(),
-			apiclient.GetNoCheck(),
+			apiclient.GetNoOutput(),
 			apiclient.GetSuppressWarning())
 		err := apiclient.SetAccessToken()
 		clilog.Info.Printf("Token %s cached\n", apiclient.GetIntegrationToken())
