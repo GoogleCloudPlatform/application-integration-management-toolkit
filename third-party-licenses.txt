@@ -7588,8 +7588,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ## golang.org/x/crypto
 
 * Name: golang.org/x/crypto
-* Version: v0.31.0
-* License: [BSD-3-Clause](https://cs.opensource.google/go/x/crypto/+/v0.31.0:LICENSE)
+* Version: v0.35.0
+* License: [BSD-3-Clause](https://cs.opensource.google/go/x/crypto/+/v0.35.0:LICENSE)
 
 ```
 Copyright 2009 The Go Authors.
@@ -7625,8 +7625,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ## golang.org/x/net
 
 * Name: golang.org/x/net
-* Version: v0.33.0
-* License: [BSD-3-Clause](https://cs.opensource.google/go/x/net/+/v0.33.0:LICENSE)
+* Version: v0.36.0
+* License: [BSD-3-Clause](https://cs.opensource.google/go/x/net/+/v0.36.0:LICENSE)
 
 ```
 Copyright 2009 The Go Authors.
@@ -7699,8 +7699,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ## golang.org/x/sync/semaphore
 
 * Name: golang.org/x/sync/semaphore
-* Version: v0.10.0
-* License: [BSD-3-Clause](https://cs.opensource.google/go/x/sync/+/v0.10.0:LICENSE)
+* Version: v0.11.0
+* License: [BSD-3-Clause](https://cs.opensource.google/go/x/sync/+/v0.11.0:LICENSE)
 
 ```
 Copyright 2009 The Go Authors.
@@ -7736,8 +7736,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ## golang.org/x/sys
 
 * Name: golang.org/x/sys
-* Version: v0.28.0
-* License: [BSD-3-Clause](https://cs.opensource.google/go/x/sys/+/v0.28.0:LICENSE)
+* Version: v0.30.0
+* License: [BSD-3-Clause](https://cs.opensource.google/go/x/sys/+/v0.30.0:LICENSE)
 
 ```
 Copyright 2009 The Go Authors.
@@ -7773,8 +7773,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ## golang.org/x/text
 
 * Name: golang.org/x/text
-* Version: v0.21.0
-* License: [BSD-3-Clause](https://cs.opensource.google/go/x/text/+/v0.21.0:LICENSE)
+* Version: v0.22.0
+* License: [BSD-3-Clause](https://cs.opensource.google/go/x/text/+/v0.22.0:LICENSE)
 
 ```
 Copyright 2009 The Go Authors.
