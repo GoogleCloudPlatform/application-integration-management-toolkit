@@ -113,8 +113,12 @@ var ScaffoldCmd = &cobra.Command{
 			if overridesBody, err = integrations.Get(name, version, false, false, true); err != nil {
 				return err
 			}
-			if testCasesBody, err = integrations.ListTestCases(name, version, false, "", -1, "", ""); err != nil {
-				return err
+			if !skipTestCases {
+				if testCasesBody, err = integrations.ListTestCases(name, version, false, "", -1, "", ""); err != nil {
+					return err
+				}
+			} else {
+				clilog.Info.Printf("Skipping scaffolding testcases\n")
 			}
 		} else if userLabel != "" {
 			if integrationBody, err = integrations.GetByUserlabel(name, userLabel, false, true, false); err != nil {
@@ -123,9 +127,14 @@ var ScaffoldCmd = &cobra.Command{
 			if overridesBody, err = integrations.GetByUserlabel(name, userLabel, false, false, true); err != nil {
 				return err
 			}
-			if testCasesBody, err = integrations.ListTestCasesByUserlabel(name, userLabel, false, "", -1, "", ""); err != nil {
-				return err
+			if !skipTestCases {
+				if testCasesBody, err = integrations.ListTestCasesByUserlabel(name, userLabel, false, "", -1, "", ""); err != nil {
+					return err
+				}
+			} else {
+				clilog.Info.Printf("Skipping scaffolding testcases\n")
 			}
+
 		} else if snapshot != "" {
 			if integrationBody, err = integrations.GetBySnapshot(name, snapshot, false, true, false); err != nil {
 				return err
@@ -133,8 +142,12 @@ var ScaffoldCmd = &cobra.Command{
 			if overridesBody, err = integrations.GetBySnapshot(name, snapshot, false, false, true); err != nil {
 				return err
 			}
-			if testCasesBody, err = integrations.ListTestCasesBySnapshot(name, snapshot, false, "", -1, "", ""); err != nil {
-				return err
+			if !skipTestCases {
+				if testCasesBody, err = integrations.ListTestCasesBySnapshot(name, snapshot, false, "", -1, "", ""); err != nil {
+					return err
+				}
+			} else {
+				clilog.Info.Printf("Skipping scaffolding testcases\n")
 			}
 		} else {
 			return errors.New("latest version not found. 1) The integration may be in DRAFT state. Pass a snapshot number. 2) An invalid integration name was set. 3) Latest flag was combined with version, snapshot or user-label")
@@ -426,8 +439,8 @@ Generate scaffold for integration and produce cloud deploy config: ` + GetExampl
 }
 
 var (
-	cloudBuild, cloudDeploy, skipConnectors, skipAuthconfigs, useUnderscore, extractCode bool
-	env                                                                                  string
+	cloudBuild, cloudDeploy, skipConnectors, skipAuthconfigs, skipTestCases, useUnderscore, extractCode bool
+	env                                                                                                 string
 )
 
 const jsonExt = ".json"
@@ -461,6 +474,8 @@ func init() {
 		false, "Exclude connectors from scaffold")
 	ScaffoldCmd.Flags().BoolVarP(&skipAuthconfigs, "skip-authconfigs", "",
 		false, "Exclude authconfigs from scaffold")
+	ScaffoldCmd.Flags().BoolVarP(&skipTestCases, "skip-testcases", "",
+		false, "Exclude testcases from scaffold")
 	ScaffoldCmd.Flags().BoolVarP(&useUnderscore, "use-underscore", "",
 		false, "Use underscore as a file splitter; default is __")
 	ScaffoldCmd.Flags().BoolVarP(&extractCode, "extract-code", "x",

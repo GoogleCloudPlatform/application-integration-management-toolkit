@@ -193,6 +193,8 @@ func init() {
 		false, "Skip applying connector configuration; default is false")
 	ApplyCmd.Flags().BoolVarP(&skipAuthconfigs, "skip-authconfigs", "",
 		false, "Skip applying authconfigs configuration; default is false")
+	ApplyCmd.Flags().BoolVarP(&skipTestCases, "skip-testcases", "",
+		false, "Skip applying testcases; default is false")
 	ApplyCmd.Flags().BoolVarP(&useUnderscore, "use-underscore", "",
 		false, "Use underscore as a file splitter; default is __")
 	ApplyCmd.Flags().BoolVarP(&runTests, "run-tests", "",
@@ -607,8 +609,12 @@ func processIntegration(overridesFile string, integrationFolder string, testsFol
 		}
 
 		// create  test cases for integration
-		if err = processTestCases(testsFolder, getFilenameWithoutExtension(integrationNames[0]), version); err != nil {
-			return err
+		if !skipTestCases {
+			if err = processTestCases(testsFolder, getFilenameWithoutExtension(integrationNames[0]), version); err != nil {
+				return err
+			}
+		} else {
+			clilog.Info.Printf("Skipping applying testcases configuration\n")
 		}
 
 		// publish the integration
