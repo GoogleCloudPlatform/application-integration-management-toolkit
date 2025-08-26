@@ -64,6 +64,7 @@ type connectionRequest struct {
 	LockConfig             *lockConfig          `json:"lockConfig,omitempty"`
 	DestinationConfigs     *[]destinationConfig `json:"destinationConfigs,omitempty"`
 	AuthConfig             *authConfig          `json:"authConfig,omitempty"`
+	AuthOverrideEnabled    bool                 `json:"authOverrideEnabled,omitempty"`
 	ServiceAccount         *string              `json:"serviceAccount,omitempty"`
 	Suspended              *bool                `json:"suspended,omitempty"`
 	NodeConfig             *nodeConfig          `json:"nodeConfig,omitempty"`
@@ -78,8 +79,10 @@ type authConfig struct {
 	UserPassword            *userPassword            `json:"userPassword,omitempty"`
 	Oauth2JwtBearer         *oauth2JwtBearer         `json:"oauth2JwtBearer,omitempty"`
 	Oauth2ClientCredentials *oauth2ClientCredentials `json:"oauth2ClientCredentials,omitempty"`
+	Oauth2AuthCodeFlow      *oauth2AuthCodeFlow      `json:"oauth2AuthCodeFlow,omitempty"`
 	SshPublicKey            *sshPublicKey            `json:"sshPublicKey,omitempty"`
 	AdditionalVariables     *[]configVar             `json:"additionalVariables,omitempty"`
+	AuthKey                 string                   `json:"authKey,omitempty"`
 }
 
 type lockConfig struct {
@@ -88,7 +91,8 @@ type lockConfig struct {
 }
 
 type logConfig struct {
-	Enabled bool `json:"enabled,omitempty"`
+	Enabled bool   `json:"enabled,omitempty"`
+	Level   string `json:"level,omitempty"`
 }
 
 type sslConfig struct {
@@ -133,6 +137,14 @@ type oauth2JwtBearer struct {
 	ClientKey        *secret        `json:"clientKey,omitempty"`
 	ClientKeyDetails *secretDetails `json:"clientKeyDetails,omitempty"`
 	JwtClaims        jwtClaims      `json:"jwtClaims,omitempty"`
+}
+
+type oauth2AuthCodeFlow struct {
+	ClientId            string         `json:"clientId,omitempty"`
+	ClientSecret        *secret        `json:"clientSecret,omitempty"`
+	ClientSecretDetails *secretDetails `json:"clientSecretDetails,omitempty"`
+	Scopes              []string       `json:"scopes,omitempty"`
+	AuthUri             string         `json:"authUri,omitempty"`
 }
 
 type oauth2ClientCredentials struct {
