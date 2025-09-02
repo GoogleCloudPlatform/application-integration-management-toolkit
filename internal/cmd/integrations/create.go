@@ -132,9 +132,9 @@ var CreateCmd = &cobra.Command{
 		return err
 	},
 	Example: `Create a new Inegration Version with a user label: ` + GetExample(0) + `
-Create a new Inegration Version with overrides: ` + GetExample(1) + `
-Create a new Inegration Version and publish it: ` + GetExample(2) + `,
-Create a new Inegration Version and return a basic response: ` + GetExample(13),
+Create a new Integration Version with overrides: ` + GetExample(1) + `
+Create a new Integration Version and publish it: ` + GetExample(2) + `,
+Create a new Integration Version and return a basic response: ` + GetExample(13),
 }
 
 var (
