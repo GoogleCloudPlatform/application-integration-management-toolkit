@@ -125,26 +125,28 @@ type parametersInternal struct {
 }
 
 type parameterInternal struct {
-	Key         string     `json:"key,omitempty"`
-	DataType    string     `json:"dataType,omitempty"`
-	Name        string     `json:"name,omitempty"`
-	IsTransient bool       `json:"isTransient,omitempty"`
-	ProducedBy  producedBy `json:"producedBy,omitempty"`
-	Producer    string     `json:"producer,omitempty"`
-	Masked      bool       `json:"masked,omitempty"`
+	Key               string     `json:"key,omitempty"`
+	DataType          string     `json:"dataType,omitempty"`
+	Name              string     `json:"name,omitempty"`
+	IsTransient       bool       `json:"isTransient,omitempty"`
+	ProducedBy        producedBy `json:"producedBy,omitempty"`
+	Producer          string     `json:"producer,omitempty"`
+	Masked            bool       `json:"masked,omitempty"`
+	ContainsLargeData bool       `json:"containsLargeData,omitempty"`
 }
 
 type parameterExternal struct {
-	Key             string     `json:"key,omitempty"`
-	DataType        string     `json:"dataType,omitempty"`
-	DefaultValue    *valueType `json:"defaultValue,omitempty"`
-	Name            string     `json:"name,omitempty"`
-	IsTransient     bool       `json:"isTransient,omitempty"`
-	InputOutputType string     `json:"inputOutputType,omitempty"`
-	Producer        string     `json:"producer,omitempty"`
-	Searchable      bool       `json:"searchable,omitempty"`
-	JsonSchema      string     `json:"jsonSchema,omitempty"`
-	Masked          bool       `json:"masked,omitempty"`
+	Key               string     `json:"key,omitempty"`
+	DataType          string     `json:"dataType,omitempty"`
+	DefaultValue      *valueType `json:"defaultValue,omitempty"`
+	Name              string     `json:"name,omitempty"`
+	IsTransient       bool       `json:"isTransient,omitempty"`
+	InputOutputType   string     `json:"inputOutputType,omitempty"`
+	Producer          string     `json:"producer,omitempty"`
+	Searchable        bool       `json:"searchable,omitempty"`
+	JsonSchema        string     `json:"jsonSchema,omitempty"`
+	Masked            bool       `json:"masked,omitempty"`
+	ContainsLargeData bool       `json:"containsLargeData,omitempty"`
 }
 
 type parameterConfig struct {
