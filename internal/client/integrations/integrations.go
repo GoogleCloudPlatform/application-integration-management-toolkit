@@ -147,6 +147,7 @@ type parameterExternal struct {
 	JsonSchema        string     `json:"jsonSchema,omitempty"`
 	Masked            bool       `json:"masked,omitempty"`
 	ContainsLargeData bool       `json:"containsLargeData,omitempty"`
+	Description       string     `json:"description,omitempty"`
 }
 
 type parameterConfig struct {
@@ -178,6 +179,8 @@ type triggerconfig struct {
 	Properties               map[string]string        `json:"properties,omitempty"`
 	CloudSchedulerConfig     *cloudSchedulerConfig    `json:"cloudSchedulerConfig,omitempty"`
 	ErrorCatcherId           string                   `json:"errorCatcherId,omitempty"`
+	InputVariables           inputOutputVariableNames `json:"inputVariables,omitempty"`
+	OutputVariables          inputOutputVariableNames `json:"outputVariables,omitempty"`
 }
 
 type taskconfig struct {
@@ -207,6 +210,10 @@ type errorCatcherConfig struct {
 
 type tasks struct {
 	TaskId string `json:"taskId,omitempty"`
+}
+
+type inputOutputVariableNames struct {
+	Names []string `json:"names,omitempty"`
 }
 
 type eventparameter struct {
