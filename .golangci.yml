@@ -24,7 +24,8 @@ run:
     - third-party
 
 output:
-  formats: tab
+  formats:
+    - format: tab
   print-issued-lines: true
   print-linter-name: true
 
