@@ -85,7 +85,6 @@ linters:
     - unparam
     - ineffassign
     - staticcheck
-    - typecheck
     - unused
     - bodyclose
     - goconst
