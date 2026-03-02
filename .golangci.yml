@@ -25,9 +25,8 @@ run:
 
 output:
   formats:
-    - format: tab
-  print-issued-lines: true
-  print-linter-name: true
+    tab:
+      print-linter-name: true
 
 linters-settings:
   errcheck:
