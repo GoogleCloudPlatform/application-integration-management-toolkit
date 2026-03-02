@@ -18,9 +18,7 @@ linters:
 #   - copyloopvar
     - gocritic
     - revive
-    - gosimple
     - lll
-    - stylecheck
     - unconvert
     - unparam
     - ineffassign
