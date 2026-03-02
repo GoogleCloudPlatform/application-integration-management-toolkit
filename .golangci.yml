@@ -17,7 +17,6 @@ linters:
     - errcheck
 #   - copyloopvar
     - gocritic
-    - gofumpt
     - revive
     - gosimple
     - lll
@@ -29,7 +28,6 @@ linters:
     - unused
     - bodyclose
     - goconst
-    - goimports
     - gosec
     - misspell
     - nakedret
@@ -80,3 +78,8 @@ linters:
         - G401
         - G402
         - G404
+
+formatters:
+  enable:
+    - gofumpt
+    - goimports
