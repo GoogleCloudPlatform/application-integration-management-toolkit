@@ -1,6 +1,6 @@
 module client
 
-go 1.23.2
+go 1.26.0
 
 require (
 	internal/apiclient v1.0.0
@@ -22,7 +22,3 @@ replace internal/secmgr => ../../internal/secmgr
 replace internal/client => ../../internal/client
 
 replace internal/cmd => ../../internal/cmd
-
-
-
-
