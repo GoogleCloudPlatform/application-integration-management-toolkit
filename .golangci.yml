@@ -1,4 +1,4 @@
-# Copyright 2023 Google LLC
+# Copyright 2026 Google LLC
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,103 +12,86 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+version: "2"
+
 run:
-  concurrency: 4
-  deadline: 20m
+  timeout: 20m
   issues-exit-code: 1
   tests: false
-  exclude-dirs:
-    - cicd
-    - docs
-    - test
-    - third-party
 
 output:
-  formats: tab
-  print-issued-lines: true
-  print-linter-name: true
-
-linters-settings:
-  errcheck:
-    check-type-assertions: false
-    check-blank: false
-  golint:
-    min-confidence: 0.8
-  gofmt:
-    simplify: true
-  gocyclo:
-    min-complexity: 10
-  maligned:
-    suggest-new: true
-  goconst:
-    min-len: 3
-    min-occurrences: 3
-  depguard:
-    list-type: blacklist
-    include-go-root: false
-  misspell:
-    locale: US
-  lll:
-    line-length: 120
-    tab-width: 1
-  unused:
-    check-exported: false
-  unparam:
-    check-exported: false
-  nakedret:
-    max-func-lines: 30
-  prealloc:
-    simple: true
-    range-loops: true
-    for-loops: false
-  gosec:
-    includes:
-      - G401
-      - G402
-      - G404
+  formats:
+    tab:
+      print-linter-name: true
 
 linters:
+  default: none
   enable:
     - govet
     - errcheck
 #   - copyloopvar
     - gocritic
-    - gofumpt
     - revive
-    - gosimple
-    - govet
     - lll
-    - stylecheck
     - unconvert
     - unparam
     - ineffassign
     - staticcheck
-    - typecheck
     - unused
     - bodyclose
     - goconst
-    - gofmt
-    - goimports
     - gosec
     - misspell
     - nakedret
     - prealloc
-    - unconvert
-  enable-all: false
-  disable-all: true
-  fast: false
+  exclusions:
+    paths:
+      - cicd
+      - docs
+      - test
+      - third-party
+    rules:
+      - linters:
+          - gosec
+        text: "G[105,202,401,505]"
+      - linters:
+          - goimports
+        text: "File is not `goimports`-ed"
+      - linters:
+          - govet
+        text: "shadows declaration"
+      - linters:
+          - staticcheck
+        text: "SA1019:"
+  settings:
+    errcheck:
+      check-type-assertions: false
+      check-blank: false
+    gocyclo:
+      min-complexity: 10
+    goconst:
+      min-len: 3
+      min-occurrences: 3
+    misspell:
+      locale: US
+    lll:
+      line-length: 120
+      tab-width: 1
+    unparam:
+      check-exported: false
+    nakedret:
+      max-func-lines: 30
+    prealloc:
+      simple: true
+      range-loops: true
+      for-loops: false
+    gosec:
+      includes:
+        - G401
+        - G402
+        - G404
 
-issues:
-  exclude-rules:
-    - linters:
-        - gosec
-      text: "G[105,202,401,505]"
-    - linters:
-        - goimports
-      text: "File is not `goimports`-ed"
-    - linters:
-        - govet
-      text: "shadows declaration"
-    - linters:
-        - staticcheck
-      text: "SA1019:"
+formatters:
+  enable:
+    - gofumpt
+    - goimports
