@@ -21,4 +21,4 @@ replace internal/client => ../../internal/client
 
 replace internal/cmd => ../../internal/cmd
 
-go 1.26.0
+go 1.26.1
