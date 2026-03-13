@@ -114,7 +114,7 @@ var PublishVerCmd = &cobra.Command{
 			info = "snapshot number " + snapshot
 		}
 		if err == nil {
-			clilog.Info.Printf("Integration %s %s published successfully\n", name, info)
+			clilog.Debug.Printf("Integration %s %s published successfully\n", name, info)
 		}
 		return err
 	},
