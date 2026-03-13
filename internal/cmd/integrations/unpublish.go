@@ -91,7 +91,7 @@ var UnPublishVerCmd = &cobra.Command{
 			_, err = integrations.UnpublishSnapshot(name, snapshot)
 		}
 		if err == nil {
-			clilog.Info.Printf("Integration %s %s unpublished successfully\n", name, info)
+			clilog.Debug.Printf("Integration %s %s unpublished successfully\n", name, info)
 		}
 		return err
 	},
