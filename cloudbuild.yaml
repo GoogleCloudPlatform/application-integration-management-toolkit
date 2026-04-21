@@ -51,16 +51,24 @@ steps:
   args: ['push', '${_IMAGE_NAME}:latest']
 
 #sign and attach integrationcli
+- name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+  id: get_token
+  entrypoint: 'bash'
+  args:
+    - -c
+    - |
+      gcloud auth print-access-token > /workspace/token.txt
 - name: 'us-docker.pkg.dev/${PROJECT_ID}/${_REPO}/cosign:latest'
   id: sign_integrationcli
   entrypoint: 'sh'
   secretEnv: ['COSIGN_PASSWORD', 'COSIGN_PRIVATE_KEY']
+  env: ['HOME=/tmp']
   args:
     - -c
     - |
+      cosign login us-docker.pkg.dev -u oauth2accesstoken -p $(cat /workspace/token.txt)
       echo "$$COSIGN_PRIVATE_KEY" > /tmp/cosign.key
-      cosign sign --key=/tmp/cosign.key --output-signature=/tmp/integrationcli_${TAG_NAME}.sig --yes ${_IMAGE_NAME}:${TAG_NAME}
-      cosign attach signature --signature=/tmp/integrationcli_${TAG_NAME}.sig ${_IMAGE_NAME}:${TAG_NAME}
+      cosign sign --key=/tmp/cosign.key --yes ${_IMAGE_NAME}:${TAG_NAME}
 
 - name: "gcr.io/google.com/cloudsdktool/cloud-sdk"
   id: export_sbom
