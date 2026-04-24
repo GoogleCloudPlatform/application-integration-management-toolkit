@@ -13,19 +13,7 @@
 # limitations under the License.
 # gcloud builds submit --config=cloudbuild.yaml --project=project-name --substitutions=TAG="v0.65"
 steps:
-#publish latest cosign
-- name: 'gcr.io/cloud-builders/docker'
-  id: build_cosign
-  args:
-    - 'build'
-    - '-t'
-    - '${_COSIGN_IMAGE_NAME}:latest'
-    - '-f'
-    - 'Dockerfile.cosign'
-    - '.'
-- name: 'gcr.io/cloud-builders/docker'
-  id: push_cosign
-  args: ['push', '${_COSIGN_IMAGE_NAME}:latest']
+
 #publish integrationcli
 - name: 'gcr.io/cloud-builders/docker'
   id: build_integrationcli
@@ -58,17 +46,27 @@ steps:
     - -c
     - |
       gcloud auth print-access-token > /workspace/token.txt
-- name: 'us-docker.pkg.dev/${PROJECT_ID}/${_REPO}/cosign:latest'
+- name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
   id: sign_integrationcli
-  entrypoint: 'sh'
+  entrypoint: 'bash'
   secretEnv: ['COSIGN_PASSWORD', 'COSIGN_PRIVATE_KEY']
   env: ['HOME=/tmp']
   args:
     - -c
     - |
-      cosign login us-docker.pkg.dev -u oauth2accesstoken -p $(cat /workspace/token.txt)
+      # Download cosign
+      curl -sL https://github.com/sigstore/cosign/releases/download/v3.0.6/cosign-linux-amd64 -o /tmp/cosign
+      
+      # Verify hash
+      echo "c956e5dfcac53d52bcf058360d579472f0c1d2d9b69f55209e256fe7783f4c74  /tmp/cosign" | sha256sum -c -
+      
+      chmod +x /tmp/cosign
+      
+      # Login and sign
+      gcloud auth print-access-token > /tmp/token.txt
+      /tmp/cosign login us-docker.pkg.dev -u oauth2accesstoken -p $(cat /tmp/token.txt)
       echo "$$COSIGN_PRIVATE_KEY" > /tmp/cosign.key
-      cosign sign --key=/tmp/cosign.key --yes ${_IMAGE_NAME}:${TAG_NAME}
+      /tmp/cosign sign --key=/tmp/cosign.key --yes ${_IMAGE_NAME}:${TAG_NAME}
 
 - name: "gcr.io/google.com/cloudsdktool/cloud-sdk"
   id: export_sbom
