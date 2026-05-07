@@ -16,6 +16,7 @@ package connections
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"internal/apiclient"
 	"internal/clilog"
@@ -80,19 +81,24 @@ func CreateEndpoint(name string, serviceAttachment string, description string, w
 		operationId := filepath.Base(o.Name)
 		clilog.Info.Printf("Checking connection status for %s in %d seconds\n", operationId, interval)
 
+		var lroError error
 		stop := apiclient.Every(interval*time.Second, func(time.Time) bool {
 			var respBody []byte
+			lroError = nil
 
 			if respBody, err = GetOperation(operationId); err != nil {
+				lroError = err
 				return false
 			}
 
 			if err = json.Unmarshal(respBody, &o); err != nil {
+				lroError = err
 				return false
 			}
 
 			if o.Done {
 				if o.Error != nil {
+					lroError = errors.New(o.Error.Message)
 					clilog.Error.Printf("Connection completed with error: %s\n", o.Error.Message)
 				} else {
 					clilog.Info.Println("Connection completed successfully!")
@@ -105,8 +111,13 @@ func CreateEndpoint(name string, serviceAttachment string, description string, w
 		})
 
 		<-stop
+
+		if isBubbleLROErrorsEnabled() {
+			err = lroError
+		}
 	}
-	return
+
+	return respBody, err
 }
 
 // GetEndpoint

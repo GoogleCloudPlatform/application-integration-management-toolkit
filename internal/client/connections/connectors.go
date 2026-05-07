@@ -289,19 +289,24 @@ func Create(name string, content []byte, serviceAccountName string, serviceAccou
 		operationId := filepath.Base(o.Name)
 		clilog.Info.Printf("Checking connection status for %s in %d seconds\n", operationId, interval)
 
+		var lroError error
 		stop := apiclient.Every(interval*time.Second, func(time.Time) bool {
 			var respBody []byte
+			lroError = nil
 
 			if respBody, err = GetOperation(operationId); err != nil {
+				lroError = err
 				return false
 			}
 
 			if err = json.Unmarshal(respBody, &o); err != nil {
+				lroError = err
 				return false
 			}
 
 			if o.Done {
 				if o.Error != nil {
+					lroError = errors.New(o.Error.Message)
 					clilog.Error.Printf("Connection completed with error: %s\n", o.Error.Message)
 				} else {
 					clilog.Info.Println("Connection completed successfully!")
@@ -314,6 +319,11 @@ func Create(name string, content []byte, serviceAccountName string, serviceAccou
 		})
 
 		<-stop
+
+		if isBubbleLROErrorsEnabled() {
+			err = lroError
+		}
+
 	}
 
 	return respBody, err
@@ -1118,19 +1128,24 @@ func RepairEvent(name string, wait bool) (err error) {
 		operationId := filepath.Base(o.Name)
 		clilog.Info.Printf("Checking connection repair status for %s in %d seconds\n", operationId, interval)
 
+		var lroError error
 		stop := apiclient.Every(interval*time.Second, func(time.Time) bool {
 			var respBody []byte
+			lroError = nil
 
 			if respBody, err = GetOperation(operationId); err != nil {
+				lroError = err
 				return false
 			}
 
 			if err = json.Unmarshal(respBody, &o); err != nil {
+				lroError = err
 				return false
 			}
 
 			if o.Done {
 				if o.Error != nil {
+					lroError = errors.New(o.Error.Message)
 					clilog.Error.Printf("Connection completed with error: %s\n", o.Error.Message)
 				} else {
 					clilog.Info.Println("Connection repair completed successfully!")
@@ -1143,6 +1158,10 @@ func RepairEvent(name string, wait bool) (err error) {
 		})
 
 		<-stop
+
+		if isBubbleLROErrorsEnabled() {
+			err = lroError
+		}
 	}
 	return err
 }
@@ -1175,4 +1194,8 @@ func isGoogleConnection(connectionName string) bool {
 		return true
 	}
 	return false
+}
+
+func isBubbleLROErrorsEnabled() bool {
+	return os.Getenv("INTEGRATIONCLI_BUBBLE_LRO_ERRORS") == "1"
 }
