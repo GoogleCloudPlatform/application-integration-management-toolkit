@@ -1,102 +1,179 @@
-# Copyright 2022 Google LLC
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#      http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-# gcloud builds submit --config=cloudbuild.yaml --project=project-name --substitutions=TAG="v0.65"
-steps:
-
-#publish integrationcli
-- name: 'gcr.io/cloud-builders/docker'
-  id: build_integrationcli
-  args:
-    - 'build'
-    - '-t'
-    - '${_IMAGE_NAME}:${TAG_NAME}'
-    - '-f'
-    - 'Dockerfile'
-    - '.'
-    - '--build-arg'
-    - 'TAG=${TAG_NAME}'
-    - '--build-arg'
-    - 'COMMIT=$COMMIT_SHA'
-- name: 'gcr.io/cloud-builders/docker'
-  id: push_integrationcli
-  args: ['push', '${_IMAGE_NAME}:${TAG_NAME}']
-- name: 'gcr.io/cloud-builders/docker'
-  id: tag_latest_integrationcli
-  args: ['tag', '${_IMAGE_NAME}:${TAG_NAME}', '${_IMAGE_NAME}:latest']
-- name: 'gcr.io/cloud-builders/docker'
-  id: push_latest_integrationcli
-  args: ['push', '${_IMAGE_NAME}:latest']
-
-#sign and attach integrationcli
-- name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
-  id: get_token
-  entrypoint: 'bash'
-  args:
-    - -c
-    - |
-      gcloud auth print-access-token > /workspace/token.txt
-- name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
-  id: sign_integrationcli
-  entrypoint: 'bash'
-  secretEnv: ['COSIGN_PASSWORD', 'COSIGN_PRIVATE_KEY']
-  env: ['HOME=/tmp']
-  args:
-    - -c
-    - |
-      # Download cosign
-      curl -sL https://github.com/sigstore/cosign/releases/download/v3.0.6/cosign-linux-amd64 -o /tmp/cosign
-      
-      # Verify hash
-      echo "c956e5dfcac53d52bcf058360d579472f0c1d2d9b69f55209e256fe7783f4c74  /tmp/cosign" | sha256sum -c -
-      
-      chmod +x /tmp/cosign
-      
-      # Login and sign
-      gcloud auth print-access-token > /tmp/token.txt
-      /tmp/cosign login us-docker.pkg.dev -u oauth2accesstoken -p $(cat /tmp/token.txt)
-      echo "$$COSIGN_PRIVATE_KEY" > /tmp/cosign.key
-      /tmp/cosign sign --key=/tmp/cosign.key --yes ${_IMAGE_NAME}:${TAG_NAME}
-
-- name: "gcr.io/google.com/cloudsdktool/cloud-sdk"
-  id: export_sbom
-  entrypoint: gcloud
-  args:
-    - artifacts
-    - sbom
-    - export
-    - --uri=${_IMAGE_NAME}:${TAG_NAME}
-    - --project=${PROJECT_ID}
-
-availableSecrets:
-  secretManager:
-  - versionName: projects/$PROJECT_ID/secrets/integrationcli-cosign-password/versions/latest
-    env: 'COSIGN_PASSWORD'
-  - versionName: projects/$PROJECT_ID/secrets/integrationcli-cosign-private-key/versions/latest
-    env: 'COSIGN_PRIVATE_KEY'
-
-images:
-- '${_IMAGE_NAME}:${TAG_NAME}'
-
-#repo name
-substitutions:
-  _REPO: "images"
-  _IMAGE_NAME: "us-docker.pkg.dev/${PROJECT_ID}/${_REPO}/integrationcli"
-  _COSIGN_IMAGE_NAME: "us-docker.pkg.dev/${PROJECT_ID}/${_REPO}/cosign"
-
-options:
-  machineType: E2_HIGHCPU_8
-  logging: CLOUD_LOGGING_ONLY
-  substitution_option: ALLOW_LOOSE
-  dynamic_substitutions: true
-  requestedVerifyOption: VERIFIED
+  # Copyright 2022 Google LLC
+  #
+  # Licensed under the Apache License, Version 2.0 (the "License");
+  # you may not use this file except in compliance with the License.
+  # You may obtain a copy of the License at
+  #
+  #      http://www.apache.org/licenses/LICENSE-2.0
+  #
+  # Unless required by applicable law or agreed to in writing, software
+  # distributed under the License is distributed on an "AS IS" BASIS,
+  # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  # See the License for the specific language governing permissions and
+  # limitations under the License.
+  # gcloud builds submit --config=cloudbuild.yaml --project=project-name --substitutions=TAG="v0.65"
+  steps:
+  
+  # 1. Publish integrationcli to DEV repository
+  - name: 'gcr.io/cloud-builders/docker'
+    id: build_integrationcli
+    args:
+      - 'build'
+      - '-t'
+      - '${_DEV_IMAGE}:${TAG_NAME}'
+      - '-f'
+      - 'Dockerfile'
+      - '.'
+      - '--build-arg'
+      - 'TAG=${TAG_NAME}'
+      - '--build-arg'
+      - 'COMMIT=$COMMIT_SHA'
+  - name: 'gcr.io/cloud-builders/docker'
+    id: push_integrationcli
+    args: ['push', '${_DEV_IMAGE}:${TAG_NAME}']
+  - name: 'gcr.io/cloud-builders/docker'
+    id: tag_latest_integrationcli
+    args: ['tag', '${_DEV_IMAGE}:${TAG_NAME}', '${_DEV_IMAGE}:latest']
+  - name: 'gcr.io/cloud-builders/docker'
+    id: push_latest_integrationcli
+    args: ['push', '${_DEV_IMAGE}:latest']
+  
+  # 2. Sign and attach integrationcli in DEV repository
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    id: get_token
+    entrypoint: 'bash'
+    args:
+      - -c
+      - |
+        gcloud auth print-access-token > /workspace/token.txt
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    id: sign_integrationcli
+    entrypoint: 'bash'
+    secretEnv: ['COSIGN_PASSWORD', 'COSIGN_PRIVATE_KEY']
+    env: ['HOME=/tmp']
+    args:
+      - -c
+      - |
+        # Download cosign
+        curl -sL https://github.com/sigstore/cosign/releases/download/v3.0.6/cosign-linux-amd64 -o /tmp/cosign
+        
+        # Verify hash
+        echo "c956e5dfcac53d52bcf058360d579472f0c1d2d9b69f55209e256fe7783f4c74  /tmp/cosign" | sha256sum -c -
+        
+        chmod +x /tmp/cosign
+        
+        # Login and sign
+        gcloud auth print-access-token > /tmp/token.txt
+        /tmp/cosign login us-docker.pkg.dev -u oauth2accesstoken -p $(cat /tmp/token.txt)
+        echo "$$COSIGN_PRIVATE_KEY" > /tmp/cosign.key
+        /tmp/cosign sign --key=/tmp/cosign.key --yes ${_DEV_IMAGE}:${TAG_NAME}
+  
+  - name: "gcr.io/google.com/cloudsdktool/cloud-sdk"
+    id: export_sbom
+    entrypoint: gcloud
+    args:
+      - artifacts
+      - sbom
+      - export
+      - --uri=${_DEV_IMAGE}:${TAG_NAME}
+      - --project=${PROJECT_ID}
+  
+  # 3. Promote from DEV to STAGING
+  # This copies the image and its signatures from DEV into STAGING to await Vulnerability Scanning.
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    id: promote_to_staging
+    entrypoint: 'bash'
+    args:
+      - -c
+      - |
+        TOKEN=$(gcloud auth print-access-token)
+        DIGEST=$(gcloud artifacts docker images describe ${_DEV_IMAGE}:${TAG_NAME} --format="value(image_summary.digest)")
+        
+        echo "Promoting image $$DIGEST from ${_DEV_REPO} to ${_STAG_REPO}..."
+        
+        curl -s -H "Authorization: Bearer $$TOKEN" -H "Content-Type: application/json" -X POST \
+        "https://artifactregistry.googleapis.com/v1/projects/${PROJECT_ID}/locations/us/repositories/${_DEV_REPO}:promoteArtifact" \
+        -d "{
+          \"source_repository\": \"projects/${PROJECT_ID}/locations/us/repositories/${_DEV_REPO}\",
+          \"source_version\": \"projects/${PROJECT_ID}/locations/us/repositories/${_DEV_REPO}/packages/integrationcli/versions/$$DIGEST\",
+          \"target_repository\": \"projects/${PROJECT_ID}/locations/us/repositories/${_STAG_REPO}\",
+          \"attachment_behavior\": \"INCLUDE\"
+        }"
+  
+  # 4. Wait for Vulnerability Scanning and Promote from STAGING to PROD
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    id: promote_to_prod
+    entrypoint: 'bash'
+    args:
+      - -c
+      - |
+        TOKEN=$(gcloud auth print-access-token)
+        DIGEST=$(gcloud artifacts docker images describe ${_DEV_IMAGE}:${TAG_NAME} --format="value(image_summary.digest)")
+        
+        echo "Waiting for AutoVM to attach Vulnerability Attestation..."
+        
+        # Smart polling loop: check every 30 seconds for the signature
+        ITERATIONS=0
+        while [ $ITERATIONS -lt 30 ]; do
+          ATTACHS=$(gcloud artifacts attachments list \
+            --repository=${_STAG_REPO} \
+            --location=us \
+            --project=${PROJECT_ID} \
+            --target="projects/${PROJECT_ID}/locations/us/repositories/${_STAG_REPO}/packages/integrationcli/versions/$$DIGEST" \
+            --filter="type=application/vnd.in-toto.verification_summary+dsse" \
+            --format="value(name)")
+          
+          if [ -n "$ATTACHS" ]; then
+            echo "Signature found! Proceeding with promotion."
+            break
+          fi
+          
+          echo "No signature yet. Waiting 30 seconds..."
+          sleep 30
+          ITERATIONS=$$((ITERATIONS+1))
+        done
+        
+        if [ $ITERATIONS -eq 30 ]; then
+          echo "ERROR: AutoVM timed out after 15 minutes."
+          exit 1
+        fi
+        
+        echo "Promoting image $$DIGEST from ${_STAG_REPO} to ${_PROD_REPO}..."
+        
+        # Fixed: Using PUBLIC_BCID_VSA_ONLY to prevent internal data leaks
+        curl -s -H "Authorization: Bearer $$TOKEN" -H "Content-Type: application/json" -X POST \
+        "https://artifactregistry.googleapis.com/v1/projects/${PROJECT_ID}/locations/us/repositories/${_STAG_REPO}:promoteArtifact" \
+        -d "{
+          \"source_repository\": \"projects/${PROJECT_ID}/locations/us/repositories/${_STAG_REPO}\",
+          \"source_version\": \"projects/${PROJECT_ID}/locations/us/repositories/${_STAG_REPO}/packages/integrationcli/versions/$$DIGEST\",
+          \"target_repository\": \"projects/${PROJECT_ID}/locations/us/repositories/${_PROD_REPO}\",
+          \"attachment_behavior\": \"PUBLIC_BCID_VSA_ONLY\"
+        }"
+  
+  availableSecrets:
+    secretManager:
+    - versionName: projects/$PROJECT_ID/secrets/integrationcli-cosign-password/versions/latest
+      env: 'COSIGN_PASSWORD'
+    - versionName: projects/$PROJECT_ID/secrets/integrationcli-cosign-private-key/versions/latest
+      env: 'COSIGN_PRIVATE_KEY'
+  
+  images:
+  - '${_DEV_IMAGE}:${TAG_NAME}'
+  
+  # Repository Definitions
+  substitutions:
+    _DEV_REPO: "integrationcli-dev"
+    _STAG_REPO: "integrationcli-staging"
+    _PROD_REPO: "images"
+    _DEV_IMAGE: "us-docker.pkg.dev/${PROJECT_ID}/${_DEV_REPO}/integrationcli"
+  
+  options:
+    machineType: E2_HIGHCPU_8
+    logging: CLOUD_LOGGING_ONLY
+    substitution_option: ALLOW_LOOSE
+    dynamic_substitutions: true
+    requestedVerifyOption: VERIFIED
+  
+  timeout: 1800s
+  
+  
