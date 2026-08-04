@@ -11,28 +11,37 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# gcloud builds submit --config=cloudbuild.yaml --project=project-name --substitutions=TAG="v0.65"
+#
+# Secure release pipeline for integrationcli.
+#   build -> DEV -> cosign + SBOM -> promote to STAGING
+#   -> [EXIT GATE: wait for AutoVM Vulnerability Attestation] -> promote to PROD (images)
+#   -> tag PROD :<version>/:latest -> deprecate the superseded PROD release
+#
+# Run by the us-west1 Cloud Build trigger on a git tag push (TAG_NAME = the tag), e.g.:
+#   git tag -a v0.65 -m "Release v0.65" && git push origin v0.65
 steps:
-#publish latest cosign
-- name: 'gcr.io/cloud-builders/docker'
-  id: build_cosign
+
+# 0. Record the digest currently behind PROD :latest BEFORE we publish, so the
+#    superseded release can be lifecycle-tagged at the end
+#    (go/public-image-lifecycle-management).
+- name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+  id: capture_previous_prod
+  entrypoint: 'bash'
   args:
-    - 'build'
-    - '-t'
-    - '${_COSIGN_IMAGE_NAME}:latest'
-    - '-f'
-    - 'Dockerfile.cosign'
-    - '.'
-- name: 'gcr.io/cloud-builders/docker'
-  id: push_cosign
-  args: ['push', '${_COSIGN_IMAGE_NAME}:latest']
-#publish integrationcli
+    - -c
+    - |
+      PREV_DIGEST=$$(gcloud artifacts docker images describe ${_PROD_IMAGE}:latest \
+        --format='value(image_summary.digest)' 2>/dev/null || true)
+      echo "$${PREV_DIGEST}" > /workspace/prev_prod_digest.txt
+      echo "Previous PROD :latest digest: $${PREV_DIGEST:-<none>}"
+
+# 1. Build + publish integrationcli to the DEV repository.
 - name: 'gcr.io/cloud-builders/docker'
   id: build_integrationcli
   args:
     - 'build'
     - '-t'
-    - '${_IMAGE_NAME}:${TAG_NAME}'
+    - '${_DEV_IMAGE}:${TAG_NAME}'
     - '-f'
     - 'Dockerfile'
     - '.'
@@ -42,35 +51,200 @@ steps:
     - 'COMMIT=$COMMIT_SHA'
 - name: 'gcr.io/cloud-builders/docker'
   id: push_integrationcli
-  args: ['push', '${_IMAGE_NAME}:${TAG_NAME}']
+  args: ['push', '${_DEV_IMAGE}:${TAG_NAME}']
 - name: 'gcr.io/cloud-builders/docker'
-  id: tag_latest_integrationcli
-  args: ['tag', '${_IMAGE_NAME}:${TAG_NAME}', '${_IMAGE_NAME}:latest']
+  id: tag_latest_dev
+  args: ['tag', '${_DEV_IMAGE}:${TAG_NAME}', '${_DEV_IMAGE}:latest']
 - name: 'gcr.io/cloud-builders/docker'
-  id: push_latest_integrationcli
-  args: ['push', '${_IMAGE_NAME}:latest']
+  id: push_latest_dev
+  args: ['push', '${_DEV_IMAGE}:latest']
 
-#sign and attach integrationcli
-- name: 'us-docker.pkg.dev/${PROJECT_ID}/${_REPO}/cosign:latest'
-  id: sign_integrationcli
-  entrypoint: 'sh'
-  secretEnv: ['COSIGN_PASSWORD', 'COSIGN_PRIVATE_KEY']
+# 2. Sign (cosign) + export SBOM on the DEV image.
+- name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+  id: get_token
+  entrypoint: 'bash'
   args:
     - -c
     - |
+      gcloud auth print-access-token > /workspace/token.txt
+- name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+  id: sign_integrationcli
+  entrypoint: 'bash'
+  secretEnv: ['COSIGN_PASSWORD', 'COSIGN_PRIVATE_KEY']
+  env: ['HOME=/tmp']
+  args:
+    - -c
+    - |
+      # Download cosign
+      curl -sL https://github.com/sigstore/cosign/releases/download/v3.0.6/cosign-linux-amd64 -o /tmp/cosign
+      # Verify hash
+      echo "c956e5dfcac53d52bcf058360d579472f0c1d2d9b69f55209e256fe7783f4c74  /tmp/cosign" | sha256sum -c -
+      chmod +x /tmp/cosign
+      # Login and sign
+      gcloud auth print-access-token > /tmp/token.txt
+      /tmp/cosign login us-docker.pkg.dev -u oauth2accesstoken -p $$(cat /tmp/token.txt)
       echo "$$COSIGN_PRIVATE_KEY" > /tmp/cosign.key
-      cosign sign --key=/tmp/cosign.key --output-signature=/tmp/integrationcli_${TAG_NAME}.sig --yes ${_IMAGE_NAME}:${TAG_NAME}
-      cosign attach signature --signature=/tmp/integrationcli_${TAG_NAME}.sig ${_IMAGE_NAME}:${TAG_NAME}
-
-- name: "gcr.io/google.com/cloudsdktool/cloud-sdk"
+      /tmp/cosign sign --key=/tmp/cosign.key --yes ${_DEV_IMAGE}:${TAG_NAME}
+- name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
   id: export_sbom
   entrypoint: gcloud
   args:
     - artifacts
     - sbom
     - export
-    - --uri=${_IMAGE_NAME}:${TAG_NAME}
+    - --uri=${_DEV_IMAGE}:${TAG_NAME}
     - --project=${PROJECT_ID}
+
+# 3. Promote DEV -> STAGING (image + attachments) to await vulnerability scanning.
+- name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+  id: promote_to_staging
+  entrypoint: 'bash'
+  args:
+    - -c
+    - |
+      TOKEN=$$(gcloud auth print-access-token)
+      DIGEST=$$(gcloud artifacts docker images describe ${_DEV_IMAGE}:${TAG_NAME} \
+        --format='value(image_summary.digest)')
+      echo "Promoting $$DIGEST from ${_DEV_REPO} to ${_STAG_REPO}..."
+      # Per go/moss-onboarding-cap1: the DESTINATION repo is the resource in the URL
+      # (:promoteArtifact); the body carries source_repository + source_version +
+      # attachment_behavior. There is NO target_repository field.
+      HTTP=$$(curl -s -o /workspace/promote_stg.json -w "%{http_code}" \
+        -H "Authorization: Bearer $$TOKEN" -H "Content-Type: application/json" -X POST \
+        "https://artifactregistry.googleapis.com/v1/projects/${PROJECT_ID}/locations/us/repositories/${_STAG_REPO}:promoteArtifact" \
+        -d "{
+          \"source_repository\": \"projects/${PROJECT_ID}/locations/us/repositories/${_DEV_REPO}\",
+          \"source_version\": \"projects/${PROJECT_ID}/locations/us/repositories/${_DEV_REPO}/packages/integrationcli/versions/$$DIGEST\",
+          \"attachment_behavior\": \"INCLUDE\"
+        }")
+      cat /workspace/promote_stg.json
+      if [ "$$HTTP" != "200" ]; then echo "ERROR: promote dev->staging failed (HTTP $$HTTP)"; exit 1; fi
+
+# 4. EXIT GATE: wait for AutoVM to attach a Vulnerability Attestation (VSA) in STAGING,
+#    then promote STAGING -> PROD (images). If no VSA within the window, fail (no PROD push).
+- name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+  id: promote_to_prod
+  entrypoint: 'bash'
+  args:
+    - -c
+    - |
+      TOKEN=$$(gcloud auth print-access-token)
+      DIGEST=$$(gcloud artifacts docker images describe ${_DEV_IMAGE}:${TAG_NAME} \
+        --format='value(image_summary.digest)')
+      echo "Waiting for AutoVM to attach a Vulnerability Attestation in ${_STAG_REPO}..."
+      ITERATIONS=0
+      while [ $$ITERATIONS -lt 30 ]; do
+        ATTACHS=$$(gcloud artifacts attachments list \
+          --repository=${_STAG_REPO} --location=us --project=${PROJECT_ID} \
+          --target="projects/${PROJECT_ID}/locations/us/repositories/${_STAG_REPO}/packages/integrationcli/versions/$$DIGEST" \
+          --filter="type=application/vnd.in-toto.verification_summary+dsse" \
+          --format='value(name)')
+        if [ -n "$$ATTACHS" ]; then
+          echo "VSA found; proceeding with promotion to PROD."
+          break
+        fi
+        echo "No VSA yet; waiting 30s... ($$ITERATIONS/30)"
+        sleep 30
+        ITERATIONS=$$((ITERATIONS+1))
+      done
+      if [ $$ITERATIONS -eq 30 ]; then
+        echo "ERROR: AutoVM VSA timed out after 15 minutes; not promoting to PROD."
+        exit 1
+      fi
+      echo "Promoting $$DIGEST from ${_STAG_REPO} to ${_PROD_REPO}..."
+      # Destination (PROD) repo goes in the URL. PUBLIC_BCID_VSA_ONLY keeps internal
+      # staging attestations out of the public repo (only the VSA follows).
+      HTTP=$$(curl -s -o /workspace/promote_prod.json -w "%{http_code}" \
+        -H "Authorization: Bearer $$TOKEN" -H "Content-Type: application/json" -X POST \
+        "https://artifactregistry.googleapis.com/v1/projects/${PROJECT_ID}/locations/us/repositories/${_PROD_REPO}:promoteArtifact" \
+        -d "{
+          \"source_repository\": \"projects/${PROJECT_ID}/locations/us/repositories/${_STAG_REPO}\",
+          \"source_version\": \"projects/${PROJECT_ID}/locations/us/repositories/${_STAG_REPO}/packages/integrationcli/versions/$$DIGEST\",
+          \"attachment_behavior\": \"PUBLIC_BCID_VSA_ONLY\"
+        }")
+      cat /workspace/promote_prod.json
+      if [ "$$HTTP" != "200" ]; then echo "ERROR: promote staging->prod failed (HTTP $$HTTP)"; exit 1; fi
+      # promoteArtifact is asynchronous: HTTP 200 only means the copy was accepted.
+      # Wait for the promoted digest to actually materialize in PROD before the
+      # downstream tag_prod step keys off it (otherwise tag_prod can race the copy).
+      echo "Waiting for $$DIGEST to land in ${_PROD_REPO}..."
+      LANDED=0
+      for i in $$(seq 1 20); do
+        if gcloud artifacts docker images describe "${_PROD_IMAGE}@$$DIGEST" \
+             --format='value(image_summary.digest)' >/dev/null 2>&1; then
+          LANDED=1; echo "Promoted digest present in ${_PROD_REPO}."; break
+        fi
+        echo "Not in ${_PROD_REPO} yet; waiting 15s... ($$i/20)"; sleep 15
+      done
+      if [ "$$LANDED" != "1" ]; then
+        echo "ERROR: promoted digest never appeared in ${_PROD_REPO} after promotion."; exit 1
+      fi
+
+# 5. Tag the promoted digest in PROD as :<version> and :latest. Promotion is by digest,
+#    so the human-facing tags customers pull are (re)applied here; the deprecation step
+#    below also keys off PROD :latest.
+- name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+  id: tag_prod
+  entrypoint: 'bash'
+  args:
+    - -c
+    - |
+      DIGEST=$$(gcloud artifacts docker images describe ${_DEV_IMAGE}:${TAG_NAME} \
+        --format='value(image_summary.digest)')
+      gcloud artifacts docker tags add "${_PROD_IMAGE}@$$DIGEST" "${_PROD_IMAGE}:${TAG_NAME}" --quiet
+      gcloud artifacts docker tags add "${_PROD_IMAGE}@$$DIGEST" "${_PROD_IMAGE}:latest" --quiet
+      # MOSS Cap-2 (activate public image scanning, go/autovm-scanner-activation#public):
+      # mark the new ACTIVE release with a public-image-<version> lifecycle tag so
+      # the scanner enrolls it as an active public image.
+      gcloud artifacts docker tags add "${_PROD_IMAGE}@$$DIGEST" "${_PROD_IMAGE}:public-image-${TAG_NAME}" --quiet
+      echo "Tagged PROD $$DIGEST as ${TAG_NAME}, latest, and public-image-${TAG_NAME}."
+
+# 6. Retire the PREVIOUS PROD release so the public image scanner (go/publico) treats the
+#    superseded digest as remediated and stops filing vulnerability bugs against it.
+#    No-ops on the first release and when the digest is unchanged.
+- name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+  id: deprecate_previous_prod
+  entrypoint: 'bash'
+  args:
+    - -c
+    - |
+      PREV_DIGEST=$$(cat /workspace/prev_prod_digest.txt 2>/dev/null || true)
+      NEW_DIGEST=$$(gcloud artifacts docker images describe ${_PROD_IMAGE}:${TAG_NAME} \
+        --format='value(image_summary.digest)' 2>/dev/null || true)
+      if [ -z "$$PREV_DIGEST" ]; then
+        echo "No previous PROD release found; nothing to deprecate (first release?)."
+        exit 0
+      fi
+      if [ "$$PREV_DIGEST" = "$$NEW_DIGEST" ]; then
+        echo "Previous PROD release already points at this build ($$NEW_DIGEST); skipping."
+        exit 0
+      fi
+      SHA="$${PREV_DIGEST#sha256:}"
+      echo "Deprecating previous PROD release $$PREV_DIGEST as ${_LIFECYCLE_TAG_PREFIX}$$SHA"
+      gcloud artifacts docker tags add \
+        "${_PROD_IMAGE}@$$PREV_DIGEST" \
+        "${_PROD_IMAGE}:${_LIFECYCLE_TAG_PREFIX}$$SHA" --quiet
+      # Remove the superseded release's ACTIVE marker(s) so a retired digest is not
+      # tagged both public-image-* (active) and deprecated-public-image-* (retired).
+      # Guard each delete by re-resolving the tag back to PREV_DIGEST so we never
+      # remove the NEW release's public-image-* marker even if the listing is
+      # over-broad (a stale/broad list must not break Cap-2 scanner enrollment).
+      PREV_TAGS=$$(gcloud artifacts docker images list "${_PROD_IMAGE}" --include-tags \
+        --filter="version:$$PREV_DIGEST" --format='value(tags)' 2>/dev/null | tr ',' '\n')
+      for t in $$PREV_TAGS; do
+        case "$$t" in
+          public-image-*)
+            T_DIGEST=$$(gcloud artifacts docker images describe "${_PROD_IMAGE}:$$t" \
+              --format='value(image_summary.digest)' 2>/dev/null || true)
+            if [ "$$T_DIGEST" = "$$PREV_DIGEST" ]; then
+              echo "Removing active marker $$t from superseded release"
+              gcloud artifacts docker tags delete "${_PROD_IMAGE}:$$t" --quiet || true
+            else
+              echo "Skipping $$t (resolves to $$T_DIGEST, not the superseded digest)"
+            fi
+            ;;
+        esac
+      done
 
 availableSecrets:
   secretManager:
@@ -80,13 +254,17 @@ availableSecrets:
     env: 'COSIGN_PRIVATE_KEY'
 
 images:
-- '${_IMAGE_NAME}:${TAG_NAME}'
+- '${_DEV_IMAGE}:${TAG_NAME}'
 
-#repo name
 substitutions:
-  _REPO: "images"
-  _IMAGE_NAME: "us-docker.pkg.dev/${PROJECT_ID}/${_REPO}/integrationcli"
-  _COSIGN_IMAGE_NAME: "us-docker.pkg.dev/${PROJECT_ID}/${_REPO}/cosign"
+  _DEV_REPO: "integrationcli-dev"
+  _STAG_REPO: "integrationcli-staging"
+  _PROD_REPO: "images"
+  _DEV_IMAGE: "us-docker.pkg.dev/${PROJECT_ID}/${_DEV_REPO}/integrationcli"
+  _PROD_IMAGE: "us-docker.pkg.dev/${PROJECT_ID}/${_PROD_REPO}/integrationcli"
+  # Lifecycle-tag prefix applied to the superseded PROD release on each new release.
+  # Switch to "no-new-use-public-image-" if older releases stay supported.
+  _LIFECYCLE_TAG_PREFIX: "deprecated-public-image-"
 
 options:
   machineType: E2_HIGHCPU_8
@@ -94,3 +272,5 @@ options:
   substitution_option: ALLOW_LOOSE
   dynamic_substitutions: true
   requestedVerifyOption: VERIFIED
+
+timeout: 3600s
