@@ -87,13 +87,23 @@ steps:
       /tmp/cosign sign --key=/tmp/cosign.key --yes ${_DEV_IMAGE}:${TAG_NAME}
 - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
   id: export_sbom
-  entrypoint: gcloud
+  entrypoint: 'bash'
   args:
-    - artifacts
-    - sbom
-    - export
-    - --uri=${_DEV_IMAGE}:${TAG_NAME}
-    - --project=${PROJECT_ID}
+    - -c
+    - |
+      # The vulnerability scan starts asynchronously when the image is pushed;
+      # `sbom export` fails with FAILED_PRECONDITION ("discovery occurrence has
+      # status SCANNING") until that scan finishes. Retry until it succeeds.
+      for i in $$(seq 1 20); do
+        if gcloud artifacts sbom export --uri=${_DEV_IMAGE}:${TAG_NAME} --project=${PROJECT_ID}; then
+          echo "SBOM exported."
+          exit 0
+        fi
+        echo "SBOM export not ready yet (scan still in progress?); waiting 30s... ($$i/20)"
+        sleep 30
+      done
+      echo "ERROR: SBOM export did not succeed within the wait window."
+      exit 1
 
 # 3. Promote DEV -> STAGING (image + attachments) to await vulnerability scanning.
 - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
@@ -164,21 +174,29 @@ steps:
         }")
       cat /workspace/promote_prod.json
       if [ "$$HTTP" != "200" ]; then echo "ERROR: promote staging->prod failed (HTTP $$HTTP)"; exit 1; fi
-      # promoteArtifact is asynchronous: HTTP 200 only means the copy was accepted.
-      # Wait for the promoted digest to actually materialize in PROD before the
-      # downstream tag_prod step keys off it (otherwise tag_prod can race the copy).
-      echo "Waiting for $$DIGEST to land in ${_PROD_REPO}..."
-      LANDED=0
-      for i in $$(seq 1 20); do
-        if gcloud artifacts docker images describe "${_PROD_IMAGE}@$$DIGEST" \
-             --format='value(image_summary.digest)' >/dev/null 2>&1; then
-          LANDED=1; echo "Promoted digest present in ${_PROD_REPO}."; break
+      # promoteArtifact is a long-running operation: HTTP 200 only means it was
+      # ACCEPTED. Poll the operation to completion and surface its real error
+      # (policy/BCID/provenance failures surface here, not in the initial response).
+      OP_ID=$$(python3 -c "import json;print(json.load(open('/workspace/promote_prod.json')).get('name','').split('/')[-1])")
+      if [ -z "$$OP_ID" ]; then echo "ERROR: no operation name in promote response"; exit 1; fi
+      echo "Waiting for promote operation $$OP_ID to finish..."
+      OP_OK=0
+      for i in $$(seq 1 40); do
+        OPJSON=$$(gcloud artifacts operations describe "$$OP_ID" --location=us --project=${PROJECT_ID} --format=json 2>/dev/null || true)
+        DONE=$$(printf '%s' "$$OPJSON" | python3 -c "import json,sys;print('yes' if json.load(sys.stdin).get('done') else 'no')" 2>/dev/null || echo no)
+        if [ "$$DONE" = "yes" ]; then
+          ERR=$$(printf '%s' "$$OPJSON" | python3 -c "import json,sys;print((json.load(sys.stdin).get('error') or {}).get('message',''))" 2>/dev/null || echo "")
+          if [ -n "$$ERR" ]; then echo "ERROR: promote staging->prod operation failed: $$ERR"; exit 1; fi
+          OP_OK=1; echo "Promote operation completed."; break
         fi
-        echo "Not in ${_PROD_REPO} yet; waiting 15s... ($$i/20)"; sleep 15
+        echo "Promote not done yet; waiting 15s... ($$i/40)"; sleep 15
       done
-      if [ "$$LANDED" != "1" ]; then
-        echo "ERROR: promoted digest never appeared in ${_PROD_REPO} after promotion."; exit 1
+      if [ "$$OP_OK" != "1" ]; then echo "ERROR: promote operation did not finish within the window."; exit 1; fi
+      # Confirm the digest is present in PROD before tag_prod keys off it.
+      if ! gcloud artifacts docker images describe "${_PROD_IMAGE}@$$DIGEST" --format='value(image_summary.digest)' >/dev/null 2>&1; then
+        echo "ERROR: promoted digest not present in ${_PROD_REPO} after operation success."; exit 1
       fi
+      echo "Promoted digest present in ${_PROD_REPO}."
 
 # 5. Tag the promoted digest in PROD as :<version> and :latest. Promotion is by digest,
 #    so the human-facing tags customers pull are (re)applied here; the deprecation step
