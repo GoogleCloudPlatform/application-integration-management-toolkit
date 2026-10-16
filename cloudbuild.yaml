@@ -72,20 +72,19 @@ steps:
         --format='value(image_summary.digest)')
       DEV_TARGET="projects/${PROJECT_ID}/locations/us/repositories/${_DEV_REPO}/packages/integrationcli/versions/$$DIGEST"
 
-      # 2a. Wait for Cloud Build's provenance + SBOM (namespace cloudbuild.googleapis.com).
-      # TODO after first run (Step 5): check for the exact provenance + SBOM `type` values
-      # instead of "at least 2" (Cloud Build may also attach a VSA in this namespace).
+      # 2a. Wait for Cloud Build's provenance on DEV (two in-toto records, attached right after
+      # the child build ends). The SBOM is attached separately, only for projects in Cloud Build's
+      # MOSSEnablementAllowlist; the exit gate checks it at promotion (2c).
       OK=0
       for i in $$(seq 1 30); do
         GCB=$$(gcloud artifacts attachments list --repository=${_DEV_REPO} --location=us \
           --project=${PROJECT_ID} --target="$$DEV_TARGET" \
           --filter="attachmentNamespace=cloudbuild.googleapis.com" --format='value(type)')
-        COUNT=$$(printf '%s\n' "$$GCB" | grep -c . || true)
-        echo "DEV cloudbuild attachments ($$COUNT): $$(printf '%s' "$$GCB" | tr '\n' ' ')"
-        if [ "$$COUNT" -ge 2 ]; then OK=1; break; fi
+        echo "DEV cloudbuild attachments: $$(printf '%s' "$$GCB" | tr '\n' ' ')"
+        if printf '%s\n' "$$GCB" | grep -q 'provenance'; then OK=1; break; fi
         sleep 20
       done
-      if [ "$$OK" != "1" ]; then echo "ERROR: Cloud Build provenance/SBOM not attached to DEV in 10 min"; exit 1; fi
+      if [ "$$OK" != "1" ]; then echo "ERROR: Cloud Build provenance not attached to DEV in 10 min"; exit 1; fi
 
       # 2b. Wait until AutoVM has attached its DEV vulnerability attestation (so it doesn't
       # arrive mid-promotion and get mistaken for the fresh STAGING scan), then record DEV_AA.
@@ -101,34 +100,48 @@ steps:
       if [ "$$DEV_AA" -lt 1 ]; then echo "ERROR: AutoVM vuln attestation not attached to DEV in 10 min"; exit 1; fi
       echo "$$DEV_AA" > /workspace/dev_aa_count.txt
 
-      # 2c. Promote DEV -> STAGING (destination repo in the URL).
-      TOKEN=$$(gcloud auth print-access-token)
-      HTTP=$$(curl -s -o /workspace/promote_stg.json -w "%{http_code}" \
-        -H "Authorization: Bearer $$TOKEN" -H "Content-Type: application/json" -X POST \
-        "https://artifactregistry.googleapis.com/v1/projects/${PROJECT_ID}/locations/us/repositories/${_STAG_REPO}:promoteArtifact" \
-        -d "{
-          \"source_repository\": \"projects/${PROJECT_ID}/locations/us/repositories/${_DEV_REPO}\",
-          \"source_version\": \"$$DEV_TARGET\",
-          \"attachment_behavior\": \"INCLUDE\"
-        }")
-      cat /workspace/promote_stg.json
-      if [ "$$HTTP" != "200" ]; then echo "ERROR: promote dev->staging failed (HTTP $$HTTP)"; exit 1; fi
-
-      # 2d. Poll the LRO. HTTP 200 only means "accepted"; exit-gate rejections show up here.
-      OP_ID=$$(python3 -c "import json;print(json.load(open('/workspace/promote_stg.json')).get('name','').split('/')[-1])")
-      if [ -z "$$OP_ID" ]; then echo "ERROR: no operation name in promote response"; exit 1; fi
-      OP_OK=0
-      for i in $$(seq 1 40); do
-        OPJSON=$$(gcloud artifacts operations describe "$$OP_ID" --location=us --project=${PROJECT_ID} --format=json 2>/dev/null || true)
-        DONE=$$(printf '%s' "$$OPJSON" | python3 -c "import json,sys;print('yes' if json.load(sys.stdin).get('done') else 'no')" 2>/dev/null || echo no)
-        if [ "$$DONE" = "yes" ]; then
-          ERR=$$(printf '%s' "$$OPJSON" | python3 -c "import json,sys;print((json.load(sys.stdin).get('error') or {}).get('message',''))" 2>/dev/null || echo "")
-          if [ -n "$$ERR" ]; then echo "ERROR: dev->staging promotion rejected: $$ERR"; exit 1; fi
-          OP_OK=1; echo "DEV->STAGING promotion done."; break
+      # 2c. Promote DEV -> STAGING (destination repo in the URL) and poll the operation: HTTP 200
+      # only means "accepted"; exit-gate rejections show up in the operation. The SBOM can land a
+      # little after provenance, so if the gate's only complaint is the missing SBOM, wait and
+      # retry; any other rejection fails immediately.
+      PROMOTED=0
+      for ATTEMPT in $$(seq 1 6); do
+        TOKEN=$$(gcloud auth print-access-token)
+        HTTP=$$(curl -s -o /workspace/promote_stg.json -w "%{http_code}" \
+          -H "Authorization: Bearer $$TOKEN" -H "Content-Type: application/json" -X POST \
+          "https://artifactregistry.googleapis.com/v1/projects/${PROJECT_ID}/locations/us/repositories/${_STAG_REPO}:promoteArtifact" \
+          -d "{
+            \"source_repository\": \"projects/${PROJECT_ID}/locations/us/repositories/${_DEV_REPO}\",
+            \"source_version\": \"$$DEV_TARGET\",
+            \"attachment_behavior\": \"INCLUDE\"
+          }")
+        cat /workspace/promote_stg.json
+        if [ "$$HTTP" != "200" ]; then echo "ERROR: promote dev->staging failed (HTTP $$HTTP)"; exit 1; fi
+        OP_ID=$$(python3 -c "import json;print(json.load(open('/workspace/promote_stg.json')).get('name','').split('/')[-1])")
+        if [ -z "$$OP_ID" ]; then echo "ERROR: no operation name in promote response"; exit 1; fi
+        OP_DONE=0; ERR=""
+        for i in $$(seq 1 40); do
+          OPJSON=$$(gcloud artifacts operations describe "$$OP_ID" --location=us --project=${PROJECT_ID} --format=json 2>/dev/null || true)
+          DONE=$$(printf '%s' "$$OPJSON" | python3 -c "import json,sys;print('yes' if json.load(sys.stdin).get('done') else 'no')" 2>/dev/null || echo no)
+          if [ "$$DONE" = "yes" ]; then
+            ERR=$$(printf '%s' "$$OPJSON" | python3 -c "import json,sys;print((json.load(sys.stdin).get('error') or {}).get('message',''))" 2>/dev/null || echo "")
+            OP_DONE=1; break
+          fi
+          sleep 15
+        done
+        if [ "$$OP_DONE" != "1" ]; then echo "ERROR: dev->staging promotion did not finish in 10 min"; exit 1; fi
+        if [ -z "$$ERR" ]; then PROMOTED=1; echo "DEV->STAGING promotion done."; break; fi
+        VIOLATIONS=$$(printf '%s' "$$ERR" | grep -o 'violations' | wc -l)
+        if printf '%s' "$$ERR" | grep -q 'SBOM_ENFORCEMENT' && [ "$$VIOLATIONS" -eq 1 ]; then
+          echo "SBOM not attached yet (attempt $$ATTEMPT/6); retrying in 60s..."; sleep 60; continue
         fi
-        sleep 15
+        echo "ERROR: dev->staging promotion rejected: $$ERR"; exit 1
       done
-      if [ "$$OP_OK" != "1" ]; then echo "ERROR: dev->staging promotion did not finish in 10 min"; exit 1; fi
+      if [ "$$PROMOTED" != "1" ]; then
+        echo "ERROR: still no SBOM on DEV after 6 attempts. Cloud Build generates SBOMs only for"
+        echo "projects in its MOSSEnablementAllowlist; check that the allowlist entry is live."
+        exit 1
+      fi
 
 # 3. EXIT GATE: wait for AutoVM's NEW vuln attestation on the STAGING copy, then promote to PROD.
 - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'

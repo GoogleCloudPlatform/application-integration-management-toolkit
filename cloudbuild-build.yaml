@@ -59,10 +59,6 @@ steps:
 # identical string to exception_prefix_groups in integrationcli.sw_policy.textproto (Step 3).
 - name: 'us-central1-docker.pkg.dev/louhi-prod-1/louhi-helper/louhi-helper-v2'
   id: secure_content_scan
-  # DISCOVERY MODE for the first release: report unapproved dependency sources without failing.
-  # Remove `allowFailure: true` once the reported prefixes are in exception_prefix_groups (BCID policy)
-  # and in --allowed_prefixes below.
-  allowFailure: true
   args:
     - 'secure_content_scan'
     - '--allowed_prefixes'
@@ -71,9 +67,11 @@ steps:
     - 'us-go.pkg.dev/access-aoss/assuredoss-go'
     - 'sum.golang.org'
     - 'https://gcr.io/distroless'
-    # Option A exception prefixes — uncomment ONLY after the same exact string is in exception_prefix_groups:
-    # - 'https://us-docker.pkg.dev/appintegration-toolkit/internal/'
-    # - 'proxy.golang.org'
+    # Exceptions: base images the scan reports from the Dockerfile (plain prefix match, no scheme).
+    # Each string must also be listed in exception_prefix_groups of the integrationcli BCID policy.
+    - 'gcr.io/distroless/'
+    - 'golang:'
+    - 'us-docker.pkg.dev/appintegration-toolkit/internal/'
   results:
     - name: 'allowed_uri_prefix'
       attestationContent: 'allowed_uri_prefix'
