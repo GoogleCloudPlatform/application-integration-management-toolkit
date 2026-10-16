@@ -12,18 +12,17 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-# Secure release pipeline for integrationcli.
-#   build -> DEV -> cosign + SBOM -> promote to STAGING
-#   -> [EXIT GATE: wait for AutoVM Vulnerability Attestation] -> promote to PROD (images)
-#   -> tag PROD :<version>/:latest -> deprecate the superseded PROD release
-#
-# Run by the us-west1 Cloud Build trigger on a git tag push (TAG_NAME = the tag), e.g.:
-#   git tag -a v0.65 -m "Release v0.65" && git push origin v0.65
+# MOSS release pipeline for integrationcli (parent build):
+#   0. remember previous PROD :latest digest
+#   1. run child build (cloudbuild-build.yaml) -> Cloud Build attaches provenance/SBOM after it ends
+#   2. wait for those attachments on DEV -> promote DEV->STAGING (INCLUDE) -> poll LRO
+#   3. wait for AutoVM's NEW vuln attestation in STAGING -> promote STAGING->PROD
+#      (PUBLIC_BCID_VSA_ONLY) -> poll LRO
+#   4. tag PROD :<version>, :latest, :public-image-<version>   (unchanged)
+#   5. deprecate the superseded PROD release                    (unchanged)
 steps:
 
-# 0. Record the digest currently behind PROD :latest BEFORE we publish, so the
-#    superseded release can be lifecycle-tagged at the end
-#    (go/public-image-lifecycle-management).
+# 0. (unchanged) Record the digest currently behind PROD :latest.
 - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
   id: capture_previous_prod
   entrypoint: 'bash'
@@ -35,172 +34,157 @@ steps:
       echo "$${PREV_DIGEST}" > /workspace/prev_prod_digest.txt
       echo "Previous PROD :latest digest: $${PREV_DIGEST:-<none>}"
 
-# 1. Build + publish integrationcli to the DEV repository.
-- name: 'gcr.io/cloud-builders/docker'
-  id: build_integrationcli
-  args:
-    - 'build'
-    - '-t'
-    - '${_DEV_IMAGE}:${TAG_NAME}'
-    - '-f'
-    - 'Dockerfile'
-    - '.'
-    - '--build-arg'
-    - 'TAG=${TAG_NAME}'
-    - '--build-arg'
-    - 'COMMIT=$COMMIT_SHA'
-- name: 'gcr.io/cloud-builders/docker'
-  id: push_integrationcli
-  args: ['push', '${_DEV_IMAGE}:${TAG_NAME}']
-- name: 'gcr.io/cloud-builders/docker'
-  id: tag_latest_dev
-  args: ['tag', '${_DEV_IMAGE}:${TAG_NAME}', '${_DEV_IMAGE}:latest']
-- name: 'gcr.io/cloud-builders/docker'
-  id: push_latest_dev
-  args: ['push', '${_DEV_IMAGE}:latest']
-
-# 2. Sign (cosign) + export SBOM on the DEV image.
+# 1. Run the child build and wait for it. The release tag is passed to the child as the
+#    user substitution _TAG_NAME (with the commit as _COMMIT_SHA).
+#    --async + polling avoids log-streaming problems with CLOUD_LOGGING_ONLY.
+#    If the trigger runs as a custom service account, add
+#    --service-account=projects/${PROJECT_ID}/serviceAccounts/<TRIGGER_SA_EMAIL>
 - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
-  id: get_token
+  id: run_child_build
   entrypoint: 'bash'
   args:
     - -c
     - |
-      gcloud auth print-access-token > /workspace/token.txt
-- name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
-  id: sign_integrationcli
-  entrypoint: 'bash'
-  secretEnv: ['COSIGN_PASSWORD', 'COSIGN_PRIVATE_KEY']
-  env: ['HOME=/tmp']
-  args:
-    - -c
-    - |
-      # Download cosign
-      curl -sL https://github.com/sigstore/cosign/releases/download/v3.0.6/cosign-linux-amd64 -o /tmp/cosign
-      # Verify hash
-      echo "c956e5dfcac53d52bcf058360d579472f0c1d2d9b69f55209e256fe7783f4c74  /tmp/cosign" | sha256sum -c -
-      chmod +x /tmp/cosign
-      # Login and sign
-      gcloud auth print-access-token > /tmp/token.txt
-      /tmp/cosign login us-docker.pkg.dev -u oauth2accesstoken -p $$(cat /tmp/token.txt)
-      echo "$$COSIGN_PRIVATE_KEY" > /tmp/cosign.key
-      /tmp/cosign sign --key=/tmp/cosign.key --yes ${_DEV_IMAGE}:${TAG_NAME}
-- name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
-  id: export_sbom
-  entrypoint: 'bash'
-  args:
-    - -c
-    - |
-      # The vulnerability scan starts asynchronously when the image is pushed;
-      # `sbom export` fails with FAILED_PRECONDITION ("discovery occurrence has
-      # status SCANNING") until that scan finishes. Retry until it succeeds.
-      for i in $$(seq 1 20); do
-        if gcloud artifacts sbom export --uri=${_DEV_IMAGE}:${TAG_NAME} --project=${PROJECT_ID}; then
-          echo "SBOM exported."
-          exit 0
-        fi
-        echo "SBOM export not ready yet (scan still in progress?); waiting 30s... ($$i/20)"
-        sleep 30
+      CHILD_ID=$$(gcloud builds submit . --config=cloudbuild-build.yaml \
+        --region=us-west1 --project=${PROJECT_ID} --async --format='value(id)' \
+        --substitutions=_DEV_IMAGE=${_DEV_IMAGE},_TAG_NAME=${TAG_NAME},_COMMIT_SHA=${COMMIT_SHA})
+      if [ -z "$$CHILD_ID" ]; then echo "ERROR: could not start child build"; exit 1; fi
+      echo "Child build: $$CHILD_ID"
+      for i in $$(seq 1 90); do
+        STATUS=$$(gcloud builds describe "$$CHILD_ID" --region=us-west1 --project=${PROJECT_ID} --format='value(status)')
+        echo "Child build status: $$STATUS ($$i/90)"
+        case "$$STATUS" in
+          SUCCESS) exit 0 ;;
+          FAILURE|INTERNAL_ERROR|TIMEOUT|CANCELLED|EXPIRED) echo "ERROR: child build $$STATUS"; exit 1 ;;
+        esac
+        sleep 20
       done
-      echo "ERROR: SBOM export did not succeed within the wait window."
-      exit 1
+      echo "ERROR: child build did not finish in 30 minutes"; exit 1
 
-# 3. Promote DEV -> STAGING (image + attachments) to await vulnerability scanning.
+# 2. Wait for Cloud Build attestations on DEV, then promote DEV -> STAGING and poll the LRO.
 - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
   id: promote_to_staging
   entrypoint: 'bash'
   args:
     - -c
     - |
-      TOKEN=$$(gcloud auth print-access-token)
       DIGEST=$$(gcloud artifacts docker images describe ${_DEV_IMAGE}:${TAG_NAME} \
         --format='value(image_summary.digest)')
-      echo "Promoting $$DIGEST from ${_DEV_REPO} to ${_STAG_REPO}..."
-      # Per go/moss-onboarding-cap1: the DESTINATION repo is the resource in the URL
-      # (:promoteArtifact); the body carries source_repository + source_version +
-      # attachment_behavior. There is NO target_repository field.
+      DEV_TARGET="projects/${PROJECT_ID}/locations/us/repositories/${_DEV_REPO}/packages/integrationcli/versions/$$DIGEST"
+
+      # 2a. Wait for Cloud Build's provenance + SBOM (namespace cloudbuild.googleapis.com).
+      # TODO after first run (Step 5): check for the exact provenance + SBOM `type` values
+      # instead of "at least 2" (Cloud Build may also attach a VSA in this namespace).
+      OK=0
+      for i in $$(seq 1 30); do
+        GCB=$$(gcloud artifacts attachments list --repository=${_DEV_REPO} --location=us \
+          --project=${PROJECT_ID} --target="$$DEV_TARGET" \
+          --filter="attachmentNamespace=cloudbuild.googleapis.com" --format='value(type)')
+        COUNT=$$(printf '%s\n' "$$GCB" | grep -c . || true)
+        echo "DEV cloudbuild attachments ($$COUNT): $$(printf '%s' "$$GCB" | tr '\n' ' ')"
+        if [ "$$COUNT" -ge 2 ]; then OK=1; break; fi
+        sleep 20
+      done
+      if [ "$$OK" != "1" ]; then echo "ERROR: Cloud Build provenance/SBOM not attached to DEV in 10 min"; exit 1; fi
+
+      # 2b. Wait until AutoVM has attached its DEV vulnerability attestation (so it doesn't
+      # arrive mid-promotion and get mistaken for the fresh STAGING scan), then record DEV_AA.
+      DEV_AA=0
+      for i in $$(seq 1 30); do
+        DEV_AA=$$(gcloud artifacts attachments list --repository=${_DEV_REPO} --location=us \
+          --project=${PROJECT_ID} --target="$$DEV_TARGET" \
+          --filter="attachmentNamespace=artifactanalysis.googleapis.com" --format='value(name)' | grep -c . || true)
+        echo "DEV vuln attestations: $$DEV_AA ($$i/30)"
+        if [ "$$DEV_AA" -ge 1 ]; then break; fi
+        sleep 20
+      done
+      if [ "$$DEV_AA" -lt 1 ]; then echo "ERROR: AutoVM vuln attestation not attached to DEV in 10 min"; exit 1; fi
+      echo "$$DEV_AA" > /workspace/dev_aa_count.txt
+
+      # 2c. Promote DEV -> STAGING (destination repo in the URL).
+      TOKEN=$$(gcloud auth print-access-token)
       HTTP=$$(curl -s -o /workspace/promote_stg.json -w "%{http_code}" \
         -H "Authorization: Bearer $$TOKEN" -H "Content-Type: application/json" -X POST \
         "https://artifactregistry.googleapis.com/v1/projects/${PROJECT_ID}/locations/us/repositories/${_STAG_REPO}:promoteArtifact" \
         -d "{
           \"source_repository\": \"projects/${PROJECT_ID}/locations/us/repositories/${_DEV_REPO}\",
-          \"source_version\": \"projects/${PROJECT_ID}/locations/us/repositories/${_DEV_REPO}/packages/integrationcli/versions/$$DIGEST\",
+          \"source_version\": \"$$DEV_TARGET\",
           \"attachment_behavior\": \"INCLUDE\"
         }")
       cat /workspace/promote_stg.json
       if [ "$$HTTP" != "200" ]; then echo "ERROR: promote dev->staging failed (HTTP $$HTTP)"; exit 1; fi
 
-# 4. EXIT GATE: wait for AutoVM to attach a Vulnerability Attestation (VSA) in STAGING,
-#    then promote STAGING -> PROD (images). If no VSA within the window, fail (no PROD push).
-- name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
-  id: promote_to_prod
-  entrypoint: 'bash'
-  args:
-    - -c
-    - |
-      TOKEN=$$(gcloud auth print-access-token)
-      DIGEST=$$(gcloud artifacts docker images describe ${_DEV_IMAGE}:${TAG_NAME} \
-        --format='value(image_summary.digest)')
-      echo "Waiting for AutoVM to attach a Vulnerability Attestation in ${_STAG_REPO}..."
-      ITERATIONS=0
-      while [ $$ITERATIONS -lt 30 ]; do
-        ATTACHS=$$(gcloud artifacts attachments list \
-          --repository=${_STAG_REPO} --location=us --project=${PROJECT_ID} \
-          --target="projects/${PROJECT_ID}/locations/us/repositories/${_STAG_REPO}/packages/integrationcli/versions/$$DIGEST" \
-          --filter="type=application/vnd.in-toto.verification_summary+dsse" \
-          --format='value(name)')
-        if [ -n "$$ATTACHS" ]; then
-          echo "VSA found; proceeding with promotion to PROD."
-          break
-        fi
-        echo "No VSA yet; waiting 30s... ($$ITERATIONS/30)"
-        sleep 30
-        ITERATIONS=$$((ITERATIONS+1))
-      done
-      if [ $$ITERATIONS -eq 30 ]; then
-        echo "ERROR: AutoVM VSA timed out after 15 minutes; not promoting to PROD."
-        exit 1
-      fi
-      echo "Promoting $$DIGEST from ${_STAG_REPO} to ${_PROD_REPO}..."
-      # Destination (PROD) repo goes in the URL. PUBLIC_BCID_VSA_ONLY keeps internal
-      # staging attestations out of the public repo (only the VSA follows).
-      HTTP=$$(curl -s -o /workspace/promote_prod.json -w "%{http_code}" \
-        -H "Authorization: Bearer $$TOKEN" -H "Content-Type: application/json" -X POST \
-        "https://artifactregistry.googleapis.com/v1/projects/${PROJECT_ID}/locations/us/repositories/${_PROD_REPO}:promoteArtifact" \
-        -d "{
-          \"source_repository\": \"projects/${PROJECT_ID}/locations/us/repositories/${_STAG_REPO}\",
-          \"source_version\": \"projects/${PROJECT_ID}/locations/us/repositories/${_STAG_REPO}/packages/integrationcli/versions/$$DIGEST\",
-          \"attachment_behavior\": \"PUBLIC_BCID_VSA_ONLY\"
-        }")
-      cat /workspace/promote_prod.json
-      if [ "$$HTTP" != "200" ]; then echo "ERROR: promote staging->prod failed (HTTP $$HTTP)"; exit 1; fi
-      # promoteArtifact is a long-running operation: HTTP 200 only means it was
-      # ACCEPTED. Poll the operation to completion and surface its real error
-      # (policy/BCID/provenance failures surface here, not in the initial response).
-      OP_ID=$$(python3 -c "import json;print(json.load(open('/workspace/promote_prod.json')).get('name','').split('/')[-1])")
+      # 2d. Poll the LRO. HTTP 200 only means "accepted"; exit-gate rejections show up here.
+      OP_ID=$$(python3 -c "import json;print(json.load(open('/workspace/promote_stg.json')).get('name','').split('/')[-1])")
       if [ -z "$$OP_ID" ]; then echo "ERROR: no operation name in promote response"; exit 1; fi
-      echo "Waiting for promote operation $$OP_ID to finish..."
       OP_OK=0
       for i in $$(seq 1 40); do
         OPJSON=$$(gcloud artifacts operations describe "$$OP_ID" --location=us --project=${PROJECT_ID} --format=json 2>/dev/null || true)
         DONE=$$(printf '%s' "$$OPJSON" | python3 -c "import json,sys;print('yes' if json.load(sys.stdin).get('done') else 'no')" 2>/dev/null || echo no)
         if [ "$$DONE" = "yes" ]; then
           ERR=$$(printf '%s' "$$OPJSON" | python3 -c "import json,sys;print((json.load(sys.stdin).get('error') or {}).get('message',''))" 2>/dev/null || echo "")
-          if [ -n "$$ERR" ]; then echo "ERROR: promote staging->prod operation failed: $$ERR"; exit 1; fi
-          OP_OK=1; echo "Promote operation completed."; break
+          if [ -n "$$ERR" ]; then echo "ERROR: dev->staging promotion rejected: $$ERR"; exit 1; fi
+          OP_OK=1; echo "DEV->STAGING promotion done."; break
         fi
-        echo "Promote not done yet; waiting 15s... ($$i/40)"; sleep 15
+        sleep 15
       done
-      if [ "$$OP_OK" != "1" ]; then echo "ERROR: promote operation did not finish within the window."; exit 1; fi
-      # Confirm the digest is present in PROD before tag_prod keys off it.
-      if ! gcloud artifacts docker images describe "${_PROD_IMAGE}@$$DIGEST" --format='value(image_summary.digest)' >/dev/null 2>&1; then
-        echo "ERROR: promoted digest not present in ${_PROD_REPO} after operation success."; exit 1
-      fi
-      echo "Promoted digest present in ${_PROD_REPO}."
+      if [ "$$OP_OK" != "1" ]; then echo "ERROR: dev->staging promotion did not finish in 10 min"; exit 1; fi
 
-# 5. Tag the promoted digest in PROD as :<version> and :latest. Promotion is by digest,
-#    so the human-facing tags customers pull are (re)applied here; the deprecation step
-#    below also keys off PROD :latest.
+# 3. EXIT GATE: wait for AutoVM's NEW vuln attestation on the STAGING copy, then promote to PROD.
+- name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+  id: promote_to_prod
+  entrypoint: 'bash'
+  args:
+    - -c
+    - |
+      DIGEST=$$(gcloud artifacts docker images describe ${_DEV_IMAGE}:${TAG_NAME} \
+        --format='value(image_summary.digest)')
+      STG_TARGET="projects/${PROJECT_ID}/locations/us/repositories/${_STAG_REPO}/packages/integrationcli/versions/$$DIGEST"
+      DEV_AA=$$(cat /workspace/dev_aa_count.txt)
+
+      # STAGING holds the copied DEV attestation(s) (DEV_AA of them) plus, once AutoVM has
+      # scanned STAGING, one more. So wait until the count is greater than DEV_AA.
+      OK=0
+      for i in $$(seq 1 30); do
+        STG_AA=$$(gcloud artifacts attachments list --repository=${_STAG_REPO} --location=us \
+          --project=${PROJECT_ID} --target="$$STG_TARGET" \
+          --filter="attachmentNamespace=artifactanalysis.googleapis.com" --format='value(name)' | grep -c . || true)
+        echo "STAGING vuln attestations: $$STG_AA (DEV had $$DEV_AA) ($$i/30)"
+        if [ "$$STG_AA" -gt "$$DEV_AA" ]; then OK=1; break; fi
+        sleep 30
+      done
+      if [ "$$OK" != "1" ]; then echo "ERROR: no new AutoVM vuln attestation in STAGING after 15 min; not promoting"; exit 1; fi
+
+      # Promote STAGING -> PROD. PUBLIC_BCID_VSA_ONLY keeps internal attestations out of
+      # the public repo; BCID still evaluates them and logs the verdict the dashboard reads.
+      TOKEN=$$(gcloud auth print-access-token)
+      HTTP=$$(curl -s -o /workspace/promote_prod.json -w "%{http_code}" \
+        -H "Authorization: Bearer $$TOKEN" -H "Content-Type: application/json" -X POST \
+        "https://artifactregistry.googleapis.com/v1/projects/${PROJECT_ID}/locations/us/repositories/${_PROD_REPO}:promoteArtifact" \
+        -d "{
+          \"source_repository\": \"projects/${PROJECT_ID}/locations/us/repositories/${_STAG_REPO}\",
+          \"source_version\": \"$$STG_TARGET\",
+          \"attachment_behavior\": \"PUBLIC_BCID_VSA_ONLY\"
+        }")
+      cat /workspace/promote_prod.json
+      if [ "$$HTTP" != "200" ]; then echo "ERROR: promote staging->prod failed (HTTP $$HTTP)"; exit 1; fi
+
+      OP_ID=$$(python3 -c "import json;print(json.load(open('/workspace/promote_prod.json')).get('name','').split('/')[-1])")
+      if [ -z "$$OP_ID" ]; then echo "ERROR: no operation name in promote response"; exit 1; fi
+      OP_OK=0
+      for i in $$(seq 1 40); do
+        OPJSON=$$(gcloud artifacts operations describe "$$OP_ID" --location=us --project=${PROJECT_ID} --format=json 2>/dev/null || true)
+        DONE=$$(printf '%s' "$$OPJSON" | python3 -c "import json,sys;print('yes' if json.load(sys.stdin).get('done') else 'no')" 2>/dev/null || echo no)
+        if [ "$$DONE" = "yes" ]; then
+          ERR=$$(printf '%s' "$$OPJSON" | python3 -c "import json,sys;print((json.load(sys.stdin).get('error') or {}).get('message',''))" 2>/dev/null || echo "")
+          if [ -n "$$ERR" ]; then echo "ERROR: staging->prod promotion rejected: $$ERR"; exit 1; fi
+          OP_OK=1; echo "STAGING->PROD promotion done."; break
+        fi
+        sleep 15
+      done
+      if [ "$$OP_OK" != "1" ]; then echo "ERROR: staging->prod promotion did not finish in 10 min"; exit 1; fi
+
+# 4. (unchanged) Tag the promoted digest in PROD as :<version>, :latest, :public-image-<version>.
 - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
   id: tag_prod
   entrypoint: 'bash'
@@ -217,9 +201,7 @@ steps:
       gcloud artifacts docker tags add "${_PROD_IMAGE}@$$DIGEST" "${_PROD_IMAGE}:public-image-${TAG_NAME}" --quiet
       echo "Tagged PROD $$DIGEST as ${TAG_NAME}, latest, and public-image-${TAG_NAME}."
 
-# 6. Retire the PREVIOUS PROD release so the public image scanner (go/publico) treats the
-#    superseded digest as remediated and stops filing vulnerability bugs against it.
-#    No-ops on the first release and when the digest is unchanged.
+# 5. (unchanged) Retire the PREVIOUS PROD release.
 - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
   id: deprecate_previous_prod
   entrypoint: 'bash'
@@ -242,11 +224,6 @@ steps:
       gcloud artifacts docker tags add \
         "${_PROD_IMAGE}@$$PREV_DIGEST" \
         "${_PROD_IMAGE}:${_LIFECYCLE_TAG_PREFIX}$$SHA" --quiet
-      # Remove the superseded release's ACTIVE marker(s) so a retired digest is not
-      # tagged both public-image-* (active) and deprecated-public-image-* (retired).
-      # Guard each delete by re-resolving the tag back to PREV_DIGEST so we never
-      # remove the NEW release's public-image-* marker even if the listing is
-      # over-broad (a stale/broad list must not break Cap-2 scanner enrollment).
       PREV_TAGS=$$(gcloud artifacts docker images list "${_PROD_IMAGE}" --include-tags \
         --filter="version:$$PREV_DIGEST" --format='value(tags)' 2>/dev/null | tr ',' '\n')
       for t in $$PREV_TAGS; do
@@ -264,16 +241,6 @@ steps:
         esac
       done
 
-availableSecrets:
-  secretManager:
-  - versionName: projects/$PROJECT_ID/secrets/integrationcli-cosign-password/versions/latest
-    env: 'COSIGN_PASSWORD'
-  - versionName: projects/$PROJECT_ID/secrets/integrationcli-cosign-private-key/versions/latest
-    env: 'COSIGN_PRIVATE_KEY'
-
-images:
-- '${_DEV_IMAGE}:${TAG_NAME}'
-
 substitutions:
   _DEV_REPO: "integrationcli-dev"
   _STAG_REPO: "integrationcli-staging"
@@ -289,6 +256,7 @@ options:
   logging: CLOUD_LOGGING_ONLY
   substitution_option: ALLOW_LOOSE
   dynamic_substitutions: true
-  requestedVerifyOption: VERIFIED
 
-timeout: 3600s
+# Raised from 3600s: the parent now waits for the child build (<=30m), the attestations
+# (<=10m), two promotions (<=10m each) and the AutoVM scan (<=15m).
+timeout: 5400s
