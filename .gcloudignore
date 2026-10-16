@@ -18,3 +18,7 @@ samples/
 README.md
 CONTRIBUTING.md
 downloadLatest.sh
+
+# Editor dev container: not part of the image build, and keeps its base images
+# out of the MOSS dependency-location scan.
+.devcontainer/
