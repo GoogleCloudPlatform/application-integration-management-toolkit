@@ -86,19 +86,20 @@ steps:
       done
       if [ "$$OK" != "1" ]; then echo "ERROR: Cloud Build provenance not attached to DEV in 10 min"; exit 1; fi
 
-      # 2b. Wait until AutoVM has attached its DEV vulnerability attestation (so it doesn't
-      # arrive mid-promotion and get mistaken for the fresh STAGING scan), then record DEV_AA.
-      DEV_AA=0
+      # 2b. Wait until AutoVM has attached its DEV vulnerability attestation, then record the
+      # names of AutoVM's DEV attachments. The promotion copies them to STAGING under the same
+      # names, which is how step 3 tells the copies apart from AutoVM's fresh STAGING scan.
+      DEV_AA=""
       for i in $$(seq 1 30); do
         DEV_AA=$$(gcloud artifacts attachments list --repository=${_DEV_REPO} --location=us \
           --project=${PROJECT_ID} --target="$$DEV_TARGET" \
-          --filter="attachmentNamespace=artifactanalysis.googleapis.com" --format='value(name)' | grep -c . || true)
-        echo "DEV vuln attestations: $$DEV_AA ($$i/30)"
-        if [ "$$DEV_AA" -ge 1 ]; then break; fi
+          --filter="attachmentNamespace=artifactanalysis.googleapis.com" --format='value(name.basename())')
+        echo "DEV vuln attestations: $$(printf '%s' "$$DEV_AA" | grep -c . || true) ($$i/30)"
+        if [ -n "$$DEV_AA" ]; then break; fi
         sleep 20
       done
-      if [ "$$DEV_AA" -lt 1 ]; then echo "ERROR: AutoVM vuln attestation not attached to DEV in 10 min"; exit 1; fi
-      echo "$$DEV_AA" > /workspace/dev_aa_count.txt
+      if [ -z "$$DEV_AA" ]; then echo "ERROR: AutoVM vuln attestation not attached to DEV in 10 min"; exit 1; fi
+      printf '%s\n' "$$DEV_AA" > /workspace/dev_aa_names.txt
 
       # 2c. Promote DEV -> STAGING (destination repo in the URL) and poll the operation: HTTP 200
       # only means "accepted"; exit-gate rejections show up in the operation. The SBOM can land a
@@ -153,17 +154,18 @@ steps:
       DIGEST=$$(gcloud artifacts docker images describe ${_DEV_IMAGE}:${TAG_NAME} \
         --format='value(image_summary.digest)')
       STG_TARGET="projects/${PROJECT_ID}/locations/us/repositories/${_STAG_REPO}/packages/integrationcli/versions/$$DIGEST"
-      DEV_AA=$$(cat /workspace/dev_aa_count.txt)
 
-      # STAGING holds the copied DEV attestation(s) (DEV_AA of them) plus, once AutoVM has
-      # scanned STAGING, one more. So wait until the count is greater than DEV_AA.
+      # STAGING starts with copies of DEV's AutoVM attachments, under their DEV names. AutoVM then
+      # scans the STAGING copy and replaces the copies, often within seconds, so counting
+      # attachments can miss the new scan. Wait for a vuln attestation whose name didn't come from DEV.
       OK=0
       for i in $$(seq 1 30); do
-        STG_AA=$$(gcloud artifacts attachments list --repository=${_STAG_REPO} --location=us \
-          --project=${PROJECT_ID} --target="$$STG_TARGET" \
-          --filter="attachmentNamespace=artifactanalysis.googleapis.com" --format='value(name)' | grep -c . || true)
-        echo "STAGING vuln attestations: $$STG_AA (DEV had $$DEV_AA) ($$i/30)"
-        if [ "$$STG_AA" -gt "$$DEV_AA" ]; then OK=1; break; fi
+        STG_VA=$$(gcloud artifacts attachments list --repository=${_STAG_REPO} --location=us \
+          --project=${PROJECT_ID} --target="$$STG_TARGET" --format='value(name.basename(),type)' \
+          | awk '$$2 == "application/vnd.in-toto.vuln+dsse" {print $$1}')
+        NEW_VA=$$(printf '%s\n' "$$STG_VA" | grep -vxF -f /workspace/dev_aa_names.txt | grep -c . || true)
+        echo "STAGING vuln attestations: $$(printf '%s' "$$STG_VA" | tr '\n' ' ')(new: $$NEW_VA) ($$i/30)"
+        if [ "$$NEW_VA" -ge 1 ]; then OK=1; break; fi
         sleep 30
       done
       if [ "$$OK" != "1" ]; then echo "ERROR: no new AutoVM vuln attestation in STAGING after 15 min; not promoting"; exit 1; fi
