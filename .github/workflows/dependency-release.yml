@@ -1,0 +1,94 @@
+# Copyright 2026 Google LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+# Keeps the published integrationcli image free of known dependency CVEs
+# without a human step:
+#
+#   1. Dependabot opens a PR (.github/dependabot.yml).
+#   2. When the lint workflow finishes green on it, `automerge-dependabot`
+#      merges it if it is a patch or minor update with every check passed,
+#      then releases the merge commit as the next patch version.
+#   3. A human merge whose commit title starts with chore(deps) or fix(deps)
+#      is released the same way by `release-dependency-commit`.
+#
+# A release is a tag push: Cloud Build builds, scans, gates and publishes the
+# container image; the binary and docs workflows are started on the tag with
+# workflow_dispatch (pushes made with GITHUB_TOKEN do not trigger workflows
+# on their own). Major updates and anything with a failing check are left for
+# a human; the job log says why.
+name: Dependency release
+
+on:
+  workflow_run:
+    workflows: ["golangci-lint"]
+    types: [completed]
+  push:
+    branches: [main]
+    paths: ["go.mod", "go.sum", "Dockerfile"]
+
+permissions: {}
+
+concurrency:
+  group: dependency-release
+  cancel-in-progress: false
+
+jobs:
+  automerge-dependabot:
+    name: Merge and release a Dependabot update
+    if: >-
+      github.event_name == 'workflow_run' &&
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.event == 'pull_request' &&
+      github.event.workflow_run.actor.login == 'dependabot[bot]' &&
+      github.event.workflow_run.pull_requests[0] != null
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+      actions: write
+    steps:
+      - uses: actions/checkout@1e31de5234b9f8995739874a8ce0492dc87873e2 #v4
+        with:
+          ref: main
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Merge if safe, then release
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ github.event.workflow_run.pull_requests[0].number }}
+          HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
+        run: bash .github/scripts/automerge-dependabot.sh
+
+  release-dependency-commit:
+    name: Release a dependency commit on main
+    if: >-
+      github.event_name == 'push' &&
+      (startsWith(github.event.head_commit.message, 'chore(deps)') ||
+       startsWith(github.event.head_commit.message, 'fix(deps)'))
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      actions: write
+    steps:
+      - uses: actions/checkout@1e31de5234b9f8995739874a8ce0492dc87873e2 #v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Release as the next patch version
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          GH_TOKEN: ${{ github.token }}
+          TARGET_SHA: ${{ github.sha }}
+        run: bash .github/scripts/release-next-patch.sh
