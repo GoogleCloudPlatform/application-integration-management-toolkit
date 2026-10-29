@@ -1,0 +1,98 @@
+# Copyright 2022 Google LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+# Child build started by cloudbuild.yaml. Builds, pushes to DEV, signs, and runs the
+# MOSS dependency-location scan. Because the image is declared under `images:`,
+# Cloud Build attaches provenance + SBOM (+ VSA) to it and uploads the SBOM to SCILo
+# AFTER this build finishes; that is why promotion lives in the parent build.
+steps:
+- name: 'gcr.io/cloud-builders/docker'
+  id: build_integrationcli
+  args: ['build', '-t', '${_DEV_IMAGE}:${_TAG_NAME}', '-f', 'Dockerfile', '.',
+         '--build-arg', 'TAG=${_TAG_NAME}', '--build-arg', 'COMMIT=${_COMMIT_SHA}']
+- name: 'gcr.io/cloud-builders/docker'
+  id: push_integrationcli
+  args: ['push', '${_DEV_IMAGE}:${_TAG_NAME}']
+- name: 'gcr.io/cloud-builders/docker'
+  id: tag_latest_dev
+  args: ['tag', '${_DEV_IMAGE}:${_TAG_NAME}', '${_DEV_IMAGE}:latest']
+- name: 'gcr.io/cloud-builders/docker'
+  id: push_latest_dev
+  args: ['push', '${_DEV_IMAGE}:latest']
+
+# Cosign signing (unchanged from the current pipeline).
+- name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+  id: sign_integrationcli
+  entrypoint: 'bash'
+  secretEnv: ['COSIGN_PASSWORD', 'COSIGN_PRIVATE_KEY']
+  env: ['HOME=/tmp']
+  args:
+    - -c
+    - |
+      curl -sL https://github.com/sigstore/cosign/releases/download/v3.0.6/cosign-linux-amd64 -o /tmp/cosign
+      echo "c956e5dfcac53d52bcf058360d579472f0c1d2d9b69f55209e256fe7783f4c74  /tmp/cosign" | sha256sum -c -
+      chmod +x /tmp/cosign
+      gcloud auth print-access-token > /tmp/token.txt
+      /tmp/cosign login us-docker.pkg.dev -u oauth2accesstoken -p $$(cat /tmp/token.txt)
+      echo "$$COSIGN_PRIVATE_KEY" > /tmp/cosign.key
+      /tmp/cosign sign --key=/tmp/cosign.key --yes ${_DEV_IMAGE}:${_TAG_NAME}
+
+# MOSS Control #10: dependency-location scan (format from go/moss-onboarding-cap1 &
+# google3/cloud/ai/platform/imageplatform/build/operations/build_operations.py L52-95, L1329-1349).
+# Note: Do NOT set `dir: /workspace/louhi_ws` here—that path is only used by Louhi builds;
+# standard GitHub Cloud Build checks out the repo directly in `/workspace`.
+# Requires the GOOGLE_INTERNAL project label + the Louhi content-scan roster (Step 2).
+# CRITICAL: BCID matches every string in `--allowed_prefixes` character-for-character against
+# moss_allowed.textproto + exception_prefix_groups (dependency_location_package.cc L171-176).
+# Do NOT put placeholder strings here; only uncomment additional prefixes after adding the exact
+# identical string to exception_prefix_groups in integrationcli.sw_policy.textproto (Step 3).
+- name: 'us-central1-docker.pkg.dev/louhi-prod-1/louhi-helper/louhi-helper-v2'
+  id: secure_content_scan
+  args:
+    - 'secure_content_scan'
+    - '--allowed_prefixes'
+    # Exact strings from security/bcid/rules/dependency_location/golden_allowlists/moss_allowed.textproto:
+    - 'docker.pkg.dev/artifact-foundry-prod/'
+    - 'us-go.pkg.dev/access-aoss/assuredoss-go'
+    - 'sum.golang.org'
+    - 'https://gcr.io/distroless'
+    # Exceptions: base images the scan reports from the Dockerfile (plain prefix match, no scheme).
+    # Each string must also be listed in exception_prefix_groups of the integrationcli BCID policy.
+    - 'gcr.io/distroless/'
+    - 'golang:'
+    - 'us-docker.pkg.dev/appintegration-toolkit/internal/'
+  results:
+    - name: 'allowed_uri_prefix'
+      attestationContent: 'allowed_uri_prefix'
+      attestationType: 'https://bcid.corp.google.com/build-content-restrictions/v0.1'
+
+# Only the version tag is declared, same as the current pipeline.
+images:
+- '${_DEV_IMAGE}:${_TAG_NAME}'
+
+availableSecrets:
+  secretManager:
+  - versionName: projects/$PROJECT_ID/secrets/integrationcli-cosign-password/versions/latest
+    env: 'COSIGN_PASSWORD'
+  - versionName: projects/$PROJECT_ID/secrets/integrationcli-cosign-private-key/versions/latest
+    env: 'COSIGN_PRIVATE_KEY'
+
+options:
+  machineType: E2_HIGHCPU_8
+  logging: CLOUD_LOGGING_ONLY
+  substitution_option: ALLOW_LOOSE
+  dynamic_substitutions: true
+  requestedVerifyOption: VERIFIED   # needed for Cloud Build provenance
+
+timeout: 1800s

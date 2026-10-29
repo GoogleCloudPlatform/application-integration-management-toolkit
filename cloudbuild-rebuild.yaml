@@ -1,0 +1,79 @@
+# Copyright 2026 Google LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+# Scheduled freshness rebuild of the public integrationcli image (MOSS control 9,
+# go/moss-onboarding-release-cadence). Cloud Scheduler -> Pub/Sub -> a trigger runs this
+# file from main. It rebuilds the version that is live as :latest, from the git tag it was
+# released from, and publishes it as <tag>-rebuild.<timestamp> through the normal release
+# pipeline (cloudbuild.yaml from main). No GitHub credential: the repository is public and
+# nothing is pushed to it, so the binary and docs workflows never run.
+steps:
+- name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+  id: rebuild_live_release
+  entrypoint: 'bash'
+  args:
+    - -c
+    - |
+      set -euo pipefail
+      LIVE_IMAGE="us-docker.pkg.dev/${PROJECT_ID}/${_LIVE_REPO}/integrationcli"
+      REPO_URL="https://github.com/GoogleCloudPlatform/application-integration-management-toolkit.git"
+
+      # 1. Which release is live? Take the version tag on the :latest digest. A tag made by an
+      #    earlier run of this file ends in -rebuild.<timestamp>; strip that to get the git tag.
+      DIGEST=$$(gcloud artifacts docker images describe "$$LIVE_IMAGE:latest" --format='value(image_summary.digest)')
+      LIVE=$$(gcloud artifacts docker images list "$$LIVE_IMAGE" --include-tags --filter="version:$$DIGEST" \
+        --format='value(tags)' | tr ',' '\n' | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+' | sort | head -n 1 || true)
+      if [ -z "$$LIVE" ]; then echo "ERROR: no vX.Y.Z tag on $$LIVE_IMAGE:latest ($$DIGEST)"; exit 1; fi
+      GIT_TAG=$$(printf '%s' "$$LIVE" | sed -E 's/-rebuild\.[0-9]{14}$$//')
+      NEW_TAG="$$GIT_TAG-rebuild.$$(date -u +%Y%m%d%H%M%S)"
+      echo "Live: $$LIVE ($$DIGEST). Rebuilding git tag $$GIT_TAG as $$NEW_TAG."
+
+      # 2. Fetch the source at that git tag. Anonymous: the repository is public.
+      git -c advice.detachedHead=false clone --quiet --depth 1 --branch "$$GIT_TAG" "$$REPO_URL" src
+      SHA=$$(git -C src rev-parse HEAD)
+      echo "Source commit: $$SHA"
+
+      # 2b. Take the release pipeline from main, not the copy frozen at the tag, so pipeline fixes
+      #     apply to rebuilds. The product source (Dockerfile, Go code) stays pinned to the tag.
+      git -C src fetch --quiet --depth 1 origin main
+      git -C src checkout --quiet FETCH_HEAD -- cloudbuild.yaml cloudbuild-build.yaml .gcloudignore
+      echo "Pipeline files from main: $$(git -C src rev-parse FETCH_HEAD)"
+      rm -rf src/.git
+
+      # 3. Run the normal release pipeline from that source, exactly like a dry run.
+      #    --async + polling: log streaming does not work with CLOUD_LOGGING_ONLY.
+      BUILD_ID=$$(gcloud builds submit src --config=src/cloudbuild.yaml --region=${_REGION} --project=${PROJECT_ID} \
+        --substitutions=TAG_NAME=$$NEW_TAG,COMMIT_SHA=$$SHA,_PROD_REPO=${_PROD_REPO} --async --format='value(id)')
+      echo "Release build: $$BUILD_ID"
+      for i in $$(seq 1 120); do
+        STATUS=$$(gcloud builds describe "$$BUILD_ID" --region=${_REGION} --project=${PROJECT_ID} --format='value(status)')
+        echo "Release build status: $$STATUS ($$i/120)"
+        case "$$STATUS" in
+          SUCCESS) echo "Published ${_PROD_REPO}/integrationcli:$$NEW_TAG from $$GIT_TAG ($$SHA)."; exit 0 ;;
+          FAILURE|INTERNAL_ERROR|TIMEOUT|CANCELLED|EXPIRED) echo "ERROR: release build $$BUILD_ID ended with $$STATUS"; exit 1 ;;
+        esac
+        sleep 60
+      done
+      echo "ERROR: release build $$BUILD_ID still running after 2 hours"; exit 1
+
+substitutions:
+  _LIVE_REPO: "images"   # where to read the live version from
+  _PROD_REPO: "images"   # where to publish; use integrationcli-test for a dry run
+  _REGION: "us-west1"
+
+options:
+  logging: CLOUD_LOGGING_ONLY
+
+# The release build itself may take up to 90 minutes (its own timeout is 5400s).
+timeout: 7800s
