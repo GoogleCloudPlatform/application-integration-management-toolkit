@@ -13,8 +13,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-# Merges a Dependabot pull request once it is safe, then releases the merge
-# commit as the next patch version (release-next-patch.sh).
+# Runs on a Dependabot pull request: waits for the other checks, merges the PR
+# once it is safe, then releases the merge commit as the next patch version
+# (release-next-patch.sh).
 #
 # Safe means all of: opened by Dependabot from a dependabot/ branch; still open
 # and mergeable; CI ran on its current head; no update in it changes a major
@@ -22,9 +23,12 @@
 # check on the PR passed. Anything else is left for a human, with the
 # reason in the job log.
 #
-# Env: GITHUB_REPOSITORY, GITHUB_TOKEN, PR_NUMBER, HEAD_SHA (the commit CI ran on).
+# Env: GITHUB_REPOSITORY, GITHUB_TOKEN, PR_NUMBER, HEAD_SHA (the PR head this run
+# is for), SELF_CHECK (this job's own check name, ignored while waiting),
+# WAIT_MINUTES (default 30).
 set -euo pipefail
-: "${GITHUB_REPOSITORY:?}" "${GITHUB_TOKEN:?}" "${PR_NUMBER:?}" "${HEAD_SHA:?}"
+: "${GITHUB_REPOSITORY:?}" "${GITHUB_TOKEN:?}" "${PR_NUMBER:?}" "${HEAD_SHA:?}" "${SELF_CHECK:?}"
+WAIT_MINUTES="${WAIT_MINUTES:-30}"
 skip() { echo "Not merging #${PR_NUMBER}: $*"; exit 0; }
 
 PR_JSON=$(gh pr view "${PR_NUMBER}" --repo "${GITHUB_REPOSITORY}" \
@@ -67,11 +71,30 @@ for a, b in pairs:
 print("ok" if not problems else "skip: " + "; ".join(problems))')
 [ "${VERDICT}" = "ok" ] || skip "${VERDICT#skip: }"
 
-BAD=$(gh pr checks "${PR_NUMBER}" --repo "${GITHUB_REPOSITORY}" --json name,bucket | python3 -c '
-import json, sys
-bad = [c["name"] + "=" + c["bucket"] for c in json.load(sys.stdin) if c["bucket"] not in ("pass", "skipping")]
-print(", ".join(bad))')
-[ -z "${BAD}" ] || skip "checks not green: ${BAD}"
+# Wait for every other check on the PR. This job is itself one of them, so it
+# is skipped by name. Any failure or a wait longer than WAIT_MINUTES leaves the
+# PR for a human.
+for ((i = 0; i < WAIT_MINUTES * 2; i++)); do
+  SUMMARY=$(gh pr checks "${PR_NUMBER}" --repo "${GITHUB_REPOSITORY}" --json name,bucket | SELF_CHECK="${SELF_CHECK}" python3 -c '
+import json, os, sys
+checks = [c for c in json.load(sys.stdin) if c["name"] != os.environ["SELF_CHECK"]]
+bad = [c["name"] + "=" + c["bucket"] for c in checks if c["bucket"] in ("fail", "cancel")]
+pending = [c["name"] for c in checks if c["bucket"] == "pending"]
+if bad: print("fail " + ", ".join(bad))
+elif pending: print("pending " + ", ".join(pending))
+elif not checks: print("pending no checks reported yet")
+else: print("ok")')
+  case "${SUMMARY}" in
+    ok) break ;;
+    fail*) skip "checks not green: ${SUMMARY#fail }" ;;
+    *) echo "Waiting for: ${SUMMARY#pending }"; sleep 30 ;;
+  esac
+done
+[ "${SUMMARY}" = "ok" ] || skip "checks still pending after ${WAIT_MINUTES} minutes: ${SUMMARY#pending }"
+
+# CI may have run on an older head if Dependabot rebased meanwhile.
+HEAD_NOW=$(gh pr view "${PR_NUMBER}" --repo "${GITHUB_REPOSITORY}" --json headRefOid --jq .headRefOid)
+[ "${HEAD_NOW}" = "${HEAD_SHA}" ] || skip "the PR head moved from ${HEAD_SHA} to ${HEAD_NOW} while waiting"
 
 echo "Merging #${PR_NUMBER}: ${TITLE}"
 gh pr merge "${PR_NUMBER}" --repo "${GITHUB_REPOSITORY}" --squash --delete-branch \
