@@ -30,7 +30,7 @@ updates:
       timezone: "Etc/UTC"
     open-pull-requests-limit: 5
     cooldown:
-      default-days: 3
+      default-days: 7
     commit-message:
       prefix: "chore(deps)"
     groups:
@@ -53,7 +53,7 @@ updates:
       time: "06:00"
       timezone: "Etc/UTC"
     cooldown:
-      default-days: 3
+      default-days: 7
     commit-message:
       prefix: "chore(deps)"
     ignore:
