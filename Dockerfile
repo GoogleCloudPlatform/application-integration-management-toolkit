@@ -35,7 +35,7 @@ RUN /tmp/go-licenses report ./... --template /go/src/apigeecli/licenses.tpl --ig
 FROM us-docker.pkg.dev/appintegration-toolkit/internal/jq:latest@sha256:d3a1c8a88f9223eab96bda760efab08290d274249581d2db6db010cbe20c232b AS jq
 
 # use debug because it includes busybox
-FROM gcr.io/distroless/static-debian12:debug-nonroot@sha256:afead1275cad5ec9662cdc09ce7fe5961a41467555fc30cd46a60247bf8bbdfd
+FROM gcr.io/distroless/static-debian12:debug-nonroot@sha256:d5563cc7f2f44313f332e91138cc8c6a158899afeeeab2fce3b0f9ccdb3cf9ee
 LABEL org.opencontainers.image.url='https://github.com/GoogleCloudPlatform/application-integration-management-toolkit' \
     org.opencontainers.image.documentation='https://github.com/GoogleCloudPlatform/application-integration-management-toolkit' \
     org.opencontainers.image.source='https://github.com/GoogleCloudPlatform/application-integration-management-toolkit' \
