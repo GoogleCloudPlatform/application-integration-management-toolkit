@@ -16,7 +16,9 @@
 # ecosystem; security updates arrive as soon as an advisory is published.
 # .github/workflows/dependency-release.yml merges them once CI passes and
 # releases the next patch version, so a dependency CVE is fixed and published
-# without a human step. Major updates are not grouped and are left for a human.
+# without a human step. Major updates of Go modules and the base image are not
+# grouped and are left for a human; GitHub Actions updates are grouped whatever
+# their size, and a group containing a major is also left for a human.
 # The cooldown waits a few days after a version is published before adopting
 # it, so a compromised or quickly-yanked release is not picked up blindly.
 version: 2
@@ -70,7 +72,9 @@ updates:
       default-days: 7
     commit-message:
       prefix: "chore(deps)"
+    # One PR for all Actions updates, majors included: they only change CI
+    # workflows, and one review beats one per action.
+    open-pull-requests-limit: 5
     groups:
       github-actions:
         patterns: ["*"]
-        update-types: ["minor", "patch"]
