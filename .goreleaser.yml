@@ -82,6 +82,8 @@ signs:
     - "sign-blob"
     - "--key=/tmp/cosign.key"
     - "--output-signature=${signature}"
+    # cosign v3 defaults to the sigstore bundle format; keep the .sig files the README documents.
+    - "--new-bundle-format=false"
     - "${artifact}"
     - "--yes"
     artifacts: all
