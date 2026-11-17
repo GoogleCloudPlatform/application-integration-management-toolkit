@@ -84,6 +84,7 @@ signs:
     - "--output-signature=${signature}"
     # cosign v3 defaults to the sigstore bundle format; keep the .sig files the README documents.
     - "--new-bundle-format=false"
+    - "--use-signing-config=false"
     - "${artifact}"
     - "--yes"
     artifacts: all
