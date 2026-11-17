@@ -68,6 +68,8 @@ steps:
   args:
     - -c
     - |
+      # The cloud-sdk image stopped shipping python3 on PATH (593.0.0, Nov 2026); use gcloud's bundled one.
+      PYTHON=$$(gcloud info --format='value(basic.python_location)')
       DIGEST=$$(gcloud artifacts docker images describe ${_DEV_IMAGE}:${TAG_NAME} \
         --format='value(image_summary.digest)')
       DEV_TARGET="projects/${PROJECT_ID}/locations/us/repositories/${_DEV_REPO}/packages/integrationcli/versions/$$DIGEST"
@@ -118,14 +120,14 @@ steps:
           }")
         cat /workspace/promote_stg.json
         if [ "$$HTTP" != "200" ]; then echo "ERROR: promote dev->staging failed (HTTP $$HTTP)"; exit 1; fi
-        OP_ID=$$(python3 -c "import json;print(json.load(open('/workspace/promote_stg.json')).get('name','').split('/')[-1])")
+        OP_ID=$$("$$PYTHON" -c "import json;print(json.load(open('/workspace/promote_stg.json')).get('name','').split('/')[-1])")
         if [ -z "$$OP_ID" ]; then echo "ERROR: no operation name in promote response"; exit 1; fi
         OP_DONE=0; ERR=""
         for i in $$(seq 1 40); do
           OPJSON=$$(gcloud artifacts operations describe "$$OP_ID" --location=us --project=${PROJECT_ID} --format=json 2>/dev/null || true)
-          DONE=$$(printf '%s' "$$OPJSON" | python3 -c "import json,sys;print('yes' if json.load(sys.stdin).get('done') else 'no')" 2>/dev/null || echo no)
+          DONE=$$(printf '%s' "$$OPJSON" | "$$PYTHON" -c "import json,sys;print('yes' if json.load(sys.stdin).get('done') else 'no')" 2>/dev/null || echo no)
           if [ "$$DONE" = "yes" ]; then
-            ERR=$$(printf '%s' "$$OPJSON" | python3 -c "import json,sys;print((json.load(sys.stdin).get('error') or {}).get('message',''))" 2>/dev/null || echo "")
+            ERR=$$(printf '%s' "$$OPJSON" | "$$PYTHON" -c "import json,sys;print((json.load(sys.stdin).get('error') or {}).get('message',''))" 2>/dev/null || echo "")
             OP_DONE=1; break
           fi
           sleep 15
@@ -151,6 +153,8 @@ steps:
   args:
     - -c
     - |
+      # The cloud-sdk image stopped shipping python3 on PATH (593.0.0, Nov 2026); use gcloud's bundled one.
+      PYTHON=$$(gcloud info --format='value(basic.python_location)')
       DIGEST=$$(gcloud artifacts docker images describe ${_DEV_IMAGE}:${TAG_NAME} \
         --format='value(image_summary.digest)')
       STG_TARGET="projects/${PROJECT_ID}/locations/us/repositories/${_STAG_REPO}/packages/integrationcli/versions/$$DIGEST"
@@ -184,14 +188,14 @@ steps:
       cat /workspace/promote_prod.json
       if [ "$$HTTP" != "200" ]; then echo "ERROR: promote staging->prod failed (HTTP $$HTTP)"; exit 1; fi
 
-      OP_ID=$$(python3 -c "import json;print(json.load(open('/workspace/promote_prod.json')).get('name','').split('/')[-1])")
+      OP_ID=$$("$$PYTHON" -c "import json;print(json.load(open('/workspace/promote_prod.json')).get('name','').split('/')[-1])")
       if [ -z "$$OP_ID" ]; then echo "ERROR: no operation name in promote response"; exit 1; fi
       OP_OK=0
       for i in $$(seq 1 40); do
         OPJSON=$$(gcloud artifacts operations describe "$$OP_ID" --location=us --project=${PROJECT_ID} --format=json 2>/dev/null || true)
-        DONE=$$(printf '%s' "$$OPJSON" | python3 -c "import json,sys;print('yes' if json.load(sys.stdin).get('done') else 'no')" 2>/dev/null || echo no)
+        DONE=$$(printf '%s' "$$OPJSON" | "$$PYTHON" -c "import json,sys;print('yes' if json.load(sys.stdin).get('done') else 'no')" 2>/dev/null || echo no)
         if [ "$$DONE" = "yes" ]; then
-          ERR=$$(printf '%s' "$$OPJSON" | python3 -c "import json,sys;print((json.load(sys.stdin).get('error') or {}).get('message',''))" 2>/dev/null || echo "")
+          ERR=$$(printf '%s' "$$OPJSON" | "$$PYTHON" -c "import json,sys;print((json.load(sys.stdin).get('error') or {}).get('message',''))" 2>/dev/null || echo "")
           if [ -n "$$ERR" ]; then echo "ERROR: staging->prod promotion rejected: $$ERR"; exit 1; fi
           OP_OK=1; echo "STAGING->PROD promotion done."; break
         fi
