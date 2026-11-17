@@ -20,8 +20,11 @@
 #      (lint, CLA, the org's Actions scan), and merges it if no update changes
 #      a major version and every check passed, then releases the merge commit
 #      as the next patch version.
-#   3. A human merge whose commit title starts with chore(deps) or fix(deps)
-#      is released the same way by `release-dependency-commit`.
+#   3. A human merge whose commit title starts with chore(deps), fix(deps) or
+#      fix(release) is released the same way by `release-dependency-commit`.
+#      fix(release) is for a change to the release pipeline itself that must
+#      ship (for example a broken build step), since the image only changes
+#      when a tag is pushed.
 #
 # A release is a tag push: Cloud Build builds, scans, gates and publishes the
 # container image; the binary and docs workflows are started on the tag with
@@ -36,7 +39,7 @@ on:
     branches: [main]
   push:
     branches: [main]
-    paths: ["go.mod", "go.sum", "Dockerfile"]
+    paths: ["go.mod", "go.sum", "Dockerfile", "cloudbuild.yaml", "cloudbuild-build.yaml"]
 
 permissions: {}
 
@@ -77,7 +80,8 @@ jobs:
     if: >-
       github.event_name == 'push' &&
       (startsWith(github.event.head_commit.message, 'chore(deps)') ||
-       startsWith(github.event.head_commit.message, 'fix(deps)'))
+       startsWith(github.event.head_commit.message, 'fix(deps)') ||
+       startsWith(github.event.head_commit.message, 'fix(release)'))
     runs-on: ubuntu-latest
     permissions:
       contents: write
